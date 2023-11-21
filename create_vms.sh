@@ -28,7 +28,7 @@ violet=$(tput setaf 5)
 normal=$(tput sgr0)
 
 # Constants
-[[ -z $OPENRC_PATH ]] && OPENRC_PATH="/installer/config/openrc"
+[[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
 [[ -z $VM_QTY ]] && VM_QTY="1"
 [[ -z $IMAGE ]] && IMAGE="ubuntu-20.04-server-cloudimg-amd64_new"
 [[ -z $FLAVOR ]] && FLAVOR="4c-4r"
@@ -40,7 +40,7 @@ normal=$(tput sgr0)
 [[ -z $SECURITY_GR ]] && SECURITY_GR="test_security_group"
 [[ -z $VOLUME_SIZE ]] && VOLUME_SIZE="10"
 [[ -z $VM_BASE_NAME ]] && VM_BASE_NAME="DRS_TEST"
-[[ -z $TEST_USER ]] && TEST_USER="test_user"
+[[ -z $TEST_USER ]] && TEST_USER="admin"
 [[ -z $ROLE ]] && ROLE="admin"
 #======================
 
@@ -48,66 +48,51 @@ while [ -n "$1" ]
 do
     case "$1" in
         --help) echo -E "
-        -qty <number_of_VMs>
-        -image <image_name>
-        -f, flavor <falvor_name>
-        -k, key <key_name>
-        -hv, hypervisor <hypervisor_name>
-        -network <network_name>
-        -volume_size <volume_size_in_GB>
-        -name <vm_base_name>
+        -q, 	-qty		<number_of_VMs>
+        -i, 	-image		<image_name>
+        -f,	-flavor		<falvor_name>
+        -k,	-key		<key_name>
+        -hv,	-hypervisor	<hypervisor_name>
+        -net,	-network	<network_name>
+        -v,	-volume_size 	volume_size_in_GB>
+        -n,	-name 		<vm_base_name>
+	-p,	-project	<project_id>
         "
             exit 0
             break ;;
-        -qty) qty="$2"
+        -q|-qty) qty="$2"
             echo "Found the -qty <number_of_VMs> option, with parameter value $qty"
             VM_QTY=$qty
             shift ;;
-        -image) image="$2"
+        -i|-image) image="$2"
             echo "Found the -image <image_name> option, with parameter value $image"
             IMAGE=$image
             shift ;;
-        -flavor) flavor="$2"
+        -f|-flavor) flavor="$2"
             echo "Found the -flavor <falvor_name> option, with parameter value $flavor"
             FLAVOR=$flavor
             shift;;
-        -f) flavor="$2"
-            echo "Found the -f <falvor_name> option, with parameter value $flavor"
-            FLAVOR=$flavor
-            shift;;
-        -key) key_name="$2"
+        -k|-key) key_name="$2"
             echo "Found the -key_name <key_name> option, with parameter value $key_name"
             KEY_NAME=$key_name
             shift;;
-        -k) key_name="$2"
-            echo "Found the -k <key_name> option, with parameter value $key_name"
-            KEY_NAME=$key_name
-            shift;;
-        -hypervisor) hyper_name="$2"
+        -hv|-hypervisor) hyper_name="$2"
             echo "Found the -hyper_name <hypervisor_name> option, with parameter value $hyper_name"
             HYPERVISOR_HOSTNAME=$hyper_name
             shift ;;
-        -hv) hyper_name="$2"
-            echo "Found the -hv <hypervisor_name> option, with parameter value $hyper_name"
-            HYPERVISOR_HOSTNAME=$hyper_name
-            shift ;;
-        -p) project="$2"
-            echo "Found the -p <project_id> option, with parameter value $project"
-            PROJECT=$project
-            shift ;;
-        -project) project="$2"
+        -p|-project) project="$2"
             echo "Found the -project <project_id> option, with parameter value $project"
             PROJECT=$project
             shift ;;
-        -network) network="$2"
+        -net|-network) network="$2"
             echo "Found the -network <network_name> option, with parameter value $network"
             NETWORK=$network
             shift ;;
-        -volume_size) volume_size="$2"
+        -v|volume_size) volume_size="$2"
             echo "Found the -volume_size <volume_size_in_GB> option, with parameter value $volume_size"
             VOLUME_SIZE=$volume_size
             shift ;;
-        -name) name="$2"
+        -n|-name) name="$2"
             echo "Found the -name <vm_base_name> option, with parameter value $name"
             VM_BASE_NAME=$name
             shift ;;

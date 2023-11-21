@@ -6,7 +6,7 @@
 
 LOG_LAST_LINES_NUMBER=15
 OUTPUT_PERIOD=10
-OPENRC_PATH="./openrc"
+OPENRC_PATH=$HOME/openrc
 
 #Colors
 green=$(tput setaf 2)
@@ -18,7 +18,7 @@ normal=$(tput sgr0)
 
 if [ -z "${1}" ]; then
     check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
-    [[ -z "$check_openrc_file" ]] && (echo "openrc file not found in $OPENRC_PATH"; exit 1)
+    [[ -z "$check_openrc_file" ]] && { echo "openrc file not found in $OPENRC_PATH"; exit 1; }
 
     source $OPENRC_PATH
 
