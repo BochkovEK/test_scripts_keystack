@@ -263,8 +263,8 @@ check_and_add_flavor () {
     FLAVOR_EXST=$(openstack flavor list| grep $FLAVOR| awk '{print $4}')
     if [ -z $FLAVOR_EXST ]; then
         printf "%s\n" "${orange}Flavor \"$FLAVOR\" not found in project \"$OS_PROJECT_NAME\"${normal}"
-        echo "Сreate a flavor by name (example name: \"4c-4r\" -> 4 cpu cores, 4096 Mb ram) with name: \"$FALVOR\"?"
-        read -p "Press enter to continue"
+        #echo "Сreate a flavor by name (example name: \"4c-4r\" -> 4 cpu cores, 4096 Mb ram) with name: \"$FALVOR\"?"
+        #read -p "Press enter to continue"
         # example FLAVOR=4c-4r
         CPU_DRAFT=$(echo "${FLAVOR%-*}")
         RAM_DRAFT=$(echo "${FLAVOR##*-}")
@@ -283,11 +283,11 @@ check_and_add_flavor () {
         let "RAM_MB = ${RAM_GB} * 1024"
         #echo $RAM_MB
 
-        echo "Сreate a flavor with a name <cpu qty>c_<ram GB>m with cpus: $CPU_QTY and ram: $RAM_MB Mb: \"$FLAVOR\"?"
+        echo "Сreate a flavor with a template name <cpu qty>c_<ram GB>m with cpus: $CPU_QTY and ram: $RAM_MB Mb: \"$FLAVOR\"?"
         read -p "Press enter to continue"
 
         echo "Creating \"$FLAVOR\" in project \"$OS_PROJECT_NAME\" with $CPU_QTY cpus and $RAM_MB Mb...";
-        openstack flavor create --public --project $PROJECT --vcpus $CPU_QTY --ram $RAM_MB --disk 0 $FLAVOR
+        openstack flavor create --private --project $PROJECT --vcpus $CPU_QTY --ram $RAM_MB --disk 0 $FLAVOR
     else
         printf "%s\n" "${green}Flavor \"$FLAVOR\" already exist in project: \"$OS_PROJECT_NAME\"${normal}"
         #openstack security group show $SECURITY_GR_ID
