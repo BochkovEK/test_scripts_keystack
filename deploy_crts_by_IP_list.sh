@@ -17,7 +17,7 @@ copy_pub_keys () {
     for IP in "${IPS[@]}"; do
         echo "Copy keys to ${IP}"
         ssh-copy-id -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa.pub $IP
-        ssh -o StrictHostKeyChecking=no $IP echo "$KEY" >> ~/.ssh/authorized_keys
+        ssh -o StrictHostKeyChecking=no $IP echo '"$KEY"' >> ~/.ssh/authorized_keys
     done
 }
 

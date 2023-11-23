@@ -28,6 +28,9 @@ violet=$(tput setaf 5)
 normal=$(tput sgr0)
 
 # Constants
+
+TIMEOUT_BEFORE_NEXT_CREATION=30
+
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
 [[ -z $VM_QTY ]] && VM_QTY="1"
 [[ -z $IMAGE ]] && IMAGE="ubuntu-20.04-server-cloudimg-amd64_new"
@@ -320,7 +323,7 @@ do
     --boot-from-volume $VOLUME_SIZE \
     $INSTANCE_NAME
 
-  sleep 10
+  sleep $TIMEOUT_BEFORE_NEXT_CREATION
 done
 
 echo "Check vms list on $HYPERVISOR_HOSTNAME:"
