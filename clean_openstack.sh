@@ -3,12 +3,24 @@
 # The script deletes VMs and Volumes for the project. The project can be specified as a parameter. By default the project is "admin" 
 # exzmple start command: bash clean_openstack.sh ha_test_project_2 
 
-OPENRC=./openrc
+OPENRC=$HOME/openrc
 PROJECT="admin"
 
 [[ ! -z $1 ]] && PROJECT=$1
 
 echo "Check VMs and volumes for project $PROJECT"
+
+# Check openrc file
+check_and_source_openrc_file () {
+    echo "Check openrc file and source it..."
+    check_openrc_file=$(ls -f $OPENRC 2>/dev/null)
+    if [ -z "$check_openrc_file" ]; then
+        printf "%s\n" "${red}openrc file not found in $OPENRC - ERROR!${normal}"
+        exit 1
+    fi
+    source $OPENRC
+    #export OS_PROJECT_NAME=$PROJECT
+}
 
 delete_vms () {
     echo "Deleting $(openstack server list --project $PROJECT |grep $1 |awk '{print $4}')..."
@@ -81,8 +93,7 @@ Delete all volumes?
     fi
 }
 
-source $OPENRC
-#echo
+check_and_source_openrc_file
 clean_vms
 clean_volumes
 

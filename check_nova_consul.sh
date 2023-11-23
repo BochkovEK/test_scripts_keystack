@@ -16,9 +16,10 @@ normal=$(tput sgr0)
 # functions
 # Check openrc file
 Check_openrc_file () {
+    echo "Check openrc file here: $OPENRC_PATH"
     check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
-    echo $OPENRC_PATH
-    echo $check_openrc_file
+    #echo $OPENRC_PATH
+    #echo $check_openrc_file
     [[ -z "$check_openrc_file" ]] && { echo "openrc file not found in $OPENRC_PATH"; exit 1; }
 
     source $OPENRC_PATH
