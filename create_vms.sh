@@ -60,9 +60,14 @@ do
         -v,	-volume_size 	volume_size_in_GB>
         -n,	-name 		<vm_base_name>
 	-p,	-project	<project_id>
+	-t			<time_out_between_VM_create>
         "
             exit 0
             break ;;
+	-t) tobvc="$2"
+	    echo "Found the -t <time_out_between_VM_create> option, with parameter value $tobvc"
+            TIMEOUT_BEFORE_NEXT_CREATION=$qty
+            shift ;;
         -q|-qty) qty="$2"
             echo "Found the -qty <number_of_VMs> option, with parameter value $qty"
             VM_QTY=$qty
