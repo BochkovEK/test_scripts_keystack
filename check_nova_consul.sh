@@ -81,7 +81,7 @@ Check_disabled_computes_in_nova () {
         cmpt_disabled_nova_list=$(echo "$nova_state_list" | grep -E "(nova-compute.+disable)|(nova-compute.+down)" | awk '{print $6}')
         if [ ! -z "$cmpt_disabled_nova_list" ]; then
             for cmpt in $cmpt_disabled_nova_list; do
-                printf "${red}Failed to start nova service on $cmpt${normal}"
+                printf "%40s\n" "${red}Failed to start nova service on $cmpt${normal}"
                 exit 1
             done
         fi
