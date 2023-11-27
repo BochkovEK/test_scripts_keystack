@@ -13,6 +13,7 @@ green=$(tput setaf 2)
 red=$(tput setaf 1)
 violet=$(tput setaf 5)
 normal=$(tput sgr0)
+yallow=$(tput setaf 3)
 
 [[ ! -z "${2}" ]] && OUTPUT_PERIOD=${2}
 
@@ -45,6 +46,7 @@ do
         sed --unbuffered \
         -e 's/\(.*Starting fence.*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*IPMI "power off".*\)/\o033[31m\1\o033[39m/'; \
-        DATE=$(date); printf "${violet}${DATE}${normal}\n"
+        DATE=$(date); printf "${violet}${DATE}${normal}\n${yallow}for check this log: \"ssh $NODE_NAME less /var/log/kolla/autoevacuate.log\" ${normal}\n"
+        
     sleep $OUTPUT_PERIOD
 done
