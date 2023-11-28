@@ -70,13 +70,14 @@ clean_volumes () {
         echo "Volumes list:"
         for name in $volumes_names; do
 	    [ -z $name ] && name="None"
-            echo "   Attached to $name"
+            #echo "   Attached to $name"
+	    echo "$name"
         done
 
-        volumes_ID_na=$(openstack volume list |grep 'available' |awk '{print $2}')
-        for name in $volumes_ID_na; do
-            echo "   Volume $name not attached"
-        done
+        #volumes_ID_na=$(openstack volume list |grep 'available' |awk '{print $2}')
+        #for name in $volumes_ID_na; do
+        #    echo "   Volume $name not attached"
+        #done
 
         echo -E "
 Delete all volumes?

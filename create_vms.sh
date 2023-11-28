@@ -333,11 +333,11 @@ done
 
 echo "Check vms list on $HYPERVISOR_HOSTNAME:"
 #openstack server list --all-projects --host $HYPERVISOR_HOSTNAME --long
-openstack server list --all-projects --host $HYPERVISOR_HOSTNAME --long -c Name -c Flavor -c Status -c Host -c ID
+openstack server list --all-projects --host $HYPERVISOR_HOSTNAME --long -c Name -c Flavor -c Status -c Host -c ID -c Networks
 echo "Command for check vms list on $HYPERVISOR_HOSTNAME:"
 #echo "export OS_PROJECT_NAME=$PROJECT"
 #echo "export OS_USERNAME=$TEST_USER"
-echo "openstack server list --all-projects --host $HYPERVISOR_HOSTNAME --long -c Name -c Flavor -c Status -c Host -c ID"
+echo "openstack server list --all-projects --host $HYPERVISOR_HOSTNAME --long -c Name -c Flavor -c Status -c Host -c ID -c Networks"
 }
 
 output_of_initial_parameters
