@@ -9,7 +9,7 @@ cpus='4'
 ram='4'
 type_test='cpu'
 
-OPENRC_PATH="./openrc"
+OPENRC_PATH="$HOME/openrc"
 
 #Colors
 green=$(tput setaf 2)

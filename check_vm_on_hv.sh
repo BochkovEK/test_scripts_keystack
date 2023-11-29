@@ -23,6 +23,7 @@ batch_run_command() {
     echo -E "
     Start check VMs with parameters:
         Hypervisor: $hypervisor_name
+	Key: $key_name
         User name: $user
         Command: $command_str
         "
