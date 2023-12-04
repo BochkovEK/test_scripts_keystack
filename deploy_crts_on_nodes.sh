@@ -89,7 +89,7 @@ deploy_and_copy () {
         echo "Copy gitlab key to ${IP}"
         KEY=$(cat $INSTALL_HOME/config/gitlab_key.pub)
         echo $KEY
-        ssh -o StrictHostKeyChecking=no $IP echo '"$KEY"' >> ~/.ssh/authorized_keys
+        ssh -o StrictHostKeyChecking=no $IP "echo '"$KEY"' >> ~/.ssh/authorized_keys"
       fi
 #      if [ "$DEPLOY_NEXUS_CRTS" = true ] ; then
 #        echo "Deploy nexus crt to $IP"
