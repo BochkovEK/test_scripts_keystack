@@ -97,8 +97,9 @@ deploy_and_copy () {
 #        ssh -o StrictHostKeyChecking=no $IP chmod 600 ~/.docker/config.json
 #      fi
        if [ "$DEPLOY_CA_CRT" = true ] ; then
-           scp -o StrictHostKeyChecking=no $INSTALL_HOME/data/ca/root/ca.crt $IP:/usr/local/share/ca-certificates/ca.crt
-           ssh -o StrictHostKeyChecking=no $IP update-ca-certificates
+         echo "Deploy docker cfg to $IP"
+         scp -o StrictHostKeyChecking=no $INSTALL_HOME/data/ca/root/ca.crt $IP:/usr/local/share/ca-certificates/ca.crt
+         ssh -o StrictHostKeyChecking=no $IP update-ca-certificates
        fi
     done
 }
