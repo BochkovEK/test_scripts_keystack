@@ -130,6 +130,7 @@ echo -E "
     Deploy ca crt:                          $DEPLOY_CA_CRT
     Deploy gitlab key:                      $DEPLOY_GITLAB_KEY
     Deploy public key from lcm:             $DEPLOY_LCM_KEY
+    Deploy lcm hosts string:                $DEPLOY_LCM_HOSTS_STRING
 "
 #    Deploy nexus crts:                      $DEPLOY_NEXUS_CRTS
 #    Deploy docker cfg:                      $DEPLOY_DOCKER_CFG
