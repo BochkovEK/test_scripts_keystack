@@ -18,6 +18,7 @@ IPS_LIST=("<IP_1>" "<IP_2>" "<IP_3>" "...")
 [[ -z $DEPLOY_DOCKER_CFG ]] && DEPLOY_DOCKER_CFG=true
 [[ -z $DEPLOY_NEXUS_CRTS ]] && DEPLOY_NEXUS_CRTS=true
 [[ -z $DEPLOY_CA_CRT ]] && DEPLOY_CA_CRT=true
+[[ -z $DEPLOY_LCM_HOSTS_STRING ]] && DEPLOY_LCM_HOSTS_STRING=true
 
 while [ -n "$1" ]
 do
