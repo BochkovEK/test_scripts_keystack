@@ -27,9 +27,10 @@ do
         -s, 	-settings		    <path_settings_file>
         -l,   -by_list        <deploy_by_ips_list_bool>
         -cc,  -ca_crt         <deploy_ca_crt_bool>
+        -lk,	-lcm_key	  	  <deploy_lcm_key_bool>
         "
 #        -gk,	-gitlab_key		  <deploy_gitlab_key_bool>
-#        -lk,	-lcm_key	  	  <deploy_lcm_key_bool>
+
 #        -dc,	-docker_cfg		  <deploy_docker_cfg_bool>
 #        -nc,	-nexus_crt		  <deploy_nexus_crt_bool>
 #        "
@@ -81,10 +82,10 @@ deploy_and_copy () {
     fi
     #for IP in "${IPS[@]}"; do
     for IP in "${IPS_ARRAY[@]}"; do
-#      if [ "$DEPLOY_LCM_KEY" = true ] ; then
-#        echo "Copy public key from lcm to ${IP}"
-#        ssh-copy-id -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa.pub $IP
-#      fi
+      if [ "$DEPLOY_LCM_KEY" = true ] ; then
+        echo "Copy public key from lcm to ${IP}"
+        ssh-copy-id -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa.pub $IP
+      fi
 #      if [ "$DEPLOY_GITLAB_KEY" = true ] ; then
 #        echo "Copy gitlab key to ${IP}"
 #        KEY=$(cat $INSTALL_HOME/config/gitlab_key.pub)
@@ -116,8 +117,8 @@ echo -E "
     Installer home dir:                     $INSTALL_HOME
     Deploy public key from lcm:             $DEPLOY_LCM_KEY
     Deploy ca crt:                          $DEPLOY_CA_CRT
+    Deploy gitlab key:                      $DEPLOY_GITLAB_KEY
 "
-#    Deploy gitlab key:                      $DEPLOY_GITLAB_KEY
 #    Deploy nexus crts:                      $DEPLOY_NEXUS_CRTS
 #    Deploy docker cfg:                      $DEPLOY_DOCKER_CFG
 #"
