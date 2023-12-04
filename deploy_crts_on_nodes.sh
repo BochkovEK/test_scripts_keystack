@@ -69,9 +69,15 @@ done
 
 deploy_and_copy () {
     if [ "DEPLOY_BY_IPS_LIST" = true ] ; then
-        IPS_ARRAY=( "${IPS_LIST[@]}" )
+      IPS_ARRAY=( "${IPS_LIST[@]}" )
     else
-        read -a IPS_ARRAY <<< "$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}')"
+      IPS_ARRAY=()
+      srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}')
+      for i in $srv; do
+        IPS_ARRAY+=("$i")
+      done
+      #echo "${IPS_ARRAY[@]}"
+      #read -a IPS_ARRAY <<< "$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}')"
     fi
     #for IP in "${IPS[@]}"; do
     for IP in "${IPS_ARRAY[@]}"; do
