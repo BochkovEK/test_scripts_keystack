@@ -94,7 +94,6 @@ deploy_and_copy () {
     done
 }
 
-read -p "Press enter to continue"
 
 echo -E "
     Deploy by IPs list (false: by hosts):   $DEPLOY_BY_IPS_LIST
@@ -104,5 +103,8 @@ echo -E "
     Deploy nexus crts:                      $DEPLOY_NEXUS_CRTS
     Deploy docker cfg:                      $DEPLOY_DOCKER_CFG
 "
+read -p "Press enter to continue"
+
+
 source $SETTINGS
 deploy_and_copy
