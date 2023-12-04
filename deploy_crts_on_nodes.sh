@@ -102,6 +102,7 @@ deploy_and_copy () {
         lcm_hostname=$(hostname)
         hosts_string=$(cat /etc/hosts |grep "$lcm_hostname")
         ssh -o StrictHostKeyChecking=no $IP "echo '"$hosts_string"' >> /etc/hosts"
+        ssh -o StrictHostKeyChecking=no $IP cat /etc/hosts
       fi
 #      if [ "$DEPLOY_NEXUS_CRTS" = true ] ; then
 #        echo "Deploy nexus crt to $IP"
