@@ -120,7 +120,7 @@ do
 done
 
 output_of_initial_parameters () {
-    echo -E "
+      echo -E "
 VMs will be created with the following parameters:
         VM base name: $VM_BASE_NAME
         Number of VMs: $VM_QTY
