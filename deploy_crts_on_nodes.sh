@@ -17,7 +17,7 @@ IPS_LIST=("<IP_1>" "<IP_2>" "<IP_3>" "...")
 [[ -z $DEPLOY_GITLAB_KEY ]] && DEPLOY_GITLAB_KEY=true
 [[ -z $DEPLOY_DOCKER_CFG ]] && DEPLOY_DOCKER_CFG=true
 [[ -z $DEPLOY_NEXUS_CRTS ]] && DEPLOY_NEXUS_CRTS=true
-
+[[ -z $DEPLOY_CA_CRT ]] && DEPLOY_CA_CRT=true
 
 while [ -n "$1" ]
 do
@@ -56,8 +56,8 @@ do
         -nc|-nexus_crt) DEPLOY_NEXUS_CRTS="$2"
 	          echo "Found the -nexus_crt <deploy_nexus_crt_bool> option, with parameter value $DEPLOY_NEXUS_CRTS"
             shift ;;
-        -cc|-ca_crt) DEPLOY_CA_CRTS="$2"
-            echo "Found the -ca_crt <deploy_ca_crt_bool> option, with parameter value $DEPLOY_CA_CRTS"
+        -cc|-ca_crt) DEPLOY_CA_CRT="$2"
+            echo "Found the -ca_crt <deploy_ca_crt_bool> option, with parameter value $DEPLOY_CA_CRT"
             shift ;;
         --) shift
             break ;;
@@ -96,7 +96,7 @@ deploy_and_copy () {
 #        scp -o StrictHostKeyChecking=no $INSTALL_HOME/config/docker_auth.json $IP:~/.docker/config.json
 #        ssh -o StrictHostKeyChecking=no $IP chmod 600 ~/.docker/config.json
 #      fi
-       if [ "$CA_CRT" = true ] ; then
+       if [ "$DEPLOY_CA_CRT" = true ] ; then
            scp -o StrictHostKeyChecking=no $INSTALL_HOME/data/ca/root/ca.crt $IP:/usr/local/share/ca-certificates/ca.crt
            ssh -o StrictHostKeyChecking=no $IP update-ca-certificates
        fi
@@ -108,10 +108,12 @@ echo -E "
     Deploy by IPs list (false: by hosts):   $DEPLOY_BY_IPS_LIST
     Installer home dir:                     $INSTALL_HOME
     Deploy public key from lcm:             $DEPLOY_LCM_KEY
-    Deploy gitlab key:                      $DEPLOY_GITLAB_KEY
-    Deploy nexus crts:                      $DEPLOY_NEXUS_CRTS
-    Deploy docker cfg:                      $DEPLOY_DOCKER_CFG
+    Deploy ca crt:                          $DEPLOY_CA_CRT
 "
+#    Deploy gitlab key:                      $DEPLOY_GITLAB_KEY
+#    Deploy nexus crts:                      $DEPLOY_NEXUS_CRTS
+#    Deploy docker cfg:                      $DEPLOY_DOCKER_CFG
+#"
 read -p "Press enter to continue"
 
 
