@@ -28,9 +28,8 @@ do
         -l,   -by_list        <deploy_by_ips_list_bool>
         -cc,  -ca_crt         <deploy_ca_crt_bool>
         -lk,	-lcm_key	  	  <deploy_lcm_key_bool>
+        -gk,	-gitlab_key		  <deploy_gitlab_key_bool>
         "
-#        -gk,	-gitlab_key		  <deploy_gitlab_key_bool>
-
 #        -dc,	-docker_cfg		  <deploy_docker_cfg_bool>
 #        -nc,	-nexus_crt		  <deploy_nexus_crt_bool>
 #        "
@@ -86,11 +85,11 @@ deploy_and_copy () {
         echo "Copy public key from lcm to ${IP}"
         ssh-copy-id -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa.pub $IP
       fi
-#      if [ "$DEPLOY_GITLAB_KEY" = true ] ; then
-#        echo "Copy gitlab key to ${IP}"
-#        KEY=$(cat $INSTALL_HOME/config/gitlab_key.pub)
-#        ssh -o StrictHostKeyChecking=no $IP echo '"$KEY"' >> ~/.ssh/authorized_keys
-#      fi
+      if [ "$DEPLOY_GITLAB_KEY" = true ] ; then
+        echo "Copy gitlab key to ${IP}"
+        KEY=$(cat $INSTALL_HOME/config/gitlab_key.pub)
+        ssh -o StrictHostKeyChecking=no $IP echo '"$KEY"' >> ~/.ssh/authorized_keys
+      fi
 #      if [ "$DEPLOY_NEXUS_CRTS" = true ] ; then
 #        echo "Deploy nexus crt to $IP"
 #        ssh -o StrictHostKeyChecking=no $IP mkdir -p /etc/docker/certs.d/nexus.$DOMAIN:5000
@@ -115,9 +114,9 @@ deploy_and_copy () {
 echo -E "
     Deploy by IPs list (false: by hosts):   $DEPLOY_BY_IPS_LIST
     Installer home dir:                     $INSTALL_HOME
-    Deploy public key from lcm:             $DEPLOY_LCM_KEY
     Deploy ca crt:                          $DEPLOY_CA_CRT
     Deploy gitlab key:                      $DEPLOY_GITLAB_KEY
+    Deploy public key from lcm:             $DEPLOY_LCM_KEY
 "
 #    Deploy nexus crts:                      $DEPLOY_NEXUS_CRTS
 #    Deploy docker cfg:                      $DEPLOY_DOCKER_CFG
