@@ -29,6 +29,7 @@ do
         -cc,  -ca_crt         <deploy_ca_crt_bool>
         -lk,	-lcm_key	  	  <deploy_lcm_key_bool>
         -gk,	-gitlab_key		  <deploy_gitlab_key_bool>
+        -hs,  -hosts_string   <deploy_lcm_hosts_string_bool>
         "
 #        -dc,	-docker_cfg		  <deploy_docker_cfg_bool>
 #        -nc,	-nexus_crt		  <deploy_nexus_crt_bool>
@@ -58,6 +59,9 @@ do
             shift ;;
         -cc|-ca_crt) DEPLOY_CA_CRT="$2"
             echo "Found the -ca_crt <deploy_ca_crt_bool> option, with parameter value $DEPLOY_CA_CRT"
+            shift ;;
+        -hs|-hosts_string) DEPLOY_LCM_HOSTS_STRING="$2"
+            echo "Found the -ca_crt <deploy_lcm_hosts_string_bool> option, with parameter value $DEPLOY_LCM_HOSTS_STRING"
             shift ;;
         --) shift
             break ;;
@@ -91,6 +95,12 @@ deploy_and_copy () {
         #echo $KEY
         ssh -o StrictHostKeyChecking=no $IP "echo '"$KEY"' >> ~/.ssh/authorized_keys"
         ssh -o StrictHostKeyChecking=no $IP cat ~/.ssh/authorized_keys
+      fi
+      if [ "$DEPLOY_LCM_HOSTS_STRING" = true ] ; then
+        echo "Deploy lcm hosts string to $IP"
+        lcm_hostname=$(hostname)
+        hosts_string=$(cat /etc/hosts |grep "$lcm_hostname")
+        ssh -o StrictHostKeyChecking=no $IP "echo '"$hosts_string"' >> /etc/hosts"
       fi
 #      if [ "$DEPLOY_NEXUS_CRTS" = true ] ; then
 #        echo "Deploy nexus crt to $IP"
