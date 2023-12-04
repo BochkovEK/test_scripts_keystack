@@ -14,9 +14,9 @@ IPS_LIST=("<IP_1>" "<IP_2>" "<IP_3>" "...")
 [[ -z $SETTINGS ]] && SETTINGS=$INSTALL_HOME/config/settings
 [[ -z $DEPLOY_BY_IPS_LIST ]] && DEPLOY_BY_IPS_LIST=false
 [[ -z $DEPLOY_LCM_KEY ]] && DEPLOY_LCM_KEY=false
-[[ -z $DEPLOY_GITLAB_KEY ]] && DEPLOY_GITLAB_KEY=true
-[[ -z $DEPLOY_DOCKER_CFG ]] && DEPLOY_DOCKER_CFG=true
-[[ -z $DEPLOY_NEXUS_CRTS ]] && DEPLOY_NEXUS_CRTS=true
+[[ -z $DEPLOY_GITLAB_KEY ]] && DEPLOY_GITLAB_KEY=false
+[[ -z $DEPLOY_DOCKER_CFG ]] && DEPLOY_DOCKER_CFG=false
+#[[ -z $DEPLOY_NEXUS_CRTS ]] && DEPLOY_NEXUS_CRTS=false
 [[ -z $DEPLOY_CA_CRT ]] && DEPLOY_CA_CRT=true
 [[ -z $DEPLOY_LCM_HOSTS_STRING ]] && DEPLOY_LCM_HOSTS_STRING=true
 
@@ -31,10 +31,10 @@ do
         -lk,	-lcm_key	  	  <deploy_lcm_key_bool>
         -gk,	-gitlab_key		  <deploy_gitlab_key_bool>
         -hs,  -hosts_string   <deploy_lcm_hosts_string_bool>
+        -dc,	-docker_cfg		  <deploy_docker_cfg_bool>
         "
-#        -dc,	-docker_cfg		  <deploy_docker_cfg_bool>
 #        -nc,	-nexus_crt		  <deploy_nexus_crt_bool>
-#        "
+
             exit 0
             break ;;
 	      -ih|-install_home) INSTALL_HOME="$2"
@@ -81,8 +81,6 @@ deploy_and_copy () {
       for i in $srv; do
         IPS_ARRAY+=("$i")
       done
-      #echo "${IPS_ARRAY[@]}"
-      #read -a IPS_ARRAY <<< "$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}')"
     fi
     #for IP in "${IPS[@]}"; do
     for IP in "${IPS_ARRAY[@]}"; do
@@ -110,17 +108,17 @@ deploy_and_copy () {
 #        scp -o StrictHostKeyChecking=no $INSTALL_HOME/data/ca/installer/certs/nexus.crt $IP:/etc/docker/certs.d/nexus.$DOMAIN:5000/nexus.crt
 #        ssh -o StrictHostKeyChecking=no $IP chmod 444 /etc/docker/certs.d/nexus.$DOMAIN:5000/nexus.crt
 #      fi
-#      if [ "$DEPLOY_DOCKER_CFG" = true ] ; then
-#        echo "Deploy docker cfg to $IP"
-#        ssh -o StrictHostKeyChecking=no $IP mkdir -p ~/.docker
-#        scp -o StrictHostKeyChecking=no $INSTALL_HOME/config/docker_auth.json $IP:~/.docker/config.json
-#        ssh -o StrictHostKeyChecking=no $IP chmod 600 ~/.docker/config.json
-#      fi
-       if [ "$DEPLOY_CA_CRT" = true ] ; then
-         echo "Deploy docker cfg to $IP"
-         scp -o StrictHostKeyChecking=no $INSTALL_HOME/data/ca/root/ca.crt $IP:/usr/local/share/ca-certificates/ca.crt
-         ssh -o StrictHostKeyChecking=no $IP update-ca-certificates
-       fi
+      if [ "$DEPLOY_DOCKER_CFG" = true ] ; then
+        echo "Deploy docker cfg to $IP"
+        ssh -o StrictHostKeyChecking=no $IP mkdir -p ~/.docker
+        scp -o StrictHostKeyChecking=no $INSTALL_HOME/config/docker_auth.json $IP:~/.docker/config.json
+        ssh -o StrictHostKeyChecking=no $IP chmod 600 ~/.docker/config.json
+      fi
+      if [ "$DEPLOY_CA_CRT" = true ] ; then
+        echo "Deploy docker cfg to $IP"
+        scp -o StrictHostKeyChecking=no $INSTALL_HOME/data/ca/root/ca.crt $IP:/usr/local/share/ca-certificates/ca.crt
+        ssh -o StrictHostKeyChecking=no $IP update-ca-certificates
+      fi
     done
 }
 
@@ -132,9 +130,9 @@ echo -E "
     Deploy gitlab key:                      $DEPLOY_GITLAB_KEY
     Deploy public key from lcm:             $DEPLOY_LCM_KEY
     Deploy lcm hosts string:                $DEPLOY_LCM_HOSTS_STRING
+    Deploy docker cfg:                      $DEPLOY_DOCKER_CFG
 "
 #    Deploy nexus crts:                      $DEPLOY_NEXUS_CRTS
-#    Deploy docker cfg:                      $DEPLOY_DOCKER_CFG
 #"
 read -p "Press enter to continue"
 
