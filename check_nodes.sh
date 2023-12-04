@@ -1,7 +1,17 @@
 #!/bin/bash
 
 required_python="python:3.8"
-nodes_to_find="\-ctrl\-..$|\-comp\-..$|\-net\-..$"
+cmpt_pattern="\-comp\-..$"
+ctrl_pattern="\-ctrl\-..$"
+net_pattern="\-net\-..$"
+nodes_to_find="$cmpt_pattern|$ctrl_pattern|$net_pattern"
+echo "nodes_to_find: $nodes_to_find"
+
+#color
+red=$(tput setaf 1)
+green=$(tput setaf 2)
+normal=$(tput sgr0)
+
 
 print_end () {
     echo -e "\n======== End checking - ${green}SUCCEED!${normal} ========\n"
@@ -70,8 +80,27 @@ check_python () {
     fi
 }
 
+check_virt_flags () {
+    host_name=$(ssh -o StrictHostKeyChecking=no $1 hostname 2>/dev/null)
+    echo "Check virtualiztion flag on $host_name..."
+    virt_flag=$(ssh -o StrictHostKeyChecking=no $1 "egrep '(vmx|svm)' /proc/cpuinfo 2>/dev/null")
+    if [[ ! -z ${virt_flag} ]]; then
+       print_ok "virtualization flag exists on $host_name"
+    else
+       print_fail "virtualization flag does't exists on $host_name"
+    fi
+}
+
 srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}')
 for host in $srv; do
-        echo "Check python on $(cat /etc/hosts | grep -E ${host} | awk '{print $2}')"
-         check_python $required_python $host
+    echo "Check $host node..."
+    #cmpt_pattern_clip="${cmpt_pattern#*|}"
+    #echo $cmpt_pattern_clip
+    cmpt_node=$(ssh -o StrictHostKeyChecking=no $host "hostname| grep -E '${cmpt_pattern}' 2>/dev/null")
+    echo "$cmpt_node"
+    if [[ ! -z ${cmpt_node} ]]; then
+        check_virt_flags $host
+    fi
+    echo "Check python on $(cat /etc/hosts | grep -E ${host} | awk '{print $2}')"
+    check_python $required_python $host
 done

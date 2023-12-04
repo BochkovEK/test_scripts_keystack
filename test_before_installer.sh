@@ -21,7 +21,7 @@
 #    )
 
 #=================== VARIABLES ======================
-COMPOSE_FILE=./compose.yaml
+COMPOSE_FILE=~/installer/compose.yaml
 SETTINGS_FILE=./installer/source
 
 red=$(tput setaf 1)
