@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#The script check python, virtual flags on nodes
+
+#!!! needed Check container list
+
 required_python="python:3.8"
 cmpt_pattern="\-comp\-..$"
 ctrl_pattern="\-ctrl\-..$"
