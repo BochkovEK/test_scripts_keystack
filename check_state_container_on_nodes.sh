@@ -31,17 +31,14 @@ do
       ctrl)
         nodes_to_find=$ctrl_pattern
         echo "Сontainer will be checked on ctrl nodes"
-        nodes_to_find
         ;;
       comp)
         nodes_to_find=$comp_pattern
         echo "Сontainer will be checked on comp nodes"
-        nodes_to_find
         ;;
       net)
         nodes_to_find=$net_pattern
         echo "Сontainer will be checked on net nodes"
-        nodes_to_find
         ;;
       *)
         echo "type is not specified correctly. Сontainers will be checked on ctr, comp, net nodes"
