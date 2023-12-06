@@ -121,7 +121,12 @@ Check_docker_consul () {
 
     for host in $nova_nodes_list;do
         echo "consul on $host"
-        ssh -o StrictHostKeyChecking=no $host "docker ps | grep consul"
+        docker_consul=$(ssh -o StrictHostKeyChecking=no $host "docker ps | grep consul")
+        echo "$docker_consul" | \
+            sed --unbuffered \
+                -e 's/\(.*Up.*\)/\o033[92m\1\o033[39m/' \
+                -e 's/\(.*Restarting.*\)/\o033[31m\1\o033[39m/' \
+                -e 's/\(.*unhealthy.*\)/\o033[31m\1\o033[39m/'
     done
 }
 
@@ -129,7 +134,12 @@ Check_docker_consul () {
 Check_members_list () {
     ctrl_node=($nova_nodes_list)
     echo "Check members list on ${ctrl_node[0]}..."
-    ssh -t -o StrictHostKeyChecking=no $ctrl_node "docker exec -it consul consul members list"
+    members_list=$(ssh -t -o StrictHostKeyChecking=no $ctrl_node "docker exec -it consul consul members list")
+    echo "$members_list" | \
+            sed --unbuffered \
+                -e 's/\(.*alive.*\)/\o033[92m\1\o033[39m/' \
+                #-e 's/\(.*Restarting.*\)/\o033[31m\1\o033[39m/' \
+                #-e 's/\(.*unhealthy.*\)/\o033[31m\1\o033[39m/'
 }
 
 # Check consul logs
@@ -137,7 +147,7 @@ Check_consul_logs () {
     echo "Check consul logs..."
     leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no $ctrl_node "docker exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
     echo "Leader consul node is $leader_ctrl_node"
-    ssh -o StrictHostKeyChecking=no $leader_ctrl_node tail -7 /var/log/kolla/autoevacuate.log; DATE=$(date); printf "%40s\n" "${violet}${DATE}${normal}"
+    ssh -o StrictHostKeyChecking=no $leader_ctrl_node tail -7 /var/log/kolla/autoevacuate.log; DATE=$(date); printf "%s\n" "${violet}${DATE}${normal}"
 }
 
 # Check consul config
