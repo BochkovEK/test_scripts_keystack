@@ -48,7 +48,7 @@ do
         -e 's/\(.*Server.*\)/\o033[33m\1\o033[39m/' \
         -e 's/\(.*Evacuating instance.*\)/\o033[33m\1\o033[39m/' \
         -e 's/\(.*Starting fence.*\)/\o033[33m\1\o033[39m/' \
-        -e 's/\(.*IPMI "power off".*\)/\o033[33m\1\o033[39m/'; \
+        -e 's/\(.*IPMI "power off".*\)/\o033[33m\1\o033[39m/' \
         -e 's/\(.*disabled.*\)/\o033[33m\1\o033[39m/'; \
         DATE=$(date); printf "${violet}${DATE}${normal}\n${yallow}for check this log: \"ssh $NODE_NAME less /var/log/kolla/autoevacuate.log | less\" ${normal}\n"
         
