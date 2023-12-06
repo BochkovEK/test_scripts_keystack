@@ -44,7 +44,7 @@ do
         echo "type is not specified correctly. Сontainers will be checked on ctr, comp, net nodes"
         ;;
       esac
-    shift ;;
+      shift ;;
   --) shift
     break ;;
   *) echo "$1 is not an option";;
@@ -56,5 +56,5 @@ done
 
 for host in "${NODES[@]}"; do
   echo "Check container $CONTAINER_NAME on ${host}"
-        ssh -o StrictHostKeyChecking=no -t $host docker ps | grep "$CONTAINER_NAME"
+  ssh -o StrictHostKeyChecking=no -t $host docker ps | grep "$CONTAINER_NAME"
 done
