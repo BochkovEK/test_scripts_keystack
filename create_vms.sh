@@ -64,8 +64,8 @@ do
         "
             exit 0
             break ;;
-	-t) tobvc="$2"
-	    echo "Found the -t <time_out_between_VM_create> option, with parameter value $tobvc"
+	      -t) tobvc="$2"
+	          echo "Found the -t <time_out_between_VM_create> option, with parameter value $tobvc"
             TIMEOUT_BEFORE_NEXT_CREATION=$qty
             shift ;;
         -q|-qty) qty="$2"
