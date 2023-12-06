@@ -11,7 +11,33 @@ red=$(tput setaf 1)
 violet=$(tput setaf 5)
 normal=$(tput sgr0)
 
-[[ ! -z "$1" ]] && OPENRC_PATH="${1}"
+[[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
+[[ -z $REGION ]] && REGION="region-ps"
+#======================
+
+while [ -n "$1" ]
+do
+    case "$1" in
+        --help) echo -E "
+        -o, 	-openrc		<path_openrc_file>
+        -r, 	-region		<region_name>
+"
+            exit 0
+            break ;;
+	-o|-openrc)
+	    echo "Found the -t <path_openrc_file> option, with parameter value $OPENRC_PATH"
+            shift ;;
+  -r|-region)
+	    echo "Found the -t <region_name> option, with parameter value $REGION"
+            shift ;;
+        --) shift
+            break ;;
+        *) echo "$1 is not an option";;
+        esac
+        shift
+done
+
+leader_ctrl_node=""
 
 # functions
 # Check openrc file
@@ -27,7 +53,7 @@ Check_openrc_file () {
 
 # Check nova srvice list
 Check_nova_srvice_list () {
-    echo "Check nova srvice list"
+    echo "Check nova srvice list..."
     nova_state_list=$(openstack compute service list)
     echo "$nova_state_list" | \
         sed --unbuffered \
@@ -42,7 +68,7 @@ Check_nova_srvice_list () {
 
 # Check connection to nova nodes
 Check_connection_to_nova_nodes () {
-    echo "Check connection to nova nodes"
+    echo "Check connection to nova nodes..."
 
     for host in $nova_nodes_list;do
         host $host
@@ -62,6 +88,7 @@ Check_connection_to_nova_nodes () {
 
 # Check disabled computes in nova
 Check_disabled_computes_in_nova () {
+    echo "Check disabled computes in nova..."
     cmpt_disabled_nova_list=$(echo "$nova_state_list" | grep -E "(nova-compute.+disable)|(nova-compute.+down)" | awk '{print $6}')
 
     # Trying to raise and enable nova service on cmpt
@@ -90,27 +117,47 @@ Check_disabled_computes_in_nova () {
 
 # Check docker consul
 Check_docker_consul () {
-    echo "Check consul docker on nodes"
+    echo "Check consul docker on nodes..."
 
     for host in $nova_nodes_list;do
         echo "consul on $host"
-        ssh -o StrictHostKeyChecking=no $host "docker ps | grep consul"
+        docker_consul=$(ssh -o StrictHostKeyChecking=no $host "docker ps | grep consul")
+        echo "$docker_consul" | \
+            sed --unbuffered \
+                -e 's/\(.*Up.*\)/\o033[92m\1\o033[39m/' \
+                -e 's/\(.*Restarting.*\)/\o033[31m\1\o033[39m/' \
+                -e 's/\(.*unhealthy.*\)/\o033[31m\1\o033[39m/'
     done
 }
 
 # Check members list
 Check_members_list () {
     ctrl_node=($nova_nodes_list)
-    echo "Check members list on ${ctrl_node[0]}"
-    ssh -t -o StrictHostKeyChecking=no $ctrl_node "docker exec -it consul consul members list"
+    echo "Check members list on ${ctrl_node[0]}..."
+    members_list=$(ssh -t -o StrictHostKeyChecking=no $ctrl_node "docker exec -it consul consul members list")
+    echo "$members_list" | \
+            sed --unbuffered \
+                -e 's/\(.*alive.*\)/\o033[92m\1\o033[39m/' \
+                #-e 's/\(.*Restarting.*\)/\o033[31m\1\o033[39m/' \
+                #-e 's/\(.*unhealthy.*\)/\o033[31m\1\o033[39m/'
 }
 
 # Check consul logs
 Check_consul_logs () {
-    echo "Check consul logs"
+    echo "Check consul logs..."
     leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no $ctrl_node "docker exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
     echo "Leader consul node is $leader_ctrl_node"
-    ssh -o StrictHostKeyChecking=no $leader_ctrl_node tail -7 /var/log/kolla/autoevacuate.log; DATE=$(date); printf "%40s\n" "${violet}${DATE}${normal}"
+    ssh -o StrictHostKeyChecking=no $leader_ctrl_node tail -7 /var/log/kolla/autoevacuate.log; DATE=$(date); printf "%s\n" "${violet}${DATE}${normal}"
+}
+
+# Check consul config
+Check_consul_config () {
+  echo "Check consul config..."
+  ipmi_fencing_state=$(ssh -o StrictHostKeyChecking=no $leader_ctrl_node cat /etc/kolla/consul/region-config_${REGION}.json| grep -E '"bmc": \w|"ipmi": \w')
+  echo "$ipmi_fencing_state" | \
+            sed --unbuffered \
+                -e 's/\(.*true.*\)/\o033[92m\1\o033[39m/' \
+                -e 's/\(.*false.*\)/\o033[31m\1\o033[39m/'
 }
 
 clear
@@ -122,3 +169,4 @@ Check_disabled_computes_in_nova
 Check_docker_consul
 Check_members_list
 Check_consul_logs
+Check_consul_config

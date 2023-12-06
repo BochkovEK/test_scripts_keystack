@@ -311,7 +311,7 @@ do
   echo "Check for VM: \"$INSTANCE_NAME\" exist"
   VM_EXIST=$(openstack server list| grep $INSTANCE_NAME| awk '{print $4}')
   if [ ! -z $VM_EXIST ]; then
-      printf "%s\n" "${orange}VM: \"$INSTANCE_NAME\" is already exist in roject \"$PROJECT\"${normal}"
+      printf "%s\n" "${orange}VM: \"$INSTANCE_NAME\" is already exist in project \"$PROJECT\"${normal}"
       echo "Сreate VM: \"$INSTANCE_NAME\" in project \"$PROJECT\"?"
       read -p "Press enter to continue"
   fi
