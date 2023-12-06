@@ -2,6 +2,17 @@
 
 #the script pull from repo itkey, tag, push to nexus stand
 #the script needs credentials for repo itkey (vi ~/.docker/config.json)
+#config.json:
+#{
+#  "auths": {
+#          "nexus.demo.local": {
+#                  "auth": "foo"
+#           },
+#          "repo.itkey.com:8443": {
+#                  "auth": "bar"
+#    }
+#  }
+#}
 
 INSTALLER_HOME=/installer
 SETTINGS=$INSTALLER_HOME/config/settings
