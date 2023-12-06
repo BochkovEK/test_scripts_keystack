@@ -21,11 +21,11 @@ do
         -c, 	-container_name		<container_name>
         -t, 	-type_of_nodes		<type_of_nodes> 'ctrl', 'comp', 'net'
 "
-            exit 0
-            break ;;
+      exit 0
+      break ;;
 	-c|-container_name) CONTAINER_NAME="$2"
 	    echo "Found the -t <container_name> option, with parameter value $CONTAINER_NAME"
-            shift ;;
+      shift ;;
   -t|-type_of_nodes)
       case "$2" in
       ctrl)
@@ -44,7 +44,7 @@ do
         echo "type is not specified correctly. Сontainers will be checked on ctr, comp, net nodes"
         ;;
       esac
-      shift ;;
+      break ;;
   --) shift
     break ;;
   *) echo "$1 is not an option";;
