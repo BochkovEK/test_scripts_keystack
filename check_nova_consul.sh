@@ -150,11 +150,11 @@ Check_consul_config () {
 
 clear
 
-#Check_openrc_file
+Check_openrc_file
 #Check_nova_srvice_list
 #Check_connection_to_nova_nodes
 #Check_disabled_computes_in_nova
 #Check_docker_consul
 #Check_members_list
-#Check_consul_logs
-#Check_consul_config
+Check_consul_logs
+Check_consul_config
