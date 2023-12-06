@@ -8,7 +8,7 @@ SETTINGS=$INSTALLER_HOME/config/settings
 REPO_ITKEY=repo.itkey.com:8443
 REPO_FOLDER=project_k
 
-[[ -z "${1}" ]] && { echo -e "Required to specify the tag as a launch parameter\nexample: bash kpull_push_to_stand_docker_image.sh kolla-ansible:ks2023.2.1-rc1"; exit 1 }
+[[ -z "${1}" ]] && { echo -e "Required to specify the tag as a launch parameter\nexample: bash kpull_push_to_stand_docker_image.sh kolla-ansible:ks2023.2.1-rc1"; exit 1; }
 tag=$1
 
 source $SETTINGS && \
