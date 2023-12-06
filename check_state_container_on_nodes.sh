@@ -14,6 +14,27 @@ nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
 [[ -z $NODES ]] && NODES=()
 #======================
 
+note_type_func () {
+  case "$1" in
+        ctrl)
+          nodes_to_find=$ctrl_pattern
+          echo "Сontainer will be checked on ctrl nodes"
+          ;;
+        comp)
+          nodes_to_find=$comp_pattern
+          echo "Сontainer will be checked on comp nodes"
+          ;;
+        net)
+          nodes_to_find=$net_pattern
+          echo "Сontainer will be checked on net nodes"
+          ;;
+        *)
+          echo "type is not specified correctly. Сontainers will be checked on ctr, comp, net nodes"
+          ;;
+        esac
+}
+
+#======================
 while [ -n "$1" ]
 do
     case "$1" in
@@ -27,24 +48,8 @@ do
 	    echo "Found the -t <container_name> option, with parameter value $CONTAINER_NAME"
       shift ;;
   -t|-type_of_nodes)
-      case "$2" in
-      ctrl)
-        nodes_to_find=$ctrl_pattern
-        echo "Сontainer will be checked on ctrl nodes"
-        ;;
-      comp)
-        nodes_to_find=$comp_pattern
-        echo "Сontainer will be checked on comp nodes"
-        ;;
-      net)
-        nodes_to_find=$net_pattern
-        echo "Сontainer will be checked on net nodes"
-        ;;
-      *)
-        echo "type is not specified correctly. Сontainers will be checked on ctr, comp, net nodes"
-        ;;
-      esac
-      break ;;
+      note_type_func $"2"
+      shift ;;
   --) shift
     break ;;
   *) echo "$1 is not an option";;
