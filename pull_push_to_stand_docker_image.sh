@@ -23,7 +23,6 @@ REPO_FOLDER=project_k
 tag=$1
 
 source $SETTINGS && \
-tag=kolla-ansible:ks2023.2.1-rc1 && \
-docker pull ${REPO_ITKEY}/${REPO_FOLDER}/$tag && \
-docker tag ${REPO_ITKEY}/${REPO_FOLDER}/${tag} nexus.${DOMAIN}/${REPO_FOLDER}/$tag && \
+docker pull ${REPO_ITKEY}/${REPO_FOLDER}/${tag} && \
+docker tag ${REPO_ITKEY}/${REPO_FOLDER}/${tag} nexus.${DOMAIN}/${REPO_FOLDER}/${tag} && \
 docker push nexus.${DOMAIN}/${REPO_FOLDER}/${tag}
