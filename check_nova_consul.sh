@@ -53,7 +53,7 @@ Check_openrc_file () {
 
 # Check nova srvice list
 Check_nova_srvice_list () {
-    echo "Check nova srvice list"
+    echo "Check nova srvice list..."
     nova_state_list=$(openstack compute service list)
     echo "$nova_state_list" | \
         sed --unbuffered \
@@ -68,7 +68,7 @@ Check_nova_srvice_list () {
 
 # Check connection to nova nodes
 Check_connection_to_nova_nodes () {
-    echo "Check connection to nova nodes"
+    echo "Check connection to nova nodes..."
 
     for host in $nova_nodes_list;do
         host $host
@@ -88,6 +88,7 @@ Check_connection_to_nova_nodes () {
 
 # Check disabled computes in nova
 Check_disabled_computes_in_nova () {
+    echo "Check disabled computes in nova..."
     cmpt_disabled_nova_list=$(echo "$nova_state_list" | grep -E "(nova-compute.+disable)|(nova-compute.+down)" | awk '{print $6}')
 
     # Trying to raise and enable nova service on cmpt
@@ -116,7 +117,7 @@ Check_disabled_computes_in_nova () {
 
 # Check docker consul
 Check_docker_consul () {
-    echo "Check consul docker on nodes"
+    echo "Check consul docker on nodes..."
 
     for host in $nova_nodes_list;do
         echo "consul on $host"
@@ -127,13 +128,13 @@ Check_docker_consul () {
 # Check members list
 Check_members_list () {
     ctrl_node=($nova_nodes_list)
-    echo "Check members list on ${ctrl_node[0]}"
+    echo "Check members list on ${ctrl_node[0]}..."
     ssh -t -o StrictHostKeyChecking=no $ctrl_node "docker exec -it consul consul members list"
 }
 
 # Check consul logs
 Check_consul_logs () {
-    echo "Check consul logs"
+    echo "Check consul logs..."
     leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no $ctrl_node "docker exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
     echo "Leader consul node is $leader_ctrl_node"
     ssh -o StrictHostKeyChecking=no $leader_ctrl_node tail -7 /var/log/kolla/autoevacuate.log; DATE=$(date); printf "%40s\n" "${violet}${DATE}${normal}"
@@ -141,6 +142,7 @@ Check_consul_logs () {
 
 # Check consul config
 Check_consul_config () {
+  echo "Check consul config..."
   ipmi_fencing_state=$(ssh -o StrictHostKeyChecking=no $leader_ctrl_node cat /etc/kolla/consul/region-config_${REGION}.json| grep -E 'bmc|ipmi')
   echo "$ipmi_fencing_state" | \
             sed --unbuffered \
