@@ -48,7 +48,7 @@ do
 	    echo "Found the -t <container_name> option, with parameter value $CONTAINER_NAME"
       shift ;;
   -t|-type_of_nodes)
-      note_type_func $"2"
+      note_type_func "$2"
       shift ;;
   --) shift
     break ;;
@@ -58,6 +58,8 @@ do
 done
 
 [[ -n $NODES ]] && { srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}'); for i in $srv; do NODES+=("$i"); done; }
+
+echo $NODES
 
 for host in "${NODES[@]}"; do
   echo "Check container $CONTAINER_NAME on ${host}"
