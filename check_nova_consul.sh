@@ -142,7 +142,7 @@ Check_consul_logs () {
 # Check consul config
 Check_consul_config () {
   ipmi_fencing_state=$(ssh -o StrictHostKeyChecking=no $leader_ctrl_node cat /etc/kolla/consul/region-config_${REGION}.json| grep -E 'bmc|ipmi')
-  echo "ipmi_fencing_state" | \
+  echo "$ipmi_fencing_state" | \
             sed --unbuffered \
                 -e 's/\(.*true.*\)/\o033[92m\1\o033[39m/' \
                 -e 's/\(.*false.*\)/\o033[31m\1\o033[39m/'
