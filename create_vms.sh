@@ -168,7 +168,7 @@ chech_hv () {
     #Mock:
     #cat test_compute_service_list)
     #openstack compute service list)
-    echo "$nova_state_list" | grep -E "nova-comput(.)+$HYPERVISOR_HOSTNAME" | #\
+    echo "$nova_state_list" | grep -E "nova-comput(.)+$HYPERVISOR_HOSTNAME" #| \
         #sed --unbuffered \
         #    -e 's/\(.*enabled | up.*\)/\o033[92m\1\o033[39m/' \
         #    -e 's/\(.*disabled.*\)/\o033[31m\1\o033[39m/' \
@@ -343,8 +343,8 @@ echo "openstack server list --all-projects --host $HYPERVISOR_HOSTNAME --long -c
 output_of_initial_parameters
 check_and_source_openrc_file
 chech_hv
-check_project
-check_and_add_flavor
-check_and_add_secur_group
-check_and_add_keypair
-create_vms
+#check_project
+#check_and_add_flavor
+#check_and_add_secur_group
+#check_and_add_keypair
+#create_vms
