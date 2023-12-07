@@ -26,9 +26,9 @@ if [ -z "${1}" ]; then
 # Check nova srvice list
     nova_state_list=$(openstack compute service list)
     nova_nodes_list=$(echo "$nova_state_list" | grep -E "nova-compute|nova-scheduler" | awk '{print $6}')
-    nova_nodes_arr=($nova_nodes_list)
+    nova_nodes_arr=("$nova_nodes_list")
     ctrl_node=${nova_nodes_arr[0]}
-    leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no $ctrl_node "docker exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
+    leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no "$ctrl_node" "docker exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
     NODE_NAME=$leader_ctrl_node
     echo "Leader consul node is $NODE_NAME"
 else
