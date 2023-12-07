@@ -177,19 +177,20 @@ chech_hv () {
 #            -e 's/\(.*disabled.*\)/\o033[31m\1\o033[39m/' \
 #            -e 's/\(.*down.*\)/\o033[31m\1\o033[39m/'
 
+            #-e 's/\(.*up.*\)/\o033[92m\1\o033[39m/' \
+
      compute_state=$(echo "$nova_state_list" | grep -E "nova-comput(.)+$HYPERVISOR_HOSTNAME")
      echo "$compute_state" | \
         sed --unbuffered \
-            -e 's/\(.*enabled.*\)/\o033[92m\1\o033[39m/' \
-            -e 's/\(.*up.*\)/\o033[92m\1\o033[39m/' \
+            -e 's/\(.*enabled(.)+up.*\)/\o033[92m\1\o033[39m/' \
             -e 's/\(.*disabled.*\)/\o033[31m\1\o033[39m/' \
             -e 's/\(.*down.*\)/\o033[31m\1\o033[39m/'
 #    hv_fail_state=$(echo $nova_state_list|grep -E "($HYPERVISOR_HOSTNAME(.)+(disabled|down))|(Internal Server Error \(HTTP 500\))")
      hv_fail_state=$(echo "$compute_state" | grep -E "($HYPERVISOR_HOSTNAME(.)+(disabled|down))|(Internal Server Error \(HTTP 500\))")
 
     if [ -n "$hv_fail_state" ]; then
-        printf "%s\n" "${red}Nova state fail on $HYPERVISOR_HOSTNAME${normal}: "
-        printf "%s\n" "${red}$hv_fail_state${normal} "
+        printf "%s\n" "${red}Nova state fail on $HYPERVISOR_HOSTNAME${normal}"
+        #printf "%s\n" "${red}$hv_fail_state${normal} "
         exit 1
     else
         printf "%s\n" "${green}Nova state on $HYPERVISOR_HOSTNAME - OK!${normal}"
