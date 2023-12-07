@@ -177,12 +177,10 @@ chech_hv () {
 #            -e 's/\(.*disabled.*\)/\o033[31m\1\o033[39m/' \
 #            -e 's/\(.*down.*\)/\o033[31m\1\o033[39m/'
 
-            #-e 's/\(.*up.*\)/\o033[92m\1\o033[39m/' \
-
      compute_state=$(echo "$nova_state_list" | grep -E "nova-comput(.)+$HYPERVISOR_HOSTNAME")
      echo "$compute_state" | \
         sed --unbuffered \
-            -e 's/\(.*enabled*up.*\)/\o033[92m\1\o033[39m/' \
+            -e 's/\(.*enabled\s\+|\s\+up.*\)/\o033[92m\1\o033[39m/' \
             -e 's/\(.*disabled.*\)/\o033[31m\1\o033[39m/' \
             -e 's/\(.*down.*\)/\o033[31m\1\o033[39m/'
 #    hv_fail_state=$(echo $nova_state_list|grep -E "($HYPERVISOR_HOSTNAME(.)+(disabled|down))|(Internal Server Error \(HTTP 500\))")
