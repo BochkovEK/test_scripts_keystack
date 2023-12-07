@@ -190,6 +190,8 @@ chech_hv () {
         printf "%s\n" "${red}Nova state fail on $HYPERVISOR_HOSTNAME${normal}: "
         printf "%s\n" "${red}$hv_fail_state${normal} "
         exit 1
+    else
+        printf "%s\n" "${green}Nova state on $HYPERVISOR_HOSTNAME - OK!${normal}"
     fi
 }
 
