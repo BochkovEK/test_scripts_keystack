@@ -16,7 +16,6 @@ normal=$(tput sgr0)
 [[ -z $REGION ]] && REGION="region-ps"
 
 NOVA_STATE_LIST=""
-#ctrl_node=("$NOVA_STATE_LIST")
 #======================
 
 while [ -n "$1" ]
@@ -174,6 +173,7 @@ Check_consul_config () {
 
 clear
 
+create_nova_state_list
 Check_openrc_file
 Check_nova_srvice_list
 Check_connection_to_nova_nodes
