@@ -15,7 +15,6 @@ normal=$(tput sgr0)
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $REGION ]] && REGION="region-ps"
 
-NOVA_STATE_LIST=""
 #======================
 
 while [ -n "$1" ]
@@ -55,15 +54,10 @@ Check_openrc_file () {
     source $OPENRC_PATH
 }
 
-# Create nova state list
-create_nova_state_list () {
-NOVA_STATE_LIST=$(openstack compute service list)
-}
-
 # Check nova srvice list
 Check_nova_srvice_list () {
     echo "Check nova srvice list..."
-    echo "$NOVA_STATE_LIST" | \
+    echo "$nova_state_list" | \
         sed --unbuffered \
             -e 's/\(.*enabled | up.*\)/\o033[92m\1\o033[39m/' \
             -e 's/\(.*disabled.*\)/\o033[31m\1\o033[39m/' \
@@ -73,7 +67,6 @@ Check_nova_srvice_list () {
 # Check connection to nova nodes
 Check_connection_to_nova_nodes () {
     echo "Check connection to nova nodes..."
-    comp_and_ctrl_nodes=$(echo "$NOVA_STATE_LIST" | grep -E "(nova-compute)|(nova-scheduler)" | awk '{print $6}')
     for host in $comp_and_ctrl_nodes;do
         host $host
         if ping -c 1 $host &> /dev/null; then
@@ -93,7 +86,7 @@ Check_connection_to_nova_nodes () {
 # Check disabled computes in nova
 Check_disabled_computes_in_nova () {
     echo "Check disabled computes in nova..."
-    cmpt_disabled_nova_list=$(echo "$NOVA_STATE_LIST" | grep -E "(nova-compute.+disable)|(nova-compute.+down)" | awk '{print $6}')
+    cmpt_disabled_nova_list=$(echo "$nova_state_list" | grep -E "(nova-compute.+disable)|(nova-compute.+down)" | awk '{print $6}')
 
     # Trying to raise and enable nova service on cmpt
     if [ -n "$cmpt_disabled_nova_list" ]; then
@@ -105,14 +98,14 @@ Check_disabled_computes_in_nova () {
             openstack compute service set --up "${cmpt}" nova-compute
         done
         fi
-        NOVA_STATE_LIST=$(openstack compute service list)
-        echo "$NOVA_STATE_LIST" | \
+        nova_state_list=$(openstack compute service list)
+        echo "$nova_state_list" | \
             sed --unbuffered \
                 -e 's/\(.*enabled | up.*\)/\o033[92m\1\o033[39m/' \
                 -e 's/\(.*disabled.*\)/\o033[31m\1\o033[39m/' \
                 -e 's/\(.*down.*\)/\o033[31m\1\o033[39m/'
 
-        cmpt_disabled_nova_list=$(echo "$NOVA_STATE_LIST" | grep -E "(nova-compute.+disable)|(nova-compute.+down)" | awk '{print $6}')
+        cmpt_disabled_nova_list=$(echo "$nova_state_list" | grep -E "(nova-compute.+disable)|(nova-compute.+down)" | awk '{print $6}')
         if [ -n "$cmpt_disabled_nova_list" ]; then
             for cmpt in $cmpt_disabled_nova_list; do
                 printf "%40s\n" "${red}Failed to start nova service on $cmpt${normal}"
@@ -125,7 +118,8 @@ Check_disabled_computes_in_nova () {
 # Check docker consul
 Check_docker_consul () {
     echo "Check consul docker on nodes..."
-    for host in $NOVA_STATE_LIST;do
+
+    for host in $comp_and_ctrl_nodes;do
         echo "consul on $host"
         docker_consul=$(ssh -o StrictHostKeyChecking=no $host "docker ps | grep consul")
         echo "$docker_consul" | \
@@ -138,7 +132,7 @@ Check_docker_consul () {
 
 # Check members list
 Check_members_list () {
-    ctrl_node=$(echo "$NOVA_STATE_LIST" | grep -E "(nova-compute.+disable)" | awk '{print $6}')
+    ctrl_node=$(echo "$nova_state_list" | grep -E "(nova-compute.+disable)" | awk '{print $6}')
     echo "Check members list on ${ctrl_node[0]}..."
     members_list=$(ssh -t -o StrictHostKeyChecking=no "${ctrl_node[0]}" "docker exec -it consul consul members list")
     echo "$members_list" | \
@@ -151,7 +145,7 @@ Check_members_list () {
 # Check consul logs
 Check_consul_logs () {
     echo "Check consul logs..."
-    ctrl_node=$(echo "$NOVA_STATE_LIST" | grep -E "(nova-compute.+disable)" | awk '{print $6}')
+    ctrl_node=$(echo "$nova_state_list" | grep -E "(nova-compute.+disable)" | awk '{print $6}')
     leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no "${ctrl_node[0]}" "docker exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
     echo "Leader consul node is $leader_ctrl_node"
     ssh -o StrictHostKeyChecking=no "$leader_ctrl_node" tail -7 /var/log/kolla/autoevacuate.log; DATE=$(date); printf "%s\n" "${violet}${DATE}${normal}"
@@ -167,7 +161,10 @@ Check_consul_config () {
                 -e 's/\(.*false.*\)/\o033[31m\1\o033[39m/'
 }
 
-clear
+#clear
+
+nova_state_list=$(openstack compute service list)
+comp_and_ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)|(nova-scheduler)" | awk '{print $6}')
 
 create_nova_state_list
 Check_openrc_file
