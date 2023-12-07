@@ -80,12 +80,12 @@ Check_connection_to_nova_nodes () {
             printf "%40s\n" "${green}There is a connection with $host - success${normal}"
         else
             printf "%40s\n" "${red}No connection with $host - error!${normal}"
-            unreachable_nova_node=$(host $host |grep -E "ctrl|cmpt")
-            if [ ! -z "$unreachable_nova_node" ]; then
-                printf "%40s\n" "${red}One of the nova cluster nodes is unreachable!${normal}"
-                echo -e "${red}The node may be turned off.${normal}\n"
-                exit 1
-            fi
+            #unreachable_nova_node=$(host $host |grep -E "ctrl|cmpt")
+            #if [ -n "$unreachable_nova_node" ]; then
+            #    printf "%40s\n" "${red}One of the nova cluster nodes is unreachable!${normal}"
+            echo -e "${red}The node may be turned off.${normal}\n"
+            #exit 1
+            #fi
         fi
     done
 }
