@@ -338,7 +338,7 @@ openstack server list --all-projects --host $HYPERVISOR_HOSTNAME --long -c Name 
 echo "Command for check vms list on $HYPERVISOR_HOSTNAME:"
 #echo "export OS_PROJECT_NAME=$PROJECT"
 #echo "export OS_USERNAME=$TEST_USER"
-echo "openstack server list --all-projects --host $HYPERVISOR_HOSTNAME --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks"
+printf "%s\n" "${orange}openstack server list --all-projects --host $HYPERVISOR_HOSTNAME --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
 }
 
 output_of_initial_parameters
