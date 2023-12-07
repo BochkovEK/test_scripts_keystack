@@ -13,6 +13,7 @@
 #    }
 #  }
 #}
+#Stsrt example bash pull_push_to_stand_docker_image.sh drs:ks-2023.2-rc7
 
 INSTALLER_HOME=/installer
 SETTINGS=$INSTALLER_HOME/config/settings
