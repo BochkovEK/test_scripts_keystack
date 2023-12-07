@@ -169,22 +169,24 @@ chech_hv () {
     #cat test_compute_service_list)
     #openstack compute service list)
 
-    hv_fail_state=$(echo $nova_state_list|grep -E "(nova-comput(.)+$HYPERVISOR_HOSTNAME(.)+(disabled|down))|(Internal Server Error \(HTTP 500\))")
+    #hv_fail_state=$(echo $nova_state_list|grep -E "(nova-comput(.)+$HYPERVISOR_HOSTNAME(.)+(disabled|down))|(Internal Server Error \(HTTP 500\))")
 
-    echo "$hv_fail_state" | grep -E "nova-comput(.)+$HYPERVISOR_HOSTNAME" | \
-        sed --unbuffered \
-            -e 's/\(.*enabled | up.*\)/\o033[92m\1\o033[39m/' \
-            -e 's/\(.*disabled.*\)/\o033[31m\1\o033[39m/' \
-            -e 's/\(.*down.*\)/\o033[31m\1\o033[39m/'
-
-#    echo "$nova_state_list" | grep -E "nova-comput(.)+$HYPERVISOR_HOSTNAME" | \
+#    echo "$hv_fail_state" | grep -E "nova-comput(.)+$HYPERVISOR_HOSTNAME" | \
 #        sed --unbuffered \
 #            -e 's/\(.*enabled | up.*\)/\o033[92m\1\o033[39m/' \
 #            -e 's/\(.*disabled.*\)/\o033[31m\1\o033[39m/' \
 #            -e 's/\(.*down.*\)/\o033[31m\1\o033[39m/'
-#    hv_fail_state=$(echo $nova_state_list|grep -E "($HYPERVISOR_HOSTNAME(.)+(disabled|down))|(Internal Server Error \(HTTP 500\))")
 
-    if [ ! -z "$hv_fail_state" ]; then
+     compute_state=$(echo "$nova_state_list" | grep -E "nova-comput(.)+$HYPERVISOR_HOSTNAME")
+     echo "$compute_state" | \
+        sed --unbuffered \
+            -e 's/\(.*enabled | up.*\)/\o033[92m\1\o033[39m/' \
+            -e 's/\(.*disabled.*\)/\o033[31m\1\o033[39m/' \
+            -e 's/\(.*down.*\)/\o033[31m\1\o033[39m/'
+#    hv_fail_state=$(echo $nova_state_list|grep -E "($HYPERVISOR_HOSTNAME(.)+(disabled|down))|(Internal Server Error \(HTTP 500\))")
+     hv_fail_state=$(echo "$compute_state" | grep -E "($HYPERVISOR_HOSTNAME(.)+(disabled|down))|(Internal Server Error \(HTTP 500\))")
+
+    if [ -n "$hv_fail_state" ]; then
         printf "%s\n" "${red}Nova state fail on $HYPERVISOR_HOSTNAME${normal}: "
         printf "%s\n" "${red}$hv_fail_state${normal} "
         exit 1
