@@ -165,33 +165,20 @@ chech_hv () {
         fi
     echo "Check nova state on hypervizor: $HYPERVISOR_HOSTNAME..."
     nova_state_list=$(openstack compute service list)
-    #Mock:
-    #cat test_compute_service_list)
-    #openstack compute service list)
 
-    #hv_fail_state=$(echo $nova_state_list|grep -E "(nova-comput(.)+$HYPERVISOR_HOSTNAME(.)+(disabled|down))|(Internal Server Error \(HTTP 500\))")
-
-#    echo "$hv_fail_state" | grep -E "nova-comput(.)+$HYPERVISOR_HOSTNAME" | \
-#        sed --unbuffered \
-#            -e 's/\(.*enabled | up.*\)/\o033[92m\1\o033[39m/' \
-#            -e 's/\(.*disabled.*\)/\o033[31m\1\o033[39m/' \
-#            -e 's/\(.*down.*\)/\o033[31m\1\o033[39m/'
-
-     compute_state=$(echo "$nova_state_list" | grep -E "nova-comput(.)+$HYPERVISOR_HOSTNAME")
-     echo "$compute_state" | \
-        sed --unbuffered \
-            -e 's/\(.*enabled\s\+|\s\+up.*\)/\o033[92m\1\o033[39m/' \
-            -e 's/\(.*disabled.*\)/\o033[31m\1\o033[39m/' \
-            -e 's/\(.*down.*\)/\o033[31m\1\o033[39m/'
-#    hv_fail_state=$(echo $nova_state_list|grep -E "($HYPERVISOR_HOSTNAME(.)+(disabled|down))|(Internal Server Error \(HTTP 500\))")
-     hv_fail_state=$(echo "$compute_state" | grep -E "($HYPERVISOR_HOSTNAME(.)+(disabled|down))|(Internal Server Error \(HTTP 500\))")
+    compute_state=$(echo "$nova_state_list" | grep -E "nova-comput(.)+$HYPERVISOR_HOSTNAME")
+    echo "$compute_state" | \
+      sed --unbuffered \
+        -e 's/\(.*enabled\s\+|\s\+up.*\)/\o033[92m\1\o033[39m/' \
+        -e 's/\(.*disabled.*\)/\o033[31m\1\o033[39m/' \
+        -e 's/\(.*down.*\)/\o033[31m\1\o033[39m/'
+    hv_fail_state=$(echo "$compute_state" | grep -E "($HYPERVISOR_HOSTNAME(.)+(disabled|down))|(Internal Server Error \(HTTP 500\))")
 
     if [ -n "$hv_fail_state" ]; then
-        printf "%s\n" "${red}Nova state fail on $HYPERVISOR_HOSTNAME${normal}"
-        #printf "%s\n" "${red}$hv_fail_state${normal} "
-        exit 1
+      printf "%s\n" "${red}Nova state fail on $HYPERVISOR_HOSTNAME${normal}"
+      exit 1
     else
-        printf "%s\n" "${green}Nova state on $HYPERVISOR_HOSTNAME - OK!${normal}"
+      printf "%s\n" "${green}Nova state on $HYPERVISOR_HOSTNAME - OK!${normal}"
     fi
 }
 
@@ -357,8 +344,8 @@ echo "openstack server list --all-projects --host $HYPERVISOR_HOSTNAME --long -c
 output_of_initial_parameters
 check_and_source_openrc_file
 chech_hv
-#check_project
-#check_and_add_flavor
-#check_and_add_secur_group
-#check_and_add_keypair
-#create_vms
+check_project
+check_and_add_flavor
+check_and_add_secur_group
+check_and_add_keypair
+create_vms
