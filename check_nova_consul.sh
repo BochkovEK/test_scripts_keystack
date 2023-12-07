@@ -24,10 +24,10 @@ do
 "
             exit 0
             break ;;
-	-o|-openrc)
+	-o|-openrc) OPENRC_PATH="$2"
 	    echo "Found the -t <path_openrc_file> option, with parameter value $OPENRC_PATH"
             shift ;;
-  -r|-region)
+  -r|-region) REGION="$2"
 	    echo "Found the -t <region_name> option, with parameter value $REGION"
             shift ;;
         --) shift
@@ -79,7 +79,7 @@ Check_connection_to_nova_nodes () {
             unreachable_nova_node=$(host $host |grep -E "ctrl|cmpt")
             if [ ! -z "$unreachable_nova_node" ]; then
                 printf "%40s\n" "${red}One of the nova cluster nodes is unreachable!${normal}"
-                printf "${red}The node may be turned off.${normal}\n"
+                echo -e "${red}The node may be turned off.${normal}\n"
                 exit 1
             fi
         fi
