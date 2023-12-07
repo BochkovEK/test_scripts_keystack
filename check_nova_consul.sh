@@ -134,7 +134,7 @@ Check_docker_consul () {
 Check_members_list () {
     #ctrl_node=$(echo "$comp_and_ctrl_nodes" | grep -E "(nova-scheduler" | awk '{print $6}')
     echo "Check members list on ${ctrl_node_array[0]}..."
-    members_list=$(ssh -t -o StrictHostKeyChecking=no "${ctrl_node_array[0]}" "docker exec -it consul consul members list")
+    members_list=$(ssh -t -o StrictHostKeyChecking=no '${ctrl_node_array[0]}' "docker exec -it consul consul members list")
     echo "$members_list" | \
             sed --unbuffered \
                 -e 's/\(.*alive.*\)/\o033[92m\1\o033[39m/' \
