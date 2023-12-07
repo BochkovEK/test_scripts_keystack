@@ -132,7 +132,7 @@ Check_docker_consul () {
 
 # Check members list
 Check_members_list () {
-    ctrl_node=$(echo "$nova_state_list" | grep -E "(nova-compute.+disable)" | awk '{print $6}')
+    ctrl_node=$(echo "$comp_and_ctrl_nodes" | grep -E "(nova-scheduler" | awk '{print $6}')
     echo "Check members list on ${ctrl_node[0]}..."
     members_list=$(ssh -t -o StrictHostKeyChecking=no "${ctrl_node[0]}" "docker exec -it consul consul members list")
     echo "$members_list" | \
