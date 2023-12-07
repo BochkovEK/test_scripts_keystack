@@ -134,7 +134,7 @@ Check_docker_consul () {
 Check_members_list () {
     #ctrl_node=$(echo "$comp_and_ctrl_nodes" | grep -E "(nova-scheduler" | awk '{print $6}')
     echo "Check members list on ${ctrl_node_array[0]}..."
-    members_list=$(ssh -t -o StrictHostKeyChecking=no '${ctrl_node_array[0]}' "docker exec -it consul consul members list")
+    members_list=$(ssh -t -o StrictHostKeyChecking=no ${ctrl_node_array[0]} "docker exec -it consul consul members list")
     echo "$members_list" | \
             sed --unbuffered \
                 -e 's/\(.*alive.*\)/\o033[92m\1\o033[39m/' \
@@ -146,7 +146,7 @@ Check_members_list () {
 Check_consul_logs () {
     echo "Check consul logs..."
     #ctrl_node=$(echo "$nova_state_list" | grep -E "(nova-compute.+disable)" | awk '{print $6}')
-    leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no "${ctrl_node_array[0]}" "docker exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
+    leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no ${ctrl_node_array[0]} "docker exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
     echo "Leader consul node is $leader_ctrl_node"
     ssh -o StrictHostKeyChecking=no "$leader_ctrl_node" tail -7 /var/log/kolla/autoevacuate.log; DATE=$(date); printf "%s\n" "${violet}${DATE}${normal}"
 }
@@ -168,12 +168,11 @@ comp_and_ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)|(nova-sc
 ctrl_node=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
 ctrl_node_array=("$ctrl_node")
 
-create_nova_state_list
-Check_openrc_file
-Check_nova_srvice_list
-Check_connection_to_nova_nodes
-Check_disabled_computes_in_nova
-Check_docker_consul
+#Check_openrc_file
+#Check_nova_srvice_list
+#Check_connection_to_nova_nodes
+#Check_disabled_computes_in_nova
+#Check_docker_consul
 Check_members_list
 Check_consul_logs
 Check_consul_config
