@@ -15,7 +15,7 @@ violet=$(tput setaf 5)
 normal=$(tput sgr0)
 yallow=$(tput setaf 3)
 
-[[ ! -z "${2}" ]] && OUTPUT_PERIOD=${2}
+[[ -n "${2}" ]] && OUTPUT_PERIOD=${2}
 
 if [ -z "${1}" ]; then
     check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
@@ -25,9 +25,11 @@ if [ -z "${1}" ]; then
 
 # Check nova srvice list
     nova_state_list=$(openstack compute service list)
-    nova_nodes_list=$(echo "$nova_state_list" | grep -E "nova-compute|nova-scheduler" | awk '{print $6}')
-    nova_nodes_arr=("$nova_nodes_list")
-    ctrl_node=${nova_nodes_arr[0]}
+    #nova_nodes_list=$(echo "$nova_state_list" | grep -E "nova-compute|nova-scheduler" | awk '{print $6}')
+    ctrl_nodes_list=$(echo "$nova_state_list" | grep -E "nova-scheduler" | awk '{print $6}')
+    #nova_nodes_arr=("$nova_nodes_list")
+    for i in $ctrl_nodes_list; do nova_ctrl_arr+=("$i"); done;
+    ctrl_node=${nova_ctrl_arr[0]}
     leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no "$ctrl_node" "docker exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
     NODE_NAME=$leader_ctrl_node
     echo "Leader consul node is $NODE_NAME"

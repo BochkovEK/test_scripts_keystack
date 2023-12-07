@@ -57,9 +57,9 @@ do
     shift
 done
 
-[[ -z $NODES ]] && { srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}'); for i in $srv; do NODES+=("$i"); done; }
+[[ -z ${NODES[0]} ]] && { srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}'); for i in $srv; do NODES+=("$i"); done; }
 
-echo $NODES
+echo "${NODES[*]}"
 
 for host in "${NODES[@]}"; do
   echo "Check container $CONTAINER_NAME on ${host}"
