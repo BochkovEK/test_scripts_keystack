@@ -68,16 +68,12 @@ Check_nova_srvice_list () {
             -e 's/\(.*enabled | up.*\)/\o033[92m\1\o033[39m/' \
             -e 's/\(.*disabled.*\)/\o033[31m\1\o033[39m/' \
             -e 's/\(.*down.*\)/\o033[31m\1\o033[39m/'
-#    nova_nodes_list=$(echo "$nova_state_list" | grep -E "nova-compute|nova-scheduler" | awk '{print $6}')
-#    echo "nova_nodes_list: $nova_nodes_list"
-#    cmpt_disabled_nova_list=$(echo "$nova_state_list" | grep -E "(nova-compute.+disable)|(nova-compute.+down)" | awk '{print $6}')
-#    echo "cmpt_disabled_nova_list: $cmpt_disabled_nova_list"
 }
 
 # Check connection to nova nodes
 Check_connection_to_nova_nodes () {
     echo "Check connection to nova nodes..."
-    comp_and_ctrl_nodes=$(echo "$NOVA_STATE_LIST" | grep -E "nova-compute|nova-scheduler" | awk '{print $6}')
+    comp_and_ctrl_nodes=$(echo "$NOVA_STATE_LIST" | grep -E "(nova-compute)|(nova-scheduler)" | awk '{print $6}')
     for host in $comp_and_ctrl_nodes;do
         host $host
         if ping -c 1 $host &> /dev/null; then
