@@ -28,19 +28,19 @@ do
             exit 0
             break ;;
 	-o|-openrc) OPENRC_PATH="$2"
-	    echo "Found the -t <path_openrc_file> option, with parameter value $OPENRC_PATH"
-            shift ;;
+	  echo "Found the -openrc <path_openrc_file> option, with parameter value $OPENRC_PATH"
+    shift ;;
   -r|-region) REGION="$2"
-	    echo "Found the -t <region_name> option, with parameter value $REGION"
-            shift ;;
-  --dtr|--dont_try_to_rise) TRY_TO_RISE="false"
-	    echo "Found the -dont_try_to_rise <dont_try_to_rise_compute_node>"
-            shift ;;
-        --) shift
-            break ;;
-        *) echo "$1 is not an option";;
-        esac
-        shift
+	  echo "Found the -region <region_name> option, with parameter value $REGION"
+    shift ;;
+  -dtr|-dont_try_to_rise) TRY_TO_RISE="false"
+	  echo "Found the -dont_try_to_rise <dont_try_to_rise_compute_node>"
+    ;;
+  --) shift
+    break ;;
+  *) echo "$1 is not an option";;
+    esac
+    shift
 done
 
 # functions
