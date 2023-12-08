@@ -21,9 +21,9 @@ while [ -n "$1" ]
 do
     case "$1" in
         --help) echo -E "
-        -o, 	-openrc		          <path_openrc_file>
-        -r, 	-region		          <region_name>
-        -dtr, -dont_try_to_rise   If nova is not active on some nodes, then there will be no attempt to rise it
+        -o, 	  -openrc		          <path_openrc_file>
+        -r, 	  -region		          <region_name>
+        -dtr,   -dont_try_to_rise   If nova is not active on some nodes, then there will be no attempt to rise it
 "
             exit 0
             break ;;
