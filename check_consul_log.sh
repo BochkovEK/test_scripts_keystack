@@ -37,7 +37,7 @@ else
     NODE_NAME=$1
 fi
 
-clear
+#clear
 
 echo -e "Consul logs from $NODE_NAME node"
 echo -e "Output period check: $OUTPUT_PERIOD sec"
