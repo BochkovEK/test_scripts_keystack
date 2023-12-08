@@ -58,9 +58,9 @@ Check_nova_srvice_list () {
     echo "Check nova srvice list..."
     echo "$nova_state_list" | \
         sed --unbuffered \
-            -e 's/\(.*enabled | up.*\)/\o033[92m\1\o033[39m/' \
             -e 's/\(.*disabled.*\)/\o033[31m\1\o033[39m/' \
             -e 's/\(.*down.*\)/\o033[31m\1\o033[39m/'
+            #-e 's/\(.*enabled | up.*\)/\o033[92m\1\o033[39m/' \
 }
 
 # Check connection to nova nodes
@@ -77,7 +77,7 @@ Check_connection_to_nova_nodes () {
             #if [ -n "$unreachable_nova_node" ]; then
             #    printf "%40s\n" "${red}One of the nova cluster nodes is unreachable!${normal}"
             echo -e "${red}The node may be turned off.${normal}\n"
-            #exit 1
+            exit 1
             #fi
         fi
     done
