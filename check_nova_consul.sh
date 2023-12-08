@@ -33,7 +33,7 @@ do
   -r|-region) REGION="$2"
 	    echo "Found the -t <region_name> option, with parameter value $REGION"
             shift ;;
-  -dtr|-dont_try_to_rise) TRY_TO_RISE="false"
+  --dtr|--dont_try_to_rise) TRY_TO_RISE="false"
 	    echo "Found the -dont_try_to_rise <dont_try_to_rise_compute_node>"
             shift ;;
         --) shift
