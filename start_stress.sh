@@ -17,6 +17,37 @@ red=$(tput setaf 1)
 violet=$(tput setaf 5)
 normal=$(tput sgr0)
 
+
+while [ -n "$1" ]
+do
+    case "$1" in
+        --help) echo -E "
+        -hv <hypervisor_name>
+        -tt <type_of_stress_test cpu or ram>
+        -cpu <number_cpus_for_stress>
+        -ram <gb_ram_stress>
+        "
+            exit 0
+            break ;;
+        -hv) hypervisor_name="$2"
+            echo "Found the -hv option, with parameter value $hypervisor_name"
+            shift ;;
+        -cpu) cpus="$2"
+            echo "Found the -cpu option, with parameter value $cpus"
+            shift ;;
+        -ram) ram_gb="$2"
+            echo "Found the -ram option in Gb, with parameter value $ram_gb"
+            shift;;
+        -tt) type_test="$2"
+            echo "Found the -tt option, with parameter value $type_test"
+            shift;;
+        --) shift
+            break ;;
+        *) echo "$1 is not an option";;
+        esac
+        shift
+done
+
 # Functions
 
 copy_and_stress() {
@@ -34,7 +65,7 @@ copy_and_stress() {
             ;;
         ram)
             echo "Starting ram stress on $VM_IP..."
-            ssh -o StrictHostKeyChecking=no -i $key_name ubuntu@$VM_IP "nohup ./stress --vm $ram --vm-bytes 1G > /dev/null 2>&1 &"
+            ssh -o StrictHostKeyChecking=no -i $key_name ubuntu@$VM_IP "nohup ./stress --vm 1 --vm-bytes '$ram_gb'G > /dev/null 2>&1 &"
             ;;
     esac
 }
@@ -65,35 +96,6 @@ check_openrc_file () {
     source $OPENRC_PATH
 }
 
-while [ -n "$1" ]
-do
-    case "$1" in
-        --help) echo -E "
-        -hv <hypervisor_name>
-        -tt <type_of_stress_test cpu or ram>
-        -cpu <number_cpus_for_stress>
-        -ram <gb_ram_stress>
-        "
-            exit 0
-            break ;;
-        -hv) hypervisor_name="$2"
-            echo "Found the -hv option, with parameter value $hypervisor_name"
-            shift ;;
-        -cpu) cpus="$2"
-            echo "Found the -cpu option, with parameter value $cpus"
-            shift ;;
-        -ram) ram="$2"
-            echo "Found the -ram option, with parameter value $ram"
-            shift;;
-        -tt) type_test="$2"
-            echo "Found the -tt option, with parameter value $type_test"
-            shift;;
-        --) shift
-            break ;;
-        *) echo "$1 is not an option";;
-        esac
-        shift
-done
 
 rm -rf /root/.ssh/known_hosts
 check_openrc_file
