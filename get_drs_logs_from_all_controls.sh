@@ -1,6 +1,7 @@
 #!/bin/bash
 
 #scp drs logs from controls
+#On home pc: scp root@<lcm_ip>:~/test_scripts_keystack/drs_logs/* C:\Users\bochk\drs_logs
 
 TAIL_NUM=100
 nodes_to_find="\-ctrl\-..$"
