@@ -29,7 +29,7 @@ normal=$(tput sgr0)
 
 # Constants
 
-TIMEOUT_BEFORE_NEXT_CREATION=30
+TIMEOUT_BEFORE_NEXT_CREATION=10
 
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
 [[ -z $VM_QTY ]] && VM_QTY="1"
