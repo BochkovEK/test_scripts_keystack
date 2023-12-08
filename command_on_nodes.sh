@@ -39,13 +39,13 @@ while [ -n "$1" ]
 do
     case "$1" in
         --help) echo -E "
-        -c, 	-container_name		<container_name>
+        -c, 	-command		      <command>
         -t, 	-type_of_nodes		<type_of_nodes> 'ctrl', 'comp', 'net'
 "
       exit 0
       break ;;
 	-c|-command) COMMAND="$2"
-	    echo "Found the -t <command> option, with parameter value $COMMAND"
+	    echo "Found the -command <command> option, with parameter value $COMMAND"
       shift ;;
   -t|-type_of_nodes)
       note_type_func "$2"
