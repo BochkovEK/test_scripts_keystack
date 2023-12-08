@@ -50,8 +50,6 @@ Check_openrc_file () {
     #echo $OPENRC_PATH
     #echo $check_openrc_file
     [[ -z "$check_openrc_file" ]] && { echo "openrc file not found in $OPENRC_PATH"; exit 1; }
-
-    source $OPENRC_PATH
 }
 
 # Check nova srvice list
@@ -162,13 +160,14 @@ Check_consul_config () {
 }
 
 #clear
+Check_openrc_file
 
+source $OPENRC_PATH
 nova_state_list=$(openstack compute service list)
 comp_and_ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)|(nova-scheduler)" | awk '{print $6}')
 ctrl_node=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
 for i in $ctrl_node; do ctrl_node_array+=("$i"); done;
 
-Check_openrc_file
 Check_nova_srvice_list
 Check_connection_to_nova_nodes
 Check_disabled_computes_in_nova
