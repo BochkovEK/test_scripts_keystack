@@ -148,7 +148,15 @@ Check_consul_logs () {
     #ctrl_node=$(echo "$nova_state_list" | grep -E "(nova-compute.+disable)" | awk '{print $6}')
     leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no "${ctrl_node_array[0]}" "docker exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
     echo "Leader consul node is $leader_ctrl_node"
-    ssh -o StrictHostKeyChecking=no -t "$leader_ctrl_node" 'tail -7 /var/log/kolla/autoevacuate.log; violet=$(tput setaf 5); normal=$(tput sgr0); DATE=$(date); printf "%s\n" "${violet}${DATE}${normal}"'
+    ssh -o StrictHostKeyChecking=no -t "$leader_ctrl_node" tail -7 /var/log/kolla/autoevacuate.log | \
+        sed --unbuffered \
+        -e 's/\(.*Force off.*\)/\o033[31m\1\o033[39m/' \
+        -e 's/\(.*Server.*\)/\o033[33m\1\o033[39m/' \
+        -e 's/\(.*Evacuating instance.*\)/\o033[33m\1\o033[39m/' \
+        -e 's/\(.*Starting fence.*\)/\o033[31m\1\o033[39m/' \
+        -e 's/\(.*IPMI "power off".*\)/\o033[31m\1\o033[39m/' \
+        -e 's/\(.*disabled,.*\)/\o033[33m\1\o033[39m/'; \
+    ssh -o StrictHostKeyChecking=no -t "$leader_ctrl_node" 'violet=$(tput setaf 5); normal=$(tput sgr0); DATE=$(date); printf "%s\n" "${violet}${DATE}${normal}"'
 }
 
 # Check consul config

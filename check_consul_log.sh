@@ -44,7 +44,7 @@ echo -e "Output period check: $OUTPUT_PERIOD sec"
 
 while :
 do
-    ssh -o StrictHostKeyChecking=no $NODE_NAME tail -n $LOG_LAST_LINES_NUMBER /var/log/kolla/autoevacuate.log | \
+    ssh -o StrictHostKeyChecking=no "$NODE_NAME" tail -n $LOG_LAST_LINES_NUMBER /var/log/kolla/autoevacuate.log | \
         sed --unbuffered \
         -e 's/\(.*Force off.*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*Server.*\)/\o033[33m\1\o033[39m/' \
@@ -52,7 +52,7 @@ do
         -e 's/\(.*Starting fence.*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*IPMI "power off".*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*disabled,.*\)/\o033[33m\1\o033[39m/'; \
-        DATE=$(date); printf "${violet}${DATE}\nfor check this log: \"ssh $NODE_NAME less /var/log/kolla/autoevacuate.log | less\" ${normal}\n"
+        DATE=$(date); printf "%s\n" "${violet}${DATE}for check this log: \"ssh $NODE_NAME less /var/log/kolla/autoevacuate.log | less\" ${normal}\n"
         
-    sleep $OUTPUT_PERIOD
+    sleep "$OUTPUT_PERIOD"
 done
