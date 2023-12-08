@@ -68,7 +68,7 @@ Check_connection_to_nova_nodes () {
     echo "Check connection to nova nodes..."
     for host in $comp_and_ctrl_nodes;do
         host $host
-        if ping -c 1 $host &> /dev/null; then
+        if ping -c 2 $host &> /dev/null; then
             printf "%40s\n" "${green}There is a connection with $host - success${normal}"
         else
             printf "%40s\n" "${red}No connection with $host - error!${normal}"
