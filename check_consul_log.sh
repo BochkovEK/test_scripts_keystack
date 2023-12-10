@@ -51,8 +51,12 @@ do
         -e 's/\(.*Evacuating instance.*\)/\o033[33m\1\o033[39m/' \
         -e 's/\(.*Starting fence.*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*IPMI "power off".*\)/\o033[31m\1\o033[39m/' \
-        -e 's/\(.*disabled,.*\)/\o033[33m\1\o033[39m/'; \
-        DATE=$(date); printf "%s\n" "${violet}${DATE}" hostname="$(hostname)" "Logs from: $hostname" "for check this log: \"ssh $NODE_NAME less /var/log/kolla/autoevacuate.log | less\" ${normal}"
+        -e 's/\(.*disabled,.*\)/\o033[33m\1\o033[39m/'
+    ssh -o StrictHostKeyChecking=no -t "$NODE_NAME" 'DATE="$(date)"; printf "%s\n" "${violet}${DATE}${hostname}${normal}"'
+    #'\'
+     #'hostname="$(hostname)";
+      #'\'
+     #printf "%s\n" "${violet}${DATE}" "Logs from: $hostname" "for check this log: \"ssh $NODE_NAME less /var/log/kolla/autoevacuate.log | less\" ${normal}""
         
     sleep "$OUTPUT_PERIOD"
 done
