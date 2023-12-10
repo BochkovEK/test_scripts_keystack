@@ -52,7 +52,10 @@ do
         -e 's/\(.*Starting fence.*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*IPMI "power off".*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*disabled,.*\)/\o033[33m\1\o033[39m/'
-    ssh -o StrictHostKeyChecking=no "$NODE_NAME" 'DATE="$(date)"; hostname="$(hostname)"; violet="$(tput setaf 5)"; normal=$(tput sgr0); printf "%s\n" "${violet}${DATE}${normal}"'
+    ssh -o StrictHostKeyChecking=no "$NODE_NAME" 'echo -e "\033[0;35m$(date)\033[0m
+\033[0;35m$(hostname)\033[0m
+\033[0;35mFor check this log: \"ssh $NODE_NAME less /var/log/kolla/autoevacuate.log | less\"\033[0m"'
+    #'DATE="$(date)"; hostname="$(hostname)"; violet="$(tput setaf 5)"; normal=$(tput sgr0); printf "%s\n" "${violet}${DATE}${normal}"'
       #"Logs from: ${hostname}"
       #"For check this log: \"ssh $NODE_NAME less /var/log/kolla/autoevacuate.log | less\" ${normal}"'
     #'\'
