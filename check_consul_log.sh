@@ -55,7 +55,7 @@ do
     ssh -o StrictHostKeyChecking=no "$NODE_NAME" 'DATE="$(date)"; hostname="$(hostname)"; violet=$(tput setaf 5); normal=$(tput sgr0);
       printf "%s\n" "${violet}${DATE}"
       "Logs from: ${hostname}"
-      For check this log: \"ssh $NODE_NAME less /var/log/kolla/autoevacuate.log | less\" ${normal}"'
+      "For check this log: \"ssh $NODE_NAME less /var/log/kolla/autoevacuate.log | less\" ${normal}"'
     #'\'
      #'hostname="$(hostname)";
       #'\'
