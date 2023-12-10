@@ -52,7 +52,7 @@ do
         -e 's/\(.*Starting fence.*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*IPMI "power off".*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*disabled,.*\)/\o033[33m\1\o033[39m/'
-    ssh -o StrictHostKeyChecking=no "$NODE_NAME" 'DATE="$(date)"; hostname="$(hostname)" printf "%s\n" "${violet}${DATE}${hostname}${normal}"'
+    ssh -o StrictHostKeyChecking=no "$NODE_NAME" 'DATE="$(date)"; hostname="$(hostname)"; printf "%s\n" "${violet}${DATE}${hostname}${normal}"'
     #'\'
      #'hostname="$(hostname)";
       #'\'
