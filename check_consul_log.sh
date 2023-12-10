@@ -53,7 +53,7 @@ do
         -e 's/\(.*IPMI "power off".*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*disabled,.*\)/\o033[33m\1\o033[39m/'
     ssh -o StrictHostKeyChecking=no "$NODE_NAME" 'echo -e "\033[0;35m$(date)\033[0m
-\033[0;35m$(hostname)\033[0m
+\033[0;35mLogs from: $(hostname)\033[0m
 \033[0;35mFor check this log: \"ssh $(hostname) less /var/log/kolla/autoevacuate.log | less\"\033[0m"'
 
     sleep "$OUTPUT_PERIOD"
