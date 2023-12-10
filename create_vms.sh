@@ -64,9 +64,8 @@ do
         "
             exit 0
             break ;;
-	      -t) tobvc="$2"
-	          echo "Found the -t <time_out_between_VM_create> option, with parameter value $tobvc"
-            TIMEOUT_BEFORE_NEXT_CREATION=$qty
+	      -t|-timeout) TIMEOUT_BEFORE_NEXT_CREATION="$2"
+	          echo "Found the -timeout <time_out_between_VM_create> option, with parameter value $TIMEOUT_BEFORE_NEXT_CREATION"
             shift ;;
         -q|-qty) qty="$2"
             echo "Found the -qty <number_of_VMs> option, with parameter value $qty"
@@ -159,7 +158,7 @@ chech_hv () {
     if ping -c 1 $HYPERVISOR_HOSTNAME &> /dev/null; then
             printf "%s\n" "${green}There is a connection with $HYPERVISOR_HOSTNAME - success${normal}"
         else
-            printf "%s\n" "${red}No connection with $host - error!${normal}"
+            printf "%s\n" "${red}No connection with $HYPERVISOR_HOSTNAME - error!${normal}"
             printf "%s\n" "${red}The node $HYPERVISOR_HOSTNAME may be turned off.${normal} "
             exit 1
         fi
