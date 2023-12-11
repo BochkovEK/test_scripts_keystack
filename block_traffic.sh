@@ -7,7 +7,10 @@
 # BLOCKED_IPS=("<IP_ctrl_1>" "<IP_ctrl_2>" "<IP_3>" "...")
 # BLOCKED_IPS=("10.224.133.138" "10.224.133.139" "10.224.133.133" "10.224.133.134" "10.224.133.135") && \
 # scp ./block_traffic.sh "$comp_to_block_traffic":~/
-# ssh -t -o StrictHostKeyChecking=no "$comp_to_block_traffic" 'BLOCKED_IPS="$BLOCKED_IPS"; ~/block_traffic.sh'
+# ssh -o StrictHostKeyChecking=no "$comp_to_block_traffic" 'chmod 777 ~/block_traffic.sh'
+# ssh -t -o StrictHostKeyChecking=no "$comp_to_block_traffic" 'BLOCKED_IPS='"$BLOCKED_IPS"'; ~/block_traffic.sh'
+
+[[ -z $BLOCKED_IPS ]] && echo "IPS list to block not found (env BLOCKED_IPS)"
 
 TIMEOUT=180
 
