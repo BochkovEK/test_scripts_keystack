@@ -51,7 +51,7 @@ do
         -e 's/\(.*Evacuating instance.*\)/\o033[33m\1\o033[39m/' \
         -e 's/\(.*Starting fence.*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*IPMI "power off".*\)/\o033[31m\1\o033[39m/' \
-        -e 's/\(.*[CRITICAL].*\)/\o033[33m\1\o033[39m/' \
+        -e 's/\(.*[CRITICAL].*\)/\o033[31m\1\o033[39m/'
         -e 's/\(.*disabled,.*\)/\o033[33m\1\o033[39m/' \
         -e 's/\(.*failed: True.*\)/\o033[33m\1\o033[39m/' \
         -e 's/\(.*[WARNING].*\)/\o033[33m\1\o033[39m/'
