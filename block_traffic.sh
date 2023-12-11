@@ -2,12 +2,14 @@
 
 # The script blocks all traffic to and from the IP list nodes.
 # The script must be copied to the desired compute node and run using the ssh command from another node.
+# Example:
+# comp_to_block_traffic=""
+# BLOCKED_IPS=("<IP_ctrl_1>" "<IP_ctrl_2>" "<IP_3>" "...")
+# BLOCKED_IPS=("10.224.133.138" "10.224.133.139" "10.224.133.133" "10.224.133.134" "10.224.133.135") && \
+# scp ./block_traffic.sh "$comp_to_block_traffic":~/
+# ssh -t -o StrictHostKeyChecking=no "$comp_to_block_traffic" 'BLOCKED_IPS="$BLOCKED_IPS"; ~/block_traffic.sh'
 
 TIMEOUT=180
-
-# IPS nodes list
-#example: BLOCKED_IPS=("<IP_ctrl_1>" "<IP_ctrl_2>" "<IP_3>" "...")
-BLOCKED_IPS=("10.224.133.138" "10.224.133.139" "10.224.133.133" "10.224.133.134" "10.224.133.135")
 
 block_traffic () {
     for IP in "${BLOCKED_IPS[@]}"; do
