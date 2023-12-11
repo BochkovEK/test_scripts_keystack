@@ -30,7 +30,7 @@ if [ -z "${1}" ]; then
     #nova_nodes_arr=("$nova_nodes_list")
     for i in $ctrl_nodes_list; do nova_ctrl_arr+=("$i"); done;
     ctrl_node=${nova_ctrl_arr[0]}
-    leader_ctrl_node=$(ssh -o StrictHostKeyChecking=no "$ctrl_node" "docker exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
+    leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no "$ctrl_node" "docker exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
     NODE_NAME=$leader_ctrl_node
     echo "Leader consul node is $NODE_NAME"
 else
@@ -52,6 +52,8 @@ do
         -e 's/\(.*Starting fence.*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*IPMI "power off".*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*disabled,.*\)/\o033[33m\1\o033[39m/'
+        -e 's/\(.*failed: True.*\)/\o033[33m\1\o033[39m/'
+
     ssh -o StrictHostKeyChecking=no "$NODE_NAME" 'echo -e "\033[0;35m$(date)\033[0m
 \033[0;35mLogs from: $(hostname)\033[0m
 \033[0;35mFor check this log: \"ssh $(hostname) less /var/log/kolla/autoevacuate.log | less\"\033[0m"'
