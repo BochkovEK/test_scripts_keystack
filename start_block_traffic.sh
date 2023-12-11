@@ -28,7 +28,6 @@ done
 
 scp ./block_traffic.sh "$NODE_TO_BLOCK_TRAFFIC":~/
 ssh -o StrictHostKeyChecking=no "$NODE_TO_BLOCK_TRAFFIC" 'chmod 777 ~/block_traffic.sh'
-ssh -t -o StrictHostKeyChecking=no "$NODE_TO_BLOCK_TRAFFIC" 'BLOCKED_IPS='"${BLOCKED_IPS[*]}"'; echo "${BLOCKED_IPS[*]}"; echo "" > ~/blocked_ips_list;
-for i in "${BLOCKED_IPS[@]}"; do echo "$i" >> ~/blocked_ips_list; done'
+ssh -t -o StrictHostKeyChecking=no "$NODE_TO_BLOCK_TRAFFIC" 'echo '"${BLOCKED_IPS[*]}"' > ~/blocked_ips_list'
 ssh -t -o StrictHostKeyChecking=no "$NODE_TO_BLOCK_TRAFFIC" 'bash ~/block_traffic.sh'
 
