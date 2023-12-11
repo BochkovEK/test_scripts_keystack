@@ -36,19 +36,15 @@ enable_traffic () {
 
 check_ips_list () {
   echo "check ips list..."
-  str=$(cat ~/blocked_ips_list) #"a b c d"
-
-for token in ${str}; do
-    echo "$token"
-done
-#    for IP in "${BLOCKED_IPS[@]}"; do
-#        echo "${IP}"
-#    done
+  BLOCKED_IPS=$(cat ~/blocked_ips_list) #"a b c d"
+    for IP in ${BLOCKED_IPS}; do
+        echo "$IP"
+    done
 }
 
 check_ips_list
-#block_traffic
-#echo "The server is isolated from: ${BLOCKED_IPS[*]}"
-#iptables -S
-#sleep $TIMEOUT
-#enable_traffic
+block_traffic
+echo "The server is isolated from: ${BLOCKED_IPS[*]}"
+iptables -S
+sleep $TIMEOUT
+enable_traffic
