@@ -24,7 +24,7 @@ while [ -n "$1" ]; do
       shift
 done
 
-[[ -z $NODE_TO_BLOCK_TRAFFIC ]] && { echo "node name needed to block traffic (env NODE_TO_BLOCK_TRAFFIC)"; exit 1; }
+[[ -z $NODE_TO_BLOCK_TRAFFIC ]] && { echo "node name needed to block traffic (env NODE_TO_BLOCK_TRAFFIC) or start this script with key -n <node_name>"; exit 1; }
 
 scp ./block_traffic.sh "$NODE_TO_BLOCK_TRAFFIC":~/
 ssh -o StrictHostKeyChecking=no "$NODE_TO_BLOCK_TRAFFIC" 'chmod 777 ~/block_traffic.sh'
