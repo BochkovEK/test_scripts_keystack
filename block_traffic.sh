@@ -46,6 +46,6 @@ check_ips_list () {
 check_ips_list
 block_traffic
 echo "The server is isolated from: ${BLOCKED_IPS[*]}"
-iptables -S
+#iptables -S
 sleep $TIMEOUT
 enable_traffic
