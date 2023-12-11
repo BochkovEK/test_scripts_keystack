@@ -10,7 +10,7 @@
 # ssh -o StrictHostKeyChecking=no "$comp_to_block_traffic" 'chmod 777 ~/block_traffic.sh'
 # ssh -t -o StrictHostKeyChecking=no "$comp_to_block_traffic" 'BLOCKED_IPS='"$BLOCKED_IPS"'; ~/block_traffic.sh'
 
-[[ -z $BLOCKED_IPS ]] && echo "IPS list to block not found (env BLOCKED_IPS)"
+[[ -z $BLOCKED_IPS ]] && { echo "IPS list to block not found (env BLOCKED_IPS)"; exit 1; }
 
 TIMEOUT=180
 
