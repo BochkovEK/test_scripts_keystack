@@ -35,6 +35,7 @@ enable_traffic () {
 }
 
 check_ips_list () {
+  echo "check ips list..."
     for IP in "${BLOCKED_IPS[@]}"; do
         echo "${IP}"
     done
