@@ -11,7 +11,7 @@ if [ -f ~/blocked_ips_list ]; then BLOCKED_IPS=$(cat ~/blocked_ips_list); else e
 TIMEOUT=180
 
 block_traffic () {
-    for IP in "${BLOCKED_IPS[@]}"; do
+    for IP in ${BLOCKED_IPS}; do
 # Blocking incoming traffic from IP
         echo "Block incoming traffic from ${IP}"
         iptables -A INPUT -s "$IP" -j DROP
@@ -23,7 +23,7 @@ block_traffic () {
 }
 
 enable_traffic () {
-    for IP in "${BLOCKED_IPS[@]}"; do
+    for IP in ${BLOCKED_IPS}; do
 # Deleting incoming traffic rule from IP
         echo "Deleting incoming traffic rule from $IP"
         iptables -D INPUT -s "$IP" -j DROP
@@ -37,6 +37,7 @@ enable_traffic () {
 check_ips_list () {
   echo "check ips list..."
   BLOCKED_IPS=$(cat ~/blocked_ips_list) #"a b c d"
+  [[ -z $BLOCKED_IPS ]] && { "BLOCKED_IPS is empty"; exit 1; }
     for IP in ${BLOCKED_IPS}; do
         echo "$IP"
     done
