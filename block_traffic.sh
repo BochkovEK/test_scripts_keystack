@@ -36,9 +36,14 @@ enable_traffic () {
 
 check_ips_list () {
   echo "check ips list..."
-    for IP in "${BLOCKED_IPS[@]}"; do
-        echo "${IP}"
-    done
+  str=$(cat ~/blocked_ips_list) #"a b c d"
+
+for token in ${str}; do
+    echo "$token"
+done
+#    for IP in "${BLOCKED_IPS[@]}"; do
+#        echo "${IP}"
+#    done
 }
 
 check_ips_list
