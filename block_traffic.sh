@@ -8,7 +8,7 @@
 # BLOCKED_IPS=("10.224.133.138" "10.224.133.139" "10.224.133.133" "10.224.133.134" "10.224.133.135") && \
 # scp ./block_traffic.sh "$comp_to_block_traffic":~/
 # ssh -o StrictHostKeyChecking=no "$comp_to_block_traffic" 'chmod 777 ~/block_traffic.sh'
-# ssh -t -o StrictHostKeyChecking=no "$comp_to_block_traffic" 'BLOCKED_IPS='"$BLOCKED_IPS"'; ~/block_traffic.sh'
+# ssh -t -o StrictHostKeyChecking=no "$comp_to_block_traffic" 'export BLOCKED_IPS='"$BLOCKED_IPS"'; ~/block_traffic.sh'
 
 [[ -z $BLOCKED_IPS ]] && { echo "IPS list to block not found (env BLOCKED_IPS)"; exit 1; }
 
@@ -38,8 +38,15 @@ enable_traffic () {
     done
 }
 
-block_traffic
-echo "The server is isolated from: ${BLOCKED_IPS[*]}"
-iptables -S
-sleep $TIMEOUT
-enable_traffic
+check_ips_list () {
+    for IP in "${BLOCKED_IPS[@]}"; do
+        echo "${IP}"
+    done
+}
+
+check_ips_list
+#block_traffic
+#echo "The server is isolated from: ${BLOCKED_IPS[*]}"
+#iptables -S
+#sleep $TIMEOUT
+#enable_traffic
