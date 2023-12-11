@@ -30,7 +30,7 @@ if [ -z "${1}" ]; then
     #nova_nodes_arr=("$nova_nodes_list")
     for i in $ctrl_nodes_list; do nova_ctrl_arr+=("$i"); done;
     ctrl_node=${nova_ctrl_arr[0]}
-    leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no "$ctrl_node" "docker exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
+    leader_ctrl_node=$(ssh -o StrictHostKeyChecking=no "$ctrl_node" "docker exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
     NODE_NAME=$leader_ctrl_node
     echo "Leader consul node is $NODE_NAME"
 else
