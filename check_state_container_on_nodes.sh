@@ -49,10 +49,10 @@ do
       shift ;;
   -t|-type_of_nodes)
       note_type_func "$2"
-      #shift ;;
+      shift ;;
       #esac
       #shift
-#  --) shift
+  *) shift
     break ;;
 #  #*) #echo "$1 is not an option";;
     esac
