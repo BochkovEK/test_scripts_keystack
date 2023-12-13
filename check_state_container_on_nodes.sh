@@ -52,7 +52,7 @@ do
       shift ;;
       #esac
       #shift
-  *) shift
+  *) #shift
     break ;;
 #  #*) #echo "$1 is not an option";;
     esac
