@@ -50,14 +50,9 @@ do
   -t|-type_of_nodes)
       note_type_func "$2"
       shift ;;
-      #esac
-      #shift
-  *) #shift
+  *)
     break ;;
-#  #*) #echo "$1 is not an option";;
     esac
-    #shift
-    #break ;;
 done
 
 # Define parameters
@@ -78,6 +73,7 @@ for host in "${NODES[@]}"; do
   ssh -o StrictHostKeyChecking=no -t $host docker ps | grep "$CONTAINER_NAME" | \
       sed --unbuffered \
         -e 's/\(.*(healthy).*\)/\o033[92m\1\o033[39m/' \
+        -e 's/\(.*Up.*\)/\o033[92m\1\o033[39m/' \
         -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*restarting.*\)/\o033[31m\1\o033[39m/'
 done
