@@ -22,8 +22,15 @@ REPO_FOLDER=project_k
 
 [[ -z "${1}" ]] && { echo -e "Required to specify the tag as a launch parameter\nexample: bash kpull_push_to_stand_docker_image.sh kolla-ansible:ks2023.2.1-rc1"; exit 1; }
 tag=$1
+echo "Source tag: $tag"
+tag_target=$tag
+[[ -n "${2}" ]] && { echo -e "Second parameter found. tag_target=$2"; tag_target=$2; }
 
+echo "Source settings file..."
 source $SETTINGS && \
-docker pull ${REPO_ITKEY}/${REPO_FOLDER}/${tag} && \
-docker tag ${REPO_ITKEY}/${REPO_FOLDER}/${tag} nexus.${DOMAIN}/${REPO_FOLDER}/${tag} && \
-docker push nexus.${DOMAIN}/${REPO_FOLDER}/${tag}
+echo "Pulling ${REPO_ITKEY}/${REPO_FOLDER}/${tag}..." && \
+docker pull ${REPO_ITKEY}/${REPO_FOLDER}/${tag}
+echo "Tagging ${REPO_ITKEY}/${REPO_FOLDER}/${tag} to nexus.${DOMAIN}/${REPO_FOLDER}/${tag_target}..." && \
+docker tag ${REPO_ITKEY}/${REPO_FOLDER}/${tag} nexus.${DOMAIN}/${REPO_FOLDER}/${tag_target} && \
+echo "Pushing nexus.${DOMAIN}/${REPO_FOLDER}/${tag_target}..." && \
+docker push nexus.${DOMAIN}/${REPO_FOLDER}/${tag_target}
