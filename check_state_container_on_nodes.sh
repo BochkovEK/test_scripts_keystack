@@ -51,6 +51,7 @@ do
       note_type_func "$2"
       #shift ;;
       esac
+      shift
 #  --) shift
 #    break ;;
 #  #*) #echo "$1 is not an option";;
