@@ -26,7 +26,7 @@ echo "Source tag: $tag"
 tag_target=$tag
 [[ -n "${2}" ]] && { echo -e "Second parameter found. tag_target=$2"; tag_target=$2; }
 
-echo "Source settings file..."
+echo "Source settings file $SETTINGS..."
 source $SETTINGS && \
 echo "Pulling ${REPO_ITKEY}/${REPO_FOLDER}/${tag}..." && \
 docker pull ${REPO_ITKEY}/${REPO_FOLDER}/${tag}

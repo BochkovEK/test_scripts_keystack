@@ -63,5 +63,9 @@ echo "${NODES[*]}"
 
 for host in "${NODES[@]}"; do
   echo "Check container $CONTAINER_NAME on ${host}"
-  ssh -o StrictHostKeyChecking=no -t $host docker ps | grep "$CONTAINER_NAME"
+  ssh -o StrictHostKeyChecking=no -t $host docker ps | grep "$CONTAINER_NAME" | \
+      sed --unbuffered \
+        -e 's/\(.*healthy.*\)/\o033[92m\1\o033[39m/' \
+        -e 's/\(.*unhealthy.*\)/\o033[31m\1\o033[39m/' \
+        -e 's/\(.*restarting.*\)/\o033[31m\1\o033[39m/'
 done
