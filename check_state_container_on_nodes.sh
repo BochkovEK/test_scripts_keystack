@@ -39,6 +39,7 @@ while [ -n "$1" ]
 do
     case "$1" in
         --help) echo -E "
+        <container_name> as parameter
         -c, 	-container_name		<container_name>
         -t, 	-type_of_nodes		<type_of_nodes> 'ctrl', 'comp', 'net'
 "
