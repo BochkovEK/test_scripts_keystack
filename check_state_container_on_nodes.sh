@@ -49,7 +49,7 @@ do
       shift ;;
   -t|-type_of_nodes)
       note_type_func "$2"
-      shift ;;
+      #shift ;;
       esac
 #  --) shift
 #    break ;;
