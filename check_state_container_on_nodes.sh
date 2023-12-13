@@ -50,12 +50,12 @@ do
   -t|-type_of_nodes)
       note_type_func "$2"
       #shift ;;
-      esac
-      shift
+      #esac
+      #shift
 #  --) shift
-#    break ;;
+    break
 #  #*) #echo "$1 is not an option";;
-  #  esac
+    esac
     #shift
     #break ;;
 done
@@ -70,6 +70,7 @@ done
 
 [[ -z ${NODES[0]} ]] && { srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}'); for i in $srv; do NODES+=("$i"); done; }
 
+echo "Nodes for container checking:"
 echo "${NODES[*]}"
 
 for host in "${NODES[@]}"; do
