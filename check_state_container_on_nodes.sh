@@ -45,7 +45,7 @@ do
       exit 0
       break ;;
 	-c|-container_name) CONTAINER_NAME="$2"
-	    echo "Found the -t <container_name> option, with parameter value $CONTAINER_NAME"
+	    echo "Found the -container_name <container_name> option, with parameter value $CONTAINER_NAME"
       shift ;;
   -t|-type_of_nodes)
       note_type_func "$2"
@@ -55,6 +55,14 @@ do
   *) echo "$1 is not an option";;
     esac
     shift
+done
+
+# Define parameters
+count=1
+for param in "$@"; do
+  echo "Parameter #$count: $param"
+  [ "$count" = 1 ] && [[ -n $param ]] && { CONTAINER_NAME=$param; echo "Name container parameter found with value $CONTAINER_NAME"; }
+  count=$(( $count + 1 ))
 done
 
 [[ -z ${NODES[0]} ]] && { srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}'); for i in $srv; do NODES+=("$i"); done; }
