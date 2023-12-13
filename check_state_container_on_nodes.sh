@@ -50,11 +50,13 @@ do
   -t|-type_of_nodes)
       note_type_func "$2"
       shift ;;
-  --) shift
-    break ;;
-  *) echo "$1 is not an option";;
-    esac
-    shift
+      esac
+#  --) shift
+#    break ;;
+#  #*) #echo "$1 is not an option";;
+  #  esac
+    #shift
+    #break ;;
 done
 
 # Define parameters
