@@ -29,11 +29,11 @@ normal=$(tput sgr0)
 
 # Constants
 TIMEOUT_BEFORE_NEXT_CREATION=10
-UBUNTU_IMAGE_NAME="ubuntu-22.04.2-live-server-amd64"
+UBUNTU_IMAGE_NAME="ubuntu-20.04-server-cloudimg-amd64"
 
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
 [[ -z $VM_QTY ]] && VM_QTY="1"
-[[ -z $IMAGE ]] && IMAGE="ubuntu-22.04.2-live-server-amd64"
+[[ -z $IMAGE ]] && IMAGE="ubuntu-20.04-server-cloudimg-amd64"
 [[ -z $FLAVOR ]] && FLAVOR="4c-4r"
 [[ -z $KEY_NAME ]] && KEY_NAME="key1"
 [[ -z $HYPERVISOR_HOSTNAME ]] && HYPERVISOR_HOSTNAME=""
@@ -282,9 +282,9 @@ check_image () {
     read -r -p "Press enter to continue"
 
     echo "Creating \"$UBUNTU_IMAGE_NAME\" in project \"$OS_PROJECT_NAME\"..."
-    wget https://repo.itkey.com/repository/images/iso/"$UBUNTU_IMAGE_NAME".iso
+    wget https://repo.itkey.com/repository/images/iso/"$UBUNTU_IMAGE_NAME".img
     openstack image create "$UBUNTU_IMAGE_NAME" \
-      --file "$UBUNTU_IMAGE_NAME".iso \
+      --file "$UBUNTU_IMAGE_NAME".img \
       --disk-format iso --container-format bare
   else
     printf "%s\n" "${green}Image \"$IMAGE\" already exist in project \"$OS_PROJECT_NAME\"${normal}"
