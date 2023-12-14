@@ -289,6 +289,8 @@ check_image () {
     read -r -p "Press enter to continue"
 
     echo "Creating image \"$UBUNTU_IMAGE_NAME\" in project \"$OS_PROJECT_NAME\"..."
+    [ -f ./"$UBUNTU_IMAGE_NAME".img ] && echo "File ./$UBUNTU_IMAGE_NAME.img exist." \
+    || echo "File ./$UBUNTU_IMAGE_NAME.img does not exist. Try to download it..."
     wget https://repo.itkey.com/repository/images/"$UBUNTU_IMAGE_NAME".img
     openstack image create "$UBUNTU_IMAGE_NAME" \
       --disk-format qcow2 \
