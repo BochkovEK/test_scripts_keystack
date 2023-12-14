@@ -277,8 +277,11 @@ check_image () {
     printf "%s\n" "${red}Image \"$IMAGE\" not found in project \"$OS_PROJECT_NAME\"${normal}"
     exit 1
   elif [ -z "$IMAGE_NAME_EXIST" ] && [[ $IMAGE =~ ubuntu|ubuntu-22.04.2-live-server-amd64 ]]; then
-    echo "Try to download image: \"$IMAGE\" and add to openstack?"
+    printf "%s\n" "${orange}Image \"$IMAGE\" not found in project \"$OS_PROJECT_NAME\"${normal}"
+    echo "Try to download image: \"$UBUNTU_IMAGE_NAME\" and add to openstack?"
     read -r -p "Press enter to continue"
+
+    echo "Creating \"$UBUNTU_IMAGE_NAME\" in project \"$OS_PROJECT_NAME\"..."
     wget https://repo.itkey.com/repository/images/iso/"$UBUNTU_IMAGE_NAME".iso
     openstack image create "$UBUNTU_IMAGE_NAME" \
       --file "$UBUNTU_IMAGE_NAME".iso \
