@@ -276,6 +276,18 @@ check_and_add_keypair () {
   fi
 }
 
+# Check network
+check_network () {
+  echo "Check for exist image: \"$NETWORK\""
+  IMAGE_NAME_EXIST=$(openstack image list| grep "$NETWORK"| awk '{print $2}')
+  if [ -z "$IMAGE_NAME_EXIST" ]; then
+    printf "%s\n" "${red}Image \"$IMAGE\" not found in project \"$OS_PROJECT_NAME\"${normal}"
+    exit 1
+  else
+    printf "%s\n" "${green}Network \"$NETWORK\" already exist in project \"$OS_PROJECT_NAME\"${normal}"
+  fi
+}
+
 # Check image
 check_image () {
   echo "Check for exist image: \"$IMAGE\""
@@ -405,6 +417,7 @@ check_and_source_openrc_file
   check_project;
   check_image;
   check_and_add_flavor;
+  check_network
   check_and_add_secur_group;
   check_and_add_keypair; } || SECURITY_GR_ID=$(openstack security group list|grep -E "($SECURITY_GR(.)*$PROJ_ID)" | head -1 | awk '{print $2}')
 create_vms
