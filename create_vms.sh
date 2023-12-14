@@ -273,7 +273,7 @@ check_and_add_keypair () {
 check_image () {
   echo "Check for exist image: \"$IMAGE\""
   IMAGE_NAME_EXIST=$(openstack image list| grep $IMAGE| awk '{print $2}')
-  if [ -z "$IMAGE_NAME_EXIST" ] && [[ $IMAGE =~ ubuntu|ubuntu-22.04.2-live-server-amd64 ]]; then
+  if [ -z "$IMAGE_NAME_EXIST" ] && [[ ! $IMAGE =~ ubuntu|ubuntu-22.04.2-live-server-amd64 ]]; then
     printf "%s\n" "${red}Image \"$IMAGE\" not found in project \"$OS_PROJECT_NAME\"${normal}"
     exit 1
   elif [ -z "$IMAGE_NAME_EXIST" ] && [[ $IMAGE == "ubuntu|" ]]; then
