@@ -291,8 +291,11 @@ check_image () {
     echo "Creating image \"$UBUNTU_IMAGE_NAME\" in project \"$OS_PROJECT_NAME\"..."
     wget https://repo.itkey.com/repository/images/"$UBUNTU_IMAGE_NAME".img
     openstack image create "$UBUNTU_IMAGE_NAME" \
-      --file "$UBUNTU_IMAGE_NAME".img \
-      --disk-format iso --container-format bare
+      --disk-format qcow2 \
+      --min-disk 5 \
+      --container-format bare \
+      --public \
+      --file ./"$UBUNTU_IMAGE_NAME".img
   else
     printf "%s\n" "${green}Image \"$IMAGE\" already exist in project \"$OS_PROJECT_NAME\"${normal}"
   fi
