@@ -281,7 +281,7 @@ check_image () {
     echo "Try to download image: \"$UBUNTU_IMAGE_NAME\" and add to openstack?"
     read -r -p "Press enter to continue"
 
-    echo "Creating \"$UBUNTU_IMAGE_NAME\" in project \"$OS_PROJECT_NAME\"..."
+    echo "Creating image \"$UBUNTU_IMAGE_NAME\" in project \"$OS_PROJECT_NAME\"..."
     wget https://repo.itkey.com/repository/images/"$UBUNTU_IMAGE_NAME".img
     openstack image create "$UBUNTU_IMAGE_NAME" \
       --file "$UBUNTU_IMAGE_NAME".img \
