@@ -252,6 +252,7 @@ check_and_add_secur_group () {
         openstack security group rule create --ingress --ethertype IPv4 --protocol icmp $SECURITY_GR_ID
      else
         printf "%s\n" "${green}Security group \"$SECURITY_GR\": $SECURITY_GR_ID already exist in project \"$OS_PROJECT_NAME\"${normal}"
+
         #openstack security group show $SECURITY_GR_ID
      fi
 }
@@ -388,11 +389,12 @@ fi
 
 output_of_initial_parameters
 check_and_source_openrc_file
+
 [[ ! $dont_check = "true" ]] && \
   { chech_hv;
   check_project;
   check_image;
   check_and_add_flavor;
   check_and_add_secur_group;
-  check_and_add_keypair; }
+  check_and_add_keypair; } || SECURITY_GR_ID=$(openstack security group list|grep -E "($SECURITY_GR(.)*$PROJ_ID)" | head -1 | awk '{print $2}')
 create_vms
