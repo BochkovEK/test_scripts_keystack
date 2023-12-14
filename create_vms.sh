@@ -272,11 +272,11 @@ check_and_add_keypair () {
 # Check image
 check_image () {
   echo "Check for exist image: \"$IMAGE\""
-  IMAGE_NAME_EXIST=$(openstack image list| grep $IMAGE| awk '{print $2}')
+  IMAGE_NAME_EXIST=$(openstack image list| grep "$IMAGE"| awk '{print $2}')
   if [ -z "$IMAGE_NAME_EXIST" ] && [[ ! $IMAGE =~ ubuntu|ubuntu-22.04.2-live-server-amd64 ]]; then
     printf "%s\n" "${red}Image \"$IMAGE\" not found in project \"$OS_PROJECT_NAME\"${normal}"
     exit 1
-  elif [ -z "$IMAGE_NAME_EXIST" ] && [[ $IMAGE == "ubuntu|" ]]; then
+  elif [ -z "$IMAGE_NAME_EXIST" ] && [[ $IMAGE =~ ubuntu|ubuntu-22.04.2-live-server-amd64 ]]; then
     echo "Try to download image: \"$IMAGE\" and add to openstack?"
     read -r -p "Press enter to continue"
     wget https://repo.itkey.com/repository/images/iso/"$UBUNTU_IMAGE_NAME".iso
