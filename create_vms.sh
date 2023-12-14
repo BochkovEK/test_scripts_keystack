@@ -378,7 +378,7 @@ fi
 
 output_of_initial_parameters
 check_and_source_openrc_file
-[[ ! $dont_check = "false" ]] && \
+[[ ! $dont_check = "true" ]] && \
   { chech_hv;
   check_project;
   check_image;
