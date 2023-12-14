@@ -33,10 +33,10 @@ TIMEOUT_BEFORE_NEXT_CREATION=10
 
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
 [[ -z $VM_QTY ]] && VM_QTY="1"
-[[ -z $IMAGE ]] && IMAGE="ubuntu-20.04-server-cloudimg-amd64_new"
+[[ -z $IMAGE ]] && IMAGE="ubuntu-20.04-server-cloudimg-amd64"
 [[ -z $FLAVOR ]] && FLAVOR="4c-4r"
 [[ -z $KEY_NAME ]] && KEY_NAME="key1"
-[[ -z $HYPERVISOR_HOSTNAME ]] && HYPERVISOR_HOSTNAME="cmpt-3"
+[[ -z $HYPERVISOR_HOSTNAME ]] && HYPERVISOR_HOSTNAME=""
 [[ -z $PROJECT ]] && PROJECT="admin"
 [[ -z $API_VERSION ]] && API_VERSION="2.74"
 [[ -z $NETWORK ]] && NETWORK="pub_net"
@@ -153,6 +153,9 @@ check_and_source_openrc_file () {
 
 #Check Hypervizor
 chech_hv () {
+  if [ -z $HYPERVISOR_HOSTNAME ]; then
+    host=""
+  else
     echo "Check Hypervizor: $HYPERVISOR_HOSTNAME..."
     echo "Ping $HYPERVISOR_HOSTNAME..."
     if ping -c 1 $HYPERVISOR_HOSTNAME &> /dev/null; then
@@ -179,6 +182,7 @@ chech_hv () {
     else
       printf "%s\n" "${green}Nova state on $HYPERVISOR_HOSTNAME - OK!${normal}"
     fi
+  fi
 }
 
 # Check project
@@ -333,11 +337,11 @@ done
 
 echo "Check vms list on $HYPERVISOR_HOSTNAME:"
 #openstack server list --all-projects --host $HYPERVISOR_HOSTNAME --long
-openstack server list --all-projects --host $HYPERVISOR_HOSTNAME --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks
+openstack server list --all-projects "$host" --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks
 echo "Command for check vms list on $HYPERVISOR_HOSTNAME:"
 #echo "export OS_PROJECT_NAME=$PROJECT"
 #echo "export OS_USERNAME=$TEST_USER"
-printf "%s\n" "${orange}openstack server list --all-projects --host $HYPERVISOR_HOSTNAME --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
+printf "%s\n" "${orange}openstack server list --all-projects $host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
 }
 
 output_of_initial_parameters
