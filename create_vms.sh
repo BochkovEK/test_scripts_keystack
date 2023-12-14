@@ -33,7 +33,7 @@ UBUNTU_IMAGE_NAME="ubuntu-22.04.2-live-server-amd64"
 
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
 [[ -z $VM_QTY ]] && VM_QTY="1"
-[[ -z $IMAGE ]] && IMAGE="ubuntu-20.04-server-cloudimg-amd64"
+[[ -z $IMAGE ]] && IMAGE="ubuntu-22.04.2-live-server-amd64"
 [[ -z $FLAVOR ]] && FLAVOR="4c-4r"
 [[ -z $KEY_NAME ]] && KEY_NAME="key1"
 [[ -z $HYPERVISOR_HOSTNAME ]] && HYPERVISOR_HOSTNAME=""
@@ -273,10 +273,10 @@ check_and_add_keypair () {
 check_image () {
   echo "Check for exist image: \"$IMAGE\""
   IMAGE_NAME_EXIST=$(openstack image list| grep $IMAGE| awk '{print $2}')
-  if [ -z "$IMAGE_NAME_EXIST" ] && [[ $IMAGE =~ "ubuntu" ]]; then
+  if [ -z "$IMAGE_NAME_EXIST" ] && [[ $IMAGE =~ ubuntu|ubuntu-22.04.2-live-server-amd64 ]]; then
     printf "%s\n" "${red}Image \"$IMAGE\" not found in project \"$OS_PROJECT_NAME\"${normal}"
     exit 1
-  elif [ -z "$IMAGE_NAME_EXIST" ] && [[ $IMAGE == "ubuntu" ]]; then
+  elif [ -z "$IMAGE_NAME_EXIST" ] && [[ $IMAGE == "ubuntu|" ]]; then
     echo "Try to download image: \"$IMAGE\" and add to openstack?"
     read -r -p "Press enter to continue"
     wget https://repo.itkey.com/repository/images/iso/"$UBUNTU_IMAGE_NAME".iso
