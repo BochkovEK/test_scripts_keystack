@@ -282,7 +282,7 @@ check_image () {
     read -r -p "Press enter to continue"
 
     echo "Creating \"$UBUNTU_IMAGE_NAME\" in project \"$OS_PROJECT_NAME\"..."
-    wget https://repo.itkey.com/repository/images/iso/"$UBUNTU_IMAGE_NAME".img
+    wget https://repo.itkey.com/repository/images/"$UBUNTU_IMAGE_NAME".img
     openstack image create "$UBUNTU_IMAGE_NAME" \
       --file "$UBUNTU_IMAGE_NAME".img \
       --disk-format iso --container-format bare
