@@ -59,9 +59,9 @@ do
         -net,       -network	<network_name>
         -v,         -volume_size 	volume_size_in_GB>
         -n,         -name 		<vm_base_name>
-	      -p,         -project	<project_id>
-	      -t			    <time_out_between_VM_create>
-	      -dont_check disable resource availability checks
+        -p,         -project	<project_id>
+        -t			    <time_out_between_VM_create>
+        -dont_check disable resource availability checks
         "
           exit 0
           break ;;
