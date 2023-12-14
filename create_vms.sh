@@ -42,7 +42,7 @@ UBUNTU_IMAGE_NAME="ubuntu-20.04-server-cloudimg-amd64"
 [[ -z $NETWORK ]] && NETWORK="pub_net"
 [[ -z $SECURITY_GR ]] && SECURITY_GR="test_security_group"
 [[ -z $VOLUME_SIZE ]] && VOLUME_SIZE="5"
-[[ -z $VM_BASE_NAME ]] && VM_BASE_NAME="DRS_TEST"
+[[ -z $VM_BASE_NAME ]] && VM_BASE_NAME="TEST_VM_FROM_SCRIPT"
 [[ -z $TEST_USER ]] && TEST_USER="admin"
 [[ -z $ROLE ]] && ROLE="admin"
 #======================
