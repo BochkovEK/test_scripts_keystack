@@ -278,8 +278,8 @@ check_and_add_keypair () {
 
 # Check network
 check_network () {
-  echo "Check for exist image: \"$NETWORK\""
-  NETWORK_NAME_EXIST=$(openstack image list| grep "$NETWORK"| awk '{print $2}')
+  echo "Check for exist network: \"$NETWORK\""
+  NETWORK_NAME_EXIST=$(openstack network list| grep "$NETWORK"| awk '{print $2}')
   if [ -z "$NETWORK_NAME_EXIST" ]; then
     printf "%s\n" "${red}Image \"$NETWORK\" not found in project \"$OS_PROJECT_NAME\"${normal}"
     exit 1
