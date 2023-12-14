@@ -153,7 +153,9 @@ check_and_source_openrc_file () {
 
 #Check Hypervizor
 chech_hv () {
+  echo "Check hypervisors..."
   if [ -z $HYPERVISOR_HOSTNAME ]; then
+    echo "Hypervisor is not defined. VMs will be created on different hypervisors"
     host=""
   else
     host="--hypervisor-hostname $HYPERVISOR_HOSTNAME"
@@ -344,15 +346,15 @@ do
   echo "Creating VM: $INSTANCE_NAME"
 
   openstack server create \
-    --image $IMAGE \
-    --flavor $FLAVOR \
-    --security-group $SECURITY_GR_ID \
-    --key-name $KEY_NAME \
+    --image "$IMAGE" \
+    --flavor "$FLAVOR" \
+    --security-group "$SECURITY_GR_ID" \
+    --key-name "$KEY_NAME" \
     "$host" \
     --os-compute-api-version $API_VERSION \
-    --network $NETWORK \
-    --boot-from-volume $VOLUME_SIZE \
-    $INSTANCE_NAME
+    --network "$NETWORK" \
+    --boot-from-volume "$VOLUME_SIZE" \
+    "$INSTANCE_NAME"
 
   sleep $TIMEOUT_BEFORE_NEXT_CREATION
 done
