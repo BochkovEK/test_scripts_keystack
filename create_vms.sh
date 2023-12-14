@@ -350,16 +350,16 @@ do
   fi
   echo "Creating VM: $INSTANCE_NAME"
 
-  echo "openstack server create " \
-    "--image '$IMAGE' " \
-    "--flavor '$FLAVOR' " \
-    "--security-group '$SECURITY_GR_ID' " \
-    "--key-name '$KEY_NAME' " \
-    "'$host' " \
-    "--os-compute-api-version '$API_VERSION' " \
-    "--network '$NETWORK' " \
-    "--boot-from-volume '$VOLUME_SIZE' " \
-    "'$INSTANCE_NAME'"
+#  echo "openstack server create " \
+#    "--image '$IMAGE' " \
+#    "--flavor '$FLAVOR' " \
+#    "--security-group '$SECURITY_GR_ID' " \
+#    "--key-name '$KEY_NAME' " \
+#    "'$host' " \
+#    "--os-compute-api-version '$API_VERSION' " \
+#    "--network '$NETWORK' " \
+#    "--boot-from-volume '$VOLUME_SIZE' " \
+#    "'$INSTANCE_NAME'"
 
   openstack server create \
     --image "$IMAGE" \
