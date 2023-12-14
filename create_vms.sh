@@ -51,58 +51,63 @@ while [ -n "$1" ]
 do
     case "$1" in
         --help) echo -E "
-        -q, 	-qty		<number_of_VMs>
-        -i, 	-image		<image_name>
-        -f,	-flavor		<falvor_name>
-        -k,	-key		<key_name>
-        -hv,	-hypervisor	<hypervisor_name>
-        -net,	-network	<network_name>
-        -v,	-volume_size 	volume_size_in_GB>
-        -n,	-name 		<vm_base_name>
-	-p,	-project	<project_id>
-	-t			<time_out_between_VM_create>
+        -q, 	      -qty		<number_of_VMs>
+        -i, 	      -image		<image_name>
+        -f,         -flavor		<falvor_name>
+        -k,         -key		<key_name>
+        -hv,        -hypervisor	<hypervisor_name>
+        -net,       -network	<network_name>
+        -v,         -volume_size 	volume_size_in_GB>
+        -n,         -name 		<vm_base_name>
+	      -p,         -project	<project_id>
+	      -t			    <time_out_between_VM_create>
+	      -dont_check disable resource availability checks
         "
-            exit 0
-            break ;;
+          exit 0
+          break ;;
 	      -t|-timeout) TIMEOUT_BEFORE_NEXT_CREATION="$2"
-	          echo "Found the -timeout <time_out_between_VM_create> option, with parameter value $TIMEOUT_BEFORE_NEXT_CREATION"
-            shift ;;
+	        echo "Found the -timeout <time_out_between_VM_create> option, with parameter value $TIMEOUT_BEFORE_NEXT_CREATION"
+          shift ;;
         -q|-qty) qty="$2"
-            echo "Found the -qty <number_of_VMs> option, with parameter value $qty"
-            VM_QTY=$qty
-            shift ;;
+          echo "Found the -qty <number_of_VMs> option, with parameter value $qty"
+          VM_QTY=$qty
+          shift ;;
         -i|-image) image="$2"
-            echo "Found the -image <image_name> option, with parameter value $image"
-            IMAGE=$image
-            shift ;;
+          echo "Found the -image <image_name> option, with parameter value $image"
+          IMAGE=$image
+          shift ;;
         -f|-flavor) flavor="$2"
-            echo "Found the -flavor <falvor_name> option, with parameter value $flavor"
-            FLAVOR=$flavor
-            shift;;
+          echo "Found the -flavor <falvor_name> option, with parameter value $flavor"
+          FLAVOR=$flavor
+          shift;;
         -k|-key) key_name="$2"
-            echo "Found the -key_name <key_name> option, with parameter value $key_name"
-            KEY_NAME=$key_name
-            shift;;
+          echo "Found the -key_name <key_name> option, with parameter value $key_name"
+          KEY_NAME=$key_name
+          shift;;
         -hv|-hypervisor) hyper_name="$2"
-            echo "Found the -hyper_name <hypervisor_name> option, with parameter value $hyper_name"
-            HYPERVISOR_HOSTNAME=$hyper_name
-            shift ;;
+          echo "Found the -hyper_name <hypervisor_name> option, with parameter value $hyper_name"
+          HYPERVISOR_HOSTNAME=$hyper_name
+          shift ;;
         -p|-project) project="$2"
-            echo "Found the -project <project_id> option, with parameter value $project"
-            PROJECT=$project
-            shift ;;
+          echo "Found the -project <project_id> option, with parameter value $project"
+          PROJECT=$project
+          shift ;;
         -net|-network) network="$2"
-            echo "Found the -network <network_name> option, with parameter value $network"
-            NETWORK=$network
-            shift ;;
+          echo "Found the -network <network_name> option, with parameter value $network"
+          NETWORK=$network
+          shift ;;
         -v|volume_size) volume_size="$2"
-            echo "Found the -volume_size <volume_size_in_GB> option, with parameter value $volume_size"
-            VOLUME_SIZE=$volume_size
-            shift ;;
+          echo "Found the -volume_size <volume_size_in_GB> option, with parameter value $volume_size"
+          VOLUME_SIZE=$volume_size
+          shift ;;
         -n|-name) name="$2"
-            echo "Found the -name <vm_base_name> option, with parameter value $name"
-            VM_BASE_NAME=$name
-            shift ;;
+          echo "Found the -name <vm_base_name> option, with parameter value $name"
+          VM_BASE_NAME=$name
+          shift ;;
+        -dont_check) dont_check=true
+          echo "Found the -dont_check. resource availability checks are disabled"
+          VM_BASE_NAME=$name
+          shift ;;
         --) shift
             break ;;
         *) echo "$1 is not an option";;
@@ -373,10 +378,11 @@ fi
 
 output_of_initial_parameters
 check_and_source_openrc_file
-chech_hv
-check_project
-check_image
-check_and_add_flavor
-check_and_add_secur_group
-check_and_add_keypair
+[[ ! $dont_check = "false" ]] && \
+  { chech_hv;
+  check_project;
+  check_image;
+  check_and_add_flavor;
+  check_and_add_secur_group;
+  check_and_add_keypair; }
 create_vms
