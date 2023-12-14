@@ -28,8 +28,8 @@ violet=$(tput setaf 5)
 normal=$(tput sgr0)
 
 # Constants
-
 TIMEOUT_BEFORE_NEXT_CREATION=10
+UBUNTU_IMAGE_NAME="ubuntu-22.04.2-live-server-amd64"
 
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
 [[ -z $VM_QTY ]] && VM_QTY="1"
@@ -156,6 +156,7 @@ chech_hv () {
   if [ -z $HYPERVISOR_HOSTNAME ]; then
     host=""
   else
+    host="--hypervisor-hostname $HYPERVISOR_HOSTNAME"
     echo "Check Hypervizor: $HYPERVISOR_HOSTNAME..."
     echo "Ping $HYPERVISOR_HOSTNAME..."
     if ping -c 1 $HYPERVISOR_HOSTNAME &> /dev/null; then
@@ -251,22 +252,40 @@ check_and_add_secur_group () {
 
 # Check keypair
 check_and_add_keypair () {
-    echo "Check for exist keypair: \"$KEY_NAME\""
-    KEY_NAME_EXST=$(openstack keypair list| grep $KEY_NAME| awk '{print $2}')
-    if [ -z $KEY_NAME_EXST ]; then
-        printf "%s\n" "${orange}Keypair \"$KEY_NAME\" not found in project \"$OS_PROJECT_NAME\"${normal}"
-        echo "Сreate a key pair with a name: \"$KEY_NAME\"?"
-        read -p "Press enter to continue"
+  echo "Check for exist keypair: \"$KEY_NAME\""
+  KEY_NAME_EXIST=$(openstack keypair list| grep $KEY_NAME| awk '{print $2}')
+  if [ -z "$KEY_NAME_EXIST" ]; then
+    printf "%s\n" "${orange}Keypair \"$KEY_NAME\" not found in project \"$OS_PROJECT_NAME\"${normal}"
+    echo "Сreate a key pair with a name: \"$KEY_NAME\"?"
+    read -p "Press enter to continue"
 
-        echo "Creating \"$KEY_NAME\" in project \"$OS_PROJECT_NAME\"..."
-        touch ./$KEY_NAME.pem
-        openstack keypair create $KEY_NAME > ./$KEY_NAME.pem
-        chmod 400 ./$KEY_NAME.pem
-        echo "Keypair \"$KEY_NAME\" was created in project \"$OS_PROJECT_NAME\""
-     else
-        printf "%s\n" "${green}Keypair \"$KEY_NAME\" already exist in project \"$OS_PROJECT_NAME\"${normal}"
-        #openstack security group show $SECURITY_GR_ID
-     fi
+    echo "Creating \"$KEY_NAME\" in project \"$OS_PROJECT_NAME\"..."
+    touch ./$KEY_NAME.pem
+    openstack keypair create $KEY_NAME > ./$KEY_NAME.pem
+    chmod 400 ./$KEY_NAME.pem
+    echo "Keypair \"$KEY_NAME\" was created in project \"$OS_PROJECT_NAME\""
+  else
+    printf "%s\n" "${green}Keypair \"$KEY_NAME\" already exist in project \"$OS_PROJECT_NAME\"${normal}"
+  fi
+}
+
+# Check image
+check_image () {
+  echo "Check for exist image: \"$IMAGE\""
+  IMAGE_NAME_EXIST=$(openstack image list| grep $IMAGE| awk '{print $2}')
+  if [ -z "$IMAGE_NAME_EXIST" ] && [[ $IMAGE =~ "ubuntu" ]]; then
+    printf "%s\n" "${red}Image \"$IMAGE\" not found in project \"$OS_PROJECT_NAME\"${normal}"
+    exit 1
+  elif [ -z "$IMAGE_NAME_EXIST" ] && [[ $IMAGE == "ubuntu" ]]; then
+    echo "Try to download image: \"$IMAGE\" and add to openstack?"
+    read -r -p "Press enter to continue"
+    wget https://repo.itkey.com/repository/images/iso/"$UBUNTU_IMAGE_NAME".iso
+    openstack image create "$UBUNTU_IMAGE_NAME" \
+      --file "$UBUNTU_IMAGE_NAME".iso \
+      --disk-format iso --container-format bare
+  else
+    printf "%s\n" "${green}Image \"$IMAGE\" already exist in project \"$OS_PROJECT_NAME\"${normal}"
+  fi
 }
 
 # Check flavor
@@ -326,7 +345,7 @@ do
     --flavor $FLAVOR \
     --security-group $SECURITY_GR_ID \
     --key-name $KEY_NAME \
-    --hypervisor-hostname $HYPERVISOR_HOSTNAME \
+    "$host" \
     --os-compute-api-version $API_VERSION \
     --network $NETWORK \
     --boot-from-volume $VOLUME_SIZE \
@@ -335,19 +354,23 @@ do
   sleep $TIMEOUT_BEFORE_NEXT_CREATION
 done
 
-echo "Check vms list on $HYPERVISOR_HOSTNAME:"
-#openstack server list --all-projects --host $HYPERVISOR_HOSTNAME --long
-openstack server list --all-projects "$host" --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks
-echo "Command for check vms list on $HYPERVISOR_HOSTNAME:"
-#echo "export OS_PROJECT_NAME=$PROJECT"
-#echo "export OS_USERNAME=$TEST_USER"
-printf "%s\n" "${orange}openstack server list --all-projects $host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
+if [ -n "$host" ]; then
+  check_host="--host $HYPERVISOR_HOSTNAME"
+  echo "Check vms list on $HYPERVISOR_HOSTNAME:"
+  #openstack server list --all-projects --host $HYPERVISOR_HOSTNAME --long
+  openstack server list --all-projects "$check_host" --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks
+  echo "Command for check vms list on $HYPERVISOR_HOSTNAME:"
+  #echo "export OS_PROJECT_NAME=$PROJECT"
+  #echo "export OS_USERNAME=$TEST_USER"
+  printf "%s\n" "${orange}openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
+fi
 }
 
 output_of_initial_parameters
 check_and_source_openrc_file
 chech_hv
 check_project
+check_image
 check_and_add_flavor
 check_and_add_secur_group
 check_and_add_keypair
