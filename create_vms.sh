@@ -105,7 +105,7 @@ do
           VM_BASE_NAME=$name
           shift ;;
         -dont_check) dont_check=true
-          echo "Found the -dont_check. resource availability checks are disabled"
+          echo "Found the -dont_check Resource availability checks are disabled"
           shift ;;
         --) shift
             break ;;
