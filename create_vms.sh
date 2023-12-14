@@ -362,15 +362,15 @@ do
 #    "'$INSTANCE_NAME'"
 
   openstack server create \
-    --image "$IMAGE" \
-    --flavor "$FLAVOR" \
-    --security-group "$SECURITY_GR_ID" \
-    --key-name "$KEY_NAME" \
-    "$host" \
+    --image $IMAGE \
+    --flavor $FLAVOR \
+    --security-group $SECURITY_GR_ID \
+    --key-name $KEY_NAME \
+    $host \
     --os-compute-api-version $API_VERSION \
-    --network "$NETWORK" \
-    --boot-from-volume "$VOLUME_SIZE" \
-    "$INSTANCE_NAME"
+    --network $NETWORK \
+    --boot-from-volume $VOLUME_SIZE \
+    $INSTANCE_NAME
 
   sleep $TIMEOUT_BEFORE_NEXT_CREATION
 done
