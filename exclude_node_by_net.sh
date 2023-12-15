@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#The script copy blocktraffik_script to node and start it by ssh
+#The script copy block_traffic script to node and start it by ssh
 
 # BLOCKED_IPS=("<IP_ctrl_1>" "<IP_ctrl_2>" "<IP_3>" "...")
 BLOCKED_IPS=("10.224.133.138" "10.224.133.139" "10.224.133.133" "10.224.133.134" "10.224.133.135") && \
