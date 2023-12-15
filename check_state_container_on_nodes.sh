@@ -78,7 +78,7 @@ echo "${NODES[*]}"
 for host in "${NODES[@]}"; do
   echo "Check container $CONTAINER_NAME on ${host}"
   if ping -c 2 $host &> /dev/null; then
-    printf "%40s\n" "${green}There is a connection with $host - success${normal}"
+    printf "%40s\n" "There is a connection with $host - ok!"
     ssh -o StrictHostKeyChecking=no -t $host docker ps | grep "$CONTAINER_NAME" | \
       sed --unbuffered \
         -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
