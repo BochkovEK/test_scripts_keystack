@@ -268,7 +268,7 @@ check_and_add_keypair () {
 
     echo "Creating \"$KEY_NAME\" in project \"$OS_PROJECT_NAME\"..."
     touch ./$KEY_NAME.pem
-    openstack keypair create $KEY_NAME --public_key ./"$KEY_NAME".pub #> ./$KEY_NAME.pem
+    openstack keypair create $KEY_NAME --public-key ./"$KEY_NAME".pub #> ./$KEY_NAME.pem
     #chmod 400 ./$KEY_NAME.pem
     echo "Keypair \"$KEY_NAME\" was created in project \"$OS_PROJECT_NAME\""
   else
