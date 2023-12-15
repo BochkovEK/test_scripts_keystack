@@ -10,6 +10,12 @@ ctrl_pattern="\-ctrl\-..$"
 net_pattern="\-net\-..$"
 nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
 
+#Colors
+green=$(tput setaf 2)
+red=$(tput setaf 1)
+violet=$(tput setaf 5)
+normal=$(tput sgr0)
+
 [[ -z $CONTAINER_NAME ]] && CONTAINER_NAME="consul"
 [[ -z $NODES ]] && NODES=()
 #======================
@@ -71,10 +77,16 @@ echo "${NODES[*]}"
 
 for host in "${NODES[@]}"; do
   echo "Check container $CONTAINER_NAME on ${host}"
-  ssh -o StrictHostKeyChecking=no -t $host docker ps | grep "$CONTAINER_NAME" | \
+  if ping -c 2 $host &> /dev/null; then
+    printf "%40s\n" "${green}There is a connection with $host - success${normal}"
+    ssh -o StrictHostKeyChecking=no -t $host docker ps | grep "$CONTAINER_NAME" | \
       sed --unbuffered \
         -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*restarting.*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*(healthy).*\)/\o033[92m\1\o033[39m/' \
         -e 's/\(.*Up.*\)/\o033[92m\1\o033[39m/'
+  else
+    printf "%40s\n" "${red}No connection with $host - error!${normal}"
+    echo -e "${red}The node may be turned off.${normal}\n"
+  fi
 done
