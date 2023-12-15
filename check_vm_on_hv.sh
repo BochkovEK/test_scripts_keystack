@@ -3,7 +3,7 @@
 #The script checks access to the VM on HV
 #Exapmple start command: ./stress_test_on_vms.sh -hv cmpt-1 -cpu 4
 
-key_name=key1.pem
+key_name=key_test.pem
 hypervisor_name=cmpt-1
 command_str="ls -la"
 user=ubuntu
@@ -22,10 +22,10 @@ batch_run_command() {
     VMs_IPs=$(openstack server list --host $hypervisor_name |grep ACTIVE |awk '{print $8}')
     echo -E "
     Start check VMs with parameters:
-        Hypervisor: $hypervisor_name
-	Key: $key_name
-        User name: $user
-        Command: $command_str
+        Hypervisor:   $hypervisor_name
+        Key:          $key_name
+        User name:    $user
+        Command:      $command_str
         "
 
     read -p "Press enter to continue"
