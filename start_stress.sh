@@ -80,9 +80,10 @@ batch_run_stress() {
     echo -E "
 Stress test: $MODE will be launched on the hypervisor $1 VMs
     Stress test parameters:
-        Hypervisor: $1
-        Stress test type: $MODE
-        CPUs: $cpus or RAM: $ram
+        Hypervisor:           $1
+        Key:                  $KEY_NAME
+        Stress test type:     $MODE
+        CPUs: $cpus or RAM:   $ram
         "
 
     read -p "Press enter to continue"
