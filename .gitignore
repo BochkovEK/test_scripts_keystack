@@ -1,4 +1,4 @@
-key*.pem
+#key*.pem
 ./.idea/*
 /.idea/.gitignore
 /.idea/misc.xml
