@@ -55,7 +55,7 @@ count=1
 for param in "$@"; do
   echo "Parameter #$count: $param"
   [ "$count" = 1 ] && [[ -n $param ]] && { TAG=$param; echo "Found the -tag_source <source_tag_name_from_repo: adminui-backend:ks2023.2.1> option, with parameter value: $TAG"; }
-  [ "$count" = 1 ] && [[ -n $param ]] && { TAG_TARGET=$param; echo "Found the -tag_target <target_tag_name_from_repo: adminui-backend:ks2023.2.1> option, with parameter value: $TAG_TARGET"; }
+  [ "$count" = 2 ] && [[ -n $param ]] && { TAG_TARGET=$param; echo "Found the -tag_target <target_tag_name_from_repo: adminui-backend:ks2023.2.1> option, with parameter value: $TAG_TARGET"; }
   count=$(( $count + 1 ))
 done
 
