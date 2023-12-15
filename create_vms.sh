@@ -35,7 +35,7 @@ UBUNTU_IMAGE_NAME="ubuntu-20.04-server-cloudimg-amd64"
 [[ -z $VM_QTY ]] && VM_QTY="1"
 [[ -z $IMAGE ]] && IMAGE="ubuntu-20.04-server-cloudimg-amd64"
 [[ -z $FLAVOR ]] && FLAVOR="4c-4r"
-[[ -z $KEY_NAME ]] && KEY_NAME="test_key"
+[[ -z $KEY_NAME ]] && KEY_NAME="key_test"
 [[ -z $HYPERVISOR_HOSTNAME ]] && HYPERVISOR_HOSTNAME=""
 [[ -z $PROJECT ]] && PROJECT="admin"
 [[ -z $API_VERSION ]] && API_VERSION="2.74"
@@ -269,7 +269,7 @@ check_and_add_keypair () {
     echo "Creating \"$KEY_NAME\" in project \"$OS_PROJECT_NAME\"..."
     touch ./$KEY_NAME.pem
     openstack keypair create $KEY_NAME --public-key ./"$KEY_NAME".pub #> ./$KEY_NAME.pem
-    #chmod 400 ./$KEY_NAME.pem
+    chmod 400 ./$KEY_NAME.pem
     echo "Keypair \"$KEY_NAME\" was created in project \"$OS_PROJECT_NAME\""
   else
     printf "%s\n" "${green}Keypair \"$KEY_NAME\" already exist in project \"$OS_PROJECT_NAME\"${normal}"
