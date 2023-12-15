@@ -392,7 +392,8 @@ do
   sleep $TIMEOUT_BEFORE_NEXT_CREATION
 done
 
-if [ -n "$host" ]; then
+# Check vms list...
+if [ -n "$HYPERVISOR_HOSTNAME" ]; then
   check_host="--host $HYPERVISOR_HOSTNAME"
   echo "Check vms list on $HYPERVISOR_HOSTNAME:"
   #openstack server list --all-projects --host $HYPERVISOR_HOSTNAME --long
@@ -411,9 +412,9 @@ fi
 
 output_of_initial_parameters
 check_and_source_openrc_file
-
+chech_hv
 [[ ! $dont_check = "true" ]] && \
-  { chech_hv;
+  {
   check_project;
   check_image;
   check_and_add_flavor;
