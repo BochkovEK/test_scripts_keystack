@@ -396,7 +396,7 @@ if [ -n "$host" ]; then
   check_host="--host $HYPERVISOR_HOSTNAME"
   echo "Check vms list on $HYPERVISOR_HOSTNAME:"
   #openstack server list --all-projects --host $HYPERVISOR_HOSTNAME --long
-  openstack server list --all-projects "$check_host" --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks
+  openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks
   echo "Command for check vms list on $HYPERVISOR_HOSTNAME:"
   #echo "export OS_PROJECT_NAME=$PROJECT"
   #echo "export OS_USERNAME=$TEST_USER"
@@ -405,7 +405,7 @@ else
   echo "Check vms list..."
   openstack server list --all-projects --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks
   echo "Command for check vms list:"
-  printf "%s\n" "${orange}openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
+  printf "%s\n" "${orange}openstack server list --all-projects --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
 fi
 }
 
