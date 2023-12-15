@@ -77,7 +77,7 @@ Check_connection_to_nova_nodes () {
             #if [ -n "$unreachable_nova_node" ]; then
             #    printf "%40s\n" "${red}One of the nova cluster nodes is unreachable!${normal}"
             echo -e "${red}The node may be turned off.${normal}\n"
-            exit 1
+            #exit 1
             #fi
         fi
     done
