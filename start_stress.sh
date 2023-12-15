@@ -3,7 +3,7 @@
 #The cpu/ram stress test will be launched on all VMs of hypervisor
 #Exapmple start command: ./stress_test_on_vms.sh -hv cmpt-1 -cpu 4
 
-key_name=key1.pem
+KEY_NAME=key1.pem
 hypervisor_name=cmpt-1
 cpus='4'
 ram='4'
@@ -26,6 +26,7 @@ do
         -tt <type_of_stress_test cpu or ram>
         -cpu <number_cpus_for_stress>
         -ram <gb_ram_stress>
+        -key <path_to_key>
         "
             exit 0
             break ;;
@@ -41,6 +42,9 @@ do
         -tt) type_test="$2"
             echo "Found the -tt option, with parameter value $type_test"
             shift;;
+        -key) KEY_NAME="$2"
+            echo "Found the -key option, with parameter value key name: $KEY_NAME"
+            shift;;
         --) shift
             break ;;
         *) echo "$1 is not an option";;
@@ -55,17 +59,17 @@ copy_and_stress() {
     local MODE=$2
 
     echo "Copy stress to $VM_IP..."
-    scp -o StrictHostKeyChecking=no -i $key_name stress ubuntu@$VM_IP:~
-    ssh -t -o StrictHostKeyChecking=no -i $key_name ubuntu@$VM_IP "chmod +x ~/stress"
+    scp -o StrictHostKeyChecking=no -i $KEY_NAME stress ubuntu@$VM_IP:~
+    ssh -t -o StrictHostKeyChecking=no -i $KEY_NAME ubuntu@$VM_IP "chmod +x ~/stress"
 
     case $MODE in
         cpu)
             echo "Starting cpu stress on $VM_IP..."
-            ssh -o StrictHostKeyChecking=no -i $key_name ubuntu@$VM_IP "nohup ./stress -c $cpus > /dev/null 2>&1 &"
+            ssh -o StrictHostKeyChecking=no -i $KEY_NAME ubuntu@$VM_IP "nohup ./stress -c $cpus > /dev/null 2>&1 &"
             ;;
         ram)
             echo "Starting ram stress on $VM_IP..."
-            ssh -o StrictHostKeyChecking=no -i $key_name ubuntu@$VM_IP "nohup ./stress --vm 1 --vm-bytes '$ram_gb'G > /dev/null 2>&1 &"
+            ssh -o StrictHostKeyChecking=no -i $KEY_NAME ubuntu@$VM_IP "nohup ./stress --vm 1 --vm-bytes '$ram_gb'G > /dev/null 2>&1 &"
             ;;
     esac
 }
