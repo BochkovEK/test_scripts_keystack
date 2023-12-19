@@ -1,7 +1,7 @@
 #!/bin/bashq!
 
-# !!! Сделать претест по тегу
-#The script checks access to the VM on HV
+# !!! Сделать претест по пингу
+# The script checks access to the VM on HV
 
 key_name=key_test.pem
 hypervisor_name=cmpt-1
@@ -30,9 +30,16 @@ batch_run_command() {
         "
 
     read -p "Press enter to continue"
+
     for raw_string_ip in $VMs_IPs; do
         IP="${raw_string_ip##*=}"
-        ssh -t -o StrictHostKeyChecking=no -i $key_name $user@$IP "$command_str"
+        sleep 1
+        if ping -c 2 $IP &> /dev/null; then
+            printf "%40s\n" "${green}There is a connection with $IP - success${normal}"
+            ssh -t -o StrictHostKeyChecking=no -i $key_name $user@$IP "$command_str"
+        else
+            printf "%40s\n" "${red}No connection with $IP - error!${normal}"
+        fi
     done
 }
 
@@ -74,6 +81,6 @@ do
         shift
 done
 
-rm -rf /root/.ssh/known_hosts
+#rm -rf /root/.ssh/known_hosts
 check_openrc_file
 batch_run_command
