@@ -65,6 +65,7 @@ do
 	    echo "Found the -node_name option, with parameter value $NODE_NAME"
       shift ;;
   -nt|-type_of_nodes)
+      echo "Found the -type_of_nodes option, with parameter value $2"
       note_type_func "$2"
       shift ;;
   --) shift
