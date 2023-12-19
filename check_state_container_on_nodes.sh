@@ -58,9 +58,11 @@ do
       echo "Found the -type_of_nodes  with parameter value $2"
       note_type_func "$2"
       shift ;;
-    *)
+    --) shift
       break ;;
+     *) echo "$1 is not an option";;
       esac
+      shift
 done
 
 # Define parameters
