@@ -78,7 +78,7 @@ done
 echo "Nodes for container checking:"
 echo "${NODES[*]}"
 
-grep_string="\| grep '$CONTAINER_NAME'\\"
+grep_string="\| grep '$CONTAINER_NAME'"
 [[ -z ${CONTAINER_NAME} ]] && { grep_string=""; }
 
 for host in "${NODES[@]}"; do
@@ -86,7 +86,7 @@ for host in "${NODES[@]}"; do
   if ping -c 2 $host &> /dev/null; then
     printf "%40s\n" "There is a connection with $host - ok!"
 
-    ssh -o StrictHostKeyChecking=no -t $host docker ps $grep_string #| grep "$CONTAINER_NAME" | \
+    ssh -o StrictHostKeyChecking=no -t $host docker ps $grep_string \
       sed --unbuffered \
         -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*restarting.*\)/\o033[31m\1\o033[39m/' \
