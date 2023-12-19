@@ -62,7 +62,7 @@ do
       break ;;
      *) echo "$1 is not an option";;
       esac
-      #shift
+      shift
 done
 
 # Define parameters
