@@ -1,6 +1,7 @@
 #!/bin/bash
 
-#The scrip stop and delete volume, image comtainer by name
+# Сделать ключи и параметры для удаления с одной ноды
+#The scrip stop and delete volume, image container by name
 
 [[ -z "${1}" ]] && echo "Container name requaired as parameter script" && exit 1
 

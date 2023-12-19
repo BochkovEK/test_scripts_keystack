@@ -1,7 +1,7 @@
 #!/bin/bashq!
 
+# !!! Сделать претест по тегу
 #The script checks access to the VM on HV
-#Exapmple start command: ./stress_test_on_vms.sh -hv cmpt-1 -cpu 4
 
 key_name=key_test.pem
 hypervisor_name=cmpt-1
@@ -48,23 +48,23 @@ while [ -n "$1" ]
 do
     case "$1" in
         --help) echo -E "
-        -hv <hypervisor_name>
-        -u, user <user_name_on_VM_OS>
+        -hv         <hypervisor_name>
+        -u, -user   <user_name_on_VM_OS>
         -c, command <command_on_VM>
-	-k, key <key_pair_private_part_file>
+        -k, -key    <key_pair_private_part_file>
         "
             exit 0
             break ;;
         -hv) hypervisor_name="$2"
             echo "Found the -hv option, with parameter value $hypervisor_name"
             shift ;;
-        -u|user) user="$2"
+        -u|-user) user="$2"
             echo "Found the -user option, with parameter value $user"
             shift ;;
-        -c|command) command_str="$2"
+        -c|-command) command_str="$2"
             echo "Found the -command option, with parameter value $command_str"
             shift ;;
-        -k|key) key_name="$2"
+        -k|-key) key_name="$2"
 	    echo "Found the -key option, with parameter value $key_name"
             shift ;;	    
         --) shift
