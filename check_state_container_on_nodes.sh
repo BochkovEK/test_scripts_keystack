@@ -79,7 +79,7 @@ echo "Nodes for container checking:"
 echo "${NODES[*]}"
 
 grep_string="| grep '$CONTAINER_NAME'"
-echo "$grep_string"
+#echo "$grep_string"
 [[ -z ${CONTAINER_NAME} ]] && { grep_string=""; }
 
 for host in "${NODES[@]}"; do
