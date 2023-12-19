@@ -54,14 +54,14 @@ do
     --help) echo -E "
       <container_name> as parameter
       -c, 	-container_name		<container_name>
-      -t, 	-type_of_nodes		<type_of_nodes> 'ctrl', 'comp', 'net'
+      -nt, 	-type_of_nodes		<type_of_nodes> 'ctrl', 'comp', 'net'
 "
       exit 0
       break ;;
 	  -c|-container_name) CONTAINER_NAME="$2"
 	    echo "Found the -container_name <container_name> option, with parameter value $CONTAINER_NAME"
       shift ;;
-    -t|-type_of_nodes)
+    -nt|-type_of_nodes)
       echo "Found the -type_of_nodes  with parameter value $2"
       note_type_func "$2"
       shift ;;
