@@ -121,7 +121,7 @@ Check_docker_consul () {
 
     for host in $comp_and_ctrl_nodes;do
         echo "consul on $host"
-        docker_consul=$(ssh -o StrictHostKeyChecking=no $host "docker ps | grep consul")
+        docker_consul=$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no $host "docker ps | grep consul")
         echo "$docker_consul" | \
             sed --unbuffered \
                 -e 's/\(.*Up.*\)/\o033[92m\1\o033[39m/' \
