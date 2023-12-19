@@ -3,8 +3,9 @@
 # !!! Сделать претест по пингу (тестить)
 # The script checks access to the VM on HV
 
-key_name=key_test.pem
-hypervisor_name=cmpt-1
+KEY_NAME=key_test.pem
+
+[[ -z $HYPERVIZOR_NAME ]] && HYPERVIZOR_NAME=""
 command_str="ls -la"
 user=ubuntu
 
@@ -20,11 +21,13 @@ normal=$(tput sgr0)
 
 batch_run_command() {
     rm ~/.ssh/known_hosts
-    VMs_IPs=$(openstack server list --host $hypervisor_name |grep ACTIVE |awk '{print $8}')
+    host_string=""
+    [[ -z ${HYPERVIZOR_NAME} ]] && { host_string="--host $HYPERVIZOR_NAME"; }
+    VMs_IPs=$(openstack server list $host_string |grep ACTIVE |awk '{print $8}')
     echo -E "
     Start check VMs with parameters:
-        Hypervisor:   $hypervisor_name
-        Key:          $key_name
+        Hypervisor:   $HYPERVIZOR_NAME
+        Key:          $KEY_NAME
         User name:    $user
         Command:      $command_str
         "
@@ -36,7 +39,7 @@ batch_run_command() {
         sleep 1
         if ping -c 2 $IP &> /dev/null; then
             printf "%40s\n" "${green}There is a connection with $IP - success${normal}"
-            ssh -t -o StrictHostKeyChecking=no -i $key_name $user@$IP "$command_str"
+            ssh -t -o StrictHostKeyChecking=no -i $KEY_NAME$user@$IP "$command_str"
         else
             printf "%40s\n" "${red}No connection with $IP - error!${normal}"
         fi
@@ -62,8 +65,8 @@ do
         "
             exit 0
             break ;;
-        -hv) hypervisor_name="$2"
-            echo "Found the -hv option, with parameter value $hypervisor_name"
+        -hv) HYPERVIZOR_NAME="$2"
+            echo "Found the -hv option, with parameter value $HYPERVIZOR_NAME"
             shift ;;
         -u|-user) user="$2"
             echo "Found the -user option, with parameter value $user"
@@ -71,8 +74,8 @@ do
         -c|-command) command_str="$2"
             echo "Found the -command option, with parameter value $command_str"
             shift ;;
-        -k|-key) key_name="$2"
-	    echo "Found the -key option, with parameter value $key_name"
+        -k|-key) KEY_NAME="$2"
+	    echo "Found the -key option, with parameter value $KEY_NAME"
             shift ;;	    
         --) shift
             break ;;
