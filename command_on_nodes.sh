@@ -18,18 +18,18 @@ note_type_func () {
   case "$1" in
         ctrl)
           nodes_to_find=$ctrl_pattern
-          echo "Сontainer will be checked on ctrl nodes"
+          echo "Container will be checked on ctrl nodes"
           ;;
         comp)
           nodes_to_find=$comp_pattern
-          echo "Сontainer will be checked on comp nodes"
+          echo "Container will be checked on comp nodes"
           ;;
         net)
           nodes_to_find=$net_pattern
-          echo "Сontainer will be checked on net nodes"
+          echo "Container will be checked on net nodes"
           ;;
         *)
-          echo "type is not specified correctly. Сontainers will be checked on ctr, comp, net nodes"
+          echo "type is not specified correctly. Containers will be checked on ctr, comp, net nodes"
           ;;
         esac
 }

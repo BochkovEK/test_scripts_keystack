@@ -1,6 +1,6 @@
 #!/bin/bashq!
 
-# !!! Сделать претест по пингу
+# !!! Сделать претест по пингу (тестить)
 # The script checks access to the VM on HV
 
 key_name=key_test.pem
