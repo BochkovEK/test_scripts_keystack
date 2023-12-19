@@ -8,7 +8,7 @@
 nodes_to_find='\-ctrl\-..( |$)|\-comp\-..( |$)'
 #|\-net\-..( |$)'
 
-srv=$(cat /etc/hosts | grep -E "ctrl|cmpt" | awk '{print $1}')
+srv=$(cat /etc/hosts | grep -E "$nodes_to_find" | awk '{print $1}')
 
 for host in $srv;do
     id_docker=$(ssh -o StrictHostKeyChecking=no $host docker container ls -a | grep $1 | awk '{print $1}')
