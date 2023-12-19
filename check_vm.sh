@@ -6,6 +6,7 @@
 KEY_NAME=key_test.pem
 
 [[ -z $HYPERVIZOR_NAME ]] && HYPERVIZOR_NAME=""
+[[ -z $ONLY_PING ]] && ONLY_PING="false"
 command_str="ls -la"
 user=ubuntu
 
@@ -30,6 +31,7 @@ batch_run_command() {
         Key:          $KEY_NAME
         User name:    $user
         Command:      $command_str
+        Only ping:    $ONLY_PING
         "
 
     read -p "Press enter to continue"
@@ -39,7 +41,7 @@ batch_run_command() {
         sleep 1
         if ping -c 2 $IP &> /dev/null; then
             printf "%40s\n" "${green}There is a connection with $IP - success${normal}"
-            ssh -t -o StrictHostKeyChecking=no -i $KEY_NAME$user@$IP "$command_str"
+            [ "$ONLY_PING" == "true" ] && { ssh -t -o StrictHostKeyChecking=no -i $KEY_NAME$user@$IP "$command_str"; }
         else
             printf "%40s\n" "${red}No connection with $IP - error!${normal}"
         fi
@@ -62,6 +64,7 @@ do
         -u, -user   <user_name_on_VM_OS>
         -c, command <command_on_VM>
         -k, -key    <key_pair_private_part_file>
+        -ping       only ping check
         "
             exit 0
             break ;;
@@ -75,8 +78,10 @@ do
             echo "Found the -command option, with parameter value $command_str"
             shift ;;
         -k|-key) KEY_NAME="$2"
-	    echo "Found the -key option, with parameter value $KEY_NAME"
-            shift ;;	    
+	          echo "Found the -key option, with parameter value $KEY_NAME"
+            shift ;;
+        -ping) ONLY_PING="true"
+	    echo "Found the -ping option, only ping checking";;
         --) shift
             break ;;
         *) echo "$1 is not an option";;
