@@ -1,5 +1,6 @@
 #!/bin/bash
 
+#!!! Проверка всех контов но анхелси и рестарт
 #The scrip check container state on nodes or node
 
 # example nodes list define
@@ -16,7 +17,7 @@ red=$(tput setaf 1)
 violet=$(tput setaf 5)
 normal=$(tput sgr0)
 
-[[ -z $CONTAINER_NAME ]] && CONTAINER_NAME="consul"
+[[ -z $CONTAINER_NAME ]] && CONTAINER_NAME=""
 [[ -z $NODES ]] && NODES=()
 #======================
 
@@ -81,7 +82,9 @@ for host in "${NODES[@]}"; do
   echo "Check container $CONTAINER_NAME on ${host}"
   if ping -c 2 $host &> /dev/null; then
     printf "%40s\n" "There is a connection with $host - ok!"
-    ssh -o StrictHostKeyChecking=no -t $host docker ps | grep "$CONTAINER_NAME" | \
+    grep_string="\| grep '$CONTAINER_NAME'\\"
+    [[ -z ${CONTAINER_NAME} ]] && { grep_string=""; }
+    ssh -o StrictHostKeyChecking=no -t $host docker ps $grep_string #| grep "$CONTAINER_NAME" | \
       sed --unbuffered \
         -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*restarting.*\)/\o033[31m\1\o033[39m/' \
