@@ -41,6 +41,13 @@ note_type_func () {
 }
 
 #======================
+
+# Define parameters
+define_parameters () {
+  [ "$count" = 1 ] && [[ -n $1 ]] && { CONTAINER_NAME=$1; echo "Name container parameter found with value $CONTAINER_NAME"; }
+}
+
+count=1
 while [ -n "$1" ]
 do
   case "$1" in
@@ -60,17 +67,10 @@ do
       shift ;;
     --) shift
       break ;;
-     *) echo "$1 is not an option";;
+    *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
+    #*) echo "$1 is not an option";;
       esac
       shift
-done
-
-# Define parameters
-count=1
-for param in "$@"; do
-  echo "Parameter #$count: $param"
-  [ "$count" = 1 ] && [[ -n $param ]] && { CONTAINER_NAME=$param; echo "Name container parameter found with value $CONTAINER_NAME"; }
-  count=$(( $count + 1 ))
 done
 
 [[ -z ${NODES[0]} ]] && { srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}'); for i in $srv; do NODES+=("$i"); done; }
