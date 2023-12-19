@@ -68,7 +68,6 @@ do
     --) shift
       break ;;
     *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
-    #*) echo "$1 is not an option";;
       esac
       shift
 done

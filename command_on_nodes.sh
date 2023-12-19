@@ -35,6 +35,13 @@ note_type_func () {
 }
 
 #======================
+
+# Define parameters
+define_parameters () {
+  [ "$count" = 1 ] && [[ -n $1 ]] && { COMMAND=$1; echo "Command parameter found with value $COMMAND"; }
+}
+
+count=1
 while [ -n "$1" ]
 do
     case "$1" in
@@ -52,7 +59,7 @@ do
       shift ;;
   --) shift
     break ;;
-  *) echo "$1 is not an option";;
+  *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
     esac
     shift
 done
