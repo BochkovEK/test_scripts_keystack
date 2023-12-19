@@ -23,7 +23,7 @@ normal=$(tput sgr0)
 batch_run_command() {
     rm ~/.ssh/known_hosts
     host_string=""
-    [[ -z ${HYPERVIZOR_NAME} ]] && { host_string="--host $HYPERVIZOR_NAME"; }
+    [[ -n ${HYPERVIZOR_NAME} ]] && { host_string="--host $HYPERVIZOR_NAME"; }
     VMs_IPs=$(openstack server list $host_string |grep ACTIVE |awk '{print $8}')
     echo -E "
     Start check VMs with parameters:
