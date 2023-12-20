@@ -386,7 +386,6 @@ create_vms () {
       --os-compute-api-version $API_VERSION \
       --network $NETWORK \
       --boot-from-volume $VOLUME_SIZE \
-      --project $PROJECT \
       $INSTANCE_NAME
 
     sleep $TIMEOUT_BEFORE_NEXT_CREATION
