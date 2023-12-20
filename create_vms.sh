@@ -226,24 +226,24 @@ check_project () {
     else
         printf "%s\n" "${green}Role: \"$ROLE\" exist in project: \"$PROJECT\"${normal}"
     fi
-    export OS_PROJECT_NAME=$PROJECT
+    #export OS_PROJECT_NAME=$PROJECT
     export OS_USERNAME=$TEST_USER
 }
 
 # Check secur_group
 check_and_add_secur_group () {
     echo "Check for exist security group: \"$SECURITY_GR\""
-    PROJ_ID=$(openstack project list| grep $OS_PROJECT_NAME| awk '{print $2}')
+    PROJ_ID=$(openstack project list| grep $PROJECT| awk '{print $2}')
     SECURITY_GR_ID=$(openstack security group list|grep -E "($SECURITY_GR(.)*$PROJ_ID)" | head -1 | awk '{print $2}')
     if [ -z $SECURITY_GR_ID ]; then
-        printf "%s\n" "${orange}Security group \"$SECURITY_GR\" not found in project \"$OS_PROJECT_NAME\"${normal}"
+        printf "%s\n" "${orange}Security group \"$SECURITY_GR\" not found in project \"$PROJECT\"${normal}"
 
         echo "Сreate a Security group with a name: \"$SECURITY_GR\"?"
         read -p "Press enter to continue"
 
-        echo "Creating security group \"$SECURITY_GR\" in project \"$OS_PROJECT_NAME\"..."
-        SECURITY_GR_ID=$(openstack security group create $SECURITY_GR|grep "id"| head -1 | awk '{print $4}')
-        echo "Security group \"$SECURITY_GR\": $SECURITY_GR_ID was created in project \"$OS_PROJECT_NAME\""
+        echo "Creating security group \"$SECURITY_GR\" in project \"$PROJECT\"..."
+        SECURITY_GR_ID=$(openstack security group create --project $PROJECT $SECURITY_GR|grep "id"| head -1 | awk '{print $4}')
+        echo "Security group \"$SECURITY_GR\": $SECURITY_GR_ID was created in project \"$PROJECT\""
         echo "Creating rules for \"$SECURITY_GR\" security group...";
         openstack security group rule create --egress --ethertype IPv4 --protocol tcp $SECURITY_GR_ID
         openstack security group rule create --ingress --ethertype IPv4 --protocol tcp $SECURITY_GR_ID
@@ -251,28 +251,26 @@ check_and_add_secur_group () {
         openstack security group rule create --ingress --ethertype IPv4 --protocol udp $SECURITY_GR_ID
         openstack security group rule create --ingress --ethertype IPv4 --protocol icmp $SECURITY_GR_ID
      else
-        printf "%s\n" "${green}Security group \"$SECURITY_GR\": $SECURITY_GR_ID already exist in project \"$OS_PROJECT_NAME\"${normal}"
-
-        #openstack security group show $SECURITY_GR_ID
+        printf "%s\n" "${green}Security group \"$SECURITY_GR\": $SECURITY_GR_ID already exist in project \"$PROJECT\"${normal}"
      fi
 }
 
 # Check keypair
 check_and_add_keypair () {
   echo "Check for exist keypair: \"$KEY_NAME\""
-  KEY_NAME_EXIST=$(openstack keypair list| grep $KEY_NAME| awk '{print $2}')
+  KEY_NAME_EXIST=$(openstack keypair list | grep $KEY_NAME| awk '{print $2}')
   if [ -z "$KEY_NAME_EXIST" ]; then
-    printf "%s\n" "${orange}Keypair \"$KEY_NAME\" not found in project \"$OS_PROJECT_NAME\"${normal}"
+    printf "%s\n" "${orange}Keypair \"$KEY_NAME\" not found in project \"$PROJECT\"${normal}"
     echo "Сreate a key pair with a name: \"$KEY_NAME\"?"
     read -p "Press enter to continue"
 
-    echo "Creating \"$KEY_NAME\" in project \"$OS_PROJECT_NAME\"..."
+    echo "Creating \"$KEY_NAME\" in project \"$PROJECT\"..."
     touch ./$KEY_NAME.pem
     openstack keypair create $KEY_NAME --public-key ./"$KEY_NAME".pub #> ./$KEY_NAME.pem
     chmod 400 ./$KEY_NAME.pem
-    echo "Keypair \"$KEY_NAME\" was created in project \"$OS_PROJECT_NAME\""
+    echo "Keypair \"$KEY_NAME\" was created in project \"$PROJECT\""
   else
-    printf "%s\n" "${green}Keypair \"$KEY_NAME\" already exist in project \"$OS_PROJECT_NAME\"${normal}"
+    printf "%s\n" "${green}Keypair \"$KEY_NAME\" already exist in project \"$PROJECT\"${normal}"
   fi
 }
 
@@ -281,10 +279,10 @@ check_network () {
   echo "Check for exist network: \"$NETWORK\""
   NETWORK_NAME_EXIST=$(openstack network list| grep "$NETWORK"| awk '{print $2}')
   if [ -z "$NETWORK_NAME_EXIST" ]; then
-    printf "%s\n" "${red}Image \"$NETWORK\" not found in project \"$OS_PROJECT_NAME\"${normal}"
+    printf "%s\n" "${red}Image \"$NETWORK\" not found in project \"$PROJECT\"${normal}"
     exit 1
   else
-    printf "%s\n" "${green}Network \"$NETWORK\" already exist in project \"$OS_PROJECT_NAME\"${normal}"
+    printf "%s\n" "${green}Network \"$NETWORK\" already exist in project \"$PROJECT\"${normal}"
   fi
 }
 
@@ -293,14 +291,14 @@ check_image () {
   echo "Check for exist image: \"$IMAGE\""
   IMAGE_NAME_EXIST=$(openstack image list| grep "$IMAGE"| awk '{print $2}')
   if [ -z "$IMAGE_NAME_EXIST" ] && [[ ! $IMAGE =~ ubuntu|ubuntu-22.04.2-live-server-amd64 ]]; then
-    printf "%s\n" "${red}Image \"$IMAGE\" not found in project \"$OS_PROJECT_NAME\"${normal}"
+    printf "%s\n" "${red}Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
     exit 1
   elif [ -z "$IMAGE_NAME_EXIST" ] && [[ $IMAGE =~ ubuntu|ubuntu-22.04.2-live-server-amd64 ]]; then
-    printf "%s\n" "${orange}Image \"$IMAGE\" not found in project \"$OS_PROJECT_NAME\"${normal}"
+    printf "%s\n" "${orange}Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
     echo "Try to download image: \"$UBUNTU_IMAGE_NAME\" and add to openstack?"
     read -r -p "Press enter to continue"
 
-    echo "Creating image \"$UBUNTU_IMAGE_NAME\" in project \"$OS_PROJECT_NAME\"..."
+    echo "Creating image \"$UBUNTU_IMAGE_NAME\" in project \"$PROJECT\"..."
     [ -f ./"$UBUNTU_IMAGE_NAME".img ] && echo "File ./$UBUNTU_IMAGE_NAME.img exist." \
     || { echo "File ./$UBUNTU_IMAGE_NAME.img does not exist. Try to download it..."; \
     wget https://repo.itkey.com/repository/images/"$UBUNTU_IMAGE_NAME".img; }
@@ -311,7 +309,7 @@ check_image () {
       --public \
       --file ./"$UBUNTU_IMAGE_NAME".img
   else
-    printf "%s\n" "${green}Image \"$IMAGE\" already exist in project \"$OS_PROJECT_NAME\"${normal}"
+    printf "%s\n" "${green}Image \"$IMAGE\" already exist in project \"$PROJECT\"${normal}"
   fi
 }
 
@@ -320,7 +318,7 @@ check_and_add_flavor () {
     echo "Check for exist flavor: \"$FLAVOR\""
     FLAVOR_EXST=$(openstack flavor list| grep $FLAVOR| awk '{print $4}')
     if [ -z $FLAVOR_EXST ]; then
-        printf "%s\n" "${orange}Flavor \"$FLAVOR\" not found in project \"$OS_PROJECT_NAME\"${normal}"
+        printf "%s\n" "${orange}Flavor \"$FLAVOR\" not found in project \"$PROJECT\"${normal}"
         #echo "Сreate a flavor by name (example name: \"4c-4r\" -> 4 cpu cores, 4096 Mb ram) with name: \"$FALVOR\"?"
         #read -p "Press enter to continue"
         # example FLAVOR=4c-4r
@@ -344,10 +342,10 @@ check_and_add_flavor () {
         echo "Сreate a flavor with a template name <cpu qty>c_<ram GB>m with cpus: $CPU_QTY and ram: $RAM_MB Mb: \"$FLAVOR\"?"
         read -p "Press enter to continue"
 
-        echo "Creating \"$FLAVOR\" in project \"$OS_PROJECT_NAME\" with $CPU_QTY cpus and $RAM_MB Mb...";
-        openstack flavor create --private --project $PROJECT --vcpus $CPU_QTY --ram $RAM_MB --disk 0 $FLAVOR
+        echo "Creating \"$FLAVOR\" in project \"$PROJECT\" with $CPU_QTY cpus and $RAM_MB Mb...";
+        openstack flavor create --public --vcpus $CPU_QTY --ram $RAM_MB --disk 0 $FLAVOR
     else
-        printf "%s\n" "${green}Flavor \"$FLAVOR\" already exist in project: \"$OS_PROJECT_NAME\"${normal}"
+        printf "%s\n" "${green}Flavor \"$FLAVOR\" already exist in project: \"$PROJECT\"${normal}"
         #openstack security group show $SECURITY_GR_ID
     fi
 }
@@ -387,6 +385,7 @@ do
     --os-compute-api-version $API_VERSION \
     --network $NETWORK \
     --boot-from-volume $VOLUME_SIZE \
+    --project $PROJECT \
     $INSTANCE_NAME
 
   sleep $TIMEOUT_BEFORE_NEXT_CREATION
@@ -413,12 +412,13 @@ fi
 output_of_initial_parameters
 check_and_source_openrc_file
 chech_hv
+check_and_add_secur_group
+check_project
 [[ ! $dont_check = "true" ]] && \
   {
-  check_project;
   check_image;
   check_and_add_flavor;
   check_network
-  check_and_add_secur_group;
-  check_and_add_keypair; } || SECURITY_GR_ID=$(openstack security group list|grep -E "($SECURITY_GR(.)*$PROJ_ID)" | head -1 | awk '{print $2}')
+  check_and_add_keypair;
+  }
 create_vms
