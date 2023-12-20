@@ -91,6 +91,7 @@ Stress test: $MODE will be launched on the hypervisor $1 VMs
         "
 
     read -p "Press enter to continue"
+    [[ -z $VMs_IPs ]] && { echo "No instance found in the $PROJECT project"; exit 1; }
     for raw_string_ip in $VMs_IPs; do
         IP="${raw_string_ip##*=}"
         copy_and_stress $IP $MODE
