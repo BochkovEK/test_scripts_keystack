@@ -226,7 +226,7 @@ check_project () {
     else
         printf "%s\n" "${green}Role: \"$ROLE\" exist in project: \"$PROJECT\"${normal}"
     fi
-    #export OS_PROJECT_NAME=$PROJECT
+    export OS_PROJECT_NAME=$PROJECT
     export OS_USERNAME=$TEST_USER
 }
 
@@ -343,7 +343,7 @@ check_and_add_flavor () {
         read -p "Press enter to continue"
 
         echo "Creating \"$FLAVOR\" in project \"$PROJECT\" with $CPU_QTY cpus and $RAM_MB Mb...";
-        openstack flavor create --public --vcpus $CPU_QTY --ram $RAM_MB --disk 0 $FLAVOR
+        openstack flavor create --public --vcpus $CPU_QTY --ram $RAM_MB --disk 0 ${FLAVOR}_${PROJECT}
     else
         printf "%s\n" "${green}Flavor \"$FLAVOR\" already exist in project: \"$PROJECT\"${normal}"
         #openstack security group show $SECURITY_GR_ID
@@ -353,7 +353,7 @@ check_and_add_flavor () {
 # VM create
 create_vms () {
 
-  export OS_PROJECT_NAME=$PROJECT
+  #export OS_PROJECT_NAME=$PROJECT
 
   for i in $(seq $VM_QTY); do
     INSTANCE_NAME="${VM_BASE_NAME}_$i"
@@ -391,7 +391,7 @@ create_vms () {
     sleep $TIMEOUT_BEFORE_NEXT_CREATION
   done
 
-  export OS_PROJECT_NAME='admin'
+  #export OS_PROJECT_NAME='admin'
 
 # Check vms list...
   if [ -n "$HYPERVISOR_HOSTNAME" ]; then
@@ -424,3 +424,4 @@ check_and_add_secur_group
   check_and_add_keypair;
   }
 create_vms
+export OS_PROJECT_NAME='admin'
