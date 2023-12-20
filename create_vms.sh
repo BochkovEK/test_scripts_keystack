@@ -412,8 +412,8 @@ fi
 output_of_initial_parameters
 check_and_source_openrc_file
 chech_hv
-check_and_add_secur_group
 check_project
+check_and_add_secur_group
 [[ ! $dont_check = "true" ]] && \
   {
   check_image;
