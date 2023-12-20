@@ -343,7 +343,7 @@ check_and_add_flavor () {
     read -p "Press enter to continue"
 
     echo "Creating \"$FLAVOR\" in project \"$PROJECT\" with $CPU_QTY cpus and $RAM_MB Mb...";
-    openstack flavor create --public --vcpus $CPU_QTY --ram $RAM_MB --disk 0 ${FLAVOR}_${PROJECT}
+    openstack flavor create --private --project $PROJECT --vcpus $CPU_QTY --ram $RAM_MB --disk 0 ${FLAVOR}_${PROJECT}
   else
     printf "%s\n" "${green}Flavor \"$FLAVOR\" already exist in project: \"$PROJECT\"${normal}"
     #openstack security group show $SECURITY_GR_ID
@@ -402,12 +402,12 @@ create_vms () {
     echo "Command for check vms list on $HYPERVISOR_HOSTNAME:"
     #echo "export OS_PROJECT_NAME=$PROJECT"
     #echo "export OS_USERNAME=$TEST_USER"
-    printf "%s\n" "${orange}openstack server list --all-projects $check_host --long -c Project -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
+    printf "%s\n" "${orange}openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
   else
     echo "Check vms list..."
     openstack server list --all-projects --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks
     echo "Command for check vms list:"
-    printf "%s\n" "${orange}openstack server list --all-projects --long -c Project -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
+    printf "%s\n" "${orange}openstack server list --all-projects --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
   fi
 }
 
