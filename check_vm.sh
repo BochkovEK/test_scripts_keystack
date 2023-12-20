@@ -34,7 +34,7 @@ batch_run_command() {
         "
 
     read -p "Press enter to continue"
-
+    [[ -z $VMs_IPs ]] && { echo "No instance found in the $PROJECT project"; exit 1; }
     for raw_string_ip in $VMs_IPs; do
         IP="${raw_string_ip##*=}"
         sleep 1
