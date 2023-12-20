@@ -353,16 +353,17 @@ check_and_add_flavor () {
 # VM create
 create_vms () {
 
-for i in $(seq $VM_QTY)
-do
-  INSTANCE_NAME="${VM_BASE_NAME}_$i"
-  echo "Check for VM: \"$INSTANCE_NAME\" exist"
-  VM_EXIST=$(openstack server list| grep $INSTANCE_NAME| awk '{print $4}')
-  if [ -n "$VM_EXIST" ]; then
+  export OS_PROJECT_NAME=$PROJECT
+
+  for i in $(seq $VM_QTY); do
+    INSTANCE_NAME="${VM_BASE_NAME}_$i"
+    echo "Check for VM: \"$INSTANCE_NAME\" exist"
+    VM_EXIST=$(openstack server list| grep $INSTANCE_NAME| awk '{print $4}')
+    if [ -n "$VM_EXIST" ]; then
       printf "%s\n" "${orange}VM: \"$INSTANCE_NAME\" is already exist in project \"$PROJECT\"${normal}"
       echo "Сreate VM: \"$INSTANCE_NAME\" in project \"$PROJECT\"?"
       read -p "Press enter to continue"
-  fi
+    fi
   echo "Creating VM: $INSTANCE_NAME"
 
 #  echo "openstack server create " \
@@ -376,37 +377,39 @@ do
 #    "--boot-from-volume '$VOLUME_SIZE' " \
 #    "'$INSTANCE_NAME'"
 
-  openstack server create \
-    --image $IMAGE \
-    --flavor $FLAVOR \
-    --security-group $SECURITY_GR_ID \
-    --key-name $KEY_NAME \
-    $host \
-    --os-compute-api-version $API_VERSION \
-    --network $NETWORK \
-    --boot-from-volume $VOLUME_SIZE \
-    --project $PROJECT \
-    $INSTANCE_NAME
+    openstack server create \
+      --image $IMAGE \
+      --flavor $FLAVOR \
+      --security-group $SECURITY_GR_ID \
+      --key-name $KEY_NAME \
+      $host \
+      --os-compute-api-version $API_VERSION \
+      --network $NETWORK \
+      --boot-from-volume $VOLUME_SIZE \
+      --project $PROJECT \
+      $INSTANCE_NAME
 
-  sleep $TIMEOUT_BEFORE_NEXT_CREATION
-done
+    sleep $TIMEOUT_BEFORE_NEXT_CREATION
+  done
+
+  export OS_PROJECT_NAME='admin'
 
 # Check vms list...
-if [ -n "$HYPERVISOR_HOSTNAME" ]; then
-  check_host="--host $HYPERVISOR_HOSTNAME"
-  echo "Check vms list on $HYPERVISOR_HOSTNAME:"
-  #openstack server list --all-projects --host $HYPERVISOR_HOSTNAME --long
-  openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks
-  echo "Command for check vms list on $HYPERVISOR_HOSTNAME:"
-  #echo "export OS_PROJECT_NAME=$PROJECT"
-  #echo "export OS_USERNAME=$TEST_USER"
-  printf "%s\n" "${orange}openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
-else
-  echo "Check vms list..."
-  openstack server list --all-projects --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks
-  echo "Command for check vms list:"
-  printf "%s\n" "${orange}openstack server list --all-projects --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
-fi
+  if [ -n "$HYPERVISOR_HOSTNAME" ]; then
+    check_host="--host $HYPERVISOR_HOSTNAME"
+    echo "Check vms list on $HYPERVISOR_HOSTNAME:"
+    #openstack server list --all-projects --host $HYPERVISOR_HOSTNAME --long
+    openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks
+    echo "Command for check vms list on $HYPERVISOR_HOSTNAME:"
+    #echo "export OS_PROJECT_NAME=$PROJECT"
+    #echo "export OS_USERNAME=$TEST_USER"
+    printf "%s\n" "${orange}openstack server list --all-projects $check_host --long -c Project -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
+  else
+    echo "Check vms list..."
+    openstack server list --all-projects --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks
+    echo "Command for check vms list:"
+    printf "%s\n" "${orange}openstack server list --all-projects --long -c Project -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
+  fi
 }
 
 output_of_initial_parameters
