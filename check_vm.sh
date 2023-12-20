@@ -3,34 +3,33 @@
 # !!! Сделать претест по пингу (тестить)
 # The script checks access to the VM on HV
 
-KEY_NAME=key_test.pem
-
-[[ -z $HYPERVIZOR_NAME ]] && HYPERVIZOR_NAME=""
-[[ -z $ONLY_PING ]] && ONLY_PING="false"
-command_str="ls -la"
-user=ubuntu
-
-OPENRC_PATH="$HOME/openrc"
-
 #Colors
 green=$(tput setaf 2)
 red=$(tput setaf 1)
 violet=$(tput setaf 5)
 normal=$(tput sgr0)
 
+[[ -z $KEY_NAME ]] && KEY_NAME="key_test.pem"
+[[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
+[[ -z $HYPERVISOR_NAME ]] && HYPERVISOR_NAME=""
+[[ -z $ONLY_PING ]] && ONLY_PING="false"
+[[ -z $VM_USER ]] && VM_USER="ubuntu"
+[[ -z $COMMAND_STR ]] && COMMAND_STR="ls -la"
+[[ -z $PROJECT ]] && PROJECT="admin"
+
 # Functions
 
 batch_run_command() {
     rm ~/.ssh/known_hosts
     host_string=""
-    [[ -n ${HYPERVIZOR_NAME} ]] && { host_string="--host $HYPERVIZOR_NAME"; }
-    VMs_IPs=$(openstack server list $host_string |grep ACTIVE |awk '{print $8}')
+    [[ -n ${HYPERVISOR_NAME} ]] && { host_string="--host $HYPERVISOR_NAME"; }
+    VMs_IPs=$(openstack server list --project $PROJECT $host_string |grep ACTIVE |awk '{print $8}')
     echo -E "
     Start check VMs with parameters:
-        Hypervisor:   $HYPERVIZOR_NAME
+        Hypervisor:   $HYPERVISOR_NAME
         Key:          $KEY_NAME
-        User name:    $user
-        Command:      $command_str
+        User name:    $VM_USER
+        Command:      $COMMAND_STR
         Only ping:    $ONLY_PING
         "
 
@@ -41,7 +40,7 @@ batch_run_command() {
         sleep 1
         if ping -c 2 $IP &> /dev/null; then
             printf "%40s\n" "${green}There is a connection with $IP - success${normal}"
-            [ "$ONLY_PING" == "false" ] && { ssh -t -o StrictHostKeyChecking=no -i $KEY_NAME$user@$IP "$command_str"; }
+            [ "$ONLY_PING" == "false" ] && { ssh -t -o StrictHostKeyChecking=no -i $KEY_NAME$VM_USER@$IP "$COMMAND_STR"; }
         else
             printf "%40s\n" "${red}No connection with $IP - error!${normal}"
         fi
@@ -56,37 +55,40 @@ check_openrc_file () {
     source $OPENRC_PATH
 }
 
-while [ -n "$1" ]
-do
-    case "$1" in
-        --help) echo -E "
-        -hv         <hypervisor_name>
-        -u, -user   <user_name_on_VM_OS>
-        -c, command <command_on_VM>
-        -k, -key    <key_pair_private_part_file>
-        -ping       only ping check
-        "
-            exit 0
-            break ;;
-        -hv) HYPERVIZOR_NAME="$2"
-            echo "Found the -hv option, with parameter value $HYPERVIZOR_NAME"
-            shift ;;
-        -u|-user) user="$2"
-            echo "Found the -user option, with parameter value $user"
-            shift ;;
-        -c|-command) command_str="$2"
-            echo "Found the -command option, with parameter value $command_str"
-            shift ;;
-        -k|-key) KEY_NAME="$2"
-	          echo "Found the -key option, with parameter value $KEY_NAME"
-            shift ;;
-        -ping) ONLY_PING="true"
+while [ -n "$1" ]; do
+  case "$1" in
+    --help) echo -E "
+      -hv           <hypervisor_name>
+      -u, -user     <user_name_on_VM_OS>
+      -c, command   <command_on_VM>
+      -k, -key      <key_pair_private_part_file>
+      -ping         only ping check
+      -p, project   <project_name>
+      "
+      exit 0
+      break ;;
+    -hv) HYPERVISOR_NAME="$2"
+      echo "Found the -hv option, with parameter value $HYPERVISOR_NAME"
+      shift ;;
+    -u|-user) VM_USER="$2"
+      echo "Found the -user option, with parameter value $VM_USER"
+      shift ;;
+    -c|-command) COMMAND_STR="$2"
+      echo "Found the -command option, with parameter value $COMMAND_STR"
+      shift ;;
+    -k|-key) KEY_NAME="$2"
+	    echo "Found the -key option, with parameter value $KEY_NAME"
+      shift ;;
+    -p|-project) PROJECT="$2"
+      echo "Found the -project option, with parameter value $PROJECT"
+      shift ;;
+    -ping) ONLY_PING="true"
 	    echo "Found the -ping option, only ping checking";;
-        --) shift
-            break ;;
-        *) echo "$1 is not an option";;
-        esac
-        shift
+    --) shift
+      break ;;
+    *) echo "$1 is not an option";;
+  esac
+  shift
 done
 
 #rm -rf /root/.ssh/known_hosts
