@@ -20,7 +20,7 @@ normal=$(tput sgr0)
 # Functions
 
 batch_run_command() {
-    rm ~/.ssh/known_hosts
+    [[ -f "$HOME/.ssh/known_hosts" ]] && { rm ~/.ssh/known_hosts; }
     host_string=""
     [[ -n ${HYPERVISOR_NAME} ]] && { host_string="--host $HYPERVISOR_NAME"; }
     VMs_IPs=$(openstack server list --project $PROJECT $host_string |grep ACTIVE |awk '{print $8}')
