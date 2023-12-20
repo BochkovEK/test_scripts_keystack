@@ -315,46 +315,46 @@ check_image () {
 
 # Check flavor
 check_and_add_flavor () {
-    echo "Check for exist flavor: \"$FLAVOR\""
-    FLAVOR_EXST=$(openstack flavor list| grep $FLAVOR| awk '{print $4}')
-    if [ -z $FLAVOR_EXST ]; then
-        printf "%s\n" "${orange}Flavor \"$FLAVOR\" not found in project \"$PROJECT\"${normal}"
-        #echo "Сreate a flavor by name (example name: \"4c-4r\" -> 4 cpu cores, 4096 Mb ram) with name: \"$FALVOR\"?"
+  echo "Check for exist flavor: \"$FLAVOR\""
+  FLAVOR_EXST=$(openstack flavor list| grep $FLAVOR| awk '{print $4}')
+  if [ -z $FLAVOR_EXST ]; then
+    printf "%s\n" "${orange}Flavor \"$FLAVOR\" not found in project \"$PROJECT\"${normal}"
+    #echo "Сreate a flavor by name (example name: \"4c-4r\" -> 4 cpu cores, 4096 Mb ram) with name: \"$FALVOR\"?"
         #read -p "Press enter to continue"
         # example FLAVOR=4c-4r
-        CPU_DRAFT=$(echo "${FLAVOR%-*}")
-        RAM_DRAFT=$(echo "${FLAVOR##*-}")
-        CPU_QTY=$(echo "${CPU_DRAFT%c*}")
-        RAM_GB=$(echo "${RAM_DRAFT%r*}")
-        #echo "CPU_DRAT: $CPU_DRAFT"
+    CPU_DRAFT=$(echo "${FLAVOR%-*}")
+    RAM_DRAFT=$(echo "${FLAVOR##*-}")
+    CPU_QTY=$(echo "${CPU_DRAFT%c*}")
+    RAM_GB=$(echo "${RAM_DRAFT%r*}")
+    #echo "CPU_DRAT: $CPU_DRAFT"
         #echo "RAM_DRAFT: $RAM_DRAFT"
         #echo "CPU_QTY: $CPU_QTY"
         #echo "RAM_GB: $RAM_GB"
-        if [[ -z $CPU_QTY || -z $RAM_GB ]]; then
-            printf "%s\n" "${orange}The falvor name format for creation should look like: <CPUs>c-<RAM GB>r instead: \"$FALVOR\"${normal}"
-            printf "%s\n" "${red}Can't create a favorite by name: \"$FALVOR\"\n"
-            exit 1
-        fi
-
-        let "RAM_MB = ${RAM_GB} * 1024"
-        #echo $RAM_MB
-
-        echo "Сreate a flavor with a template name <cpu qty>c_<ram GB>m with cpus: $CPU_QTY and ram: $RAM_MB Mb: \"$FLAVOR\"?"
-        read -p "Press enter to continue"
-
-        echo "Creating \"$FLAVOR\" in project \"$PROJECT\" with $CPU_QTY cpus and $RAM_MB Mb...";
-        openstack flavor create --public --vcpus $CPU_QTY --ram $RAM_MB --disk 0 ${FLAVOR}_${PROJECT}
-    else
-        printf "%s\n" "${green}Flavor \"$FLAVOR\" already exist in project: \"$PROJECT\"${normal}"
-        #openstack security group show $SECURITY_GR_ID
+    if [[ -z $CPU_QTY || -z $RAM_GB ]]; then
+      printf "%s\n" "${orange}The falvor name format for creation should look like: <CPUs>c-<RAM GB>r instead: \"$FALVOR\"${normal}"
+      printf "%s\n" "${red}Can't create a favorite by name: \"$FALVOR\"\n"
+      exit 1
     fi
+
+    let "RAM_MB = ${RAM_GB} * 1024"
+    #echo $RAM_MB
+
+    echo "Сreate a flavor with a template name <cpu qty>c_<ram GB>m with cpus: $CPU_QTY and ram: $RAM_MB Mb: \"$FLAVOR\"?"
+    read -p "Press enter to continue"
+
+    echo "Creating \"$FLAVOR\" in project \"$PROJECT\" with $CPU_QTY cpus and $RAM_MB Mb...";
+    openstack flavor create --public --vcpus $CPU_QTY --ram $RAM_MB --disk 0 ${FLAVOR}_${PROJECT}
+  else
+    printf "%s\n" "${green}Flavor \"$FLAVOR\" already exist in project: \"$PROJECT\"${normal}"
+    #openstack security group show $SECURITY_GR_ID
+  fi
 }
 
 # VM create
 create_vms () {
 
   #export OS_PROJECT_NAME=$PROJECT
-
+  FLAVOR=$(openstack flavor list| grep $FLAVOR| awk '{print $4}')
   for i in $(seq $VM_QTY); do
     INSTANCE_NAME="${VM_BASE_NAME}_$i"
     echo "Check for VM: \"$INSTANCE_NAME\" exist"
@@ -364,7 +364,7 @@ create_vms () {
       echo "Сreate VM: \"$INSTANCE_NAME\" in project \"$PROJECT\"?"
       read -p "Press enter to continue"
     fi
-  echo "Creating VM: $INSTANCE_NAME"
+    echo "Creating VM: $INSTANCE_NAME"
 
 #  echo "openstack server create " \
 #    "--image '$IMAGE' " \
