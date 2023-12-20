@@ -40,7 +40,7 @@ batch_run_command() {
         sleep 1
         if ping -c 2 $IP &> /dev/null; then
             printf "%40s\n" "${green}There is a connection with $IP - success${normal}"
-            [ "$ONLY_PING" == "false" ] && { ssh -t -o StrictHostKeyChecking=no -i $KEY_NAME$VM_USER@$IP "$COMMAND_STR"; }
+            [ "$ONLY_PING" == "false" ] && { ssh -t -o StrictHostKeyChecking=no -i $KEY_NAME $VM_USER@$IP "$COMMAND_STR"; }
         else
             printf "%40s\n" "${red}No connection with $IP - error!${normal}"
         fi
