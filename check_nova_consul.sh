@@ -162,11 +162,14 @@ Check_consul_logs () {
 # Check consul config
 Check_consul_config () {
   echo "Check consul config..."
-  ipmi_fencing_state=$(ssh -o StrictHostKeyChecking=no "$leader_ctrl_node" cat /etc/kolla/consul/region-config_"${REGION}".json| grep -E '"bmc": \w|"ipmi": \w')
+  ipmi_fencing_state=$(ssh -o StrictHostKeyChecking=no "$leader_ctrl_node" cat /etc/kolla/consul/region-config_"${REGION}".json| \
+  grep -E '"bmc": \w|"ipmi": \w|alive_compute_threshold|dead_compute_threshold|')
   echo "$ipmi_fencing_state" | \
             sed --unbuffered \
                 -e 's/\(.*true.*\)/\o033[92m\1\o033[39m/' \
-                -e 's/\(.*false.*\)/\o033[31m\1\o033[39m/'
+                -e 's/\(.*false.*\)/\o033[31m\1\o033[39m/' \
+                -e 's/\(.*alive_compute_threshold.*\)/\o033[33m\1\o033[39m/' \
+                -e 's/\(.*dead_compute_threshold.*\)/\o033[33m\1\o033[39m/'
 }
 
 #clear
