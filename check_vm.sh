@@ -23,7 +23,6 @@ batch_run_command() {
     [[ -f "$HOME/.ssh/known_hosts" ]] && { rm ~/.ssh/known_hosts; }
     host_string=""
     [[ -n ${HYPERVISOR_NAME} ]] && { host_string="--host $HYPERVISOR_NAME"; }
-    VMs_IPs=$(openstack server list --project $PROJECT $host_string |grep ACTIVE |awk '{print $8}')
     echo -E "
     Start check VMs with parameters:
         Hypervisor:   $HYPERVISOR_NAME
@@ -32,8 +31,9 @@ batch_run_command() {
         Command:      $COMMAND_STR
         Only ping:    $ONLY_PING
         "
-
     read -p "Press enter to continue"
+
+    VMs_IPs=$(openstack server list --project $PROJECT $host_string |grep ACTIVE |awk '{print $8}')
     [[ -z $VMs_IPs ]] && { echo "No instance found in the $PROJECT project"; exit 1; }
     for raw_string_ip in $VMs_IPs; do
         IP="${raw_string_ip##*=}"
