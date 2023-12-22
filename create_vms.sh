@@ -330,6 +330,7 @@ check_and_add_flavor () {
         #echo "RAM_DRAFT: $RAM_DRAFT"
         #echo "CPU_QTY: $CPU_QTY"
         #echo "RAM_GB: $RAM_GB"
+    echo RAM_GB: $RAM_GB
     if [[ -z $CPU_QTY || -z $RAM_GB ]]; then
       printf "%s\n" "${orange}The falvor name format for creation should look like: <CPUs>c-<RAM GB>r instead: \"$FALVOR\"${normal}"
       printf "%s\n" "${red}Can't create a favorite by name: \"$FALVOR\"\n"
