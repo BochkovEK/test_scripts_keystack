@@ -134,16 +134,16 @@ check_container_on_lcm () {
 
 check_container_on_lcm
 
-#srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}')
-#for host in $srv; do
-#    echo "Check $host node..."
-#    #cmpt_pattern_clip="${cmpt_pattern#*|}"
-#    #echo $cmpt_pattern_clip
-#    cmpt_node=$(ssh -o StrictHostKeyChecking=no $host "hostname| grep -E '${cmpt_pattern}' 2>/dev/null")
-#    echo "$cmpt_node"
-#    if [[ -n ${cmpt_node} ]]; then
-#        check_virt_flags $host
-#    fi
-#    echo "Check python on $(cat /etc/hosts | grep -E ${host} | awk '{print $2}')"
-#    check_python $required_python $host
-#done
+srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}')
+for host in $srv; do
+    echo "Check $host node..."
+    #cmpt_pattern_clip="${cmpt_pattern#*|}"
+    #echo $cmpt_pattern_clip
+    cmpt_node=$(ssh -o StrictHostKeyChecking=no $host "hostname| grep -E '${cmpt_pattern}' 2>/dev/null")
+    echo "$cmpt_node"
+    if [[ -n ${cmpt_node} ]]; then
+        check_virt_flags $host
+    fi
+    echo "Check python on $(cat /etc/hosts | grep -E ${host} | awk '{print $2}')"
+    check_python $required_python $host
+done
