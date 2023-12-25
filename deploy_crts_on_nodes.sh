@@ -24,14 +24,14 @@ while [ -n "$1" ]
 do
     case "$1" in
         --help) echo -E "
-        -ih, 	-install_home		<install_home_dir>
-        -s, 	-settings		    <path_settings_file>
+        -ih,  -install_home   <install_home_dir>
+        -s,   -settings       <path_settings_file>
         -l,   -by_list        <deploy_by_ips_list_bool>
         -cc,  -ca_crt         <deploy_ca_crt_bool>
-        -lk,	-lcm_key	  	  <deploy_lcm_key_bool>
-        -gk,	-gitlab_key		  <deploy_gitlab_key_bool>
+        -lk,  -lcm_key        <deploy_lcm_key_bool>
+        -gk,  -gitlab_key     <deploy_gitlab_key_bool>
         -hs,  -hosts_string   <deploy_lcm_hosts_string_bool>
-        -dc,	-docker_cfg		  <deploy_docker_cfg_bool>
+        -dc,  -docker_cfg     <deploy_docker_cfg_bool>
         "
 #        -nc,	-nexus_crt		  <deploy_nexus_crt_bool>
 
