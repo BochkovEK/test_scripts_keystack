@@ -104,6 +104,8 @@ deploy_and_copy () {
       fi
       if [ "$DEPLOY_LCM_HOSTS_STRING" = true ] ; then
         echo "Deploy lcm hosts string to $IP"
+        # !!! Needed string in /etc/hosts:
+        # 10.224.129.239  ebochkov-keystack-lcm-01 demo.local config.demo.local ks-lcm.demo.local gitlab-runner.demo.local nexus.demo.local netbox.demo.local vault.demo.local
         lcm_hostname=$(hostname)
         hosts_string=$(cat /etc/hosts |grep "$lcm_hostname")
         ssh -o StrictHostKeyChecking=no $IP "echo '"$hosts_string"' >> /etc/hosts"
