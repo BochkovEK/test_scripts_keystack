@@ -131,6 +131,8 @@ check_container_on_lcm () {
   done
 }
 
+check_container_on_lcm
+
 #srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}')
 #for host in $srv; do
 #    echo "Check $host node..."
