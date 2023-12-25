@@ -8,6 +8,23 @@ required_python="python:3.8"
 cmpt_pattern="\-comp\-..$"
 ctrl_pattern="\-ctrl\-..$"
 net_pattern="\-net\-..$"
+required_container_list=(
+"bifrost_deploy"
+"netbox-housekeeping"
+"netbox-worker"
+"netbox"
+"netbox-redis"
+"netbox-postgres"
+"netbox-redis-cache"
+"web"
+"gitlab-runner"
+"gitlab"
+"vault"
+"nginx"
+"nexus"
+)
+
+
 nodes_to_find="$cmpt_pattern|$ctrl_pattern|$net_pattern"
 echo "nodes_to_find: $nodes_to_find"
 
@@ -95,16 +112,35 @@ check_virt_flags () {
     fi
 }
 
-srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}')
-for host in $srv; do
-    echo "Check $host node..."
-    #cmpt_pattern_clip="${cmpt_pattern#*|}"
-    #echo $cmpt_pattern_clip
-    cmpt_node=$(ssh -o StrictHostKeyChecking=no $host "hostname| grep -E '${cmpt_pattern}' 2>/dev/null")
-    echo "$cmpt_node"
-    if [[ ! -z ${cmpt_node} ]]; then
-        check_virt_flags $host
+check_container_on_lcm () {
+  echo "Check container list on lcm"
+  container_name_on_lcm=$(docker ps --format "{{.Names}}" --filter status=running)
+  for container in $container_name_on_lcm; do
+    for container_requaired in "${required_container_list[@]}"; do
+      container_exist="false"
+      if [ "$container" = "$container_requaired" ]; then
+        container_exist="true"
+      fi
+    done
+    if [ "$container_exist" = "true" ]; then
+      container_exist="true"
+      print_ok "$container_requaired"
+    else
+      print_fail "$container_requaired not found"
     fi
-    echo "Check python on $(cat /etc/hosts | grep -E ${host} | awk '{print $2}')"
-    check_python $required_python $host
-done
+  done
+}
+
+#srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}')
+#for host in $srv; do
+#    echo "Check $host node..."
+#    #cmpt_pattern_clip="${cmpt_pattern#*|}"
+#    #echo $cmpt_pattern_clip
+#    cmpt_node=$(ssh -o StrictHostKeyChecking=no $host "hostname| grep -E '${cmpt_pattern}' 2>/dev/null")
+#    echo "$cmpt_node"
+#    if [[ -n ${cmpt_node} ]]; then
+#        check_virt_flags $host
+#    fi
+#    echo "Check python on $(cat /etc/hosts | grep -E ${host} | awk '{print $2}')"
+#    check_python $required_python $host
+#done
