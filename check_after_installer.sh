@@ -117,7 +117,7 @@ check_container_on_lcm () {
   container_name_on_lcm=$(docker ps --format "{{.Names}}" --filter status=running)
   for container in $container_name_on_lcm; do
     for container_requaired in "${required_container_list[@]}"; do
-      echo "$container_requaired"
+      echo "$container" - "$container_requaired"
       container_exist="false"
       if [ "$container" = "$container_requaired" ]; then
         container_exist="true"
