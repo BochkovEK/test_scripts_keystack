@@ -17,8 +17,8 @@ IPS_LIST=("<IP_1>" "<IP_2>" "<IP_3>" "...")
 [[ -z $DEPLOY_GITLAB_KEY ]] && DEPLOY_GITLAB_KEY=false
 [[ -z $DEPLOY_DOCKER_CFG ]] && DEPLOY_DOCKER_CFG=false
 #[[ -z $DEPLOY_NEXUS_CRTS ]] && DEPLOY_NEXUS_CRTS=false
-[[ -z $DEPLOY_CA_CRT ]] && DEPLOY_CA_CRT=true
-[[ -z $DEPLOY_LCM_HOSTS_STRING ]] && DEPLOY_LCM_HOSTS_STRING=true
+[[ -z $DEPLOY_CA_CRT ]] && DEPLOY_CA_CRT=false
+[[ -z $DEPLOY_LCM_HOSTS_STRING ]] && DEPLOY_LCM_HOSTS_STRING=false
 
 while [ -n "$1" ]
 do
@@ -43,27 +43,34 @@ do
         -s|-settings) SETTINGS="$2"
 	          echo "Found the -settings <path_settings_file> option, with parameter value $SETTINGS"
             shift ;;
-        -l|-by_list) DEPLOY_BY_IPS_LIST="$2"
+        -l|-by_list) DEPLOY_BY_IPS_LIST="true"
 	          echo "Found the -by_list <deploy_by_ips_list_bool> option, with parameter value $DEPLOY_BY_IPS_LIST"
-            shift ;;
-       -gk|-gitlab_key) DEPLOY_GITLAB_KEY="$2"
+            #shift
+            ;;
+       -gk|-gitlab_key) DEPLOY_GITLAB_KEY="true"
 	          echo "Found the -gitlab_key <deploy_gitlab_key_bool> option, with parameter value $DEPLOY_GITLAB_KEY"
-            shift ;;
-        -lk|-lcm_key) DEPLOY_LCM_KEY="$2"
+            #shift
+            ;;
+        -lk|-lcm_key) DEPLOY_LCM_KEY="true"
 	          echo "Found the -lcm_key <deploy_lcm_key_bool> option, with parameter value $DEPLOY_LCM_KEY"
-            shift ;;
-        -dc|-docker_cfg) DEPLOY_DOCKER_CFG="$2"
+            #shift
+            ;;
+        -dc|-docker_cfg) DEPLOY_DOCKER_CFG="true"
 	          echo "Found the -docker_cfg <deploy_docker_cfg_bool> option, with parameter value $DEPLOY_DOCKER_CFG"
-            shift ;;
-        -nc|-nexus_crt) DEPLOY_NEXUS_CRTS="$2"
+            #shift
+            ;;
+        -nc|-nexus_crt) DEPLOY_NEXUS_CRTS="true"
 	          echo "Found the -nexus_crt <deploy_nexus_crt_bool> option, with parameter value $DEPLOY_NEXUS_CRTS"
-            shift ;;
-        -cc|-ca_crt) DEPLOY_CA_CRT="$2"
+            #shift
+            ;;
+        -cc|-ca_crt) DEPLOY_CA_CRT="true"
             echo "Found the -ca_crt <deploy_ca_crt_bool> option, with parameter value $DEPLOY_CA_CRT"
-            shift ;;
-        -hs|-hosts_string) DEPLOY_LCM_HOSTS_STRING="$2"
+            #shift
+            ;;
+        -hs|-hosts_string) DEPLOY_LCM_HOSTS_STRING="true"
             echo "Found the -ca_crt <deploy_lcm_hosts_string_bool> option, with parameter value $DEPLOY_LCM_HOSTS_STRING"
-            shift ;;
+            #shift
+            ;;
         --) shift
             break ;;
         *) echo "$1 is not an option";;
