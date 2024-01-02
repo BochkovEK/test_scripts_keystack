@@ -45,23 +45,25 @@ UBUNTU_IMAGE_NAME="ubuntu-20.04-server-cloudimg-amd64"
 [[ -z $VM_BASE_NAME ]] && VM_BASE_NAME="TEST_VM_FROM_SCRIPT"
 [[ -z $TEST_USER ]] && TEST_USER="admin"
 [[ -z $ROLE ]] && ROLE="admin"
+[[ -z $ADD_KEYS ]] && ADD_KEYS=""
 #======================
 
 while [ -n "$1" ]
 do
     case "$1" in
         --help) echo -E "
-        -q,           -qty		<number_of_VMs>
-        -i,           -image		<image_name>
-        -f,           -flavor		<falvor_name>
-        -k,           -key		<key_name>
-        -hv,          -hypervisor	<hypervisor_name>
-        -net,         -network	<network_name>
-        -v,           -volume_size 	volume_size_in_GB>
-        -n,           -name 		<vm_base_name>
-        -p,           -project	<project_id>
-        -t            <time_out_between_VM_create>
-        -dont_check   disable resource availability checks
+        -q,           -qty		      <number_of_VMs>
+        -i,           -image		    <image_name>
+        -f,           -flavor		    <flavor_name>
+        -k,           -key		      <key_name>
+        -hv,          -hypervisor	  <hypervisor_name>
+        -net,         -network	    <network_name>
+        -v,           -volume_size 	<volume_size_in_GB>
+        -n,           -name 		    <vm_base_name>
+        -p,           -project	    <project_id>
+        -t                          <time_out_between_VM_create>
+        -dont_check                 <disable resource availability checks>
+        -add                        <add command key>
         "
           exit 0
           break ;;
@@ -107,8 +109,11 @@ do
         -dont_check) dont_check=true
           echo "Found the -dont_check Resource availability checks are disabled"
           shift ;;
+        -add) add_key="$2"
+          echo "Found the -add <add command key> option, with parameter value $add_key"
+          shift ;;
         --) shift
-            break ;;
+          break ;;
         *) echo "$1 is not an option";;
         esac
         shift
@@ -351,8 +356,8 @@ check_and_add_flavor () {
   fi
 }
 
-# VM create
-create_vms () {
+# VM create (old)
+create_vms_old () {
 
   #export OS_PROJECT_NAME=$PROJECT
   FLAVOR=$(openstack flavor list| grep $FLAVOR| awk '{print $4}')
@@ -411,6 +416,49 @@ create_vms () {
     printf "%s\n" "${orange}openstack server list --all-projects --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
   fi
 }
+
+# VM create
+create_vms () {
+
+  echo "Create VM: \"$VM_BASE_NAME\" in project \"$PROJECT\"?"
+  read -pr "Press enter to continue"
+
+  echo "Creating VMs..."
+
+  openstack server create \
+    $INSTANCE_NAME \
+    --image $IMAGE \
+    --flavor $FLAVOR \
+    --security-group $SECURITY_GR_ID \
+    --key-name $KEY_NAME \
+    $host \
+    --os-compute-api-version $API_VERSION \
+    --network $NETWORK \
+    --boot-from-volume $VOLUME_SIZE \
+    $add_key
+
+  sleep $TIMEOUT_BEFORE_NEXT_CREATION
+
+  #export OS_PROJECT_NAME='admin'
+
+# Check vms list...
+  if [ -n "$HYPERVISOR_HOSTNAME" ]; then
+    check_host="--host $HYPERVISOR_HOSTNAME"
+    echo "Check vms list on $HYPERVISOR_HOSTNAME:"
+    #openstack server list --all-projects --host $HYPERVISOR_HOSTNAME --long
+    openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks
+    echo "Command for check vms list on $HYPERVISOR_HOSTNAME:"
+    #echo "export OS_PROJECT_NAME=$PROJECT"
+    #echo "export OS_USERNAME=$TEST_USER"
+    printf "%s\n" "${orange}openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
+  else
+    echo "Check vms list..."
+    openstack server list --all-projects --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks
+    echo "Command for check vms list:"
+    printf "%s\n" "${orange}openstack server list --all-projects --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
+  fi
+}
+
 
 output_of_initial_parameters
 check_and_source_openrc_file
