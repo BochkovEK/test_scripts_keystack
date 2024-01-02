@@ -31,7 +31,7 @@ batch_run_command() {
         Command:      $COMMAND_STR
         Only ping:    $ONLY_PING
         "
-    read -p "Press enter to continue"
+    read -r -p "Press enter to continue"
 
     VMs_IPs=$(openstack server list --project $PROJECT $host_string |grep ACTIVE |awk '{print $8}')
     [[ -z $VMs_IPs ]] && { echo "No instance found in the $PROJECT project"; exit 1; }

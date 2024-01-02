@@ -69,6 +69,6 @@ done
 echo "${NODES[*]}"
 
 for host in "${NODES[@]}"; do
-  echo "Check container $CONTAINER_NAME on ${host}"
+  echo "Start command on ${host}"
   ssh -o StrictHostKeyChecking=no -t "$host" "$COMMAND"
 done
