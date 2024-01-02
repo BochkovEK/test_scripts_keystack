@@ -421,7 +421,7 @@ create_vms_old () {
 create_vms () {
 
   echo "Create VM: \"$VM_BASE_NAME\" in project \"$PROJECT\"?"
-  read -pr "Press enter to continue"
+  read -r -p "Press enter to continue"
 
   echo "Creating VMs..."
 
