@@ -111,7 +111,7 @@ do
         -dont_check) dont_check=true
           echo "Found the -dont_check. Resource availability checks are disabled"
           shift ;;
-        -b|batch) batch=true
+        -b|-batch) batch=true
           echo "Found the -batch. VMs will be created one after another with a timeout"
           BATCH=$batch
           shift ;;
