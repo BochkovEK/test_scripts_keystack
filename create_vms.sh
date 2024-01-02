@@ -435,6 +435,7 @@ create_vms () {
     --os-compute-api-version $API_VERSION \
     --network $NETWORK \
     --boot-from-volume $VOLUME_SIZE \
+    --max $VM_QTY \
     $add_key
 
   sleep $TIMEOUT_BEFORE_NEXT_CREATION
