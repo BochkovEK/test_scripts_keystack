@@ -384,7 +384,7 @@ check_vms_list () {
 create_vms_old () {
 
   #export OS_PROJECT_NAME=$PROJECT
-  FLAVOR=$(openstack flavor list| grep $FLAVOR| awk '{print $4}')
+  FLAVOR=$(openstack flavor list| grep $FLAVOR| head -n 1| awk '{print $4}')
   for i in $(seq $VM_QTY); do
     INSTANCE_NAME="${VM_BASE_NAME}_$i"
     echo "Check for VM: \"$INSTANCE_NAME\" exist"
@@ -392,7 +392,7 @@ create_vms_old () {
     if [ -n "$VM_EXIST" ]; then
       printf "%s\n" "${orange}VM: \"$INSTANCE_NAME\" is already exist in project \"$PROJECT\"${normal}"
       echo "Сreate VM: \"$INSTANCE_NAME\" in project \"$PROJECT\"?"
-      read -p "Press enter to continue"
+      read -r -p "Press enter to continue"
     fi
     echo "Creating VM: $INSTANCE_NAME"
 
@@ -421,24 +421,7 @@ create_vms_old () {
     sleep $TIMEOUT_BEFORE_NEXT_CREATION
   done
 
-  #export OS_PROJECT_NAME='admin'
-
-# Check vms list...
-  if [ -n "$HYPERVISOR_HOSTNAME" ]; then
-    check_host="--host $HYPERVISOR_HOSTNAME"
-    echo "Check vms list on $HYPERVISOR_HOSTNAME:"
-    #openstack server list --all-projects --host $HYPERVISOR_HOSTNAME --long
-    openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks
-    echo "Command for check vms list on $HYPERVISOR_HOSTNAME:"
-    #echo "export OS_PROJECT_NAME=$PROJECT"
-    #echo "export OS_USERNAME=$TEST_USER"
-    printf "%s\n" "${orange}openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
-  else
-    echo "Check vms list..."
-    openstack server list --all-projects --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks
-    echo "Command for check vms list:"
-    printf "%s\n" "${orange}openstack server list --all-projects --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
-  fi
+  check_vms_list
 }
 
 # VM create
@@ -449,6 +432,7 @@ create_vms () {
 
   echo "Creating VMs..."
 
+  FLAVOR=$(openstack flavor list| grep $FLAVOR| head -n 1| awk '{print $4}')
   openstack server create \
     $VM_BASE_NAME \
     --image $IMAGE \
