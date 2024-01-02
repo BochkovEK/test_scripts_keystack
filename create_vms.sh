@@ -62,8 +62,9 @@ do
         -n,           -name 		    <vm_base_name>
         -p,           -project	    <project_id>
         -t                          <time_out_between_VM_create>
-        -dont_check                 <disable resource availability checks>
+        -dont_check                 <disable resource availability checks (bool)>
         -add                        <add command key>
+        -b            -batch        <creating VMs one by one with a timeout (bool)>
         "
           exit 0
           break ;;
@@ -107,7 +108,10 @@ do
           VM_BASE_NAME=$name
           shift ;;
         -dont_check) dont_check=true
-          echo "Found the -dont_check Resource availability checks are disabled"
+          echo "Found the -dont_check. Resource availability checks are disabled"
+          shift ;;
+        -b|batch) batch=true
+          echo "Found the -batch. VMs will be created one after another with a timeout"
           shift ;;
         -add) add_key="$2"
           echo "Found the -add <add command key> option, with parameter value $add_key"
@@ -356,6 +360,26 @@ check_and_add_flavor () {
   fi
 }
 
+# Check vms list...
+check_vms_list () {
+  echo "Check vms list..."
+  if [ -n "$HYPERVISOR_HOSTNAME" ]; then
+    check_host="--host $HYPERVISOR_HOSTNAME"
+    echo "Check vms list on $HYPERVISOR_HOSTNAME:"
+    #openstack server list --all-projects --host $HYPERVISOR_HOSTNAME --long
+    openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks
+    echo "Command for check vms list on $HYPERVISOR_HOSTNAME:"
+    #echo "export OS_PROJECT_NAME=$PROJECT"
+    #echo "export OS_USERNAME=$TEST_USER"
+    printf "%s\n" "${orange}openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
+  else
+    echo "Check vms list..."
+    openstack server list --all-projects --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks
+    echo "Command for check vms list:"
+    printf "%s\n" "${orange}openstack server list --all-projects --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
+  fi
+}
+
 # VM create (old)
 create_vms_old () {
 
@@ -440,24 +464,8 @@ create_vms () {
 
   sleep $TIMEOUT_BEFORE_NEXT_CREATION
 
-  #export OS_PROJECT_NAME='admin'
-
 # Check vms list...
-  if [ -n "$HYPERVISOR_HOSTNAME" ]; then
-    check_host="--host $HYPERVISOR_HOSTNAME"
-    echo "Check vms list on $HYPERVISOR_HOSTNAME:"
-    #openstack server list --all-projects --host $HYPERVISOR_HOSTNAME --long
-    openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks
-    echo "Command for check vms list on $HYPERVISOR_HOSTNAME:"
-    #echo "export OS_PROJECT_NAME=$PROJECT"
-    #echo "export OS_USERNAME=$TEST_USER"
-    printf "%s\n" "${orange}openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
-  else
-    echo "Check vms list..."
-    openstack server list --all-projects --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks
-    echo "Command for check vms list:"
-    printf "%s\n" "${orange}openstack server list --all-projects --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
-  fi
+  check_vms_list
 }
 
 
@@ -473,5 +481,9 @@ check_and_add_secur_group
   check_network
   check_and_add_keypair;
   }
-create_vms
+if [ "$batch" = "true" ]; then
+  create_vms_batch
+else
+  create_vms
+fi
 export OS_PROJECT_NAME='admin'
