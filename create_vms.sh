@@ -321,7 +321,7 @@ check_image () {
 # Check flavor
 check_and_add_flavor () {
   echo "Check for exist flavor: \"$FLAVOR\""
-  FLAVOR_EXST=$(openstack flavor list| grep $FLAVOR| awk '{print $4}')
+  FLAVOR_EXST=$(openstack flavor list| grep $FLAVOR| head -n 1| awk '{print $4}')
   if [ -z $FLAVOR_EXST ]; then
     printf "%s\n" "${orange}Flavor \"$FLAVOR\" not found in project \"$PROJECT\"${normal}"
     #echo "Сreate a flavor by name (example name: \"4c-4r\" -> 4 cpu cores, 4096 Mb ram) with name: \"$FALVOR\"?"
