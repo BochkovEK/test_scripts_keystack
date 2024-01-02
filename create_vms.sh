@@ -426,7 +426,7 @@ create_vms () {
   echo "Creating VMs..."
 
   openstack server create \
-    $INSTANCE_NAME \
+    $VM_BASE_NAME \
     --image $IMAGE \
     --flavor $FLAVOR \
     --security-group $SECURITY_GR_ID \
