@@ -46,6 +46,7 @@ UBUNTU_IMAGE_NAME="ubuntu-20.04-server-cloudimg-amd64"
 [[ -z $TEST_USER ]] && TEST_USER="admin"
 [[ -z $ROLE ]] && ROLE="admin"
 [[ -z $ADD_KEYS ]] && ADD_KEYS=""
+[[ -z $BATCH ]] && BATCH="false"
 #======================
 
 while [ -n "$1" ]
@@ -112,6 +113,7 @@ do
           shift ;;
         -b|batch) batch=true
           echo "Found the -batch. VMs will be created one after another with a timeout"
+          BATCH=$batch
           shift ;;
         -add) add_key="$2"
           echo "Found the -add <add command key> option, with parameter value $add_key"
@@ -147,6 +149,8 @@ VMs will be created with the following parameters:
         Network name: $NETWORK
         Volume size: $VOLUME_SIZE
         OS compute api version: $API_VERSION
+        Addition key: $ADD_KEYS
+        Creating VMs one by one with a timeout (bool): $BATCH
         "
 
     read -p "Press enter to continue"
@@ -465,7 +469,7 @@ check_and_add_secur_group
   check_network
   check_and_add_keypair;
   }
-if [ "$batch" = "true" ]; then
+if [ "$BATCH" = "true" ]; then
   create_vms_batch
 else
   create_vms
