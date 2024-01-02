@@ -385,7 +385,7 @@ check_vms_list () {
 }
 
 # VM create (old)
-create_vms_old () {
+create_vms_batch () {
 
   #export OS_PROJECT_NAME=$PROJECT
   FLAVOR=$(openstack flavor list| grep $FLAVOR| head -n 1| awk '{print $4}')
