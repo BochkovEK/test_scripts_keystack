@@ -412,6 +412,7 @@ create_vms_batch () {
 #    "'$INSTANCE_NAME'"
 
     openstack server create \
+      $INSTANCE_NAME \
       --image $IMAGE \
       --flavor $FLAVOR \
       --security-group $SECURITY_GR_ID \
@@ -420,7 +421,7 @@ create_vms_batch () {
       --os-compute-api-version $API_VERSION \
       --network $NETWORK \
       --boot-from-volume $VOLUME_SIZE \
-      $INSTANCE_NAME
+      $ADD_KEY
 
     sleep $TIMEOUT_BEFORE_NEXT_CREATION
   done
