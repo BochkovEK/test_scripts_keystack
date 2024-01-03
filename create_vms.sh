@@ -110,11 +110,11 @@ do
           shift ;;
         -dont_check) dont_check=true
           echo "Found the -dont_check. Resource availability checks are disabled"
-          shift ;;
+          ;;
         -b|-batch) batch=true
           echo "Found the -batch. VMs will be created one after another with a timeout"
           BATCH=$batch
-          shift ;;
+          ;;
         -add) add_key="$2"
           echo "Found the -add <add command key> option, with parameter value $add_key"
           ADD_KEY=$add_key
