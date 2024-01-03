@@ -45,7 +45,7 @@ UBUNTU_IMAGE_NAME="ubuntu-20.04-server-cloudimg-amd64"
 [[ -z $VM_BASE_NAME ]] && VM_BASE_NAME="TEST_VM_FROM_SCRIPT"
 [[ -z $TEST_USER ]] && TEST_USER="admin"
 [[ -z $ROLE ]] && ROLE="admin"
-[[ -z $ADD_KEYS ]] && ADD_KEYS=""
+[[ -z $ADD_KEY ]] && ADD_KEY=""
 [[ -z $BATCH ]] && BATCH="false"
 #======================
 
@@ -117,6 +117,7 @@ do
           shift ;;
         -add) add_key="$2"
           echo "Found the -add <add command key> option, with parameter value $add_key"
+          ADD_KEY=$add_key
           shift ;;
         --) shift
           break ;;
@@ -149,7 +150,7 @@ VMs will be created with the following parameters:
         Network name: $NETWORK
         Volume size: $VOLUME_SIZE
         OS compute api version: $API_VERSION
-        Addition key: $ADD_KEYS
+        Addition key: $ADD_KEY
         Creating VMs one by one with a timeout (bool): $BATCH
         "
 
@@ -447,7 +448,7 @@ create_vms () {
     --network $NETWORK \
     --boot-from-volume $VOLUME_SIZE \
     --max $VM_QTY \
-    $add_key
+    $ADD_KEY
 
   sleep $TIMEOUT_BEFORE_NEXT_CREATION
 
