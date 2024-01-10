@@ -63,9 +63,9 @@ do
         -n,           -name 		    <vm_base_name>
         -p,           -project	    <project_id>
         -t                          <time_out_between_VM_create>
-        -dont_check                 <disable resource availability checks (bool)>
+        -dont_check                 disable resource availability checks (without value)
         -add                        <add command key>
-        -b            -batch        <creating VMs one by one with a timeout (bool)>
+        -b            -batch        creating VMs one by one with a timeout (without value)
         "
           exit 0
           break ;;
@@ -112,7 +112,7 @@ do
           echo "Found the -dont_check. Resource availability checks are disabled"
           ;;
         -b|-batch) batch=true
-          echo "Found the -batch. VMs will be created one after another with a timeout"
+          echo "Found the -batch. VMs will be created one after another with a timeout: $TIMEOUT_BEFORE_NEXT_CREATION"
           BATCH=$batch
           ;;
         -add) add_key="$2"
@@ -432,8 +432,8 @@ create_vms_batch () {
 # VM create
 create_vms () {
 
-  echo "Create VM: \"$VM_BASE_NAME\" in project \"$PROJECT\"?"
-  read -r -p "Press enter to continue"
+#  echo "Create VM: \"$VM_BASE_NAME\" in project \"$PROJECT\"?"
+#  read -r -p "Press enter to continue"
 
   echo "Creating VMs..."
 

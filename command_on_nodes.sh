@@ -58,19 +58,19 @@ while [ -n "$1" ]; do
 "
         exit 0
         break ;;
-  -c|-command) COMMAND="$2"
-    echo "Found the -command <command> option, with parameter value $COMMAND"
-    shift ;;
-  -nt|-type_of_nodes)
-    note_type_func "$2"
-    shift ;;
-  -p|-ping)
-    PING="true"
-    echo "Found the -ping option"
-    shift ;;
-#  --) shift
-#    break ;;
-  *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
+    -c|-command) COMMAND="$2"
+      echo "Found the -command <command> option, with parameter value $COMMAND"
+      shift ;;
+    -nt|-type_of_nodes)
+      note_type_func "$2"
+      shift ;;
+    -p|-ping)
+      PING="true"
+      echo "Found the -ping option"
+      ;;
+    --) shift
+      break ;;
+    *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
     esac
     shift
 done
