@@ -80,6 +80,7 @@ echo "${NODES[*]}"
 
 check_connection () {
   for host in "${NODES[@]}"; do
+    echo "host: $host"
     sleep 1
     if ping -c 2 $host &> /dev/null; then
         printf "%40s\n" "${green}There is a connection with $host - success${normal}"
