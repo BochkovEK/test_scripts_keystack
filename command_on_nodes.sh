@@ -52,8 +52,8 @@ count=1
 while [ -n "$1" ]; do
   case "$1" in
     --help) echo -E "
-      -c, 	-command        <command>
-      -nt, 	-type_of_nodes  <type_of_nodes> 'ctrl', 'comp', 'net'
+      -c,   -command        <command>
+      -nt,  -type_of_nodes  <type_of_nodes> 'ctrl', 'comp', 'net'
       -p,   -ping           ping before execution command
 "
         exit 0
