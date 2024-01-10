@@ -68,8 +68,8 @@ while [ -n "$1" ]; do
     PING="true"
     echo "Found the -ping option"
     shift ;;
-  --) shift
-    break ;;
+#  --) shift
+#    break ;;
   *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
     esac
     shift
