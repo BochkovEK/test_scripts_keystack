@@ -11,7 +11,7 @@ normal=$(tput sgr0)
 
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $KEY_NAME ]] && KEY_NAME="key_test.pem"
-[[ -z $HYPERVISOR_NAME ]] && HYPERVISOR_NAME="comp-01"
+[[ -z $HYPERVISOR_NAME ]] && HYPERVISOR_NAME="false"
 [[ -z $CPUS ]] && CPUS="4"
 [[ -z $RAM ]] && RAM="4"
 [[ -z $TYPE_TEST ]] && TYPE_TEST="cpu"
@@ -77,11 +77,18 @@ copy_and_stress() {
 }
 
 batch_run_stress() {
+    if [ "${1}" = false ]; then
+      HV="start stress test on all VMs on project: $PROJECT"
+      HV_STRING=""
+    else
+      HV=${1}
+      HV_STRING="--host $HV"
+    fi
     local MODE=$2
     echo -E "
-Stress test: $MODE will be launched on the hypervisor $1 VMs
+Stress test: $MODE will be launched on the hypervisor ($HV_STRING) VMs
     Stress test parameters:
-        Hypervisor:           $1
+        Hypervisor:           $HV
         Key:                  $KEY_NAME
         Stress test type:     $MODE
         CPUs:                 $CPUS
@@ -90,7 +97,7 @@ Stress test: $MODE will be launched on the hypervisor $1 VMs
         "
 
     read -p "Press enter to continue"
-    VMs_IPs=$(openstack server list --host $1 --project $PROJECT |grep ACTIVE |awk '{print $8}')
+    VMs_IPs=$(openstack server list $HV_STRING --project $PROJECT |grep ACTIVE |awk '{print $8}')
     [[ -z $VMs_IPs ]] && { echo "No instance found in the $PROJECT project"; exit 1; }
     for raw_string_ip in $VMs_IPs; do
         IP="${raw_string_ip##*=}"

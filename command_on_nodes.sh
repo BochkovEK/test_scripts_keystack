@@ -55,6 +55,10 @@ while [ -n "$1" ]; do
       -c,   -command        <command>
       -nt,  -type_of_nodes  <type_of_nodes> 'ctrl', 'comp', 'net'
       -p,   -ping           ping before execution command
+      Remove all containers on all nodes:
+        bash command_on_nodes.sh -c 'docker stop $(docker ps -a -q)'
+        bash command_on_nodes.sh -c 'docker system prune -af'
+        bash command_on_nodes.sh -c 'docker volume prune -af'
 "
         exit 0
         break ;;
