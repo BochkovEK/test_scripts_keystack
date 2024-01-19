@@ -1,12 +1,14 @@
 #!/bin/bash
 
 # The script deletes VMs and Volumes for the project. The project can be specified as a parameter. By default the project is "admin" 
-# exzmple start command: bash clean_openstack.sh ha_test_project_2 
+# exemple start command: bash clean_openstack.sh ha_test_project_2
+# Add start keys and help (dont_ask key)
 
 OPENRC=$HOME/openrc
 PROJECT="admin"
 
 [[ ! -z $1 ]] && PROJECT=$1
+#[[ -z $DONT_ASK ]] && DONT_ASK="false"
 
 echo "Check VMs and volumes for project $PROJECT"
 
