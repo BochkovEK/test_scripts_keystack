@@ -47,6 +47,8 @@ UBUNTU_IMAGE_NAME="ubuntu-20.04-server-cloudimg-amd64"
 [[ -z $ROLE ]] && ROLE="admin"
 [[ -z $ADD_KEY ]] && ADD_KEY=""
 [[ -z $BATCH ]] && BATCH="false"
+[[ -z $DONT_CHECK ]] && DONT_CHECK="false"
+[[ -z $DONT_ASK ]] && DONT_ASK="false"
 #======================
 
 while [ -n "$1" ]
@@ -64,6 +66,7 @@ do
         -p,           -project	    <project_id>
         -t                          <time_out_between_VM_create>
         -dont_check                 disable resource availability checks (without value)
+        -dont_ask                   all actions will be performed automatically (without value)
         -add                        <add command key>
         -b            -batch        creating VMs one by one with a timeout (without value)
         "
@@ -108,8 +111,11 @@ do
           echo "Found the -name <vm_base_name> option, with parameter value $name"
           VM_BASE_NAME=$name
           shift ;;
-        -dont_check) dont_check=true
+        -dont_check) DONT_CHECK=true
           echo "Found the -dont_check. Resource availability checks are disabled"
+          ;;
+        -dont_ask) DONT_ASK=true
+          echo "Found the -dont_ask. All actions will be performed automatically"
           ;;
         -b|-batch) batch=true
           echo "Found the -batch. VMs will be created one after another with a timeout: $TIMEOUT_BEFORE_NEXT_CREATION"
@@ -154,7 +160,7 @@ VMs will be created with the following parameters:
         Creating VMs one by one with a timeout (bool): $BATCH
         "
 
-    read -p "Press enter to continue"
+    [[ ! $DONT_ASK = "false" ]] && read -p -r "Press enter to continue"
 }
 
 # Check openrc file
@@ -212,8 +218,10 @@ check_project () {
     PROJ_ID=$(openstack project list| grep $PROJECT| awk '{print $2}')
     if [ -z $PROJ_ID ]; then
         printf "%s\n" "${orange}Project \"$PROJECT\" does not exist${normal}"
-        echo "Сreate a Project with name: \"$PROJECT\"?"
-        read -p "Press enter to continue"
+        [[ ! $DONT_ASK = "false" ]] && {
+          echo "Сreate a Project with name: \"$PROJECT\"?";
+          read -p -r "Press enter to continue";
+          }
         openstack project create $PROJECT
     else
         printf "%s\n" "${green}Project: \"$PROJECT\" exist${normal}"
@@ -222,8 +230,10 @@ check_project () {
     USER_EXIST=$(openstack user list| grep -E " $TEST_USER "| awk '{print $4}')
     if [ -z $USER_EXIST ]; then
         printf "%s\n" "${orange}User: \"$TEST_USER\" does not exist${normal}"
-        echo "Сreate a user with name: \"$TEST_USER\"?"
-        read -p "Press enter to continue"
+        [[ ! $DONT_ASK = "false" ]] && {
+          echo "Сreate a user with name: \"$TEST_USER\"?";
+          read -p -r "Press enter to continue";
+          }
         openstack user create --password $OS_PASSWORD $TEST_USER
     else
         printf "%s\n" "${green}User: \"$TEST_USER\" exist${normal}"
@@ -232,8 +242,10 @@ check_project () {
     ROLE_IN_PROJECT=$(openstack role assignment list --user $TEST_USER --project $PROJECT --names|grep -E "$ROLE(.)+$TEST_USER(.)+$PROJECT")
     if [[ -z $ROLE_IN_PROJECT ]]; then
         printf "%s\n" "${orange}Role: \"$ROLE\" does not exist in project: \"$PROJECT\"${normal}"
-        echo "Сreate role: \"$ROLE\" in project: \"$PROJECT\"?"
-        read -p "Press enter to continue"
+        [[ ! $DONT_ASK = "false" ]] && {
+          echo "Сreate role: \"$ROLE\" in project: \"$PROJECT\"?";
+          read -p -r "Press enter to continue";
+          }
         openstack role add --project $PROJECT --user $TEST_USER $ROLE
         #Add admin user to project to view it in horizon by admin user authorization
         openstack role add --project $PROJECT --user admin admin
@@ -251,9 +263,10 @@ check_and_add_secur_group () {
     SECURITY_GR_ID=$(openstack security group list|grep -E "($SECURITY_GR(.)*$PROJ_ID)" | head -1 | awk '{print $2}')
     if [ -z $SECURITY_GR_ID ]; then
         printf "%s\n" "${orange}Security group \"$SECURITY_GR\" not found in project \"$PROJECT\"${normal}"
-
-        echo "Сreate a Security group with a name: \"$SECURITY_GR\"?"
-        read -p "Press enter to continue"
+        [[ ! $DONT_ASK = "false" ]] && {
+          echo "Сreate a Security group with a name: \"$SECURITY_GR\"?";
+          read -p -r "Press enter to continue";
+          }
 
         echo "Creating security group \"$SECURITY_GR\" in project \"$PROJECT\"..."
         SECURITY_GR_ID=$(openstack security group create --project $PROJECT $SECURITY_GR|grep "id"| head -1 | awk '{print $4}')
@@ -275,8 +288,10 @@ check_and_add_keypair () {
   KEY_NAME_EXIST=$(openstack keypair list | grep $KEY_NAME| awk '{print $2}')
   if [ -z "$KEY_NAME_EXIST" ]; then
     printf "%s\n" "${orange}Keypair \"$KEY_NAME\" not found in project \"$PROJECT\"${normal}"
-    echo "Сreate a key pair with a name: \"$KEY_NAME\"?"
-    read -p "Press enter to continue"
+    [[ ! $DONT_ASK = "false" ]] && {
+      echo "Сreate a key pair with a name: \"$KEY_NAME\"?";
+      read -p -r "Press enter to continue";
+      }
 
     echo "Creating \"$KEY_NAME\" in project \"$PROJECT\"..."
     touch ./$KEY_NAME.pem
@@ -309,8 +324,10 @@ check_image () {
     exit 1
   elif [ -z "$IMAGE_NAME_EXIST" ] && [[ $IMAGE =~ ubuntu|ubuntu-22.04.2-live-server-amd64 ]]; then
     printf "%s\n" "${orange}Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
-    echo "Try to download image: \"$UBUNTU_IMAGE_NAME\" and add to openstack?"
-    read -r -p "Press enter to continue"
+    [[ ! $DONT_ASK = "false" ]] && {
+      echo "Try to download image: \"$UBUNTU_IMAGE_NAME\" and add to openstack?";
+      read -r -p "Press enter to continue";
+      }
 
     echo "Creating image \"$UBUNTU_IMAGE_NAME\" in project \"$PROJECT\"..."
     [ -f ./"$UBUNTU_IMAGE_NAME".img ] && echo "File ./$UBUNTU_IMAGE_NAME.img exist." \
@@ -354,8 +371,10 @@ check_and_add_flavor () {
     let "RAM_MB = ${RAM_GB} * 1024"
     #echo $RAM_MB
 
-    echo "Сreate a flavor with a template name <cpu qty>c_<ram GB>m with cpus: $CPU_QTY and ram: $RAM_MB Mb: \"$FLAVOR\"?"
-    read -p "Press enter to continue"
+    [[ ! $DONT_ASK = "false" ]] && {
+      echo "Сreate a flavor with a template name <cpu qty>c_<ram GB>m with cpus: $CPU_QTY and ram: $RAM_MB Mb: \"$FLAVOR\"?";
+      read -p -r "Press enter to continue";
+      }
 
     echo "Creating \"$FLAVOR\" in project \"$PROJECT\" with $CPU_QTY cpus and $RAM_MB Mb...";
     openstack flavor create --private --project $PROJECT --vcpus $CPU_QTY --ram $RAM_MB --disk 0 ${FLAVOR}_${PROJECT}
@@ -395,8 +414,10 @@ create_vms_batch () {
     VM_EXIST=$(openstack server list| grep $INSTANCE_NAME| awk '{print $4}')
     if [ -n "$VM_EXIST" ]; then
       printf "%s\n" "${orange}VM: \"$INSTANCE_NAME\" is already exist in project \"$PROJECT\"${normal}"
-      echo "Сreate VM: \"$INSTANCE_NAME\" in project \"$PROJECT\"?"
-      read -r -p "Press enter to continue"
+      [[ ! $DONT_ASK = "false" ]] && {
+        echo "Сreate VM: \"$INSTANCE_NAME\" in project \"$PROJECT\"?";
+        read -r -p "Press enter to continue";
+      }
     fi
     echo "Creating VM: $INSTANCE_NAME"
 
@@ -463,7 +484,7 @@ check_and_source_openrc_file
 chech_hv
 check_project
 check_and_add_secur_group
-[[ ! $dont_check = "true" ]] && \
+[[ ! $DONT_CHECK = "true" ]] && \
   {
   check_image;
   check_and_add_flavor;
