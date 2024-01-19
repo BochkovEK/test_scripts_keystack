@@ -5,7 +5,7 @@ TAIL_NUM=100
 
 CYAN='\033[0;36m'
 BLUE='\033[0;34m'
-ORANGE='\033[43m'
+ORANGE='\033[0;33m'
 NC='\033[0m' # No Color
 
 srv=$(cat /etc/hosts | grep -E "$CTRL_NODES" | awk '{print $1}')
