@@ -160,7 +160,7 @@ VMs will be created with the following parameters:
         Creating VMs one by one with a timeout (bool): $BATCH
         "
 
-    [[ ! $DONT_ASK = "false" ]] && { read -p -r "Press enter to continue"; }
+    [[ ! $DONT_ASK = "false" ]] && { read -p "Press enter to continue"; }
 }
 
 # Check openrc file
