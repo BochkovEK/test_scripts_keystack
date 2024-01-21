@@ -30,6 +30,7 @@ batch_run_command() {
         User name:    $VM_USER
         Command:      $COMMAND_STR
         Only ping:    $ONLY_PING
+        Project:      $PROJECT
         "
     read -r -p "Press enter to continue"
 
