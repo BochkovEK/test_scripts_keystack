@@ -37,7 +37,8 @@ batch_run_command() {
     VMs_IPs=$(openstack server list --project $PROJECT $host_string |grep ACTIVE |awk '{print $8}')
     [[ -z $VMs_IPs ]] && { echo "No instance found in the $PROJECT project"; exit 1; }
     for raw_string_ip in $VMs_IPs; do
-        IP="${raw_string_ip##*=}"
+        FIRST_IP=$($raw_string_ip|awk '{print $1}')
+        IP="${FIRST_IP##*=}"
         sleep 1
         if ping -c 2 $IP &> /dev/null; then
             printf "%40s\n" "${green}There is a connection with $IP - success${normal}"
