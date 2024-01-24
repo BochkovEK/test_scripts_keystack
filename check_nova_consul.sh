@@ -155,7 +155,8 @@ Check_consul_logs () {
         -e 's/\(.*Evacuating instance.*\)/\o033[33m\1\o033[39m/' \
         -e 's/\(.*Starting fence.*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*IPMI "power off".*\)/\o033[31m\1\o033[39m/' \
-        -e 's/\(.*disabled,.*\)/\o033[33m\1\o033[39m/'; \
+        -e 's/\(.*disabled,.*\)/\o033[33m\1\o033[39m/' \
+        -e 's/\(.*WARNING.*\)/\o033[33m\1\o033[39m/'; \
     ssh -o StrictHostKeyChecking=no -t "$leader_ctrl_node" 'violet=$(tput setaf 5); normal=$(tput sgr0); DATE=$(date); printf "%s\n" "${violet}${DATE}${normal}"'
 }
 
