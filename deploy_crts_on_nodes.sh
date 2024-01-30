@@ -9,7 +9,7 @@ nodes_to_find="$cmpt_pattern|$ctrl_pattern|$net_pattern"
 
 IPS_LIST=("<IP_1>" "<IP_2>" "<IP_3>" "...")
 
-[[ -z $IPS ]] && IPS=( "${IPS_LIST[@]}" )
+[[ -z $IPS_LIST ]] && IPS_LIST=( "${IPS_LIST[@]}" )
 [[ -z $INSTALL_HOME ]] && INSTALL_HOME=/installer
 [[ -z $SETTINGS ]] && SETTINGS=$INSTALL_HOME/config/settings
 [[ -z $DEPLOY_BY_IPS_LIST ]] && DEPLOY_BY_IPS_LIST=false
