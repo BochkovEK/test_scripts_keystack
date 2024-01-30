@@ -134,6 +134,7 @@ deploy_and_copy () {
 
 echo -E "
     Deploy by IPs list (false: by hosts):   $DEPLOY_BY_IPS_LIST
+    IPS_LIST:                               $IPS_LIST
     Installer home dir:                     $INSTALL_HOME
     Deploy ca crt:                          $DEPLOY_CA_CRT
     Deploy gitlab key:                      $DEPLOY_GITLAB_KEY
