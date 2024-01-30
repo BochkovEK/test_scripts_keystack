@@ -80,7 +80,7 @@ done
 
 
 deploy_and_copy () {
-    if [ "DEPLOY_BY_IPS_LIST" = true ] ; then
+    if [ "$DEPLOY_BY_IPS_LIST" = true ] ; then
       IPS_ARRAY=( "${IPS_LIST[@]}" )
     else
       IPS_ARRAY=()
