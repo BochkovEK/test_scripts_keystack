@@ -64,6 +64,7 @@ case $os in
             jq:1.5
             python3-pip:8.0
             docker:20.0
+            wget:1.0
         )
     ;;
     *)
@@ -81,6 +82,7 @@ case $os in
             jq:1.5
             python3-pip:8.0
             docker-ce:20.0
+            wget:1.0
         )
     ;;
 esac
