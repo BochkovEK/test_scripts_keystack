@@ -7,9 +7,9 @@ ctrl_pattern="\-ctrl\-..$"
 net_pattern="\-net\-..$"
 nodes_to_find="$cmpt_pattern|$ctrl_pattern|$net_pattern"
 
-IPS_LIST_INT=("<IP_1>" "<IP_2>" "<IP_3>" "...")
+IPS_LIST_INT="<IP_1> <IP_2> <IP_3>"
 
-[[ -z $IPS_LIST ]] && IPS_LIST=( "${IPS_LIST_INT[@]}" )
+[[ -z $IPS_LIST ]] && IPS_LIST=$IPS_LIST_INT
 [[ -z $INSTALL_HOME ]] && INSTALL_HOME=/installer
 [[ -z $SETTINGS ]] && SETTINGS=$INSTALL_HOME/config/settings
 [[ -z $DEPLOY_BY_IPS_LIST ]] && DEPLOY_BY_IPS_LIST=false
@@ -81,16 +81,16 @@ done
 
 deploy_and_copy () {
     if [ "$DEPLOY_BY_IPS_LIST" = true ] ; then
-      IPS_ARRAY=( "${IPS_LIST[@]}" )
+      srv=$IPS_LIST
     else
-      IPS_ARRAY=()
+      #IPS_ARRAY=()
       srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}')
-      for i in $srv; do
-        IPS_ARRAY+=("$i")
-      done
+      #for i in $srv; do
+      #  IPS_ARRAY+=("$i")
+      #done
     fi
     #for IP in "${IPS[@]}"; do
-    for IP in "${IPS_ARRAY[@]}"; do
+    for IP in $srv; do
       if [ "$DEPLOY_LCM_KEY" = true ] ; then
         echo "Copy public key from lcm to ${IP}"
         ssh-copy-id -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa.pub $IP
