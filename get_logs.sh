@@ -68,7 +68,7 @@ get_drs_logs () {
   for host in $srv; do
 	  host_name=$(cat /etc/hosts | grep -E ${host} | awk '{print $2}')
     echo "Copy drs logs from $host_name..."
-    scp -o "StrictHostKeyChecking=no" $host:$DRS_LOGS_SRC $DRS_LOGS_DEST/drs_log_from_$host_name
+    scp -o "StrictHostKeyChecking=no" $host:$DRS_LOGS_SRC $DRS_LOGS_DEST/drs_log_from_$host_name.log
     echo "Copy drs logs tail: ${TAIL_NUM} from $host_name..."
 	  tail_strins=$(ssh  -o "StrictHostKeyChecking=no" $host tail -$TAIL_NUM $DRS_LOGS_SRC)
 	  echo $tail_strins > $DRS_LOGS_DEST/drs_log_from_${host_name}_tail_${TAIL_NUM}.txt
@@ -83,7 +83,7 @@ get_ha_logs () {
   for host in $srv; do
 	  host_name=$(cat /etc/hosts | grep -E ${host} | awk '{print $2}')
     echo "Copy ha logs from $host_name..."
-    scp -o "StrictHostKeyChecking=no" $host:$AUTOEVA_LOGS_SRC $DRS_LOGS_DEST/ha_log_from_$host_name
+    scp -o "StrictHostKeyChecking=no" $host:$AUTOEVA_LOGS_SRC $AUTOEVA_LOGS_DEST/ha_log_from_$host_name.log
     echo "Copy ha logs tail: ${TAIL_NUM} from $host_name..."
 	  tail_strins=$(ssh  -o "StrictHostKeyChecking=no" $host tail -$TAIL_NUM $AUTOEVA_LOGS_SRC)
 	  echo $tail_strins > $AUTOEVA_LOGS_DEST/ha_log_from_${host_name}_tail_${TAIL_NUM}.txt
