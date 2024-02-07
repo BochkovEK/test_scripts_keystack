@@ -9,6 +9,7 @@ ctrl_pattern="\-ctrl\-..$"
 net_pattern="\-net\-..$"
 
 [[ -z $TAIL_NUM ]] && TAIL_NUM=100
+[[ -z $NODES_TO_FIND ]] && NODES_TO_FIND=$ctrl_pattern
 [[ -z $DRS_LOGS_SRC ]] && DRS_LOGS_SRC=/var/log/kolla/drs/drs.log
 [[ -z $DRS_LOGS_DEST ]] && DRS_LOGS_DEST=./drs_logs
 [[ -z $AUTOEVA_LOGS_SRC ]] && AUTOEVA_LOGS_SRC=/var/log/kolla/autoevacuate.log
@@ -20,15 +21,15 @@ net_pattern="\-net\-..$"
 note_type_func () {
   case "$1" in
         ctrl)
-          nodes_to_find=$ctrl_pattern
+          NODES_TO_FIND=$ctrl_pattern
           echo "Сontainer will be checked on ctrl nodes"
           ;;
         comp)
-          nodes_to_find=$comp_pattern
+          NODES_TO_FIND=$comp_pattern
           echo "Сontainer will be checked on comp nodes"
           ;;
         net)
-          nodes_to_find=$net_pattern
+          NODES_TO_FIND=$net_pattern
           echo "Сontainer will be checked on net nodes"
           ;;
         *)
@@ -63,7 +64,7 @@ done
 
 get_drs_logs () {
   mkdir $DRS_LOGS_DEST
-  srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}')
+  srv=$(cat /etc/hosts | grep -E ${NODES_TO_FIND} | awk '{print $2}')
   for host in $srv; do
 	  host_name=$(cat /etc/hosts | grep -E ${host} | awk '{print $2}')
     echo "Copy drs logs from $host_name..."
@@ -78,7 +79,7 @@ get_drs_logs () {
 
 get_ha_logs () {
   mkdir $AUTOEVA_LOGS_DEST
-  srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}')
+  srv=$(cat /etc/hosts | grep -E ${NODES_TO_FIND} | awk '{print $2}')
   for host in $srv; do
 	  host_name=$(cat /etc/hosts | grep -E ${host} | awk '{print $2}')
     echo "Copy ha logs from $host_name..."
