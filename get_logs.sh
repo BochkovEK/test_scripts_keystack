@@ -1,7 +1,9 @@
 #!/bin/bash
 
-#scp drs logs from controls
-#On home pc: scp root@<lcm_ip>:~/test_scripts_keystack/drs_logs/* C:\Users\bochk\drs_logs
+# Script for get logs
+
+#On home pc:
+# scp root@<lcm_ip>:~/test_scripts_keystack/drs_logs/* C:\Users\<path>
 
 
 comp_pattern="\-comp\-..$"
