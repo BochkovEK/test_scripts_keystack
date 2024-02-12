@@ -55,7 +55,6 @@ print_ok () {
 # for compare need: package_requair, package_exist
 # package_requair format: <package_name>:<version>
 compare_version () {
-
     required_version=$(echo ${1} | awk -F ':' '{print $2}')
 #    echo required_version $required_version
 
@@ -86,7 +85,6 @@ compare_version () {
 }
 
 check_python () {
-
 # ${1}: "python:3.7.2"
     py_main_ver=$(echo ${1} | grep -o -E ':[0-9]+')
     py_main_ver=${py_main_ver:1}
@@ -118,9 +116,12 @@ check_container_on_lcm () {
   for container in $container_name_on_lcm; do
     container_exist="false"
     for container_requaired in "${required_container_list[@]}"; do
-      #echo "$container" - "$container_requaired"
+      echo "$container" - "$container_requaired"
       if [ "$container" = "$container_requaired" ]; then
         container_exist="true"
+#      else
+#        container_exist="false"
+#        print_fail "$container not found"
       fi
     done
     if [ "$container_exist" = "true" ]; then
