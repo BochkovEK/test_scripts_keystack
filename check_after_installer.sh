@@ -126,9 +126,9 @@ check_container_on_lcm () {
     done
     if [ "$container_exist" = "true" ]; then
       container_exist="true"
-      print_ok "$container"
+      print_ok "$container_requaired"
     else
-      print_fail "$container not found"
+      print_fail "$container_requaired not found"
     fi
   done
 }
