@@ -16,13 +16,13 @@ required_container_list=(
 "netbox-redis"
 "netbox-postgres"
 "netbox-redis-cache"
-"web"
 "gitlab-runner"
 "gitlab"
 "vault"
 "nginx"
 "nexus"
 )
+#"web"
 
 
 nodes_to_find="$cmpt_pattern|$ctrl_pattern|$net_pattern"
@@ -116,7 +116,7 @@ check_container_on_lcm () {
   for container_requaired in "${required_container_list[@]}"; do
     container_exist="false"
     for container in $container_name_on_lcm; do
-      echo "$container" - "$container_requaired"
+#      echo "$container" - "$container_requaired"
       if [ "$container" = "$container_requaired" ]; then
         container_exist="true"
 #      else
