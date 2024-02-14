@@ -85,15 +85,19 @@ batch_run_stress() {
       HV_STRING="--host $HV"
     fi
     local MODE=$2
+    # load_string
+    if [ "$MODE" = cpu ]; then
+      load_string="CPU: $CPUS"
+    else
+      load_string="RAM: $RAM"
+    fi
     echo -E "
 Stress test: $MODE will be launched on the hypervisor ($HV_STRING) VMs
     Stress test parameters:
         Hypervisor:           $HV
         Key:                  $KEY_NAME
         Stress test type:     $MODE
-        CPUs:                 $CPUS
-        or
-        RAM:                  $RAM
+        $load_string
         "
 
     read -p "Press enter to continue"
