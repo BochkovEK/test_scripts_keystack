@@ -46,7 +46,7 @@ UBUNTU_IMAGE_NAME="ubuntu-20.04-server-cloudimg-amd64"
 [[ -z $TEST_USER ]] && TEST_USER="admin"
 [[ -z $ROLE ]] && ROLE="admin"
 [[ -z $ADD_KEY ]] && ADD_KEY=""
-[[ -z $BATCH ]] && BATCH="false"
+[[ -z $BATCH ]] && BATCH="true"
 [[ -z $DONT_CHECK ]] && DONT_CHECK="false"
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
 #======================
