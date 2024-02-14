@@ -410,6 +410,9 @@ create_vms_batch () {
   FLAVOR=$(openstack flavor list| grep $FLAVOR| head -n 1| awk '{print $4}')
   for i in $(seq $VM_QTY); do
     INSTANCE_NAME="${VM_BASE_NAME}_$i"
+    if [ "$VM_QTY" = 1 ]; then
+      INSTANCE_NAME="${VM_BASE_NAME}"
+    fi
     echo "Check for VM: \"$INSTANCE_NAME\" exist"
     VM_EXIST=$(openstack server list| grep $INSTANCE_NAME| awk '{print $4}')
     if [ -n "$VM_EXIST" ]; then
