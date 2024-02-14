@@ -36,6 +36,7 @@ batch_run_command() {
 
     [[ ! $DONT_ASK = "true" ]] && { read -p "Press enter to continue"; }
 
+    echo "Start checking..."
     VMs_IPs=$(openstack server list --project $PROJECT $host_string |grep ACTIVE |awk '{print $8}')
     [[ -z $VMs_IPs ]] && { echo "No instance found in the $PROJECT project"; exit 1; }
     for raw_string_ip in $VMs_IPs; do
