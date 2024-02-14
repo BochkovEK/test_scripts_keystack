@@ -32,10 +32,10 @@ while [ -n "$1" ]; do
     -hv) HYPERVISOR_NAME="$2"
       echo "Found the -hv option, with parameter value $HYPERVISOR_NAME"
       shift ;;
-    -cpu) CPUS="$2"
+    -cpu) CPUS="$2"; TYPE_TEST="cpu"
       echo "Found the -cpu option, with parameter value $CPUS"
       shift ;;
-    -ram) RAM="$2"
+    -ram) RAM="$2"; TYPE_TEST="ram"
       echo "Found the -ram option in Gb, with parameter value $RAM"
       shift;;
     -tt|-type_test) TYPE_TEST="$2"
