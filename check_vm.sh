@@ -16,7 +16,7 @@ normal=$(tput sgr0)
 [[ -z $VM_USER ]] && VM_USER="ubuntu"
 [[ -z $COMMAND_STR ]] && COMMAND_STR="ls -la"
 [[ -z $PROJECT ]] && PROJECT="admin"
-[[ -z $DONT_ASK ]] && DONT_ASK="false"
+[[ -z $DONT_ASK ]] && DONT_ASK="true"
 
 # Functions
 
