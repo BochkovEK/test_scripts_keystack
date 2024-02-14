@@ -16,6 +16,7 @@ normal=$(tput sgr0)
 [[ -z $VM_USER ]] && VM_USER="ubuntu"
 [[ -z $COMMAND_STR ]] && COMMAND_STR="ls -la"
 [[ -z $PROJECT ]] && PROJECT="admin"
+[[ -z $DONT_ASK ]] && DONT_ASK="false"
 
 # Functions
 
@@ -32,7 +33,8 @@ batch_run_command() {
         Only ping:    $ONLY_PING
         Project:      $PROJECT
         "
-    read -r -p "Press enter to continue"
+
+    [[ ! $DONT_ASK = "true" ]] && { read -p "Press enter to continue"; }
 
     VMs_IPs=$(openstack server list --project $PROJECT $host_string |grep ACTIVE |awk '{print $8}')
     [[ -z $VMs_IPs ]] && { echo "No instance found in the $PROJECT project"; exit 1; }
@@ -67,6 +69,7 @@ while [ -n "$1" ]; do
       -k, -key      <key_pair_private_part_file>
       -ping         only ping check
       -p, project   <project_name>
+      -dont_ask     all actions will be performed automatically (without value)
       "
       exit 0
       break ;;
@@ -89,6 +92,9 @@ while [ -n "$1" ]; do
 	    echo "Found the -ping option, only ping checking";;
     --) shift
       break ;;
+    -dont_ask) DONT_ASK=true
+      echo "Found the -dont_ask. All actions will be performed automatically"
+      ;;
     *) echo "$1 is not an option";;
   esac
   shift
