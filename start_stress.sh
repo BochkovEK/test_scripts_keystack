@@ -3,19 +3,56 @@
 #The cpu/ram stress test will be launched on all VMs of hypervisor
 #Exapmple start command: ./stress_test_on_vms.sh -hv cmpt-1 -cpu 4
 
-key_name=key1.pem
-hypervisor_name=cmpt-1
-cpus='4'
-ram='4'
-type_test='cpu'
-
-OPENRC_PATH="$HOME/openrc"
-
 #Colors
 green=$(tput setaf 2)
 red=$(tput setaf 1)
 violet=$(tput setaf 5)
 normal=$(tput sgr0)
+
+[[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
+[[ -z $KEY_NAME ]] && KEY_NAME="key_test.pem"
+[[ -z $HYPERVISOR_NAME ]] && HYPERVISOR_NAME="false"
+[[ -z $CPUS ]] && CPUS="4"
+[[ -z $RAM ]] && RAM="4"
+[[ -z $TYPE_TEST ]] && TYPE_TEST="cpu"
+[[ -z $PROJECT ]] && PROJECT="admin"
+
+while [ -n "$1" ]; do
+  case "$1" in
+    --help) echo -E "
+      -hv               <hypervisor_name>
+      -tt, -type_test   <type_of_stress_test 'cpu' or 'ram'>
+      -cpu              <number_cpus_for_stress>
+      -ram              <gb_ram_stress>
+      -key              <path_to_key>
+      -p, project       <project_name>
+      "
+      exit 0
+      break ;;
+    -hv) HYPERVISOR_NAME="$2"
+      echo "Found the -hv option, with parameter value $HYPERVISOR_NAME"
+      shift ;;
+    -cpu) CPUS="$2"; TYPE_TEST="cpu"
+      echo "Found the -cpu option, with parameter value $CPUS"
+      shift ;;
+    -ram) RAM="$2"; TYPE_TEST="ram"
+      echo "Found the -ram option in Gb, with parameter value $RAM"
+      shift;;
+    -tt|-type_test) TYPE_TEST="$2"
+      echo "Found the -type_test option, with parameter value $TYPE_TEST"
+      shift;;
+    -key) KEY_NAME="$2"
+      echo "Found the -key option, with parameter value key name: $KEY_NAME"
+      shift;;
+    -p|-project) PROJECT="$2"
+      echo "Found the -project option, with parameter value $PROJECT"
+      shift;;
+    --) shift
+      break ;;
+    *) echo "$1 is not an option";;
+  esac
+  shift
+done
 
 # Functions
 
@@ -24,33 +61,48 @@ copy_and_stress() {
     local MODE=$2
 
     echo "Copy stress to $VM_IP..."
-    scp -o StrictHostKeyChecking=no -i $key_name stress ubuntu@$VM_IP:~
-    ssh -t -o StrictHostKeyChecking=no -i $key_name ubuntu@$VM_IP "chmod +x ~/stress"
+    scp -o StrictHostKeyChecking=no -i $KEY_NAME stress ubuntu@$VM_IP:~
+    ssh -t -o StrictHostKeyChecking=no -i $KEY_NAME ubuntu@$VM_IP "chmod +x ~/stress"
 
     case $MODE in
         cpu)
             echo "Starting cpu stress on $VM_IP..."
-            ssh -o StrictHostKeyChecking=no -i $key_name ubuntu@$VM_IP "nohup ./stress -c $cpus > /dev/null 2>&1 &"
+            ssh -o StrictHostKeyChecking=no -i $KEY_NAME ubuntu@$VM_IP "nohup ./stress -c $CPUS > /dev/null 2>&1 &"
             ;;
         ram)
             echo "Starting ram stress on $VM_IP..."
-            ssh -o StrictHostKeyChecking=no -i $key_name ubuntu@$VM_IP "nohup ./stress --vm $ram --vm-bytes 1G > /dev/null 2>&1 &"
+            ssh -o StrictHostKeyChecking=no -i $KEY_NAME ubuntu@$VM_IP "nohup ./stress --vm 1 --vm-bytes '$RAM'G > /dev/null 2>&1 &"
             ;;
     esac
 }
 
 batch_run_stress() {
+    if [ "${1}" = false ]; then
+      HV="start stress test on all VMs on project: $PROJECT"
+      HV_STRING=""
+    else
+      HV=${1}
+      HV_STRING="--host $HV"
+    fi
     local MODE=$2
-    VMs_IPs=$(openstack server list --host $1 |grep ACTIVE |awk '{print $8}')
+    # load_string
+    if [ "$MODE" = cpu ]; then
+      load_string="CPU:                  $CPUS"
+    else
+      load_string="RAM:                  $RAM"
+    fi
     echo -E "
-Stress test: $MODE will be launched on the hypervisor $1 VMs
+Stress test: $MODE will be launched on the hypervisor ($HV_STRING) VMs
     Stress test parameters:
-        Hypervisor: $1
-        Stress test type: $MODE
-        CPUs: $cpus or RAM: $ram
+        Hypervisor:           $HV
+        Key:                  $KEY_NAME
+        Stress test type:     $MODE
+        $load_string
         "
 
     read -p "Press enter to continue"
+    VMs_IPs=$(openstack server list $HV_STRING --project $PROJECT |grep ACTIVE |awk '{print $8}')
+    [[ -z $VMs_IPs ]] && { echo "No instance found in the $PROJECT project"; exit 1; }
     for raw_string_ip in $VMs_IPs; do
         IP="${raw_string_ip##*=}"
         copy_and_stress $IP $MODE
@@ -65,36 +117,6 @@ check_openrc_file () {
     source $OPENRC_PATH
 }
 
-while [ -n "$1" ]
-do
-    case "$1" in
-        --help) echo -E "
-        -hv <hypervisor_name>
-        -tt <type_of_stress_test cpu or ram>
-        -cpu <number_cpus_for_stress>
-        -ram <gb_ram_stress>
-        "
-            exit 0
-            break ;;
-        -hv) hypervisor_name="$2"
-            echo "Found the -hv option, with parameter value $hypervisor_name"
-            shift ;;
-        -cpu) cpus="$2"
-            echo "Found the -cpu option, with parameter value $cpus"
-            shift ;;
-        -ram) ram="$2"
-            echo "Found the -ram option, with parameter value $ram"
-            shift;;
-        -tt) type_test="$2"
-            echo "Found the -tt option, with parameter value $type_test"
-            shift;;
-        --) shift
-            break ;;
-        *) echo "$1 is not an option";;
-        esac
-        shift
-done
-
 rm -rf /root/.ssh/known_hosts
 check_openrc_file
-batch_run_stress $hypervisor_name $type_test
+batch_run_stress $HYPERVISOR_NAME $TYPE_TEST

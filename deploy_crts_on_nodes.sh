@@ -7,9 +7,9 @@ ctrl_pattern="\-ctrl\-..$"
 net_pattern="\-net\-..$"
 nodes_to_find="$cmpt_pattern|$ctrl_pattern|$net_pattern"
 
-IPS_LIST=("<IP_1>" "<IP_2>" "<IP_3>" "...")
+IPS_LIST_INT="<IP_1> <IP_2> <IP_3>"
 
-[[ -z $IPS ]] && IPS=( "${IPS_LIST[@]}" )
+[[ -z $IPS_LIST ]] && IPS_LIST=$IPS_LIST_INT
 [[ -z $INSTALL_HOME ]] && INSTALL_HOME=/installer
 [[ -z $SETTINGS ]] && SETTINGS=$INSTALL_HOME/config/settings
 [[ -z $DEPLOY_BY_IPS_LIST ]] && DEPLOY_BY_IPS_LIST=false
@@ -17,21 +17,21 @@ IPS_LIST=("<IP_1>" "<IP_2>" "<IP_3>" "...")
 [[ -z $DEPLOY_GITLAB_KEY ]] && DEPLOY_GITLAB_KEY=false
 [[ -z $DEPLOY_DOCKER_CFG ]] && DEPLOY_DOCKER_CFG=false
 #[[ -z $DEPLOY_NEXUS_CRTS ]] && DEPLOY_NEXUS_CRTS=false
-[[ -z $DEPLOY_CA_CRT ]] && DEPLOY_CA_CRT=true
-[[ -z $DEPLOY_LCM_HOSTS_STRING ]] && DEPLOY_LCM_HOSTS_STRING=true
+[[ -z $DEPLOY_CA_CRT ]] && DEPLOY_CA_CRT=false
+[[ -z $DEPLOY_LCM_HOSTS_STRING ]] && DEPLOY_LCM_HOSTS_STRING=false
 
 while [ -n "$1" ]
 do
     case "$1" in
         --help) echo -E "
-        -ih, 	-install_home		<install_home_dir>
-        -s, 	-settings		    <path_settings_file>
+        -ih,  -install_home   <install_home_dir>
+        -s,   -settings       <path_settings_file>
         -l,   -by_list        <deploy_by_ips_list_bool>
         -cc,  -ca_crt         <deploy_ca_crt_bool>
-        -lk,	-lcm_key	  	  <deploy_lcm_key_bool>
-        -gk,	-gitlab_key		  <deploy_gitlab_key_bool>
+        -lk,  -lcm_key        <deploy_lcm_key_bool>
+        -gk,  -gitlab_key     <deploy_gitlab_key_bool>
         -hs,  -hosts_string   <deploy_lcm_hosts_string_bool>
-        -dc,	-docker_cfg		  <deploy_docker_cfg_bool>
+        -dc,  -docker_cfg     <deploy_docker_cfg_bool>
         "
 #        -nc,	-nexus_crt		  <deploy_nexus_crt_bool>
 
@@ -43,27 +43,34 @@ do
         -s|-settings) SETTINGS="$2"
 	          echo "Found the -settings <path_settings_file> option, with parameter value $SETTINGS"
             shift ;;
-        -l|-by_list) DEPLOY_BY_IPS_LIST="$2"
+        -l|-by_list) DEPLOY_BY_IPS_LIST="true"
 	          echo "Found the -by_list <deploy_by_ips_list_bool> option, with parameter value $DEPLOY_BY_IPS_LIST"
-            shift ;;
-       -gk|-gitlab_key) DEPLOY_GITLAB_KEY="$2"
+            #shift
+            ;;
+       -gk|-gitlab_key) DEPLOY_GITLAB_KEY="true"
 	          echo "Found the -gitlab_key <deploy_gitlab_key_bool> option, with parameter value $DEPLOY_GITLAB_KEY"
-            shift ;;
-        -lk|-lcm_key) DEPLOY_LCM_KEY="$2"
+            #shift
+            ;;
+        -lk|-lcm_key) DEPLOY_LCM_KEY="true"
 	          echo "Found the -lcm_key <deploy_lcm_key_bool> option, with parameter value $DEPLOY_LCM_KEY"
-            shift ;;
-        -dc|-docker_cfg) DEPLOY_DOCKER_CFG="$2"
+            #shift
+            ;;
+        -dc|-docker_cfg) DEPLOY_DOCKER_CFG="true"
 	          echo "Found the -docker_cfg <deploy_docker_cfg_bool> option, with parameter value $DEPLOY_DOCKER_CFG"
-            shift ;;
-        -nc|-nexus_crt) DEPLOY_NEXUS_CRTS="$2"
+            #shift
+            ;;
+        -nc|-nexus_crt) DEPLOY_NEXUS_CRTS="true"
 	          echo "Found the -nexus_crt <deploy_nexus_crt_bool> option, with parameter value $DEPLOY_NEXUS_CRTS"
-            shift ;;
-        -cc|-ca_crt) DEPLOY_CA_CRT="$2"
+            #shift
+            ;;
+        -cc|-ca_crt) DEPLOY_CA_CRT="true"
             echo "Found the -ca_crt <deploy_ca_crt_bool> option, with parameter value $DEPLOY_CA_CRT"
-            shift ;;
-        -hs|-hosts_string) DEPLOY_LCM_HOSTS_STRING="$2"
+            #shift
+            ;;
+        -hs|-hosts_string) DEPLOY_LCM_HOSTS_STRING="true"
             echo "Found the -ca_crt <deploy_lcm_hosts_string_bool> option, with parameter value $DEPLOY_LCM_HOSTS_STRING"
-            shift ;;
+            #shift
+            ;;
         --) shift
             break ;;
         *) echo "$1 is not an option";;
@@ -73,17 +80,17 @@ done
 
 
 deploy_and_copy () {
-    if [ "DEPLOY_BY_IPS_LIST" = true ] ; then
-      IPS_ARRAY=( "${IPS_LIST[@]}" )
+    if [ "$DEPLOY_BY_IPS_LIST" = true ] ; then
+      srv=$IPS_LIST
     else
-      IPS_ARRAY=()
+      #IPS_ARRAY=()
       srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}')
-      for i in $srv; do
-        IPS_ARRAY+=("$i")
-      done
+      #for i in $srv; do
+      #  IPS_ARRAY+=("$i")
+      #done
     fi
     #for IP in "${IPS[@]}"; do
-    for IP in "${IPS_ARRAY[@]}"; do
+    for IP in $srv; do
       if [ "$DEPLOY_LCM_KEY" = true ] ; then
         echo "Copy public key from lcm to ${IP}"
         ssh-copy-id -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa.pub $IP
@@ -97,6 +104,8 @@ deploy_and_copy () {
       fi
       if [ "$DEPLOY_LCM_HOSTS_STRING" = true ] ; then
         echo "Deploy lcm hosts string to $IP"
+        # !!! Needed string in /etc/hosts:
+        # 10.224.129.239  ebochkov-keystack-lcm-01 demo.local config.demo.local ks-lcm.demo.local gitlab-runner.demo.local nexus.demo.local netbox.demo.local vault.demo.local
         lcm_hostname=$(hostname)
         hosts_string=$(cat /etc/hosts |grep "$lcm_hostname")
         ssh -o StrictHostKeyChecking=no $IP "echo '"$hosts_string"' >> /etc/hosts"
@@ -125,6 +134,7 @@ deploy_and_copy () {
 
 echo -E "
     Deploy by IPs list (false: by hosts):   $DEPLOY_BY_IPS_LIST
+    IPS_LIST:                               $IPS_LIST
     Installer home dir:                     $INSTALL_HOME
     Deploy ca crt:                          $DEPLOY_CA_CRT
     Deploy gitlab key:                      $DEPLOY_GITLAB_KEY

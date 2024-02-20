@@ -8,6 +8,23 @@ required_python="python:3.8"
 cmpt_pattern="\-comp\-..$"
 ctrl_pattern="\-ctrl\-..$"
 net_pattern="\-net\-..$"
+required_container_list=(
+"bifrost_deploy"
+"netbox-housekeeping"
+"netbox-worker"
+"netbox"
+"netbox-redis"
+"netbox-postgres"
+"netbox-redis-cache"
+"gitlab-runner"
+"gitlab"
+"vault"
+"nginx"
+"nexus"
+)
+#"web"
+
+
 nodes_to_find="$cmpt_pattern|$ctrl_pattern|$net_pattern"
 echo "nodes_to_find: $nodes_to_find"
 
@@ -38,7 +55,6 @@ print_ok () {
 # for compare need: package_requair, package_exist
 # package_requair format: <package_name>:<version>
 compare_version () {
-
     required_version=$(echo ${1} | awk -F ':' '{print $2}')
 #    echo required_version $required_version
 
@@ -69,7 +85,6 @@ compare_version () {
 }
 
 check_python () {
-
 # ${1}: "python:3.7.2"
     py_main_ver=$(echo ${1} | grep -o -E ':[0-9]+')
     py_main_ver=${py_main_ver:1}
@@ -95,6 +110,31 @@ check_virt_flags () {
     fi
 }
 
+check_container_on_lcm () {
+  echo "Check container list on lcm"
+  container_name_on_lcm=$(docker ps --format "{{.Names}}" --filter status=running)
+  for container_requaired in "${required_container_list[@]}"; do
+    container_exist="false"
+    for container in $container_name_on_lcm; do
+#      echo "$container" - "$container_requaired"
+      if [ "$container" = "$container_requaired" ]; then
+        container_exist="true"
+#      else
+#        container_exist="false"
+#        print_fail "$container not found"
+      fi
+    done
+    if [ "$container_exist" = "true" ]; then
+      container_exist="true"
+      print_ok "$container_requaired"
+    else
+      print_fail "$container_requaired not found"
+    fi
+  done
+}
+
+check_container_on_lcm
+
 srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}')
 for host in $srv; do
     echo "Check $host node..."
@@ -102,7 +142,7 @@ for host in $srv; do
     #echo $cmpt_pattern_clip
     cmpt_node=$(ssh -o StrictHostKeyChecking=no $host "hostname| grep -E '${cmpt_pattern}' 2>/dev/null")
     echo "$cmpt_node"
-    if [[ ! -z ${cmpt_node} ]]; then
+    if [[ -n ${cmpt_node} ]]; then
         check_virt_flags $host
     fi
     echo "Check python on $(cat /etc/hosts | grep -E ${host} | awk '{print $2}')"

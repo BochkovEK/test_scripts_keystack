@@ -64,6 +64,7 @@ case $os in
             jq:1.5
             python3-pip:8.0
             docker:20.0
+            wget:1.0
         )
     ;;
     *)
@@ -81,6 +82,7 @@ case $os in
             jq:1.5
             python3-pip:8.0
             docker-ce:20.0
+            wget:1.0
         )
     ;;
 esac
@@ -159,7 +161,7 @@ compare_version () {
 
 check_rpm_packages () {
 
-    for package in ${required_rpm[@]}; do
+    for package in "${required_rpm[@]}"; do
 #        echo package $package
         package_name=$(echo $package | awk -F ":" '{print $1}')
 #        echo package_name $package_name
@@ -176,7 +178,7 @@ check_rpm_packages () {
 
 check_dpkg_packages () {
     packages=("$@")
-    for package in ${packages[@]}; do
+    for package in "${packages[@]}"; do
 #        echo package $package
         package_name=$(echo $package | awk -F ":" '{print $1}')
 #        echo package_name: $package_name
@@ -250,7 +252,9 @@ check_docker_status () {
 check_docker_compose_file () {
 
 #    source $SETTINGS_FILE
-    check_comp_file=$(${docker_compose_command} -f $COMPOSE_FILE config)
+    #check_comp_file=$(
+    ${docker_compose_command} -f $COMPOSE_FILE config
+    #)
 
     if [ $? -eq 0 ]; then
         print_ok "Docker compose file ($COMPOSE_FILE)"
@@ -280,7 +284,7 @@ clear
 echo -e "\n====== Insatlled packages checking ======\n"
 case $os in
     ubuntu)
-        check_dpkg_packages ${required_rpm[@]}
+        check_dpkg_packages "${required_rpm[@]}"
     ;;
     *)
         check_rpm_packages
