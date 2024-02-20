@@ -26,7 +26,7 @@ do
     case "$1" in
         --help) echo -E "
         The power management script
-        -host_name,   -h  <host_name>     Host name for power management
+        -host_name,   -h  <host_name>     Host name for power management (ipmi)
         -power_state, -p  <power_state>   on, off, restart
         "
           exit 0
