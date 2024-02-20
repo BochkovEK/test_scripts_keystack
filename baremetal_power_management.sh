@@ -7,7 +7,7 @@
 # Define parameters
 define_parameters () {
   [ "$count" = 1 ] && [[ -n $1 ]] && { HOST_NAME=$1; echo "Host name parameter found with value $HOST_NAME"; }
-  [ "$count" = 2 ] && [[ -n $1 ]] && { $POWER_STATE=$1; echo "Power state parameter found with value $POWER_STATE"; }
+  [ "$count" = 2 ] && [[ -n $1 ]] && { POWER_STATE=$1; echo "Power state parameter found with value $POWER_STATE"; }
 }
 
 count=1
