@@ -10,7 +10,7 @@ def fence_redfish(hostname, power_state='on', username='root', password='r00tme'
 
     s = sushy.Sushy(url, auth=basic_auth, verify=verify)
     system = s.get_system()
-    current_state = system.power_state
+    # current_state = system.power_state
     if power_state == 'on':
         power_on = system.reset_system(sushy.RESET_ON)
         return power_on
@@ -18,5 +18,4 @@ def fence_redfish(hostname, power_state='on', username='root', password='r00tme'
 
 # hostname1 = '10.3.17.115'
 print(fence_redfish(*sys.argv[1:]))
-#[1], sys.argv[2]), sys.argv[3], sys.argv[4])
 
