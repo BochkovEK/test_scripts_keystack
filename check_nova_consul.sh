@@ -17,7 +17,6 @@ ORANGE='\033[0;33m'
 NC='\033[0m' # No Color
 
 
-
 [[ -z $TRY_TO_RISE ]] && TRY_TO_RISE="true"
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $REGION ]] && REGION="region-ps"
