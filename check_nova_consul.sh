@@ -172,7 +172,7 @@ Check_consul_config () {
   [ -n "$OS_REGION_NAME" ] && REGION=$OS_REGION_NAME
   echo -e "${ORANGE}ssh -t -o StrictHostKeyChecking=no $leader_ctrl_node cat /etc/kolla/consul/region-config_${REGION}.json${NC}"
   ipmi_fencing_state=$(ssh -o StrictHostKeyChecking=no "$leader_ctrl_node" cat /etc/kolla/consul/region-config_"${REGION}".json| \
-  grep -E '"bmc": \w|"ipmi": \w|alive_compute_threshold|dead_compute_threshold')
+  grep -E '"bmc": \w|"ipmi": \w|alive_compute_threshold|dead_compute_threshold|"ceph": \w|"nova": \w')
   echo "$ipmi_fencing_state" | \
             sed --unbuffered \
                 -e 's/\(.*true.*\)/\o033[92m\1\o033[39m/' \
