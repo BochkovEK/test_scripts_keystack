@@ -353,7 +353,6 @@ check_image () {
     wget https://repo.itkey.com/repository/images/"$CIRROS_IMAGE_NAME".img; }
     openstack image create "$CIRROS_IMAGE_NAME" \
       --disk-format qcow2 \
-      --min-disk 5 \
       --container-format bare \
       --public \
       --file ./"$CIRROS_IMAGE_NAME".img
