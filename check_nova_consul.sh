@@ -164,6 +164,7 @@ Check_consul_logs () {
 Check_consul_config () {
   echo "Check consul config..."
   [ -n "$OS_REGION_NAME" ] && REGION=$OS_REGION_NAME
+  echo -e "${ORANGE}ssh -t -o StrictHostKeyChecking=no $leader_ctrl_node cat /etc/kolla/consul/region-config_${REGION}.json${NC}"
   ipmi_fencing_state=$(ssh -o StrictHostKeyChecking=no "$leader_ctrl_node" cat /etc/kolla/consul/region-config_"${REGION}".json| \
   grep -E '"bmc": \w|"ipmi": \w|alive_compute_threshold|dead_compute_threshold')
   echo "$ipmi_fencing_state" | \
