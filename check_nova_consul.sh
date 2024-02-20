@@ -11,6 +11,13 @@ red=$(tput setaf 1)
 violet=$(tput setaf 5)
 normal=$(tput sgr0)
 
+CYAN='\033[0;36m'
+BLUE='\033[0;34m'
+ORANGE='\033[0;33m'
+NC='\033[0m' # No Color
+
+
+
 [[ -z $TRY_TO_RISE ]] && TRY_TO_RISE="true"
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $REGION ]] && REGION="region-ps"
