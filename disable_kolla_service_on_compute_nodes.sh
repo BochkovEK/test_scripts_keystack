@@ -39,7 +39,9 @@ for host in "${NODES[@]}"; do
   if ping -c 2 $host &> /dev/null; then
     printf "%40s\n" "There is a connection with $host - ok!"
     ssh -o StrictHostKeyChecking=no $host sed -i 's/Restart=always/Restart=no/' /etc/systemd/system/kolla-consul-container.service
+    ssh -o StrictHostKeyChecking=no $host cat -i 's/Restart=always/Restart=no/' /etc/systemd/system/kolla-consul-container.service
     ssh -o StrictHostKeyChecking=no $host sed -i 's/Restart=always/Restart=no/' /etc/systemd/system/kolla-nova_compute-container.service
-    ssh -o StrictHostKeyChecking=no $host systemctl daemon-reload
+    ssh -o StrictHostKeyChecking=no $host cat /etc/systemd/system/kolla-nova_compute-container.service
+#    ssh -o StrictHostKeyChecking=no $host systemctl daemon-reload
   fi
 done
