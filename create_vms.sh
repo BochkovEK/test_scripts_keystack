@@ -344,10 +344,11 @@ image_exists_in_openstack () {
 check_image () {
   echo "Check for exist image: \"$IMAGE\""
   IMAGE_NAME_EXIST=$(image_exists_in_openstack $IMAGE)
+  echo $IMAGE_NAME_EXIST
   echo $IMAGE|grep -E 'ubuntu|$UBUNTU_IMAGE_NAME|cirros|$CIRROS_IMAGE_NAME'
   echo $IMAGE|grep -E 'ubuntu|$UBUNTU_IMAGE_NAME'
   echo $IMAGE|grep -E 'cirros|$CIRROS_IMAGE_NAME'
-  exist 1
+#  exit 1
   if [ -z "$IMAGE_NAME_EXIST" ] && [ -z "$(echo $IMAGE|grep -E 'ubuntu|$UBUNTU_IMAGE_NAME|cirros|$CIRROS_IMAGE_NAME')" ]; then
     printf "%s\n" "${red}Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
     exit 1
@@ -372,6 +373,7 @@ check_image () {
   else
     printf "%s\n" "${green}Image \"$IMAGE\" already exist in project \"$PROJECT\"${normal}"
   fi
+  exit 1
 }
 
 # Check flavor
