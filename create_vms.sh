@@ -372,8 +372,9 @@ check_image () {
     fi
   else
     printf "%s\n" "${green}Image \"$IMAGE\" already exist in project \"$PROJECT\"${normal}"
+    IMAGE=$IMAGE_NAME_EXIST
   fi
-  exit 1
+#  exit 1
 }
 
 # Check flavor
