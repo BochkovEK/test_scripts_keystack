@@ -117,8 +117,8 @@ Check_disabled_computes_in_nova () {
               yn=${yn:-"Yes"}
               echo $yn
               case $yn in
-                  [Yy]* ) echo yes_no_input="true"; break;;
-                  [Nn]* ) echo yes_no_input"false"; break ;;
+                  [Yy]* ) yes_no_input="true"; break;;
+                  [Nn]* ) yes_no_input="false"; break ;;
                   * ) echo "Please answer yes or no.";;
               esac
             done
