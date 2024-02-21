@@ -93,9 +93,10 @@ yes_no_input () {
   while true; do
     read -p "Trying to raise and enable nova service on $1? [Yes]: " yn
     yn=${yn:-"Yes"}
+    echo $yn
     case $yn in
-        [Yy]* ) make install; break;;
-        [Nn]* ) ;;
+        [Yy]* ) echo "true";;
+        [Nn]* ) echo "false";;
         * ) echo "Please answer yes or no.";;
     esac
   done
@@ -110,9 +111,10 @@ Check_disabled_computes_in_nova () {
     if [ -n "$cmpt_disabled_nova_list" ]; then
         if [ "$TRY_TO_RISE" = true ] ; then
           for cmpt in $cmpt_disabled_nova_list; do
-            yes_no_input $cmpt
-            openstack compute service set --enable "${cmpt}" nova-compute
-            openstack compute service set --up "${cmpt}" nova-compute
+            if [ "$(yes_no_imput $cmpt)" = "true" ]; then
+              openstack compute service set --enable "${cmpt}" nova-compute
+              openstack compute service set --up "${cmpt}" nova-compute
+            fi
           done
           nova_state_list=$(openstack compute service list)
           echo "$nova_state_list" | \
