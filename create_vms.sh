@@ -340,6 +340,8 @@ check_image () {
       --container-format bare \
       --public \
       --file ./"$UBUNTU_IMAGE_NAME".img
+
+    IMAGE=$UBUNTU_IMAGE_NAME
   elif [ -z "$IMAGE_NAME_EXIST" ] && [[ $IMAGE =~ cirros|$CIRROS_IMAGE_NAME ]]; then
     printf "%s\n" "${orange}Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
     [[ ! $DONT_ASK = "true" ]] && {
@@ -357,6 +359,7 @@ check_image () {
       --public \
       --file ./"$CIRROS_IMAGE_NAME".img
 
+    IMAGE=$CIRROS_IMAGE_NAME
   else
     printf "%s\n" "${green}Image \"$IMAGE\" already exist in project \"$PROJECT\"${normal}"
   fi
