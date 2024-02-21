@@ -91,7 +91,8 @@ Check_connection_to_nova_nodes () {
 
 yes_no_input () {
   while true; do
-    read -p "Trying to raise and enable nova service on $1: " yn
+    read -p "Trying to raise and enable nova service on $1? [Yes]: " yn
+    yn=${yn:-"Yes"}
     case $yn in
         [Yy]* ) make install; break;;
         [Nn]* ) ;;
