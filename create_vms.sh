@@ -344,10 +344,10 @@ image_exists_in_openstack () {
 check_image () {
   echo "Check for exist image: \"$IMAGE\""
   IMAGE_NAME_EXIST=$(image_exists_in_openstack $IMAGE)
-  if [ -z "$(image_exists_in_openstack $IMAGE)" ] && [[ ! $IMAGE =~ ubuntu|$UBUNTU_IMAGE_NAME|cirros|$CIRROS_IMAGE_NAME ]]; then
+  if [ -z "$(image_exists_in_openstack $IMAGE)" ] && [ -n "$(echo $IMAGE|grep -E 'ubuntu|$UBUNTU_IMAGE_NAME|cirros|$CIRROS_IMAGE_NAME')" ]; then
     printf "%s\n" "${red}Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
     exit 1
-  elif [ -z "$IMAGE_NAME_EXIST" ] && [[ $IMAGE =~ ubuntu|$UBUNTU_IMAGE_NAME ]]; then
+  elif [ -z "$IMAGE_NAME_EXIST" ] && [ -n "$(echo $IMAGE|grep -E 'ubuntu|$UBUNTU_IMAGE_NAME')" ]; then
     printf "%s\n" "${orange}Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
     if [ -z "$(image_exists_in_openstack $UBUNTU_IMAGE_NAME)" ]; then
       create_image $UBUNTU_IMAGE_NAME
@@ -356,7 +356,7 @@ check_image () {
       [[ ! $DONT_ASK = "true" ]] && read -p "Press enter to use this image and continue: "
       IMAGE=$UBUNTU_IMAGE_NAME
     fi
-  elif [ -z "$IMAGE_NAME_EXIST" ] && [[ $IMAGE =~ cirros|$CIRROS_IMAGE_NAME ]]; then
+  elif [ -z "$IMAGE_NAME_EXIST" ] && [ -n "$(echo $IMAGE|grep -E 'cirros|$CIRROS_IMAGE_NAME')" ]; then
     printf "%s\n" "${orange}Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
     if [ -z "$(image_exists_in_openstack $CIRROS_IMAGE_NAME)" ]; then
       create_image $CIRROS_IMAGE_NAME
