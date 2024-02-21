@@ -1,4 +1,7 @@
 # The power management script
+# Example start:
+#  bash baremetal_power_management.sh ebochkov-ks-sber-comp-05-rmi check
+#  bash baremetal_power_management.sh ebochkov-ks-sber-comp-05-rmi on
 
 required_modules=(
             #foo
@@ -27,7 +30,10 @@ do
         --help) echo -E "
         The power management script
         -host_name,   -h  <host_name>     Host name for power management (ipmi)
-        -power_state, -p  <power_state>   on, off, restart
+        -power_state, -p  <power_state>   check, on, off, restart
+        Example to start script:
+           bash baremetal_power_management.sh ebochkov-ks-sber-comp-05-rmi check
+           bash baremetal_power_management.sh ebochkov-ks-sber-comp-05-rmi on
         "
           exit 0
           break ;;
@@ -47,6 +53,10 @@ do
         shift
 done
 
+check_parameters () {
+  [ -z "$HOST_NAME" ] && { echo "Host name needed as env (HOST_NAME) or first start scrip parameter"; exit 1; }
+}
+
 check_module_exist () {
   for module in "${required_modules[@]}"; do
     module_exists=$(pip list| grep module)
@@ -58,6 +68,7 @@ start_python_power_management_script () {
   python3 ./baremetal_power_management.py $HOST_NAME $POWER_STATE $USER_NAME $PASSWORD
 }
 
+check_parameters
 check_module_exist
 start_python_power_management_script
 
