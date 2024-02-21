@@ -112,8 +112,8 @@ Check_disabled_computes_in_nova () {
 #            echo $yes_no_input
             if [ "$yes_no_input" = "true" ]; then
               echo "Trying to raise and enable nova service on $cmpt"
-              openstack compute service set --enable "${cmpt}" nova-compute
-              openstack compute service set --up "${cmpt}" nova-compute
+              openstack compute service set --enable --up "${cmpt}" nova-compute
+#              openstack compute service set --up "${cmpt}" nova-compute
             fi
           done
           nova_state_list=$(openstack compute service list)
@@ -146,6 +146,7 @@ Check_docker_consul () {
                 -e 's/\(.*Up.*\)/\o033[92m\1\o033[39m/' \
                 -e 's/\(.*Restarting.*\)/\o033[31m\1\o033[39m/' \
                 -e 's/\(.*unhealthy.*\)/\o033[31m\1\o033[39m/'
+        [ -z "$docker_consul" ] && echo -e "\033[0;35mDocker consul not started on $host\033[0m"
     done
 }
 
