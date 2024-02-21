@@ -93,7 +93,7 @@ yes_no_input () {
   while true; do
     read -p "Trying to raise and enable nova service on $1? [Yes]: " yn
     yn=${yn:-"Yes"}
-#    echo $yn
+    echo $yn
 #    case $yn in
 #        [Yy]* ) echo "true";;
 #        [Nn]* ) echo "false";;
