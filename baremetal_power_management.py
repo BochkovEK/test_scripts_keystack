@@ -14,6 +14,8 @@ def fence_redfish(hostname, power_state='on', username='root', password='r00tme'
     if power_state == 'on':
         power_on = system.reset_system(sushy.RESET_ON)
         return power_on
+    elif power_state == 'check':
+        return system.power_state
 
 
 # hostname1 = '10.3.17.115'
