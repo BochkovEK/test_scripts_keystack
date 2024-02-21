@@ -89,18 +89,6 @@ Check_connection_to_nova_nodes () {
     done
 }
 
-#yes_no_input () {
-#  while true; do
-#    read -p "Trying to raise and enable nova service on $1? [Yes]: " yn
-#    yn=${yn:-"Yes"}
-#    echo $yn
-##    case $yn in
-##        [Yy]* ) echo "true";;
-##        [Nn]* ) echo "false";;
-##        * ) echo "Please answer yes or no.";;
-##    esac
-#  done
-#}
 
 # Check disabled computes in nova
 Check_disabled_computes_in_nova () {
@@ -112,7 +100,7 @@ Check_disabled_computes_in_nova () {
         if [ "$TRY_TO_RISE" = true ] ; then
           for cmpt in $cmpt_disabled_nova_list; do
             while true; do
-              read -p "Trying to raise and enable nova service on $cmpt? [Yes]: " yn
+              read -p "Do you want to try to raise and enable nova service on $cmpt? [Yes]: " yn
               yn=${yn:-"Yes"}
               echo $yn
               case $yn in
@@ -122,6 +110,7 @@ Check_disabled_computes_in_nova () {
               esac
             done
             if [ "$yes_no_input)" = "true" ]; then
+              echo "Trying to raise and enable nova service on $cmpt"
               openstack compute service set --enable "${cmpt}" nova-compute
               openstack compute service set --up "${cmpt}" nova-compute
             fi
