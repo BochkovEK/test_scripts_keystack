@@ -316,50 +316,51 @@ check_network () {
   fi
 }
 
+# Create image
+create_image () {
+  [[ ! $DONT_ASK = "true" ]] && { echo "Try to download image: \"$1\" and add to openstack?";
+    read -p "Press enter to continue"; }
+
+  echo "Creating image \"$1\" in project \"$PROJECT\"..."
+  [ -f ./"$1".img ] && echo "File ./$1.img exist." \
+  || { echo "File ./$1.img does not exist. Try to download it..."; \
+  wget https://repo.itkey.com/repository/images/"$1".img; }
+  image_exists_in_openstack
+  openstack image create "$1" \
+    --disk-format qcow2 \
+    --min-disk 5 \
+    --container-format bare \
+    --public \
+    --file ./"$1".img
+
+  IMAGE=$1
+}
+
+image_exists_in_openstack () {
+  openstack image list| grep "$1"| awk '{print $2}'
+}
+
 # Check image
 check_image () {
   echo "Check for exist image: \"$IMAGE\""
-  IMAGE_NAME_EXIST=$(openstack image list| grep "$IMAGE"| awk '{print $2}')
-  if [ -z "$IMAGE_NAME_EXIST" ] && [[ ! $IMAGE =~ ubuntu|$UBUNTU_IMAGE_NAME|cirros|$CIRROS_IMAGE_NAME ]]; then
+  IMAGE_NAME_EXIST=$(image_exists_in_openstack $IMAGE)
+  if [ -z "$(image_exists_in_openstack $IMAGE)" ] && [[ ! $IMAGE =~ ubuntu|$UBUNTU_IMAGE_NAME|cirros|$CIRROS_IMAGE_NAME ]]; then
     printf "%s\n" "${red}Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
     exit 1
   elif [ -z "$IMAGE_NAME_EXIST" ] && [[ $IMAGE =~ ubuntu|$UBUNTU_IMAGE_NAME ]]; then
     printf "%s\n" "${orange}Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
-    [[ ! $DONT_ASK = "true" ]] && {
-      echo "Try to download image: \"$UBUNTU_IMAGE_NAME\" and add to openstack?";
-      read -p "Press enter to continue";
-      }
-
-    echo "Creating image \"$UBUNTU_IMAGE_NAME\" in project \"$PROJECT\"..."
-    [ -f ./"$UBUNTU_IMAGE_NAME".img ] && echo "File ./$UBUNTU_IMAGE_NAME.img exist." \
-    || { echo "File ./$UBUNTU_IMAGE_NAME.img does not exist. Try to download it..."; \
-    wget https://repo.itkey.com/repository/images/"$UBUNTU_IMAGE_NAME".img; }
-    openstack image create "$UBUNTU_IMAGE_NAME" \
-      --disk-format qcow2 \
-      --min-disk 5 \
-      --container-format bare \
-      --public \
-      --file ./"$UBUNTU_IMAGE_NAME".img
-
-    IMAGE=$UBUNTU_IMAGE_NAME
+    if [ -z "$(image_exists_in_openstack $UBUNTU_IMAGE_NAME)" ]; then
+      create_image $UBUNTU_IMAGE_NAME
+    else
+      IMAGE=$UBUNTU_IMAGE_NAME
+    fi
   elif [ -z "$IMAGE_NAME_EXIST" ] && [[ $IMAGE =~ cirros|$CIRROS_IMAGE_NAME ]]; then
     printf "%s\n" "${orange}Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
-    [[ ! $DONT_ASK = "true" ]] && {
-      echo "Try to download image: \"$CIRROS_IMAGE_NAME\" and add to openstack?";
-      read -p "Press enter to continue";
-      }
-
-    echo "Creating image \"$CIRROS_IMAGE_NAME\" in project \"$PROJECT\"..."
-    [ -f ./"$CIRROS_IMAGE_NAME".img ] && echo "File ./$CIRROS_IMAGE_NAME.img exist." \
-    || { echo "File ./$CIRROS_IMAGE_NAME.img does not exist. Try to download it..."; \
-    wget https://repo.itkey.com/repository/images/"$CIRROS_IMAGE_NAME".img; }
-    openstack image create "$CIRROS_IMAGE_NAME" \
-      --disk-format qcow2 \
-      --container-format bare \
-      --public \
-      --file ./"$CIRROS_IMAGE_NAME".img
-
-    IMAGE=$CIRROS_IMAGE_NAME
+    if [ -z "$(image_exists_in_openstack $CIRROS_IMAGE_NAME)" ]; then
+      create_image $CIRROS_IMAGE_NAME
+    else
+      IMAGE=$CIRROS_IMAGE_NAME
+    fi
   else
     printf "%s\n" "${green}Image \"$IMAGE\" already exist in project \"$PROJECT\"${normal}"
   fi
