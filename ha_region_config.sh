@@ -61,4 +61,4 @@ change_ipmi_fencing () {
 }
 
 [ -n "$ALIVE_THRSHOLD" ] && change_alive_threshold $ALIVE_THRSHOLD
-[ -n "$IPMI_FENCING" ] && change_alive_threshold $IPMI_FENCING
+[ -n "$IPMI_FENCING" ] && change_ipmi_fencing $IPMI_FENCING
