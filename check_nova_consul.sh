@@ -62,6 +62,7 @@ Check_openrc_file () {
 # Check nova srvice list
 Check_nova_srvice_list () {
     echo "Check nova srvice list..."
+    nova_state_list=$(openstack compute service list)
     echo "$nova_state_list" | \
         sed --unbuffered \
             -e 's/\(.*disabled.*\)/\o033[31m\1\o033[39m/' \
