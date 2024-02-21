@@ -118,24 +118,26 @@ Check_disabled_computes_in_nova () {
 #            echo $yes_no_input
             if [ "$yes_no_input" = "true" ]; then
               echo "Trying to raise and enable nova service on $cmpt"
+              try_to_rise="true"
               openstack compute service set --enable --up "${cmpt}" nova-compute
-#              openstack compute service set --up "${cmpt}" nova-compute
             fi
           done
-          nova_state_list=$(openstack compute service list)
-          echo "$nova_state_list" | \
-            sed --unbuffered \
-              -e 's/\(.*enabled | up.*\)/\o033[92m\1\o033[39m/' \
-              -e 's/\(.*disabled.*\)/\o033[31m\1\o033[39m/' \
-              -e 's/\(.*down.*\)/\o033[31m\1\o033[39m/'
-
-        cmpt_disabled_nova_list=$(echo "$nova_state_list" | grep -E "(nova-compute.+disable)|(nova-compute.+down)" | awk '{print $6}')
-        if [ -n "$cmpt_disabled_nova_list" ]; then
-          for cmpt in $cmpt_disabled_nova_list; do
-            printf "%40s\n" "${red}Failed to start nova service on $cmpt${normal}"
-          done
-#          exit 1
-        fi
+          if [ "$try_to_rise" = "true" ]; then
+            Check_nova_srvice_list
+#            nova_state_list=$(openstack compute service list)
+#            echo "$nova_state_list" | \
+#              sed --unbuffered \
+#                -e 's/\(.*enabled | up.*\)/\o033[92m\1\o033[39m/' \
+#                -e 's/\(.*disabled.*\)/\o033[31m\1\o033[39m/' \
+#                -e 's/\(.*down.*\)/\o033[31m\1\o033[39m/'
+          fi
+#        cmpt_disabled_nova_list=$(echo "$nova_state_list" | grep -E "(nova-compute.+disable)|(nova-compute.+down)" | awk '{print $6}')
+#        if [ -n "$cmpt_disabled_nova_list" ]; then
+#          for cmpt in $cmpt_disabled_nova_list; do
+#            printf "%40s\n" "${red}Failed to start nova service on $cmpt${normal}"
+#          done
+##          exit 1
+#        fi
       fi
     fi
 }
