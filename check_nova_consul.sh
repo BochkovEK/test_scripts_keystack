@@ -91,7 +91,7 @@ Check_connection_to_nova_nodes () {
 
 yes_no_input () {
   while true; do
-    read -p "Do you wish to install this program? " yn
+    read -p "Trying to raise and enable nova service on $1: " yn
     case $yn in
         [Yy]* ) make install; break;;
         [Nn]* ) ;;
@@ -109,8 +109,7 @@ Check_disabled_computes_in_nova () {
     if [ -n "$cmpt_disabled_nova_list" ]; then
         if [ "$TRY_TO_RISE" = true ] ; then
           for cmpt in $cmpt_disabled_nova_list; do
-            echo "Trying to raise and enable nova service on $cmpt"
-            yes_no_input
+            yes_no_input $cmpt
             openstack compute service set --enable "${cmpt}" nova-compute
             openstack compute service set --up "${cmpt}" nova-compute
           done
