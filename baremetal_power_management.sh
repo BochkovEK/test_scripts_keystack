@@ -3,6 +3,12 @@
 #  bash baremetal_power_management.sh ebochkov-ks-sber-comp-05-rmi check
 #  bash baremetal_power_management.sh ebochkov-ks-sber-comp-05-rmi on
 
+#Colors
+green=$(tput setaf 2)
+red=$(tput setaf 1)
+violet=$(tput setaf 5)
+normal=$(tput sgr0)
+
 required_modules=(
             #foo
             "sushy"
@@ -55,6 +61,12 @@ done
 
 check_parameters () {
   [ -z "$HOST_NAME" ] && { echo "Host name needed as env (HOST_NAME) or first start script parameter"; exit 1; }
+  if ping -c 2 $HOST_NAME &> /dev/null; then
+    printf "%40s\n" "${green}There is a connection with $HOST_NAME - success${normal}"
+  else
+    printf "%40s\n" "${red}No connection with $HOST_NAME - error!${normal}"
+    exit 1
+  fi
 }
 
 check_module_exist () {
