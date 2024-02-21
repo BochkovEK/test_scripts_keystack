@@ -12,9 +12,11 @@ def fence_redfish(hostname, power_state='on', username='root', password='r00tme'
     system = s.get_system()
     # current_state = system.power_state
     if power_state == 'on':
+        print(f"Try to power ON {hostname}...\nNone is ok output")
         power_on = system.reset_system(sushy.RESET_ON)
         return power_on
     elif power_state == 'check':
+        print("Check power state...")
         return system.power_state
 
 
