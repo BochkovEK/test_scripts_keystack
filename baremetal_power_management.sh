@@ -54,7 +54,7 @@ do
 done
 
 check_parameters () {
-  [ -z "$HOST_NAME" ] && { echo "Host name needed as env (HOST_NAME) or first start scrip parameter"; exit 1; }
+  [ -z "$HOST_NAME" ] && { echo "Host name needed as env (HOST_NAME) or first start script parameter"; exit 1; }
 }
 
 check_module_exist () {
