@@ -68,5 +68,5 @@ cat_consul_conf () {
 
 [ -n "$ALIVE_THRSHOLD" ] && change_alive_threshold $ALIVE_THRSHOLD
 [ -n "$IPMI_FENCING" ] && change_ipmi_fencing $IPMI_FENCING
-[ -n "$conf_id_changed" ] && { echo "Restart consul containers..."; bash command_on_nodes.sh -nt ctrl -c "docker restart consul"; }
-cat_consul_conf
+[ -n "$conf_id_changed" ] && { echo "Restart consul containers..."; bash command_on_nodes.sh -nt ctrl -c "docker restart consul"; cat_consul_conf; }
+#cat_consul_conf
