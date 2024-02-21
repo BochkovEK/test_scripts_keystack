@@ -109,7 +109,8 @@ Check_disabled_computes_in_nova () {
                   * ) echo "Please answer yes or no.";;
               esac
             done
-            if [ "$yes_no_input)" = "true" ]; then
+#            echo $yes_no_input
+            if [ "$yes_no_input" = "true" ]; then
               echo "Trying to raise and enable nova service on $cmpt"
               openstack compute service set --enable "${cmpt}" nova-compute
               openstack compute service set --up "${cmpt}" nova-compute
