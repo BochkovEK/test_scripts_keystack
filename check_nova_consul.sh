@@ -180,6 +180,7 @@ Check_members_list () {
     echo "$members_list" | \
             sed --unbuffered \
                 -e 's/\(.*alive.*\)/\o033[92m\1\o033[39m/' \
+                -e 's/\(.*failed.*\)/\o033[31m\1\o033[39m/'
                 #-e 's/\(.*Restarting.*\)/\o033[31m\1\o033[39m/' \
                 #-e 's/\(.*unhealthy.*\)/\o033[31m\1\o033[39m/'
 }
