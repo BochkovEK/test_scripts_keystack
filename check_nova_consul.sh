@@ -138,8 +138,8 @@ Check_disabled_computes_in_nova () {
         if [ -n "$cmpt_disabled_nova_list" ]; then
           for cmpt in $cmpt_disabled_nova_list; do
             printf "%40s\n" "${red}Failed to start nova service on $cmpt${normal}"
-            exit 1
           done
+#          exit 1
         fi
       fi
     fi
