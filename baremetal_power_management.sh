@@ -65,7 +65,7 @@ check_module_exist () {
 }
 
 start_python_power_management_script () {
-  python3 ./baremetal_power_management.py $HOST_NAME $POWER_STATE $USER_NAME $PASSWORD
+  python3 ./redfish_manager.py $HOST_NAME $POWER_STATE $USER_NAME $PASSWORD
 }
 
 check_parameters
