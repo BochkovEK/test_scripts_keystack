@@ -10,5 +10,5 @@ source $OPENRC_PATH
 
 REGION=$OS_REGION_NAME
 
-bash command_on_nodes.sh -c "sed -i 's/\"alive_compute_threshold\": \"1\"/\"alive_compute_threshold\": \"$1\"/' /etc/kolla/consul/region-config_${REGION}.json"
-bash command_on_nodes.sh -c "docker restart consul"
+bash command_on_nodes.sh -nt ctrl -c "sed -i 's/\"alive_compute_threshold\": \"1\"/\"alive_compute_threshold\": \"$1\"/' /etc/kolla/consul/region-config_${REGION}.json"
+bash command_on_nodes.sh -nt ctrl -c "docker restart consul"
