@@ -72,7 +72,19 @@ Check_nova_srvice_list () {
 # Check connection to nova nodes
 Check_connection_to_nodes () {
     echo "Check connection to $1 nodes..."
-    for host in $2; do
+    case $1 in
+      controls)
+        nodes=$ctrl_nodes
+        ;;
+      computes)
+        nodes=$comp_nodes
+        ;;
+      *)
+        echo "Unknown node type define"
+        return
+        ;;
+    esac
+    for host in $nodes; do
         host $host
         sleep 1
         if ping -c 2 $host &> /dev/null; then
@@ -130,9 +142,20 @@ Check_disabled_computes_in_nova () {
 
 # Check docker container
 Check_docker_container () {
-    echo "Check $1 docker on nodes..."
-
-    for host in $2;do
+    echo "Check $2 docker on $1 nodes..."
+    case $1 in
+      controls)
+        nodes=$ctrl_nodes
+        ;;
+      computes)
+        nodes=$comp_nodes
+        ;;
+      *)
+        echo "Unknown node type define"
+        return
+        ;;
+    esac
+    for host in $nodes;do
         echo "consul on $host"
         docker=$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no $host "docker ps | grep $1")
         if [ -z "$docker" ]; then
@@ -204,12 +227,12 @@ comp_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6
 for i in $ctrl_nodes; do ctrl_node_array+=("$i"); done;
 
 Check_nova_srvice_list
-Check_connection_to_nodes "controls" $ctrl_nodes
-Check_connection_to_nodes "computes" $comp_nodes
+Check_connection_to_nodes "controls"
+Check_connection_to_nodes "computes"
 Check_disabled_computes_in_nova
-Check_docker_container consul $ctrl_nodes
-Check_docker_container consul $comp_nodes
-Check_docker_container nova_compute $comp_nodes
+Check_docker_container "controls" consul
+Check_docker_container "computes" consul
+Check_docker_container "computes" nova_compute
 Check_members_list
 Check_consul_logs
 Check_consul_config
