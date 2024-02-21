@@ -30,7 +30,7 @@ normal=$(tput sgr0)
 # Constants
 TIMEOUT_BEFORE_NEXT_CREATION=10
 UBUNTU_IMAGE_NAME="ubuntu-20.04-server-cloudimg-amd64"
-CIRROS_IMAGE_NAME="cirros-0.5.2-x86_64-disk"
+CIRROS_IMAGE_NAME="cirros-0.6.2-x86_64-disk"
 
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
 [[ -z $VM_QTY ]] && VM_QTY="1"
@@ -320,10 +320,10 @@ check_network () {
 check_image () {
   echo "Check for exist image: \"$IMAGE\""
   IMAGE_NAME_EXIST=$(openstack image list| grep "$IMAGE"| awk '{print $2}')
-  if [ -z "$IMAGE_NAME_EXIST" ] && [[ ! $IMAGE =~ ubuntu|ubuntu-22.04.2-live-server-amd64|cirros|cirros-0.5.2-x86_64-disk ]]; then
+  if [ -z "$IMAGE_NAME_EXIST" ] && [[ ! $IMAGE =~ ubuntu|$UBUNTU_IMAGE_NAME|cirros|$CIRROS_IMAGE_NAME ]]; then
     printf "%s\n" "${red}Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
     exit 1
-  elif [ -z "$IMAGE_NAME_EXIST" ] && [[ $IMAGE =~ ubuntu|ubuntu-22.04.2-live-server-amd64 ]]; then
+  elif [ -z "$IMAGE_NAME_EXIST" ] && [[ $IMAGE =~ ubuntu|$UBUNTU_IMAGE_NAME ]]; then
     printf "%s\n" "${orange}Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
     [[ ! $DONT_ASK = "true" ]] && {
       echo "Try to download image: \"$UBUNTU_IMAGE_NAME\" and add to openstack?";
@@ -340,7 +340,7 @@ check_image () {
       --container-format bare \
       --public \
       --file ./"$UBUNTU_IMAGE_NAME".img
-  elif [ -z "$IMAGE_NAME_EXIST" ] && [[ $IMAGE =~ cirros|cirros-0.5.2-x86_64-disk ]]; then
+  elif [ -z "$IMAGE_NAME_EXIST" ] && [[ $IMAGE =~ cirros|$CIRROS_IMAGE_NAME ]]; then
     printf "%s\n" "${orange}Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
     [[ ! $DONT_ASK = "true" ]] && {
       echo "Try to download image: \"$CIRROS_IMAGE_NAME\" and add to openstack?";

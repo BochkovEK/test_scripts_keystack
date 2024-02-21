@@ -91,7 +91,7 @@ Delete all volumes?
 #        for id in $volumes_ID; do
 #            delete_volumes $id
 #        done
-        echo "Remove all volumes completed"
+        echo "Deletion command sent..."
         openstack volume list
     else
 	echo "Volumes not found"
