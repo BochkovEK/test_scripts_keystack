@@ -157,9 +157,9 @@ Check_docker_container () {
     esac
     for host in $nodes;do
         echo "consul on $host"
-        docker=$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no $host "docker ps | grep $1")
+        docker=$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no $host "docker ps | grep $2")
         if [ -z "$docker" ]; then
-          [ -z "$docker" ] && echo -e "\033[31mDocker $1 not started on $host\033[0m"
+          [ -z "$docker" ] && echo -e "\033[31mDocker $2 not started on $host\033[0m"
         else
           echo "$docker" | \
               sed --unbuffered \
@@ -229,10 +229,10 @@ for i in $ctrl_nodes; do ctrl_node_array+=("$i"); done;
 Check_nova_srvice_list
 Check_connection_to_nodes "controls"
 Check_connection_to_nodes "computes"
-Check_disabled_computes_in_nova
 Check_docker_container "controls" consul
 Check_docker_container "computes" consul
 Check_docker_container "computes" nova_compute
+Check_disabled_computes_in_nova
 Check_members_list
 Check_consul_logs
 Check_consul_config
