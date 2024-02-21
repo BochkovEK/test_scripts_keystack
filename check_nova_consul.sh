@@ -70,25 +70,19 @@ Check_nova_srvice_list () {
 }
 
 # Check connection to nova nodes
-Check_connection_to_nova_nodes () {
-    echo "Check connection to nova nodes..."
-    for host in $comp_and_ctrl_nodes;do
+Check_connection_to_nodes () {
+    echo "Check connection to $1 nodes..."
+    for host in $2; do
         host $host
         sleep 1
         if ping -c 2 $host &> /dev/null; then
             printf "%40s\n" "${green}There is a connection with $host - success${normal}"
         else
             printf "%40s\n" "${red}No connection with $host - error!${normal}"
-            #unreachable_nova_node=$(host $host |grep -E "ctrl|cmpt")
-            #if [ -n "$unreachable_nova_node" ]; then
-            #    printf "%40s\n" "${red}One of the nova cluster nodes is unreachable!${normal}"
             echo -e "${red}The node may be turned off.${normal}\n"
-            #exit 1
-            #fi
         fi
     done
 }
-
 
 # Check disabled computes in nova
 Check_disabled_computes_in_nova () {
@@ -138,7 +132,7 @@ Check_disabled_computes_in_nova () {
 Check_docker_container () {
     echo "Check $1 docker on nodes..."
 
-    for host in $comp_and_ctrl_nodes;do
+    for host in $2;do
         echo "consul on $host"
         docker=$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no $host "docker ps | grep $1")
         if [ -z "$docker" ]; then
@@ -152,7 +146,6 @@ Check_docker_container () {
         fi
     done
 }
-
 
 # Check members list
 Check_members_list () {
@@ -205,15 +198,18 @@ Check_openrc_file
 
 source $OPENRC_PATH
 nova_state_list=$(openstack compute service list)
-comp_and_ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)|(nova-scheduler)" | awk '{print $6}')
-ctrl_node=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
-for i in $ctrl_node; do ctrl_node_array+=("$i"); done;
+#comp_and_ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)|(nova-scheduler)" | awk '{print $6}')
+ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
+comp_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
+for i in $ctrl_nodes; do ctrl_node_array+=("$i"); done;
 
 Check_nova_srvice_list
-Check_connection_to_nova_nodes
+Check_connection_to_nodes "controls" $ctrl_nodes
+Check_connection_to_nodes "computes" $comp_nodes
 Check_disabled_computes_in_nova
-Check_docker_container consul
-Check_docker_container nova_compute
+Check_docker_container consul $ctrl_nodes
+Check_docker_container consul $comp_nodes
+Check_docker_container nova_compute $comp_nodes
 Check_members_list
 Check_consul_logs
 Check_consul_config
