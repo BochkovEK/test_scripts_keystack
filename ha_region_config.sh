@@ -47,7 +47,7 @@ REGION=$OS_REGION_NAME
 
 change_alive_threshold () {
   bash command_on_nodes.sh -nt ctrl -c "sed -i 's/\"alive_compute_threshold\": \"1\"/\"alive_compute_threshold\": \"$1\"/' /etc/kolla/consul/region-config_${REGION}.json"
-  bash command_on_nodes.sh -nt ctrl -c "docker restart consul"
+  conf_id_changed="true"
 }
 
 change_ipmi_fencing () {
@@ -57,8 +57,14 @@ change_ipmi_fencing () {
     bash command_on_nodes.sh -nt ctrl -c "sed -i 's/\"bmc\": true/\"bmc\": false/' /etc/kolla/consul/region-config_${REGION}.json"
   else echo "$1 - is not valid ipmi parameter" return 1
   fi
-  bash command_on_nodes.sh -nt ctrl -c "docker restart consul"
+  conf_id_changed="true"
+}
+
+cat_consul_conf () {
+  bash command_on_nodes.sh -nt ctrl -c "cat /etc/kolla/consul/region-config_${REGION}.json"
 }
 
 [ -n "$ALIVE_THRSHOLD" ] && change_alive_threshold $ALIVE_THRSHOLD
 [ -n "$IPMI_FENCING" ] && change_ipmi_fencing $IPMI_FENCING
+[ -n "$conf_id_changed" ] && { echo "Restart consul containers..."; bash command_on_nodes.sh -nt ctrl -c "docker restart consul"; }
+cat_consul_conf
