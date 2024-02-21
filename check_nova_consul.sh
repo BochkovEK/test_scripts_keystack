@@ -106,7 +106,7 @@ Check_disabled_computes_in_nova () {
         if [ "$TRY_TO_RISE" = true ] ; then
           for cmpt in $cmpt_disabled_nova_list; do
             while true; do
-              read -p -r "Do you want to try to raise and enable nova service on $cmpt? [Yes]: " yn
+              read -p "Do you want to try to raise and enable nova service on $cmpt? [Yes]: " yn
               yn=${yn:-"Yes"}
               echo $yn
               case $yn in
