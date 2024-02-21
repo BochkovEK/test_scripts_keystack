@@ -352,6 +352,8 @@ check_image () {
     if [ -z "$(image_exists_in_openstack $UBUNTU_IMAGE_NAME)" ]; then
       create_image $UBUNTU_IMAGE_NAME
     else
+      echo "But image: $UBUNTU_IMAGE_NAME exists in project: $PROJECT"
+      [[ ! $DONT_ASK = "true" ]] && read -p "Press enter to use this image and continue"
       IMAGE=$UBUNTU_IMAGE_NAME
     fi
   elif [ -z "$IMAGE_NAME_EXIST" ] && [[ $IMAGE =~ cirros|$CIRROS_IMAGE_NAME ]]; then
@@ -359,6 +361,8 @@ check_image () {
     if [ -z "$(image_exists_in_openstack $CIRROS_IMAGE_NAME)" ]; then
       create_image $CIRROS_IMAGE_NAME
     else
+      echo "But image: $CIRROS_IMAGE_NAME exists in project: $PROJECT"
+      [[ ! $DONT_ASK = "true" ]] && read -p "Press enter to use this image and continue"
       IMAGE=$CIRROS_IMAGE_NAME
     fi
   else
