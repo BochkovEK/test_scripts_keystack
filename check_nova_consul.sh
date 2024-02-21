@@ -111,7 +111,7 @@ Check_disabled_computes_in_nova () {
     if [ -n "$cmpt_disabled_nova_list" ]; then
         if [ "$TRY_TO_RISE" = true ] ; then
           for cmpt in $cmpt_disabled_nova_list; do
-            if [ "$(yes_no_imput $cmpt)" = "true" ]; then
+            if [ "$(yes_no_input $cmpt)" = "true" ]; then
               openstack compute service set --enable "${cmpt}" nova-compute
               openstack compute service set --up "${cmpt}" nova-compute
             fi
