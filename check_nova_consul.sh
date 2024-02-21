@@ -134,17 +134,17 @@ Check_disabled_computes_in_nova () {
     fi
 }
 
-# Check docker consul
-Check_docker_consul () {
-    echo "Check consul docker on nodes..."
+# Check docker container
+Check_docker_container () {
+    echo "Check $1 docker on nodes..."
 
     for host in $comp_and_ctrl_nodes;do
         echo "consul on $host"
-        docker_consul=$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no $host "docker ps | grep consul")
-        if [ -z "$docker_consul" ]; then
-          [ -z "$docker_consul" ] && echo -e "\033[31mDocker consul not started on $host\033[0m"
+        docker=$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no $host "docker ps | grep $1")
+        if [ -z "$docker" ]; then
+          [ -z "$docker" ] && echo -e "\033[31mDocker $1 not started on $host\033[0m"
         else
-          echo "$docker_consul" | \
+          echo "$docker" | \
               sed --unbuffered \
                   -e 's/\(.*Up.*\)/\o033[92m\1\o033[39m/' \
                   -e 's/\(.*Restarting.*\)/\o033[31m\1\o033[39m/' \
@@ -152,6 +152,7 @@ Check_docker_consul () {
         fi
     done
 }
+
 
 # Check members list
 Check_members_list () {
@@ -211,7 +212,8 @@ for i in $ctrl_node; do ctrl_node_array+=("$i"); done;
 Check_nova_srvice_list
 Check_connection_to_nova_nodes
 Check_disabled_computes_in_nova
-Check_docker_consul
+Check_docker_container consul
+Check_docker_container nova_compute
 Check_members_list
 Check_consul_logs
 Check_consul_config
