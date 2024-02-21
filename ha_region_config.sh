@@ -53,9 +53,11 @@ change_alive_threshold () {
 change_ipmi_fencing () {
   if [ "$1" = true ]; then
     bash command_on_nodes.sh -nt ctrl -c "sed -i 's/\"bmc\": false/\"bmc\": true/' /etc/kolla/consul/region-config_${REGION}.json"
-  elif [ "$1" = flase ]; then
+  elif [ "$1" = false ]; then
     bash command_on_nodes.sh -nt ctrl -c "sed -i 's/\"bmc\": true/\"bmc\": false/' /etc/kolla/consul/region-config_${REGION}.json"
-  else echo "$1 - is not valid ipmi parameter" return 1
+  else
+    echo "$1 - is not valid ipmi parameter"
+    return 1
   fi
   conf_id_changed="true"
 }
