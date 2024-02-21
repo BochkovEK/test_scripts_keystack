@@ -161,7 +161,7 @@ VMs will be created with the following parameters:
         Creating VMs one by one with a timeout (bool): $BATCH
         "
 
-    [[ ! $DONT_ASK = "true" ]] && { read -p "Press enter to continue"; }
+    [[ ! $DONT_ASK = "true" ]] && { read -p "Press enter to continue: "; }
 }
 
 # Check openrc file
@@ -221,7 +221,7 @@ check_project () {
         printf "%s\n" "${orange}Project \"$PROJECT\" does not exist${normal}"
         [[ ! $DONT_ASK = "true" ]] && {
           echo "Сreate a Project with name: \"$PROJECT\"?";
-          read -p "Press enter to continue";
+          read -p "Press enter to continue: ";
           }
         openstack project create $PROJECT
     else
@@ -233,7 +233,7 @@ check_project () {
         printf "%s\n" "${orange}User: \"$TEST_USER\" does not exist${normal}"
         [[ ! $DONT_ASK = "true" ]] && {
           echo "Сreate a user with name: \"$TEST_USER\"?";
-          read -p "Press enter to continue";
+          read -p "Press enter to continue: ";
           }
         openstack user create --password $OS_PASSWORD $TEST_USER
     else
@@ -245,7 +245,7 @@ check_project () {
         printf "%s\n" "${orange}Role: \"$ROLE\" does not exist in project: \"$PROJECT\"${normal}"
         [[ ! $DONT_ASK = "true" ]] && {
           echo "Сreate role: \"$ROLE\" in project: \"$PROJECT\"?";
-          read -p "Press enter to continue";
+          read -p "Press enter to continue: ";
           }
         openstack role add --project $PROJECT --user $TEST_USER $ROLE
         #Add admin user to project to view it in horizon by admin user authorization
@@ -266,7 +266,7 @@ check_and_add_secur_group () {
         printf "%s\n" "${orange}Security group \"$SECURITY_GR\" not found in project \"$PROJECT\"${normal}"
         [[ ! $DONT_ASK = "true" ]] && {
           echo "Сreate a Security group with a name: \"$SECURITY_GR\"?";
-          read -p "Press enter to continue";
+          read -p "Press enter to continue: ";
           }
 
         echo "Creating security group \"$SECURITY_GR\" in project \"$PROJECT\"..."
@@ -291,7 +291,7 @@ check_and_add_keypair () {
     printf "%s\n" "${orange}Keypair \"$KEY_NAME\" not found in project \"$PROJECT\"${normal}"
     [[ ! $DONT_ASK = "true" ]] && {
       echo "Сreate a key pair with a name: \"$KEY_NAME\"?";
-      read -p "Press enter to continue";
+      read -p "Press enter to continue: ";
       }
 
     echo "Creating \"$KEY_NAME\" in project \"$PROJECT\"..."
@@ -319,7 +319,7 @@ check_network () {
 # Create image
 create_image () {
   [[ ! $DONT_ASK = "true" ]] && { echo "Try to download image: \"$1\" and add to openstack?";
-    read -p "Press enter to continue"; }
+    read -p "Press enter to continue: "; }
 
   echo "Creating image \"$1\" in project \"$PROJECT\"..."
   [ -f ./"$1".img ] && echo "File ./$1.img exist." \
@@ -353,7 +353,7 @@ check_image () {
       create_image $UBUNTU_IMAGE_NAME
     else
       echo "But image: $UBUNTU_IMAGE_NAME exists in project: $PROJECT"
-      [[ ! $DONT_ASK = "true" ]] && read -p "Press enter to use this image and continue"
+      [[ ! $DONT_ASK = "true" ]] && read -p "Press enter to use this image and continue: "
       IMAGE=$UBUNTU_IMAGE_NAME
     fi
   elif [ -z "$IMAGE_NAME_EXIST" ] && [[ $IMAGE =~ cirros|$CIRROS_IMAGE_NAME ]]; then
@@ -362,7 +362,7 @@ check_image () {
       create_image $CIRROS_IMAGE_NAME
     else
       echo "But image: $CIRROS_IMAGE_NAME exists in project: $PROJECT"
-      [[ ! $DONT_ASK = "true" ]] && read -p "Press enter to use this image and continue"
+      [[ ! $DONT_ASK = "true" ]] && read -p "Press enter to use this image and continue: "
       IMAGE=$CIRROS_IMAGE_NAME
     fi
   else
@@ -399,7 +399,7 @@ check_and_add_flavor () {
 
     [[ ! $DONT_ASK = "true" ]] && {
       echo "Сreate a flavor with a template name <cpu qty>c_<ram GB>m with cpus: $CPU_QTY and ram: $RAM_MB Mb: \"$FLAVOR\"?";
-      read -p "Press enter to continue";
+      read -p "Press enter to continue: ";
       }
 
     echo "Creating \"$FLAVOR\" in project \"$PROJECT\" with $CPU_QTY cpus and $RAM_MB Mb...";
@@ -445,7 +445,7 @@ create_vms_batch () {
       printf "%s\n" "${orange}VM: \"$INSTANCE_NAME\" is already exist in project \"$PROJECT\"${normal}"
       [[ ! $DONT_ASK = "true" ]] && {
         echo "Сreate VM: \"$INSTANCE_NAME\" in project \"$PROJECT\"?";
-        read -p "Press enter to continue";
+        read -p "Press enter to continue: ";
       }
     fi
     echo "Creating VM: $INSTANCE_NAME"
