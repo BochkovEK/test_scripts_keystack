@@ -9,7 +9,7 @@ cmpt_pattern="\-comp\-..$"
 ctrl_pattern="\-ctrl\-..$"
 net_pattern="\-net\-..$"
 required_container_list=(
-"bifrost_deploy"
+#"bifrost_deploy"
 "netbox-housekeeping"
 "netbox-worker"
 "netbox"
