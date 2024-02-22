@@ -10,7 +10,7 @@ ctrl_pattern="\-ctrl\-..$"
 net_pattern="\-net\-..$"
 required_container_list=(
 #"bifrost_deploy"
-"netbox-housekeeping"
+#"netbox-housekeeping"
 "netbox-worker"
 "netbox"
 "netbox-redis"
