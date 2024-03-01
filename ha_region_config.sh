@@ -25,7 +25,7 @@ do
 	      -a|-alive_threshold) ALIVE_THRSHOLD="$2"
 	        echo "Found the -alive_threshold <alive_threshold> option, with parameter value $ALIVE_THRSHOLD"
           shift ;;
-        -d|-alive_threshold) DEAD_THRSHOLD="$2"
+        -d|-dead_threshold) DEAD_THRSHOLD="$2"
 	        echo "Found the -dead_threshold <dead_threshold> option, with parameter value $DEAD_THRSHOLD"
           shift ;;
         -i|-ipmi_fencing) IPMI_FENCING="$2"
