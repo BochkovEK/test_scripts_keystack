@@ -56,9 +56,10 @@ change_alive_threshold () {
 }
 
 change_dead_threshold () {
-  alive_threshold_string=$(cat /etc/kolla/consul/region-config_${REGION}.json| grep 'alive_compute_threshold')
-  bash command_on_nodes.sh -nt ctrl -c 'alive_threshold_string=$(cat /etc/kolla/consul/region-config_${REGION}.json| grep 'alive_compute_threshold');
-  sed -i --regexp-extended "s/$alive_threshold_string/$alive_threshold_string\n   \"dead_compute_threshold\": \"$1\",/" /etc/kolla/consul/region-config_${REGION}.json'
+#  alive_threshold_string=$(cat /etc/kolla/consul/region-config_${REGION}.json| grep 'alive_compute_threshold')
+  bash command_on_nodes.sh -nt ctrl -c 'echo $REGION'
+#  alive_threshold_string=$(cat /etc/kolla/consul/region-config_${REGION}.json| grep 'alive_compute_threshold');
+#  sed -i --regexp-extended "s/$alive_threshold_string/$alive_threshold_string\n   \"dead_compute_threshold\": \"$1\",/" /etc/kolla/consul/region-config_${REGION}.json'
   conf_id_changed="true"
 }
 
