@@ -46,7 +46,7 @@ REGION=$OS_REGION_NAME
 [[ -z "${REGION}" ]] && { echo "Region name not found"; exit 1; }
 
 change_alive_threshold () {
-  bash command_on_nodes.sh -nt ctrl -c "sed -i -E 's/\"alive_compute_threshold\":\s+\"\d\"/\"alive_compute_threshold\": \"$1\"/' /etc/kolla/consul/region-config_${REGION}.json"
+  bash command_on_nodes.sh -nt ctrl -c "sed -i --regexp-extended 's/"alive_compute_threshold":\s+"[0-9]+"/"alive_compute_threshold": "$1"/' /etc/kolla/consul/region-config_${REGION}.json"
   conf_id_changed="true"
 }
 
