@@ -97,8 +97,7 @@ check_connection () {
 start_commands_on_nodes () {
   for host in "${NODES[@]}"; do
     echo "Start command on ${host}"
-    ssh -o StrictHostKeyChecking=no -t "$host" "foo=bar; echo $foo"
-#    $COMMAND
+    ssh -o StrictHostKeyChecking=no -t "$host" $COMMAND
 #    ssh -o StrictHostKeyChecking=no -t $host << EOF
 #$COMMAND
 #EOF
