@@ -1,6 +1,6 @@
 # The script change alive_threshold in consul region config
 # openrc file required in ~/
-# Start scrip: bash change_ha_alive_threshold.sh <alive_threshold_value>
+# Start scrip: bash ha_region_config.sh -a 2
 
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $ALIVE_THRSHOLD ]] && ALIVE_THRSHOLD=""
@@ -46,7 +46,7 @@ REGION=$OS_REGION_NAME
 [[ -z "${REGION}" ]] && { echo "Region name not found"; exit 1; }
 
 change_alive_threshold () {
-  bash command_on_nodes.sh -nt ctrl -c "sed -i 's/\"alive_compute_threshold\": \"1\"/\"alive_compute_threshold\": \"$1\"/' /etc/kolla/consul/region-config_${REGION}.json"
+  bash command_on_nodes.sh -nt ctrl -c "sed -i -E 's/\"alive_compute_threshold\":\s+\"\d\"/\"alive_compute_threshold\": \"$1\"/' /etc/kolla/consul/region-config_${REGION}.json"
   conf_id_changed="true"
 }
 
