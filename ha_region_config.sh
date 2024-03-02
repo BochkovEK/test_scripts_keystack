@@ -77,7 +77,7 @@ change_dead_threshold () {
       /etc/kolla/consul/region-config_${REGION}.json; }"
   else
     bash command_on_nodes.sh -nt ctrl -c "
-      sed -i --regexp-extended 's/"alive_compute_threshold":\s+"[0-9]+"/"alive_compute_threshold": "$1"/'
+      sed -i --regexp-extended 's/"dead_compute_threshold":\s+"[0-9]+"/"dead_compute_threshold": "$1"/'
       /etc/kolla/consul/region-config_${REGION}.json"
   fi
   cat_consul_conf
