@@ -66,21 +66,35 @@ cat_consul_conf () {
   bash command_on_nodes.sh -nt ctrl -c "echo \"cat /etc/kolla/consul/region-config_${REGION}.json\"; cat /etc/kolla/consul/region-config_${REGION}.json"
 }
 
+pull_consul_conf () {
+  [ ! -d $consul_conf_dir ] && { mkdir -p $consul_conf_dir; }
+  ctrl_node=$(cat /etc/hosts | grep -m 1 -E ${ctrl_pattern} | awk '{print $2}')
+  [ "$DEBUG" = true ] && debug_echo $ctrl_node
+
+  echo "Сopying consul conf from $ctrl_node:/etc/kolla/consul/region-config_${REGION}.json"
+  scp -o StrictHostKeyChecking=no $ctrl_node:/etc/kolla/consul/region-config_${REGION}.json $consul_conf_dir
+}
+
+push_consul_conf () {
+  ctrl_nodes=$(cat /etc/hosts | grep -E ${ctrl_pattern} | awk '{print $2}')
+  [ "$DEBUG" = true ] && { for string in $ctrl_nodes; do debug_echo $string; done; }
+  for node in $ctrl_nodes; do
+    echo "Сopying consul conf to $node:/etc/kolla/consul/region-config_${REGION}.json"
+    scp -o StrictHostKeyChecking=no ${consul_conf_dir}/region-config_${REGION}.json $node:/etc/kolla/consul/region-config_${REGION}.json
+  done
+}
+
 change_alive_threshold () {
-  bash command_on_nodes.sh -nt ctrl -c "sed -i --regexp-extended 's/"alive_compute_threshold":\s+"[0-9]+"/"alive_compute_threshold": "$1"/' /etc/kolla/consul/region-config_${REGION}.json"
+  pull_consul_conf
+  sed -i --regexp-extended "s/\"alive_compute_threshold\":\s+\"[0-9]+\"/\"alive_compute_threshold\": \"$1\"/" \
+   /etc/kolla/consul/region-config_${REGION}.json
+  push_consul_conf
   cat_consul_conf
   conf_id_changed="true"
 }
 
 change_dead_threshold () {
-  [ ! -d $consul_conf_dir ] && { mkdir -p $consul_conf_dir; }
-  ctrl_node=$(cat /etc/hosts | grep -m 1 -E ${ctrl_pattern} | awk '{print $2}')
-  [ "$DEBUG" = true ] && debug_echo $ctrl_node
-  ctrl_nodes=$(cat /etc/hosts | grep -E ${ctrl_pattern} | awk '{print $2}')
-  [ "$DEBUG" = true ] && { for string in $ctrl_nodes; do debug_echo $string; done; }
-  echo "Сopying consul conf from $ctrl_node:/etc/kolla/consul/region-config_${REGION}.json"
-  scp -o StrictHostKeyChecking=no $ctrl_node:/etc/kolla/consul/region-config_${REGION}.json $consul_conf_dir
-
+  pull_consul_conf
   dead_threshold_string_exist=$(cat ${consul_conf_dir}/region-config_${REGION}.json| grep 'dead_compute_threshold')
   [ "$DEBUG" = true ] && debug_echo "${dead_threshold_string_exist}"
   if [ -z "$dead_threshold_string_exist" ]; then
@@ -92,10 +106,7 @@ change_dead_threshold () {
     sed -i --regexp-extended "s/"dead_compute_threshold":\s+"[0-9]+,"/\"dead_compute_threshold\": \"$1\",/" \
     ${consul_conf_dir}/region-config_${REGION}.json
   fi
-  for node in $ctrl_nodes; do
-    echo "Сopying consul conf to $node:/etc/kolla/consul/region-config_${REGION}.json"
-    scp -o StrictHostKeyChecking=no ${consul_conf_dir}/region-config_${REGION}.json $node:/etc/kolla/consul/region-config_${REGION}.json
-  done
+  push_consul_conf
   cat_consul_conf
   conf_id_changed="true"
 }
