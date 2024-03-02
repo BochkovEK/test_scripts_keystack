@@ -17,6 +17,7 @@ violet=$(tput setaf 5)
 normal=$(tput sgr0)
 
 [[ -z $COMMAND ]] && COMMAND="ls -la"
+[[ -z $SENDENV ]] && SENDENV=""
 [[ -z $NODES ]] && NODES=()
 [[ -z $PING ]] && PING="false"
 #======================
@@ -52,7 +53,8 @@ count=1
 while [ -n "$1" ]; do
   case "$1" in
     --help) echo -E "
-      -c,   -command        <command>
+      -c,   -command        \"<command>\"
+      -e,   -send_env       \"<ENV_NAME=env_value>\"
       -nt,  -type_of_nodes  <type_of_nodes> 'ctrl', 'comp', 'net'
       -p,   -ping           ping before execution command
       Remove all containers on all nodes:
@@ -64,6 +66,12 @@ while [ -n "$1" ]; do
         break ;;
     -c|-command) COMMAND="$2"
       echo "Found the -command <command> option, with parameter value $COMMAND"
+      shift ;;
+    -e|-send_env)
+      SENDENV_NAME=${2%=*}
+      SENDENV=$SENDENV'-o \"SendEnv $SENDENV_NAME\"'
+      echo "Found the - <send_env> option, with parameter value $2"
+      echo "SENDENV: $SENDENV"
       shift ;;
     -nt|-type_of_nodes)
       note_type_func "$2"
@@ -97,14 +105,14 @@ check_connection () {
 start_commands_on_nodes () {
   for host in "${NODES[@]}"; do
     echo "Start command on ${host}"
-    ssh -o StrictHostKeyChecking=no -t "$host" ${COMMAND}
+    ssh -o StrictHostKeyChecking=no -t $SENDENV "$host" ${COMMAND}
 #    ssh -o StrictHostKeyChecking=no -t $host << EOF
 #$COMMAND
 #EOF
   done
 }
 
-[ "$PING" = true ] && { check_connection; }
-start_commands_on_nodes
+#[ "$PING" = true ] && { check_connection; }
+#start_commands_on_nodes
 
 
