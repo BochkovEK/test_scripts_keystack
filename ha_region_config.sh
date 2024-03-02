@@ -52,8 +52,13 @@ source $OPENRC_PATH
 REGION=$OS_REGION_NAME
 [[ -z "${REGION}" ]] && { echo "Region name not found"; exit 1; }
 
+cat_consul_conf () {
+  bash command_on_nodes.sh -nt ctrl -c "cat /etc/kolla/consul/region-config_${REGION}.json"
+}
+
 change_alive_threshold () {
   bash command_on_nodes.sh -nt ctrl -c "sed -i --regexp-extended 's/"alive_compute_threshold":\s+"[0-9]+"/"alive_compute_threshold": "$1"/' /etc/kolla/consul/region-config_${REGION}.json"
+  cat_consul_conf
   conf_id_changed="true"
 }
 
@@ -75,6 +80,7 @@ change_dead_threshold () {
       sed -i --regexp-extended 's/"alive_compute_threshold":\s+"[0-9]+"/"alive_compute_threshold": "$1"/'
       /etc/kolla/consul/region-config_${REGION}.json"
   fi
+  cat_consul_conf
 #  conf_id_changed="true"
 }
 
@@ -90,12 +96,8 @@ change_ipmi_fencing () {
   conf_id_changed="true"
 }
 
-cat_consul_conf () {
-  bash command_on_nodes.sh -nt ctrl -c "cat /etc/kolla/consul/region-config_${REGION}.json"
-}
-
 [ -n "$ALIVE_THRSHOLD" ] && change_alive_threshold $ALIVE_THRSHOLD
 [ -n "$DEAD_THRSHOLD" ] && change_dead_threshold $DEAD_THRSHOLD
 [ -n "$IPMI_FENCING" ] && change_ipmi_fencing $IPMI_FENCING
-[ -n "$conf_id_changed" ] && { echo "Restart consul containers..."; bash command_on_nodes.sh -nt ctrl -c "docker restart consul"; cat_consul_conf; }
+[ -n "$conf_id_changed" ] && { echo "Restart consul containers..."; bash command_on_nodes.sh -nt ctrl -c "docker restart consul"; }
 #cat_consul_conf
