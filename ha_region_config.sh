@@ -73,10 +73,10 @@ change_dead_threshold () {
   if [ -z $dead_threshold_string_exist ]; then
     alive_threshold_string=$(cat ${consul_conf_dir}/region-config_${REGION}.json| grep 'alive_compute_threshold')
     sed -i --regexp-extended "s/$alive_threshold_strin/${alive_threshold_string}\n   "dead_compute_threshold": "$1",/" \
-    /etc/kolla/consul/region-config_${REGION}.json
+    ${consul_conf_dir}/region-config_${REGION}.json
   else
     sed -i --regexp-extended "s/"dead_compute_threshold":\s+"[0-9]+"/"dead_compute_threshold": "$1",/" \
-    /etc/kolla/consul/region-config_${REGION}.json
+    ${consul_conf_dir}/region-config_${REGION}.json
   fi
   for node in $ctrl_nodes; do
     scp -o StrictHostKeyChecking=no ${consul_conf_dir}/region-config_${REGION}.json $node:/etc/kolla/consul/region-config_${REGION}.json
