@@ -65,23 +65,23 @@ change_alive_threshold () {
 change_dead_threshold () {
   ctrl_node=$(cat /etc/hosts | grep -m 1 -E ${ctrl_pattern} | awk '{print $2}')
   dead_threshold_string_exist=$(ssh -o StrictHostKeyChecking=no -t $ctrl_node "cat /etc/kolla/consul/region-config_${REGION}.json| grep 'dead_compute_threshold'")
-#  if [ -z $dead_threshold_string_exist ]; then
-#    alive_threshold_string=$(ssh -o StrictHostKeyChecking=no -t $ctrl_node "cat /etc/kolla/consul/region-config_${REGION}.json| grep 'alive_compute_threshold'")
+  if [ -z $dead_threshold_string_exist ]; then
+    alive_threshold_string=$(ssh -o StrictHostKeyChecking=no -t $ctrl_node "cat /etc/kolla/consul/region-config_${REGION}.json| grep 'alive_compute_threshold'")
 
 #    echo $alive_threshold_string
-#  alive_threshold_string=$(cat /etc/kolla/consul/region-config_${REGION}.json| grep 'alive_compute_threshold')
-#bash command_on_nodes.sh -nt ctrl -c "echo $REGION; foo=bar; echo $foo"
+#    alive_threshold_string=$(cat /etc/kolla/consul/region-config_${REGION}.json| grep 'alive_compute_threshold')
+#    bash command_on_nodes.sh -nt ctrl -c "echo $REGION; foo=bar; echo $foo"
 #    bash command_on_nodes.sh -nt ctrl -c "kolla/consul/region-config_${REGION}.json| grep 'alive_compute_threshold'); echo $alive_threshold_string"
 #  alive_threshold_string=$(cat /etc/kolla/consul/region-config_${REGION}.json| grep 'alive_compute_threshold');
 
-#    bash command_on_nodes.sh -nt ctrl -c "
-#      sed -i --regexp-extended 's/$alive_threshold_string/$alive_threshold_string\n   \"dead_compute_threshold\": \"$1\",/'
-#      /etc/kolla/consul/region-config_${REGION}.json"
-#  else
+    bash command_on_nodes.sh -nt ctrl -c "
+      sed -i --regexp-extended 's/$alive_threshold_string/$alive_threshold_string\n   "dead_compute_threshold": "$1",/'
+      /etc/kolla/consul/region-config_${REGION}.json"
+  else
     bash command_on_nodes.sh -nt ctrl -c "
       sed -i --regexp-extended 's/"dead_compute_threshold":\s+"[0-9]+"/"dead_compute_threshold": "$1"/'
       /etc/kolla/consul/region-config_${REGION}.json"
-#  fi
+  fi
   cat_consul_conf
 #  conf_id_changed="true"
 }
