@@ -9,6 +9,7 @@ consul_conf_dir=./kolla/consul
 [[ -z $ALIVE_THRSHOLD ]] && ALIVE_THRSHOLD=""
 [[ -z $DEAD_THRSHOLD ]] && DEAD_THRSHOLD=""
 [[ -z $IPMI_FENCING ]] && IPMI_FENCING=""
+[[ -z $DEBUG ]] && DEBUG="false"
 
 #[[ -z "${1}" ]] && { echo "Alive threshold value required as parameter script"; exit 1; }
 
@@ -34,6 +35,9 @@ do
         -i|-ipmi_fencing) IPMI_FENCING="$2"
           echo "Found the -ipmi_fencing <true\false> option, with parameter value $IPMI_FENCING"
           shift ;;
+        -v|-debug) DEBUG="true"
+	        echo "Found the -debug, with parameter value $DEBUG"
+          ;;
         --) shift
           break ;;
         *) echo "$1 is not an option";;
@@ -53,6 +57,10 @@ source $OPENRC_PATH
 REGION=$OS_REGION_NAME
 [[ -z "${REGION}" ]] && { echo "Region name not found"; exit 1; }
 
+debug_echo () {
+  echo "[DEBUG] \$1: $1"
+}
+
 cat_consul_conf () {
   bash command_on_nodes.sh -nt ctrl -c "echo \"cat /etc/kolla/consul/region-config_${REGION}.json\"; cat /etc/kolla/consul/region-config_${REGION}.json"
 }
@@ -66,15 +74,17 @@ change_alive_threshold () {
 change_dead_threshold () {
   [ ! -d $consul_conf_dir ] && { mkdir -p $consul_conf_dir; }
   ctrl_node=$(cat /etc/hosts | grep -m 1 -E ${ctrl_pattern} | awk '{print $2}')
-  echo $ctrl_node
+  [ "$DEBUG" = true ] && debug_echo $ctrl_node
   ctrl_nodes=$(cat /etc/hosts | grep -E ${ctrl_pattern} | awk '{print $2}')
-  echo $ctrl_nodes
+  [ "$DEBUG" = true ] && { for string in $ctrl_nodes; do debug_echo $string; done; }
   echo "Сopying consul conf from $ctrl_node:/etc/kolla/consul/region-config_${REGION}.json"
   scp -o StrictHostKeyChecking=no $ctrl_node:/etc/kolla/consul/region-config_${REGION}.json $consul_conf_dir
 
   dead_threshold_string_exist=$(cat ${consul_conf_dir}/region-config_${REGION}.json| grep 'dead_compute_threshold')
+  [ "$DEBUG" = true ] && debug_echo "${dead_threshold_string_exist}"
   if [ -z "$dead_threshold_string_exist" ]; then
     alive_threshold_string=$(cat ${consul_conf_dir}/region-config_${REGION}.json| grep 'alive_compute_threshold')
+    [ "$DEBUG" = true ] && debug_echo "${alive_threshold_string}"
     sed -i --regexp-extended "s/$alive_threshold_string/${alive_threshold_string}\n   "dead_compute_threshold": "$1",/" \
     ${consul_conf_dir}/region-config_${REGION}.json
   else
