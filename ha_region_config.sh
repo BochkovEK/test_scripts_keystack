@@ -53,7 +53,7 @@ REGION=$OS_REGION_NAME
 [[ -z "${REGION}" ]] && { echo "Region name not found"; exit 1; }
 
 cat_consul_conf () {
-  bash command_on_nodes.sh -nt ctrl -c "cat /etc/kolla/consul/region-config_${REGION}.json"
+  bash command_on_nodes.sh -nt ctrl -c "echo \"cat /etc/kolla/consul/region-config_${REGION}.json\"; cat /etc/kolla/consul/region-config_${REGION}.json"
 }
 
 change_alive_threshold () {
