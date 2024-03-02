@@ -65,12 +65,12 @@ while [ -n "$1" ]; do
         exit 0
         break ;;
     -c|-command) COMMAND="$2"
-      echo "Found the -command <command> option, with parameter value $COMMAND"
+      echo "Found the -command \"<command>\" option, with parameter value $COMMAND"
       shift ;;
     -e|-send_env)
       SENDENV_NAME=${2%=*}
-      SENDENV=$SENDENV'-o \"SendEnv $SENDENV_NAME\"'
-      echo "Found the - <send_env> option, with parameter value $2"
+      SENDENV=$SENDENV"-o \"SendEnv $SENDENV_NAME\""
+      echo "Found the -send_env \"<ENV_NAME=env_value>\" option, with parameter value $2"
       echo "SENDENV: $SENDENV"
       shift ;;
     -nt|-type_of_nodes)
