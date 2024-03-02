@@ -66,7 +66,7 @@ change_alive_threshold () {
 change_dead_threshold () {
   [ ! -d $consul_conf_dir ] && { mkdir -p $consul_conf_dir; }
   ctrl_node=$(cat /etc/hosts | grep -m 1 -E ${ctrl_pattern} | awk '{print $2}')
-  ctrl_nodes=$(cat /etc/hosts | grep -m -E ${ctrl_pattern} | awk '{print $2}')
+  ctrl_nodes=$(cat /etc/hosts | grep -E ${ctrl_pattern} | awk '{print $2}')
   scp -o StrictHostKeyChecking=no $ctrl_node:/etc/kolla/consul/region-config_${REGION}.json $consul_conf_dir
 
   dead_threshold_string_exist=$(cat ${consul_conf_dir}/region-config_${REGION}.json| grep 'dead_compute_threshold')
