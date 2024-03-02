@@ -2,6 +2,8 @@
 # openrc file required in ~/
 # Start scrip: bash ha_region_config.sh -a 2
 
+ctrl_pattern="\-ctrl\-..$"
+
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $ALIVE_THRSHOLD ]] && ALIVE_THRSHOLD=""
 [[ -z $DEAD_THRSHOLD ]] && DEAD_THRSHOLD=""
@@ -56,8 +58,10 @@ change_alive_threshold () {
 }
 
 change_dead_threshold () {
+  srv=$(cat /etc/hosts | grep -E ${ctrl_pattern} | awk '{print $2}')
+  ssh -o StrictHostKeyChecking=no -t srv $1
 #  alive_threshold_string=$(cat /etc/kolla/consul/region-config_${REGION}.json| grep 'alive_compute_threshold')
-bash command_on_nodes.sh -nt ctrl -c "echo $REGION; foo=bar; echo $foo"
+#bash command_on_nodes.sh -nt ctrl -c "echo $REGION; foo=bar; echo $foo"
 #  bash command_on_nodes.sh -nt ctrl -c "echo $REGION; alive_threshold_string=$(cat /etc/kolla/consul/region-config_${REGION}.json| grep 'alive_compute_threshold'); echo $alive_threshold_string"
 #  alive_threshold_string=$(cat /etc/kolla/consul/region-config_${REGION}.json| grep 'alive_compute_threshold');
 #  sed -i --regexp-extended "s/$alive_threshold_string/$alive_threshold_string\n   \"dead_compute_threshold\": \"$1\",/" /etc/kolla/consul/region-config_${REGION}.json; }"

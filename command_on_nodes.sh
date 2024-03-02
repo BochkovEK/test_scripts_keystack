@@ -54,7 +54,6 @@ while [ -n "$1" ]; do
   case "$1" in
     --help) echo -E "
       -c,   -command        \"<command>\"
-      -e,   -send_env       \"<ENV_NAME=env_value>\"
       -nt,  -type_of_nodes  <type_of_nodes> 'ctrl', 'comp', 'net'
       -p,   -ping           ping before execution command
       Remove all containers on all nodes:
@@ -62,18 +61,19 @@ while [ -n "$1" ]; do
         bash command_on_nodes.sh -c 'docker system prune -af'
         bash command_on_nodes.sh -c 'docker volume prune -af'
 "
+#      -e,   -send_env       \"<ENV_NAME=env_value>\"
         exit 0
         break ;;
     -c|-command) COMMAND="$2"
       echo "Found the -command \"<command>\" option, with parameter value $COMMAND"
       shift ;;
-    -e|-send_env)
-      SENDENV_NAME=${2%=*}
-      $2
-      SENDENV=$SENDENV"-o \"SendEnv $SENDENV_NAME\""
-      echo "Found the -send_env \"<ENV_NAME=env_value>\" option, with parameter value $2"
-      echo "SENDENV: $SENDENV"
-      shift ;;
+#    -e|-send_env)
+#      SENDENV_NAME=${2%=*}
+#      $2
+#      SENDENV=$SENDENV"-o \"SendEnv $SENDENV_NAME\""
+#      echo "Found the -send_env \"<ENV_NAME=env_value>\" option, with parameter value $2"
+#      echo "SENDENV: $SENDENV"
+#      shift ;;
     -nt|-type_of_nodes)
       note_type_func "$2"
       shift ;;
@@ -115,5 +115,3 @@ start_commands_on_nodes () {
 
 #[ "$PING" = true ] && { check_connection; }
 start_commands_on_nodes
-
-
