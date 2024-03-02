@@ -69,6 +69,7 @@ while [ -n "$1" ]; do
       shift ;;
     -e|-send_env)
       SENDENV_NAME=${2%=*}
+      $2
       SENDENV=$SENDENV"-o \"SendEnv $SENDENV_NAME\""
       echo "Found the -send_env \"<ENV_NAME=env_value>\" option, with parameter value $2"
       echo "SENDENV: $SENDENV"
@@ -113,6 +114,6 @@ start_commands_on_nodes () {
 }
 
 #[ "$PING" = true ] && { check_connection; }
-#start_commands_on_nodes
+start_commands_on_nodes
 
 
