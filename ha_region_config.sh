@@ -87,7 +87,7 @@ push_consul_conf () {
 change_alive_threshold () {
   pull_consul_conf
   sed -i --regexp-extended "s/\"alive_compute_threshold\":\s+\"[0-9]+\"/\"alive_compute_threshold\": \"$1\"/" \
-   /etc/kolla/consul/region-config_${REGION}.json
+   ${consul_conf_dir}/region-config_${REGION}.json
   push_consul_conf
   cat_consul_conf
   conf_id_changed="true"
@@ -104,7 +104,7 @@ change_dead_threshold () {
     ${consul_conf_dir}/region-config_${REGION}.json
   else
     sed -i --regexp-extended "s/"dead_compute_threshold":\s+"[0-9]+,"/\"dead_compute_threshold\": \"$1\",/" \
-    ${consul_conf_dir}/region-config_${REGION}.json
+      ${consul_conf_dir}/region-config_${REGION}.json
   fi
   push_consul_conf
   cat_consul_conf
