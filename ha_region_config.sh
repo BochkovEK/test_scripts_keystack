@@ -59,7 +59,7 @@ change_alive_threshold () {
 
 change_dead_threshold () {
   srv=$(cat /etc/hosts | grep -E ${ctrl_pattern} | awk '{print $2}')
-  ssh -o StrictHostKeyChecking=no -t srv "echo $REGION"
+  ssh -o StrictHostKeyChecking=no -t $srv "echo $REGION"
 #  alive_threshold_string=$(cat /etc/kolla/consul/region-config_${REGION}.json| grep 'alive_compute_threshold')
 #bash command_on_nodes.sh -nt ctrl -c "echo $REGION; foo=bar; echo $foo"
 #  bash command_on_nodes.sh -nt ctrl -c "echo $REGION; alive_threshold_string=$(cat /etc/kolla/consul/region-config_${REGION}.json| grep 'alive_compute_threshold'); echo $alive_threshold_string"
