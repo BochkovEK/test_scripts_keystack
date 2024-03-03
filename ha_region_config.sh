@@ -89,7 +89,7 @@ change_alive_threshold () {
   sed -i --regexp-extended "s/\"alive_compute_threshold\":\s+\"[0-9]+\"/\"alive_compute_threshold\": \"$1\"/" \
    ${consul_conf_dir}/region-config_${REGION}.json
   push_consul_conf
-  cat_consul_conf
+#  cat_consul_conf
   conf_id_changed="true"
 }
 
@@ -107,7 +107,7 @@ change_dead_threshold () {
       ${consul_conf_dir}/region-config_${REGION}.json
   fi
   push_consul_conf
-  cat_consul_conf
+#  cat_consul_conf
   conf_id_changed="true"
 }
 
@@ -126,5 +126,6 @@ change_ipmi_fencing () {
 [ -n "$ALIVE_THRSHOLD" ] && change_alive_threshold $ALIVE_THRSHOLD
 [ -n "$DEAD_THRSHOLD" ] && change_dead_threshold $DEAD_THRSHOLD
 [ -n "$IPMI_FENCING" ] && change_ipmi_fencing $IPMI_FENCING
+cat_consul_conf
 [ -n "$conf_id_changed" ] && { echo "Restart consul containers..."; bash command_on_nodes.sh -nt ctrl -c "docker restart consul"; }
 #cat_consul_conf
