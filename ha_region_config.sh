@@ -153,7 +153,7 @@ change_ipmi_fencing () {
 
 check_bmc_suffix () {
   pull_consul_conf
-  [ ! -f $script_dir/$consul_conf_dir/region-config_${REGION}.json ] && { pull_consul_conf; }
+  [ ! -f $script_dir/$consul_conf_dir/region-config_${REGION}.json ] && { echo "Config exists in: $script_dir/$consul_conf_dir/region-config_${REGION}.json"; pull_consul_conf; }
   [ ! -f $script_dir/$consul_conf_dir/region-config_${REGION}.json ] && { echo "Config not found"; exit 1; }
   suffix_string_raw_1=$(cat $consul_conf_dir/region-config_${REGION}.json|grep 'suffix')
   suffix_string_raw_2=${suffix_string_raw_1//\"/}
