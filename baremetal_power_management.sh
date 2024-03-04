@@ -19,6 +19,7 @@ required_modules=(
 [[ -z $POWER_STATE ]] && POWER_STATE="on"
 [[ -z $USER_NAME ]] && USER_NAME=""
 [[ -z $PASSWORD ]] && PASSWORD=""
+[[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 #=============================================
 
 # Define parameters
@@ -59,8 +60,16 @@ do
         shift
 done
 
-check_parameters () {
-  [ -z "$HOST_NAME" ] && { echo "Host name needed as env (HOST_NAME) or first start script parameter"; exit 1; }
+# Check openrc file
+Check_openrc_file () {
+    echo "Check openrc file here: $OPENRC_PATH"
+    check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
+    #echo $OPENRC_PATH
+    #echo $check_openrc_file
+    [[ -z "$check_openrc_file" ]] && { echo "openrc file not found in $OPENRC_PATH"; exit 1; }
+}
+
+check_connection_to_ipmi () {
   if ping -c 2 $HOST_NAME &> /dev/null; then
     printf "%40s\n" "${green}There is a connection with $HOST_NAME - success${normal}"
   else
@@ -76,11 +85,45 @@ check_module_exist () {
   done
 }
 
-start_python_power_management_script () {
-  python3 ./redfish_manager.py $HOST_NAME $POWER_STATE $USER_NAME $PASSWORD
+python_script_execute () {
+  python3 ./redfish_manager.py $HOST_NAME $1 $USER_NAME $PASSWORD
 }
 
-check_parameters
+start_python_power_management_script () {
+    echo "Check power state parameter: $POWER_STATE..."
+    case $POWER_STATE in
+      check)
+        python_script_execute check
+        ;;
+      on)
+        actual_power_state=$(python_script_execute check)
+        if [ "$actual_power_state" = "PowerState.OFF" ]; then
+          check_openrc_file
+          source $OPENRC_PATH
+          comp_host_name=$(echo "${HOST_NAME%%-*}")
+          echo "Trying set --disable-reason \"test disable\" to $comp_host_name"
+          openstack compute service set --disable --disable-reason "test disable" $comp_host_name nova-compute
+          python_script_execute on
+        fi
+        ;;
+      off)
+        actual_power_state=$(python_script_execute check)
+        if [ "$actual_power_state" = "PowerState.ON" ]; then
+          python_script_execute off
+        fi
+        ;;
+      restart)
+        python_script_execute check
+        ;;
+      *)
+        echo "Unknown power state parameter: $POWER_STATE"
+        return 1
+        ;;
+    esac
+}
+
+[ -z "$HOST_NAME" ] && { echo "Host name needed as env (HOST_NAME) or first start script parameter"; exit 1; }
+check_connection_to_ipmi
 check_module_exist
 start_python_power_management_script
 
