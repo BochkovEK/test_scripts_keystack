@@ -96,7 +96,9 @@ python_script_execute () {
 start_python_power_management_script () {
     echo "Check power state parameter: $POWER_STATE..."
     bmc_suffix=$(bash $script_dir/ha_region_config.sh suffix)
+    echo "bmc_suffix: $bmc_suffix"
     BMC_HOST_NAME=$HOST_NAME$bmc_suffix
+    echo "BMC_HOST_NAME: $BMC_HOST_NAME"
     case $POWER_STATE in
       check)
         python_script_execute check
