@@ -103,20 +103,23 @@ Check_connection_to_ipmi () {
 #  check_openrc_file
 #  source $OPENRC_PATH
   [ -z "$nova_state_list" ] && nova_state_list=$(openstack compute service list)
+  [ -z "$ctrl_nodes" ] && ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
   [ -z "$nova_state_list" ] && comp_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
   suffix_output=$(bash $PWD/ha_region_config.sh suffix)
   suffix=$(echo "$suffix_output" | tail -n1)
   echo "BMC_SUFFIX: $suffix"
 
-  for host in $comp_nodes; do
+  for ctrl_host in $ctrl_nodes;do
+    for comp_host in $comp_nodes; do
 #   host $host
-    sleep 1
-    if ping -c 2 $host$suffix &> /dev/null; then
-      printf "%40s\n" "${green}There is a connection with $host$suffix - success${normal}"
-    else
-      printf "%40s\n" "${red}No connection with $host$suffix - error!${normal}"
-      echo -e "${red}The node may be turned off.${normal}\n"
-    fi
+      sleep 1
+      if ssh $ctrl_host ping -c 2 $comp_host$suffix &> /dev/null; then
+        printf "%40s\n" "${green}There is a connection with $comp_host$suffix from $ctrl_host - success${normal}"
+      else
+        printf "%40s\n" "${red}No connection with $host$suffix from $ctrl_host - error!${normal}"
+        echo -e "${red}The node may be turned off.${normal}\n"
+      fi
+    done
   done
 }
 
