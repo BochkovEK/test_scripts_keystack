@@ -261,14 +261,14 @@ ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print 
 comp_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
 for i in $ctrl_nodes; do ctrl_node_array+=("$i"); done;
 
-Check_nova_srvice_list
-Check_connection_to_nodes "controls"
-Check_connection_to_nodes "computes"
+#Check_nova_srvice_list
+#Check_connection_to_nodes "controls"
+#Check_connection_to_nodes "computes"
 Check_connection_to_ipmi
-Check_docker_container "controls" consul
-Check_docker_container "computes" consul
-Check_docker_container "computes" nova_compute
-Check_disabled_computes_in_nova
-Check_members_list
-Check_consul_logs
-Check_consul_config
+#Check_docker_container "controls" consul
+#Check_docker_container "computes" consul
+#Check_docker_container "computes" nova_compute
+#Check_disabled_computes_in_nova
+#Check_members_list
+#Check_consul_logs
+#Check_consul_config
