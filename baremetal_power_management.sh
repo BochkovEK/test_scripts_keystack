@@ -72,10 +72,11 @@ Check_openrc_file () {
 }
 
 check_connection_to_ipmi () {
-  if ping -c 2 $HOST_NAME &> /dev/null; then
-    printf "%40s\n" "${green}There is a connection with $HOST_NAME - success${normal}"
+  echo "Check connection to $BMC_HOST_NAME"
+  if ping -c 2 $BMC_HOST_NAME &> /dev/null; then
+    printf "%40s\n" "${green}There is a connection with $BMC_HOST_NAME - success${normal}"
   else
-    printf "%40s\n" "${red}No connection with $HOST_NAME - error!${normal}"
+    printf "%40s\n" "${red}No connection with $BMC_HOST_NAME - error!${normal}"
     exit 1
   fi
 }
@@ -120,7 +121,7 @@ start_python_power_management_script () {
         fi
         ;;
       restart)
-        python_script_execute check
+        python_script_execute restart
         ;;
       *)
         echo "Unknown power state parameter: $POWER_STATE"
