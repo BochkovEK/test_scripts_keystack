@@ -99,7 +99,7 @@ start_python_power_management_script () {
         actual_power_state=$(python_script_execute check| tail -n1)
         echo "Actual ipmi satus: $actual_power_state"
         if [ "$actual_power_state" = "PowerState.OFF" ]; then
-          check_openrc_file
+          Check_openrc_file
           source $OPENRC_PATH
           comp_host_name=$(echo "${HOST_NAME%%-*}")
           echo "Trying set --disable-reason \"test disable\" to $comp_host_name"
