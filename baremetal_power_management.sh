@@ -15,6 +15,8 @@ required_modules=(
             "sys"
 )
 
+script_dir=$(dirname $0)
+
 [[ -z $HOST_NAME ]] && HOST_NAME=""
 [[ -z $POWER_STATE ]] && POWER_STATE="on"
 [[ -z $USER_NAME ]] && USER_NAME=""
@@ -86,11 +88,13 @@ check_module_exist () {
 }
 
 python_script_execute () {
-  python3 ./redfish_manager.py $HOST_NAME $1 $USER_NAME $PASSWORD
+  python3 ./redfish_manager.py $BMC_HOST_NAME $1 $USER_NAME $PASSWORD
 }
 
 start_python_power_management_script () {
     echo "Check power state parameter: $POWER_STATE..."
+    bmc_suffix=$(bash $script_dir/ha_region_config.sh suffix)
+    BMC_HOST_NAME=$HOST_NAME$bmc_suffix
     case $POWER_STATE in
       check)
         python_script_execute check
@@ -101,9 +105,9 @@ start_python_power_management_script () {
         if [ "$actual_power_state" = "PowerState.OFF" ]; then
           Check_openrc_file
           source $OPENRC_PATH
-          comp_host_name=$(echo "${HOST_NAME%%-*}")
-          echo "Trying set --disable-reason \"test disable\" to $comp_host_name"
-          openstack compute service set --disable --disable-reason "test disable" $comp_host_name nova-compute
+#          comp_host_name=$(echo "${HOST_NAME%%-*}")
+          echo "Trying set --disable-reason \"test disable\" to $HOST_NAME"
+          openstack compute service set --disable --disable-reason "test disable" $HOST_NAME nova-compute
           python_script_execute on
         fi
         ;;
@@ -123,6 +127,7 @@ start_python_power_management_script () {
         ;;
     esac
 }
+
 
 [ -z "$HOST_NAME" ] && { echo "Host name needed as env (HOST_NAME) or first start script parameter"; exit 1; }
 check_connection_to_ipmi

@@ -10,6 +10,7 @@ ctrl_pattern="\-ctrl\-..$"
 net_pattern="\-net\-..$"
 nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
 
+
 #Colors
 green=$(tput setaf 2)
 red=$(tput setaf 1)

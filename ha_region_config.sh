@@ -3,7 +3,9 @@
 # Start scrip: bash ha_region_config.sh -a 2
 
 ctrl_pattern="\-ctrl\-..$"
-consul_conf_dir=$PWD/kolla/consul
+consul_conf_dir=kolla/consul
+
+script_dir=$(dirname $0)
 
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $ALIVE_THRSHOLD ]] && ALIVE_THRSHOLD=""
@@ -30,6 +32,8 @@ do
         -a,   -alive_threshold          <alive_threshold>
         -d,   -dead_compute_threshold   <dead_compute_threshold>
         -i,   -ipmi_fencing             <true\false>
+
+        start script with parameter suffix: bash ha_region_config.sh suffix - return bmc suffix
         "
           exit 0
           break ;;
@@ -87,7 +91,7 @@ Check_openrc_file () {
 
 cat_consul_conf () {
   echo "Cat all consul configs..."
-  bash $PWD/command_on_nodes.sh -nt ctrl -c "echo \"cat /etc/kolla/consul/region-config_${REGION}.json\"; cat /etc/kolla/consul/region-config_${REGION}.json"
+  bash $script_dir/command_on_nodes.sh -nt ctrl -c "echo \"cat /etc/kolla/consul/region-config_${REGION}.json\"; cat /etc/kolla/consul/region-config_${REGION}.json"
 }
 
 pull_consul_conf () {
@@ -149,7 +153,8 @@ change_ipmi_fencing () {
 
 check_bmc_suffix () {
   pull_consul_conf
-  [ ! -f $consul_conf_dir/region-config_${REGION}.json ] && { echo "Config not found"; exit 1; }
+  [ ! -f $script_dir/$consul_conf_dir/region-config_${REGION}.json ] && { pull_consul_conf; }
+  [ ! -f $script_dir/$consul_conf_dir/region-config_${REGION}.json ] && { echo "Config not found"; exit 1; }
   suffix_string_raw_1=$(cat $consul_conf_dir/region-config_${REGION}.json|grep 'suffix')
   suffix_string_raw_2=${suffix_string_raw_1//\"/}
   echo "${suffix_string_raw_2%%,*}"|awk '{print $2}'
@@ -157,9 +162,9 @@ check_bmc_suffix () {
 
 [ "$CHECK_SUFFIX" = true ] && { check_bmc_suffix; exit 0; }
 ##pull_consul_conf
-#[ -n "$ALIVE_THRSHOLD" ] && change_alive_threshold $ALIVE_THRSHOLD
-#[ -n "$DEAD_THRSHOLD" ] && change_dead_threshold $DEAD_THRSHOLD
-#[ -n "$IPMI_FENCING" ] && change_ipmi_fencing $IPMI_FENCING
-#cat_consul_conf
-#[ -n "$conf_id_changed" ] && { echo "Restart consul containers..."; bash command_on_nodes.sh -nt ctrl -c "docker restart consul"; }
+[ -n "$ALIVE_THRSHOLD" ] && change_alive_threshold $ALIVE_THRSHOLD
+[ -n "$DEAD_THRSHOLD" ] && change_dead_threshold $DEAD_THRSHOLD
+[ -n "$IPMI_FENCING" ] && change_ipmi_fencing $IPMI_FENCING
+cat_consul_conf
+[ -n "$conf_id_changed" ] && { echo "Restart consul containers..."; bash command_on_nodes.sh -nt ctrl -c "docker restart consul"; }
 ##cat_consul_conf

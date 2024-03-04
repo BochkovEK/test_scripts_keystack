@@ -16,6 +16,7 @@ BLUE='\033[0;34m'
 ORANGE='\033[0;33m'
 NC='\033[0m' # No Color
 
+script_dir=$(dirname $0)
 
 [[ -z $TRY_TO_RISE ]] && TRY_TO_RISE="true"
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
@@ -250,7 +251,6 @@ Check_consul_config () {
 }
 
 #clear
-script_dir=$(dirname $0)
 Check_openrc_file
 
 source $OPENRC_PATH
