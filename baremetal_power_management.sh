@@ -88,6 +88,7 @@ check_module_exist () {
 }
 
 python_script_execute () {
+  echo "Send command $1 to $BMC_HOST_NAME"
   python3 ./redfish_manager.py $BMC_HOST_NAME $1 $USER_NAME $PASSWORD
 }
 
