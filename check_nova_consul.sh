@@ -103,7 +103,8 @@ Check_connection_to_ipmi () {
 #  source $OPENRC_PATH
   [ -z "$nova_state_list" ] && nova_state_list=$(openstack compute service list)
   [ -z "$nova_state_list" ] && comp_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
-  suffix=$(bash $PWD/ha_region_config.sh suffix)
+  suffix_output=$(bash $PWD/ha_region_config.sh suffix)
+  suffix=$(echo "$suffix_output" | awk '{print $NF}')
   echo "BMC_SUFFIX: $suffix"
 
 #  for host in $comp_nodes; do
