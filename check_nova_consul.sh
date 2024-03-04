@@ -107,16 +107,16 @@ Check_connection_to_ipmi () {
   suffix=$(echo "$suffix_output" | tail -n1)
   echo "BMC_SUFFIX: $suffix"
 
-#  for host in $comp_nodes; do
-##   host $host
-#    sleep 1
-#    if ping -c 2 $host$suffix &> /dev/null; then
-#      printf "%40s\n" "${green}There is a connection with $host$suffix - success${normal}"
-#    else
-#      printf "%40s\n" "${red}No connection with $host$suffix - error!${normal}"
-#      echo -e "${red}The node may be turned off.${normal}\n"
-#    fi
-#  done
+  for host in $comp_nodes; do
+#   host $host
+    sleep 1
+    if ping -c 2 $host$suffix &> /dev/null; then
+      printf "%40s\n" "${green}There is a connection with $host$suffix - success${normal}"
+    else
+      printf "%40s\n" "${red}No connection with $host$suffix - error!${normal}"
+      echo -e "${red}The node may be turned off.${normal}\n"
+    fi
+  done
 }
 
 # Check disabled computes in nova
