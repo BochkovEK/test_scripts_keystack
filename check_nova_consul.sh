@@ -105,7 +105,7 @@ Check_connection_to_ipmi () {
   [ -z "$nova_state_list" ] && nova_state_list=$(openstack compute service list)
   [ -z "$ctrl_nodes" ] && ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
   [ -z "$nova_state_list" ] && comp_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
-  suffix_output=$(bash $PWD/ha_region_config.sh suffix)
+  suffix_output=$(bash ./ha_region_config.sh suffix)
   suffix=$(echo "$suffix_output" | tail -n1)
   echo "BMC_SUFFIX: $suffix"
 
