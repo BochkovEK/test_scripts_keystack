@@ -147,6 +147,7 @@ Check_disabled_computes_in_nova () {
               echo "Trying to raise and enable nova service on $cmpt"
               try_to_rise="true"
               openstack compute service set --enable --up "${cmpt}" nova-compute
+              ssh -o StrictHostKeyChecking=no ${cmpt} docker start consul nova_compute
             fi
           done
           if [ "$try_to_rise" = "true" ]; then
