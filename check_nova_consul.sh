@@ -117,7 +117,7 @@ Check_connection_to_ipmi () {
         printf "%40s\n" "${green}There is a connection with $comp_host$suffix from $ctrl_host - success${normal}"
       else
         printf "%40s\n" "${red}No connection with $host$suffix from $ctrl_host - error!${normal}"
-        echo -e "${red}The node may be turned off.${normal}\n"
+        echo -e "${red}The node may be turned off or not resolved host name $comp_host$suffix.${normal}"
       fi
     done
   done
