@@ -99,6 +99,7 @@ Check_connection_to_nodes () {
 
 # Check connection to impi
 Check_connection_to_ipmi () {
+  echo "Check connection to compute impi"
 #  check_openrc_file
 #  source $OPENRC_PATH
   [ -z "$nova_state_list" ] && nova_state_list=$(openstack compute service list)
