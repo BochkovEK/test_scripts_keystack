@@ -105,16 +105,17 @@ Check_connection_to_ipmi () {
   [ -z "$nova_state_list" ] && comp_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
   suffix=$(bash $PWD/ha_region_config.sh suffix)
   echo "SUFFIX: $suffix"
-  for host in $comp_nodes; do
-#   host $host
-    sleep 1
-    if ping -c 2 $host$suffix &> /dev/null; then
-      printf "%40s\n" "${green}There is a connection with $host$suffix - success${normal}"
-    else
-      printf "%40s\n" "${red}No connection with $host$suffix - error!${normal}"
-      echo -e "${red}The node may be turned off.${normal}\n"
-    fi
-  done
+
+#  for host in $comp_nodes; do
+##   host $host
+#    sleep 1
+#    if ping -c 2 $host$suffix &> /dev/null; then
+#      printf "%40s\n" "${green}There is a connection with $host$suffix - success${normal}"
+#    else
+#      printf "%40s\n" "${red}No connection with $host$suffix - error!${normal}"
+#      echo -e "${red}The node may be turned off.${normal}\n"
+#    fi
+#  done
 }
 
 # Check disabled computes in nova
