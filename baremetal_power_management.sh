@@ -96,7 +96,7 @@ start_python_power_management_script () {
         python_script_execute check
         ;;
       on)
-        actual_power_state=$(python_script_execute check)
+        actual_power_state=$(python_script_execute check| tail -n1)
         echo "Actual ipmi satus: $actual_power_state"
         if [ "$actual_power_state" = "PowerState.OFF" ]; then
           check_openrc_file
@@ -108,7 +108,7 @@ start_python_power_management_script () {
         fi
         ;;
       off)
-        actual_power_state=$(python_script_execute check)
+        actual_power_state=$(python_script_execute check| tail -n1)
         echo "Actual ipmi satus: $actual_power_state"
         if [ "$actual_power_state" = "PowerState.ON" ]; then
           python_script_execute off
