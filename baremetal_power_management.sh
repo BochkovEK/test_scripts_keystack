@@ -99,6 +99,7 @@ start_python_power_management_script () {
     echo "bmc_suffix: $bmc_suffix"
     BMC_HOST_NAME=$HOST_NAME$bmc_suffix
     echo "BMC_HOST_NAME: $BMC_HOST_NAME"
+    check_connection_to_ipmi
     case $POWER_STATE in
       check)
         python_script_execute check
@@ -134,7 +135,6 @@ start_python_power_management_script () {
 
 
 [ -z "$HOST_NAME" ] && { echo "Host name needed as env (HOST_NAME) or first start script parameter"; exit 1; }
-check_connection_to_ipmi
 check_module_exist
 start_python_power_management_script
 
