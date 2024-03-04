@@ -149,8 +149,8 @@ change_ipmi_fencing () {
 
 check_bmc_suffix () {
   pull_consul_conf
-  [ ! -f $consul_conf_dir/kolla/consul/region-config_${REGION}.json ] && { echo "Config not found"; exit 1; }
-  suffix_string_raw_1=$(cat $consul_conf_dir/kolla/consul/region-config_${REGION}.json|grep 'suffix')
+  [ ! -f $consul_conf_dir/region-config_${REGION}.json ] && { echo "Config not found"; exit 1; }
+  suffix_string_raw_1=$(cat $consul_conf_dir/region-config_${REGION}.json|grep 'suffix')
   suffix_string_raw_2=${suffix_string_raw_1//\"/}
   echo "${suffix_string_raw_2%%,*}"|awk '{print $2}'
 }
