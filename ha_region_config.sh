@@ -63,7 +63,7 @@ debug_echo () {
 
 cat_consul_conf () {
   echo "Cat all consul configs..."
-  bash command_on_nodes.sh -nt ctrl -c "echo \"cat /etc/kolla/consul/region-config_${REGION}.json\"; cat /etc/kolla/consul/region-config_${REGION}.json"
+  bash $PWD/command_on_nodes.sh -nt ctrl -c "echo \"cat /etc/kolla/consul/region-config_${REGION}.json\"; cat /etc/kolla/consul/region-config_${REGION}.json"
 }
 
 pull_consul_conf () {
