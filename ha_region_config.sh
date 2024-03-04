@@ -10,9 +10,16 @@ consul_conf_dir=$PWD/kolla/consul
 [[ -z $DEAD_THRSHOLD ]] && DEAD_THRSHOLD=""
 [[ -z $IPMI_FENCING ]] && IPMI_FENCING=""
 [[ -z $DEBUG ]] && DEBUG="false"
+[[ -z $CHECK_SUFFIX ]] && CHECK_SUFFIX="false"
 
 #[[ -z "${1}" ]] && { echo "Alive threshold value required as parameter script"; exit 1; }
 
+# Define parameters
+define_parameters () {
+  [ "$count" = 1 ] && [ "$1" = suffix ] && { CHECK_SUFFIX=true; echo "Check suffix parameter found"; }
+}
+
+count=1
 while [ -n "$1" ]
 do
     case "$1" in
@@ -40,17 +47,9 @@ do
           ;;
         --) shift
           break ;;
-        *) echo "$1 is not an option";;
+        *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
         esac
         shift
-done
-
-# Define parameters
-count=1
-for param in "$@"
-do
-        echo "Parameter #$count: $param"
-        count=$(( $count + 1 ))
 done
 
 source $OPENRC_PATH
@@ -60,6 +59,31 @@ REGION=$OS_REGION_NAME
 debug_echo () {
   echo "[DEBUG] \$1: $1"
 }
+
+Check_openrc_file () {
+    echo "Check openrc file here: $OPENRC_PATH"
+    check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
+    #echo $OPENRC_PATH
+    #echo $check_openrc_file
+    [[ -z "$check_openrc_file" ]] && { echo "openrc file not found in $OPENRC_PATH"; exit 1; }
+}
+
+#Check_connection_to_ipmi () {
+#  check_openrc_file
+#  source $OPENRC_PATH
+#  nova_state_list=$(openstack compute service list)
+#  comp_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
+#  for host in $comp_nodes; do
+##   host $host
+#    sleep 1
+#    if ping -c 2 $host$suffix &> /dev/null; then
+#      printf "%40s\n" "${green}There is a connection with $host$suffix - success${normal}"
+#    else
+#      printf "%40s\n" "${red}No connection with $host$suffix - error!${normal}"
+#      echo -e "${red}The node may be turned off.${normal}\n"
+#    fi
+#  done
+#}
 
 cat_consul_conf () {
   echo "Cat all consul configs..."
@@ -125,10 +149,14 @@ change_ipmi_fencing () {
 
 check_bmc_suffix () {
   pull_consul_conf
-  ls -f
+  [ ! -f $consul_conf_dir/kolla/consul/region-config_${REGION}.json ] && { echo "Config not found"; exit 1; }
+  suffix_string_raw_1=$(cat $consul_conf_dir/kolla/consul/region-config_${REGION}.json|grep 'suffix')
+  suffix_string_raw_2=${suffix_string_raw_1//\"/}
+  echo "${suffix_string_raw_2%%,*}"|awk '{print $2}'
 }
 
-pull_consul_conf
+[ "$CHECK_SUFFIX" = true ] && { check_bmc_suffix; exit 0; }
+##pull_consul_conf
 #[ -n "$ALIVE_THRSHOLD" ] && change_alive_threshold $ALIVE_THRSHOLD
 #[ -n "$DEAD_THRSHOLD" ] && change_dead_threshold $DEAD_THRSHOLD
 #[ -n "$IPMI_FENCING" ] && change_ipmi_fencing $IPMI_FENCING

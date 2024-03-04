@@ -97,6 +97,25 @@ Check_connection_to_nodes () {
     done
 }
 
+# Check connection to impi
+Check_connection_to_ipmi () {
+#  check_openrc_file
+#  source $OPENRC_PATH
+  [ -z $nova_state_list ] && nova_state_list=$(openstack compute service list)
+  [ -z $nova_state_list ] && comp_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
+  suffix=$(bash $PWD/ha_region_config.sh suffix)
+  for host in $comp_nodes; do
+#   host $host
+    sleep 1
+    if ping -c 2 $host$suffix &> /dev/null; then
+      printf "%40s\n" "${green}There is a connection with $host$suffix - success${normal}"
+    else
+      printf "%40s\n" "${red}No connection with $host$suffix - error!${normal}"
+      echo -e "${red}The node may be turned off.${normal}\n"
+    fi
+  done
+}
+
 # Check disabled computes in nova
 Check_disabled_computes_in_nova () {
     echo "Check disabled computes in nova..."
@@ -222,6 +241,9 @@ Check_consul_config () {
                 -e 's/\(.*dead_compute_threshold.*\)/\o033[33m\1\o033[39m/'
 }
 
+
+
+
 #clear
 Check_openrc_file
 
@@ -232,13 +254,14 @@ ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print 
 comp_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
 for i in $ctrl_nodes; do ctrl_node_array+=("$i"); done;
 
-Check_nova_srvice_list
-Check_connection_to_nodes "controls"
-Check_connection_to_nodes "computes"
-Check_docker_container "controls" consul
-Check_docker_container "computes" consul
-Check_docker_container "computes" nova_compute
-Check_disabled_computes_in_nova
-Check_members_list
-Check_consul_logs
-Check_consul_config
+Check_connection_to_ipmi
+#Check_nova_srvice_list
+#Check_connection_to_nodes "controls"
+#Check_connection_to_nodes "computes"
+#Check_docker_container "controls" consul
+#Check_docker_container "computes" consul
+#Check_docker_container "computes" nova_compute
+#Check_disabled_computes_in_nova
+#Check_members_list
+#Check_consul_logs
+#Check_consul_config
