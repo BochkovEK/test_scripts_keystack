@@ -3,7 +3,7 @@
 # Start scrip: bash ha_region_config.sh -a 2
 
 ctrl_pattern="\-ctrl\-..$"
-consul_conf_dir=./kolla/consul
+consul_conf_dir=$PWD/kolla/consul
 
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $ALIVE_THRSHOLD ]] && ALIVE_THRSHOLD=""
@@ -123,9 +123,15 @@ change_ipmi_fencing () {
   conf_id_changed="true"
 }
 
-[ -n "$ALIVE_THRSHOLD" ] && change_alive_threshold $ALIVE_THRSHOLD
-[ -n "$DEAD_THRSHOLD" ] && change_dead_threshold $DEAD_THRSHOLD
-[ -n "$IPMI_FENCING" ] && change_ipmi_fencing $IPMI_FENCING
-cat_consul_conf
-[ -n "$conf_id_changed" ] && { echo "Restart consul containers..."; bash command_on_nodes.sh -nt ctrl -c "docker restart consul"; }
+check_bmc_suffix () {
+  pull_consul_conf
+  ls -f
+}
+
+pull_consul_conf
+#[ -n "$ALIVE_THRSHOLD" ] && change_alive_threshold $ALIVE_THRSHOLD
+#[ -n "$DEAD_THRSHOLD" ] && change_dead_threshold $DEAD_THRSHOLD
+#[ -n "$IPMI_FENCING" ] && change_ipmi_fencing $IPMI_FENCING
 #cat_consul_conf
+#[ -n "$conf_id_changed" ] && { echo "Restart consul containers..."; bash command_on_nodes.sh -nt ctrl -c "docker restart consul"; }
+##cat_consul_conf
