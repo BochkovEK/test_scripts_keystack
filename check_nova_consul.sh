@@ -21,8 +21,14 @@ script_dir=$(dirname $0)
 [[ -z $TRY_TO_RISE ]] && TRY_TO_RISE="true"
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $REGION ]] && REGION="region-ps"
+[[ -z $DEBUG ]] && DEBUG="false"
 
 #======================
+
+# Define parameters
+define_parameters () {
+  [ "$count" = 1 ] && [[ -n $1 ]] && { CHECK=$1; echo "Command parameter found with value $CHECK"; }
+}
 
 while [ -n "$1" ]
 do
@@ -31,6 +37,13 @@ do
         -o,     -openrc             <path_openrc_file>
         -r,     -region             <region_name>
         -dtr,   -dont_try_to_rise   If nova is not active on some nodes, then there will be no attempt to rise it
+        -v,     -debug              enabled debug output
+
+        To start specify checking:
+        bash check_nova_consul.sh <check>
+
+        check list:
+        nova   - check nova state (openstack compute service list) and try to raise it for hosts
 "
             exit 0
             break ;;
@@ -43,12 +56,16 @@ do
   -dtr|-dont_try_to_rise) TRY_TO_RISE="false"
 	  echo "Found the -dont_try_to_rise, with parameter value $TRY_TO_RISE"
     ;;
+  -v|-debug) DEBUG="true"
+	  echo "Found the -debug, with parameter value $DEBUG"
+    ;;
   --) shift
     break ;;
-  *) echo "$1 is not an option";;
+  *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
     esac
     shift
 done
+
 
 # functions
 # Check openrc file
@@ -152,10 +169,14 @@ Check_disabled_computes_in_nova () {
             if [ "$yes_no_input" = "true" ]; then
               echo "Trying to raise and enable nova service on $cmpt"
               connection_success=$(Check_connection_to_node $cmpt|grep success)
+              [ "$DEBUG" = true ] && echo "connection_success: $connection_success"
               if [ -n "$connection_success" ]; then
+                echo "Connetction to $cmpt success"
                 try_to_rise="true"
                 ssh -o StrictHostKeyChecking=no ${cmpt} docker start consul nova_compute
                 openstack compute service set --enable --up "${cmpt}" nova-compute
+              else
+                echo -e "${red}no connection to $cmpt - fail${normal}"
               fi
             fi
           done
@@ -268,6 +289,7 @@ ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print 
 comp_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
 for i in $ctrl_nodes; do ctrl_node_array+=("$i"); done;
 
+[ "$CHECK" = nova ] && { Check_disabled_computes_in_nova; exit 0; }
 Check_nova_srvice_list
 Check_connection_to_nodes "controls"
 Check_connection_to_nodes "computes"
