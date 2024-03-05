@@ -154,8 +154,8 @@ Check_disabled_computes_in_nova () {
               connection_success=$(Check_connection_to_node $cmpt|grep success)
               if [ -n "$connection_success" ]; then
                 try_to_rise="true"
-                openstack compute service set --enable --up "${cmpt}" nova-compute
                 ssh -o StrictHostKeyChecking=no ${cmpt} docker start consul nova_compute
+                openstack compute service set --enable --up "${cmpt}" nova-compute
               fi
             fi
           done
