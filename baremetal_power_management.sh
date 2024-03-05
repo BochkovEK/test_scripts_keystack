@@ -113,6 +113,7 @@ start_python_power_management_script () {
 #          comp_host_name=$(echo "${HOST_NAME%%-*}")
           echo "Trying set --disable-reason \"test disable\" to $HOST_NAME"
           openstack compute service set --disable --disable-reason "test disable" $HOST_NAME nova-compute
+          echo "Trying set power state \"on\" on $HOST_NAME"
           python_script_execute on
         fi
         ;;
