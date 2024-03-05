@@ -27,6 +27,7 @@ script_dir=$(dirname $0)
 
 # Define parameters
 define_parameters () {
+
   [ "$count" = 1 ] && [[ -n $1 ]] && { CHECK=$1; echo "Command parameter found with value $CHECK"; }
 }
 
@@ -289,7 +290,7 @@ ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print 
 comp_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
 for i in $ctrl_nodes; do ctrl_node_array+=("$i"); done;
 
-[ "$CHECK" = nova ] && { Check_disabled_computes_in_nova; exit 0; }
+[ "$CHECK" = nova ] && { echo "Nova checking..."; Check_disabled_computes_in_nova; exit 0; }
 Check_nova_srvice_list
 Check_connection_to_nodes "controls"
 Check_connection_to_nodes "computes"
