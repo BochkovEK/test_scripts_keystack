@@ -169,7 +169,8 @@ Check_disabled_computes_in_nova () {
             done
 #            echo $yes_no_input
             if [ "$yes_no_input" = "true" ]; then
-              echo "Trying to raise and enable nova service on $cmpt"
+              echo "Trying to raise and enable nova service on $cmpt..."
+              echo "Check connection to host: $cmpt..."
               connection_success=$(Check_connection_to_node $cmpt|grep success)
               [ "$DEBUG" = true ] && echo "[DEBUG]: connection_success: $connection_success"
               if [ -n "$connection_success" ]; then
@@ -179,6 +180,7 @@ Check_disabled_computes_in_nova () {
                 openstack compute service set --enable --up "${cmpt}" nova-compute
               else
                 echo -e "${red}No connection to $cmpt - fail${normal}"
+                echo -e "${red}Enable nova service on $cmpt - fail${normal}"
               fi
             fi
           done
