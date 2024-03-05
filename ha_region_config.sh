@@ -13,12 +13,14 @@ script_dir=$(dirname $0)
 [[ -z $IPMI_FENCING ]] && IPMI_FENCING=""
 [[ -z $DEBUG ]] && DEBUG="false"
 [[ -z $CHECK_SUFFIX ]] && CHECK_SUFFIX="false"
+[[ -z $ONLY_CONF_CHECK ]] && ONLY_CONF_CHECK="false"
 
 #[[ -z "${1}" ]] && { echo "Alive threshold value required as parameter script"; exit 1; }
 
 # Define parameters
 define_parameters () {
   [ "$count" = 1 ] && [ "$1" = suffix ] && { CHECK_SUFFIX=true; echo "Check suffix parameter found"; }
+  [ "$count" = 1 ] && [ "$1" = check ] && { ONLY_CONF_CHECK=true; echo "Only conf check parameter found"; }
 }
 
 count=1
@@ -160,7 +162,13 @@ check_bmc_suffix () {
   echo "${suffix_string_raw_2%%,*}"|awk '{print $2}'
 }
 
+only_conf_check () {
+  pull_consul_conf
+  cat_consul_conf
+}
+
 [ "$CHECK_SUFFIX" = true ] && { check_bmc_suffix; exit 0; }
+[ "$ONLY_CONF_CHECK" = true ] && { only_conf_check; exit 0; }
 ##pull_consul_conf
 [ -n "$ALIVE_THRSHOLD" ] && change_alive_threshold $ALIVE_THRSHOLD
 [ -n "$DEAD_THRSHOLD" ] && change_dead_threshold $DEAD_THRSHOLD
