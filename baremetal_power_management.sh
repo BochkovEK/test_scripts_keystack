@@ -114,7 +114,8 @@ start_python_power_management_script () {
           echo "Trying set --disable-reason \"test disable\" to $HOST_NAME"
           openstack compute service set --disable --disable-reason "test disable" $HOST_NAME nova-compute
           echo "Trying set power state \"on\" on $HOST_NAME"
-          python_script_execute on
+          sent_launch_command=$(python_script_execute on)
+          [ "$sent_launch_command" = "None" ] && { echo "The host: $HOST_NAME startup command has been successfully sent"; }
         fi
         ;;
       off)
