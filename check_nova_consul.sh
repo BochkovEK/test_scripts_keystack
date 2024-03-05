@@ -21,16 +21,17 @@ script_dir=$(dirname $0)
 [[ -z $TRY_TO_RISE ]] && TRY_TO_RISE="true"
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $REGION ]] && REGION="region-ps"
-[[ -z $DEBUG ]] && DEBUG="false"
+[[ -z $DEBUG ]] && DEBUG="true"
 
 #======================
 
 # Define parameters
 define_parameters () {
-
+  [ "$DEBUG" = true ] && echo "\"\$1\": $1"
   [ "$count" = 1 ] && [[ -n $1 ]] && { CHECK=$1; echo "Command parameter found with value $CHECK"; }
 }
 
+count=1
 while [ -n "$1" ]
 do
     case "$1" in
