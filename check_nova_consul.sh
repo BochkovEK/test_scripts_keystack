@@ -71,6 +71,16 @@ Check_nova_srvice_list () {
             #-e 's/\(.*enabled | up.*\)/\o033[92m\1\o033[39m/' \
 }
 
+# Check connection to node
+Check_connection_to_node () {
+  if ping -c 2 $1 &> /dev/null; then
+    printf "%40s\n" "${green}There is a connection with $1 - success${normal}"
+  else
+    printf "%40s\n" "${red}No connection with $1 - error!${normal}"
+    echo -e "${red}The node may be turned off.${normal}\n"
+  fi
+}
+
 # Check connection to nova nodes
 Check_connection_to_nodes () {
     echo "Check connection to $1 nodes..."
@@ -89,12 +99,7 @@ Check_connection_to_nodes () {
     for host in $nodes; do
         host $host
         sleep 1
-        if ping -c 2 $host &> /dev/null; then
-            printf "%40s\n" "${green}There is a connection with $host - success${normal}"
-        else
-            printf "%40s\n" "${red}No connection with $host - error!${normal}"
-            echo -e "${red}The node may be turned off.${normal}\n"
-        fi
+        Check_connection_to_node $host
     done
 }
 
@@ -146,9 +151,12 @@ Check_disabled_computes_in_nova () {
 #            echo $yes_no_input
             if [ "$yes_no_input" = "true" ]; then
               echo "Trying to raise and enable nova service on $cmpt"
-              try_to_rise="true"
-              openstack compute service set --enable --up "${cmpt}" nova-compute
-              ssh -o StrictHostKeyChecking=no ${cmpt} docker start consul nova_compute
+              connection_success=$(Check_connection_to_node $cmpt|grep success)
+              if [ -n "$connection_success" ]; then
+                try_to_rise="true"
+                openstack compute service set --enable --up "${cmpt}" nova-compute
+                ssh -o StrictHostKeyChecking=no ${cmpt} docker start consul nova_compute
+              fi
             fi
           done
           if [ "$try_to_rise" = "true" ]; then
