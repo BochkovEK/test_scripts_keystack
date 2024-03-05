@@ -27,7 +27,7 @@ script_dir=$(dirname $0)
 
 # Define parameters
 define_parameters () {
-  [ "$DEBUG" = true ] && echo "\"\$1\": $1"
+  [ "$DEBUG" = true ] && echo "[DEBUG]: \"\$1\": $1"
   [ "$count" = 1 ] && [[ -n $1 ]] && { CHECK=$1; echo "Command parameter found with value $CHECK"; }
 }
 
@@ -171,14 +171,14 @@ Check_disabled_computes_in_nova () {
             if [ "$yes_no_input" = "true" ]; then
               echo "Trying to raise and enable nova service on $cmpt"
               connection_success=$(Check_connection_to_node $cmpt|grep success)
-              [ "$DEBUG" = true ] && echo "connection_success: $connection_success"
+              [ "$DEBUG" = true ] && echo "[DEBUG]: connection_success: $connection_success"
               if [ -n "$connection_success" ]; then
                 echo "Connetction to $cmpt success"
                 try_to_rise="true"
                 ssh -o StrictHostKeyChecking=no ${cmpt} docker start consul nova_compute
                 openstack compute service set --enable --up "${cmpt}" nova-compute
               else
-                echo -e "${red}no connection to $cmpt - fail${normal}"
+                echo -e "${red}No connection to $cmpt - fail${normal}"
               fi
             fi
           done
