@@ -291,7 +291,7 @@ ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print 
 comp_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
 for i in $ctrl_nodes; do ctrl_node_array+=("$i"); done;
 
-[ "$CHECK" = nova ] && { echo "Nova checking..."; Check_disabled_computes_in_nova; exit 0; }
+[ "$CHECK" = nova ] && { echo "Nova checking..."; Check_nova_srvice_list; Check_disabled_computes_in_nova; exit 0; }
 Check_nova_srvice_list
 Check_connection_to_nodes "controls"
 Check_connection_to_nodes "computes"
