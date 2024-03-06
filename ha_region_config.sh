@@ -163,7 +163,7 @@ check_bmc_suffix () {
 }
 
 only_conf_check () {
-  pull_consul_conf
+#  pull_consul_conf
   cat_consul_conf
 }
 

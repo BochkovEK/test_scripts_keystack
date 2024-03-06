@@ -56,15 +56,15 @@ while [ -n "$1" ]
 do
     case "$1" in
         --help) echo -E "
-        -q,           -qty		      <number_of_VMs>
-        -i,           -image		    <image_name>
-        -f,           -flavor		    <flavor_name>
-        -k,           -key		      <key_name>
-        -hv,          -hypervisor	  <hypervisor_name>
-        -net,         -network	    <network_name>
-        -v,           -volume_size 	<volume_size_in_GB>
-        -n,           -name 		    <vm_base_name>
-        -p,           -project	    <project_id>
+        -q,           -qty          <number_of_VMs>
+        -i,           -image        <image_name>
+        -f,           -flavor       <flavor_name>
+        -k,           -key          <key_name>
+        -hv,          -hypervisor   <hypervisor_name>
+        -net,         -network      <network_name>
+        -v,           -volume_size  <volume_size_in_GB>
+        -n,           -name         <vm_base_name>
+        -p,           -project      <project_id>
         -t                          <time_out_between_VM_create>
         -dont_check                 disable resource availability checks (without value)
         -dont_ask                   all actions will be performed automatically (without value)
