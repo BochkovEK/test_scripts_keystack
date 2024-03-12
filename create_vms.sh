@@ -47,7 +47,7 @@ CIRROS_IMAGE_NAME="cirros-0.6.2-x86_64-disk"
 [[ -z $TEST_USER ]] && TEST_USER="admin"
 [[ -z $ROLE ]] && ROLE="admin"
 [[ -z $ADD_KEY ]] && ADD_KEY=""
-[[ -z $BATCH ]] && BATCH="true"
+[[ -z $BATCH ]] && BATCH="false"
 [[ -z $DONT_CHECK ]] && DONT_CHECK="false"
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
 #======================
@@ -118,7 +118,7 @@ do
         -dont_ask) DONT_ASK=true
           echo "Found the -dont_ask. All actions will be performed automatically"
           ;;
-        -b|-batch) batch=false
+        -b|-batch) batch=true
           echo "Found the -batch. VMs will be created without a timeout"
           BATCH=$batch
           ;;
@@ -437,9 +437,10 @@ check_vms_list () {
 }
 
 # VM create (old)
-create_vms_batch () {
+create_vms () {
 
-  echo "Creating VMs..."
+  echo "Creating VMs with timeout: $TIMEOUT_BEFORE_NEXT_CREATION..."
+
   #export OS_PROJECT_NAME=$PROJECT
   FLAVOR=$(openstack flavor list| grep $FLAVOR| head -n 1| awk '{print $4}')
   for i in $(seq $VM_QTY); do
@@ -488,12 +489,12 @@ create_vms_batch () {
 }
 
 # VM create
-create_vms () {
+create_vms_batch () {
 
 #  echo "Create VM: \"$VM_BASE_NAME\" in project \"$PROJECT\"?"
 #  read -r -p "Press enter to continue"
 
-  echo "Creating VMs with timeout: $TIMEOUT_BEFORE_NEXT_CREATION..."
+  echo "Creating VMs..."
 
   FLAVOR=$(openstack flavor list| grep $FLAVOR| head -n 1| awk '{print $4}')
   openstack server create \
