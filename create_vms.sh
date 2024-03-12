@@ -69,7 +69,7 @@ do
         -dont_check                 disable resource availability checks (without value)
         -dont_ask                   all actions will be performed automatically (without value)
         -add                        <add command key>
-        -b            -batch        creating VMs one by one with a timeout (without value)
+        -b            -batch        creating VMs without a timeout (without value)
         "
           exit 0
           break ;;
@@ -118,8 +118,8 @@ do
         -dont_ask) DONT_ASK=true
           echo "Found the -dont_ask. All actions will be performed automatically"
           ;;
-        -b|-batch) batch=true
-          echo "Found the -batch. VMs will be created one after another with a timeout: $TIMEOUT_BEFORE_NEXT_CREATION"
+        -b|-batch) batch=false
+          echo "Found the -batch. VMs will be created without a timeout"
           BATCH=$batch
           ;;
         -add) add_key="$2"
@@ -158,7 +158,7 @@ VMs will be created with the following parameters:
         Volume size: $VOLUME_SIZE
         OS compute api version: $API_VERSION
         Addition key: $ADD_KEY
-        Creating VMs one by one with a timeout (bool): $BATCH
+        Creating VMs without a timeout (bool): $BATCH
         "
 
     [[ ! $DONT_ASK = "true" ]] && { read -p "Press enter to continue: "; }
@@ -439,6 +439,7 @@ check_vms_list () {
 # VM create (old)
 create_vms_batch () {
 
+  echo "Creating VMs..."
   #export OS_PROJECT_NAME=$PROJECT
   FLAVOR=$(openstack flavor list| grep $FLAVOR| head -n 1| awk '{print $4}')
   for i in $(seq $VM_QTY); do
@@ -492,7 +493,7 @@ create_vms () {
 #  echo "Create VM: \"$VM_BASE_NAME\" in project \"$PROJECT\"?"
 #  read -r -p "Press enter to continue"
 
-  echo "Creating VMs..."
+  echo "Creating VMs with timeout: $TIMEOUT_BEFORE_NEXT_CREATION..."
 
   FLAVOR=$(openstack flavor list| grep $FLAVOR| head -n 1| awk '{print $4}')
   openstack server create \
