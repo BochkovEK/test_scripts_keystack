@@ -21,6 +21,7 @@ script_dir=$(dirname $0)
 [[ -z $TRY_TO_RISE ]] && TRY_TO_RISE="true"
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $REGION ]] && REGION="region-ps"
+[[ -z $CHECK_IPMI ]] && CHECK_IPMI="false"
 [[ -z $DEBUG ]] && DEBUG="true"
 
 #======================
@@ -29,6 +30,7 @@ script_dir=$(dirname $0)
 define_parameters () {
   [ "$DEBUG" = true ] && echo "[DEBUG]: \"\$1\": $1"
   [ "$count" = 1 ] && [[ -n $1 ]] && { CHECK=$1; echo "Command parameter found with value $CHECK"; }
+#  [ "$count" = 1 ] && [[ -n $1 ]] && { CHECK=$1; echo "Command parameter found with value $CHECK"; }
 }
 
 count=1
@@ -38,14 +40,16 @@ do
         --help) echo -E "
         -o,     -openrc             <path_openrc_file>
         -r,     -region             <region_name>
-        -dtr,   -dont_try_to_rise   If nova is not active on some nodes, then there will be no attempt to rise it
-        -v,     -debug              enabled debug output
+        -dtr,   -dont_try_to_rise   If nova is not active on some nodes, then there will be no attempt to rise it (without parameter)
+        -ipmi                       enabled check connection from controls to compute impi (without parameter)
+        -v,     -debug              enabled debug output (without parameter)
 
         To start specify checking:
         bash check_nova_consul.sh <check>
 
         check list:
-        nova   - check nova state (openstack compute service list) and try to raise it for hosts
+        nova    - check nova state (openstack compute service list) and try to raise it for hosts
+        ipmi    - check connection from controls to compute impi
 "
             exit 0
             break ;;
@@ -60,6 +64,9 @@ do
     ;;
   -v|-debug) DEBUG="true"
 	  echo "Found the -debug, with parameter value $DEBUG"
+    ;;
+  -ipmi) CHECK_IPMI="true"
+	  echo "Found the -ipmi, with parameter value $CHECK_IPMI"
     ;;
   --) shift
     break ;;
@@ -124,7 +131,7 @@ Check_connection_to_nodes () {
 
 # Check connection to impi
 Check_connection_to_ipmi () {
-  echo "Check connection to compute impi"
+  echo "Check connection from controls to compute impi"
 #  check_openrc_file
 #  source $OPENRC_PATH
   [ -z "$nova_state_list" ] && nova_state_list=$(openstack compute service list)
@@ -294,10 +301,11 @@ comp_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6
 for i in $ctrl_nodes; do ctrl_node_array+=("$i"); done;
 
 [ "$CHECK" = nova ] && { echo "Nova checking..."; Check_nova_srvice_list; Check_disabled_computes_in_nova; exit 0; }
+[ "$CHECK" = ipmi ] && { Check_connection_to_ipmi; exit 0; }
 Check_nova_srvice_list
 Check_connection_to_nodes "controls"
 Check_connection_to_nodes "computes"
-Check_connection_to_ipmi
+[ "$CHECK_IPMI" = true ] && { Check_connection_to_ipmi; }
 Check_docker_container "controls" consul
 Check_docker_container "computes" consul
 Check_docker_container "computes" nova_compute
