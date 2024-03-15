@@ -90,7 +90,7 @@ check_module_exist () {
 
 python_script_execute () {
   echo "Send command $1 to $BMC_HOST_NAME"
-  python3 ./redfish_manager.py $BMC_HOST_NAME $1 $USER_NAME $PASSWORD
+  python3 $PWD/redfish_manager.py $BMC_HOST_NAME $1 $USER_NAME $PASSWORD
 }
 
 start_python_power_management_script () {
