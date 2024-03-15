@@ -10,7 +10,7 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx_https.conf:/etc/nginx/nginx.conf
       - /root/certs:/etc/certs
       #- ./default.conf:/etc/nginx/conf.d/default.conf:ro
     restart: always
