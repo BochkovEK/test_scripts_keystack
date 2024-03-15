@@ -74,23 +74,6 @@ Check_openrc_file () {
     [[ -z "$check_openrc_file" ]] && { echo "openrc file not found in $OPENRC_PATH"; exit 1; }
 }
 
-#Check_connection_to_ipmi () {
-#  check_openrc_file
-#  source $OPENRC_PATH
-#  nova_state_list=$(openstack compute service list)
-#  comp_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
-#  for host in $comp_nodes; do
-##   host $host
-#    sleep 1
-#    if ping -c 2 $host$suffix &> /dev/null; then
-#      printf "%40s\n" "${green}There is a connection with $host$suffix - success${normal}"
-#    else
-#      printf "%40s\n" "${red}No connection with $host$suffix - error!${normal}"
-#      echo -e "${red}The node may be turned off.${normal}\n"
-#    fi
-#  done
-#}
-
 cat_consul_conf () {
   echo "Cat all consul configs..."
   bash $script_dir/command_on_nodes.sh -nt ctrl -c "echo \"cat /etc/kolla/consul/region-config_${REGION}.json\"; cat /etc/kolla/consul/region-config_${REGION}.json"
