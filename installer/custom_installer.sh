@@ -429,10 +429,11 @@ echo $DOMAIN > $CFG_HOME/root_domain
 
 #Custom
 # copy docker auth config
+echo "CFG_HOME: $CFG_HOME"
+echo "CLIENT_NEXUS_PASSWORD: $CLIENT_NEXUS_PASSWORD"
 cp docker_auth.json $CFG_HOME/
 sed -i "s/DOMAIN/$DOMAIN/g" $CFG_HOME/docker_auth.json
 sed -i "s/NEXUS_NAME/$NEXUS_NAME/g" $CFG_HOME/docker_auth.json
-echo $CLIENT_NEXUS_PASSWORD
 if [ "$KS_CLIENT_NEXUS" = y ]; then
   sed -i "s/YWRtaW46Y2RmOWYxNjctZjYwZS00MzYwLTg4ZDUtODRlNDVmYTAyYTk5/$CLIENT_NEXUS_PASSWORD/g" $CFG_HOME/docker_auth.json
 fi
