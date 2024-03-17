@@ -417,6 +417,10 @@ sed -i "s/DOMAIN/$DOMAIN/g" /root/.docker/config.json
 sed -i "s/DOMAIN/$DOMAIN/g" $CFG_HOME/docker_auth.json
 sed -i "s/NEXUS_NAME/$NEXUS_NAME/g" /root/.docker/config.json
 sed -i "s/NEXUS_NAME/$NEXUS_NAME/g" $CFG_HOME/docker_auth.json
+# Custom
+sed -i "s/NEXUS_PASSWORD/$NEXUS_PASSWORD/g" /root/.docker/config.json
+sed -i "s/NEXUS_PASSWORD/$NEXUS_PASSWORD/g" $CFG_HOME/docker_auth.json
+
 chmod 600 /root/.docker/config.json
 if [[ $CLIENT_NEXUS == "y" ]]; then
   docker login $CLIENT_NEXUS_NAME -u $CLIENT_NEXUS_ADMIN -p $CLIENT_NEXUS_PASSWORD

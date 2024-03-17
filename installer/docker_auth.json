@@ -1,0 +1,7 @@
+{
+  "auths": {
+          "NEXUS_NAME.DOMAIN": {
+                  "auth": "NEXUS_PASSWORD"
+          }
+  }
+}
