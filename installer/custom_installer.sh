@@ -349,9 +349,12 @@ if [ "$os" == "sberlinux" ] && [ -f lcmpackages-sberlinux.gz ]; then
   systemctl start docker
 fi
 
-if [ -f nexus-$LCM_R.tar ]; then
-  echo "Nexus image exist => loading"
-  docker load -i nexus-$LCM_R.tar
+#Custom
+if [ "$KS_CLIENT_NEXUS" = y ]; then
+  if [ -f nexus-$LCM_R.tar ]; then
+    echo "Nexus image exist => loading"
+    docker load -i nexus-$LCM_R.tar
+  fi
 fi
 
 if [ -f nginx-$LCM_R.tar ]; then
