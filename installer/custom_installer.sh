@@ -434,9 +434,9 @@ echo "CLIENT_NEXUS_PASSWORD: $CLIENT_NEXUS_PASSWORD"
 cp docker_auth.json $CFG_HOME/
 sed -i "s/DOMAIN/$DOMAIN/g" $CFG_HOME/docker_auth.json
 sed -i "s/NEXUS_NAME/$NEXUS_NAME/g" $CFG_HOME/docker_auth.json
-if [ "$KS_CLIENT_NEXUS" = y ]; then
-  sed -i "s/YWRtaW46Y2RmOWYxNjctZjYwZS00MzYwLTg4ZDUtODRlNDVmYTAyYTk5/$CLIENT_NEXUS_PASSWORD/g" $CFG_HOME/docker_auth.json
-fi
+#if [ "$KS_CLIENT_NEXUS" = y ]; then
+#  sed -i "s/YWRtaW46Y2RmOWYxNjctZjYwZS00MzYwLTg4ZDUtODRlNDVmYTAyYTk5/$CLIENT_NEXUS_PASSWORD/g" $CFG_HOME/docker_auth.json
+#fi
 
 mkdir -p /root/.docker
 cp $CFG_HOME/docker_auth.json /root/.docker/config.json
