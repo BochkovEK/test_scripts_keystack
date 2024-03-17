@@ -440,7 +440,7 @@ fi
 
 mkdir -p /root/.docker
 cp $CFG_HOME/docker_auth.json /root/.docker/config.json
-
+cat /root/.docker/config.json
 
 chmod 600 /root/.docker/config.json
 if [[ $CLIENT_NEXUS == "y" ]]; then
