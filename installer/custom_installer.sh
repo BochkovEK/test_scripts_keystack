@@ -257,7 +257,8 @@ if [[ $SELF_SIG == "y" ]]; then
   gencrt
 else
   for ca in $NEXUS_NAME $GITLAB_NAME $VAULT_NAME $NETBOX_NAME; do
-    [[ ! -f certs/$ca.crt ]] || [[ ! -f certs/$ca.key ]] && echo "Certificate or private key $ca.crt/$ca.key not found in certs" && exit 1
+    #Custom
+    [[ ! -f ./certs/$ca.crt ]] || [[ ! -f certs/$ca.key ]] && echo "Certificate or private key $ca.crt/$ca.key not found in certs" && exit 1
   done
   [[ ! -f certs/ca.crt ]] && echo "CA certificate ca.crt not found in certs" && exit 1
   for ca in $NEXUS_NAME $GITLAB_NAME $VAULT_NAME $NETBOX_NAME; do
