@@ -59,15 +59,18 @@ fi
 export CLIENT_NEXUS=${CLIENT_NEXUS:-"n"}
 
 if [[ $CLIENT_NEXUS == "y" ]]; then
-  unset CLIENT_NEXUS_NAME
+  #Custom
+  #unset CLIENT_NEXUS_NAME
   while [ -z $CLIENT_NEXUS_NAME ]; do
     read -rp "Enter the client Artifactory full domain name for the KeyStack: " CLIENT_NEXUS_NAME
   done
-  unset CLIENT_NEXUS_ADMIN
+  #Custom
+  #unset CLIENT_NEXUS_ADMIN
   while [ -z $CLIENT_NEXUS_ADMIN ]; do
     read -rp "Enter the client Nexus admin name for the KeyStack: " CLIENT_NEXUS_ADMIN
   done
-  unset CLIENT_NEXUS_PASSWORD
+  #Custom
+  #unset CLIENT_NEXUS_PASSWORD
   while [ -z $CLIENT_NEXUS_PASSWORD ]; do
     read -rp "Enter the client Nexus password for the KeyStack: " CLIENT_NEXUS_PASSWORD
   done
@@ -75,7 +78,8 @@ fi
 
 # get installer root domain name
 if [[ -z "${KS_INSTALL_DOMAIN}" ]]; then
-  unset DOMAIN
+  #Custom
+  #unset DOMAIN
   while [ -z $DOMAIN ]; do
     read -rp "Enter the root domain name for the KeyStack: " DOMAIN
   done
@@ -85,7 +89,8 @@ fi
 
 # get Nexus domain name
 if [[ -z "${KS_NEXUS_NAME}" ]]; then
-  unset NEXUS_NAME
+  #Custom
+  #unset NEXUS_NAME
   read -rp "Enter the Nexus domain name for the KeyStack [nexus]: " NEXUS_NAME
 else
   NEXUS_NAME=$KS_NEXUS_NAME
