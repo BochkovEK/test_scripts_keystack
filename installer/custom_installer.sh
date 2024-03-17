@@ -480,7 +480,7 @@ echo
 chown -R 200:200 $NEXUS_HOME
 
 #Custom
-if [[ $CLIENT_NEXUS == "y" ]]; then
+if [[ ! $CLIENT_NEXUS == "y" ]]; then
   $DOCKER_COMPOSE_COMMAND -f $CFG_HOME/compose.yaml up -d nexus
 fi
 
