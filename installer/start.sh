@@ -20,7 +20,11 @@ cp $script_dir/$CUSTOM_INSTALLER $INSTALL_DIR
 echo "Copy docker_auth.json to $INSTALL_DIR"
 cp $script_dir/docker_auth.json $INSTALL_DIR
 
+echo "Set installer_envs:"
+[[ -f $script_dir/installer_envs ]] && { cat $script_dir/installer_envs; source $script_dir/installer_envs; }
+
 cd $INSTALL_DIR || { echo "$INSTALL_DIR not found"; exit 1; }
 echo "Current dir: $PWD"
+
 bash ./custom_installer.sh
 
