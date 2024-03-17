@@ -427,21 +427,19 @@ chmod 600 /root/.ssh/id_rsa
 # save install root domain
 echo $DOMAIN > $CFG_HOME/root_domain
 
+#Custom
 # copy docker auth config
-mkdir -p /root/.docker
-cp docker_auth.json /root/.docker/config.json
 cp docker_auth.json $CFG_HOME/
-sed -i "s/DOMAIN/$DOMAIN/g" /root/.docker/config.json
 sed -i "s/DOMAIN/$DOMAIN/g" $CFG_HOME/docker_auth.json
-sed -i "s/NEXUS_NAME/$NEXUS_NAME/g" /root/.docker/config.json
 sed -i "s/NEXUS_NAME/$NEXUS_NAME/g" $CFG_HOME/docker_auth.json
-
-# Custom
 echo $CLIENT_NEXUS_PASSWORD
 if [ "$KS_CLIENT_NEXUS" = y ]; then
-  sed -i "s/YWRtaW46Y2RmOWYxNjctZjYwZS00MzYwLTg4ZDUtODRlNDVmYTAyYTk5/$CLIENT_NEXUS_PASSWORD/g" /root/.docker/config.json
   sed -i "s/YWRtaW46Y2RmOWYxNjctZjYwZS00MzYwLTg4ZDUtODRlNDVmYTAyYTk5/$CLIENT_NEXUS_PASSWORD/g" $CFG_HOME/docker_auth.json
 fi
+
+mkdir -p /root/.docker
+cp $CFG_HOME/docker_auth.json /root/.docker/config.json
+
 
 chmod 600 /root/.docker/config.json
 if [[ $CLIENT_NEXUS == "y" ]]; then
