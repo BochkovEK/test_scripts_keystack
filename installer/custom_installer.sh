@@ -140,6 +140,10 @@ cat <<-END
 Installer HOME: $INSTALL_HOME
 LCM IP: $lcm_ip
 KeyStack Root Domain: $DOMAIN
+
+#Custom
+KeyStack Client Nexus: $CLIENT_NEXUS
+
 KeyStack Nexus Domain: $NEXUS_NAME.$DOMAIN
 KeyStack Gitlab Domain: $GITLAB_NAME.$DOMAIN
 KeyStack Vault Domain: $VAULT_NAME.$DOMAIN
