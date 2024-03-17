@@ -257,8 +257,8 @@ if [[ $SELF_SIG == "y" ]]; then
   gencrt
 else
   #Custom
-  echo "ls -la"
-  ls -la
+  echo "ls -la ./certs"
+  ls -la ./certs
 
   for ca in $NEXUS_NAME $GITLAB_NAME $VAULT_NAME $NETBOX_NAME; do
     #Custom
