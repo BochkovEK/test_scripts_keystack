@@ -427,7 +427,7 @@ chmod 600 /root/.ssh/id_rsa
 # save install root domain
 echo $DOMAIN > $CFG_HOME/root_domain
 
-#Custom
+#Custom start
 # copy docker auth config
 echo "CFG_HOME: $CFG_HOME"
 echo "CLIENT_NEXUS_PASSWORD: $CLIENT_NEXUS_PASSWORD"
@@ -440,12 +440,18 @@ fi
 
 mkdir -p /root/.docker
 cp $CFG_HOME/docker_auth.json /root/.docker/config.json
-cat /root/.docker/config.json
 
 chmod 600 /root/.docker/config.json
 if [[ $CLIENT_NEXUS == "y" ]]; then
+cat /root/.docker/config.json
+echo "
+CLIENT_NEXUS_NAME: $CLIENT_NEXUS_NAME
+CLIENT_NEXUS_ADMIN: $CLIENT_NEXUS_ADMIN
+CLIENT_NEXUS_PASSWORD: $CLIENT_NEXUS_PASSWORD
+"
   docker login $CLIENT_NEXUS_NAME -u $CLIENT_NEXUS_ADMIN -p $CLIENT_NEXUS_PASSWORD
 fi
+#Custom end
 
 # copy daemon.json
 cp daemon.json /etc/docker/daemon.json
