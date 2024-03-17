@@ -478,7 +478,12 @@ cd $NEXUS_HOME/restore-from-backup && sudo tar -xzf $NEXUS_HOME/data/nexus-db-of
 cd $INSTALL_DIR && rm -rf $NEXUS_HOME/data
 echo
 chown -R 200:200 $NEXUS_HOME
-$DOCKER_COMPOSE_COMMAND -f $CFG_HOME/compose.yaml up -d nexus
+
+#Custom
+if [[ $CLIENT_NEXUS == "y" ]]; then
+  $DOCKER_COMPOSE_COMMAND -f $CFG_HOME/compose.yaml up -d nexus
+fi
+
 $DOCKER_COMPOSE_COMMAND -f $CFG_HOME/compose.yaml up -d nginx
 # check for nexus readiness
 echo -n Waiting for Nexus readiness
