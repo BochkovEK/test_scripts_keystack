@@ -256,6 +256,10 @@ mkdir -p $CA_HOME/{root,cert}
 if [[ $SELF_SIG == "y" ]]; then
   gencrt
 else
+  #Custom
+  echo "ls -la"
+  ls -la
+
   for ca in $NEXUS_NAME $GITLAB_NAME $VAULT_NAME $NETBOX_NAME; do
     #Custom
     [[ ! -f ./certs/$ca.crt ]] || [[ ! -f certs/$ca.key ]] && echo "Certificate or private key $ca.crt/$ca.key not found in certs" && exit 1
