@@ -10,7 +10,7 @@ script_dir=$(dirname $0)
 
 mkdir -p $BACKUP_FOLDER
 [[ ! -f $BACKUP_FOLDER/installer.sh ]] && { echo "Make $INSTALL_DIR/installer.sh backup to $BACKUP_FOLDER"; cp $INSTALL_DIR/installer.sh $BACKUP_FOLDER; }
-[[ ! -f $BACKUP_FOLDER/docker_auth.json ]] && { echo "$BACKUP_FOLDER/docker_auth.json backup to $BACKUP_FOLDER"; cp docker_auth.json $BACKUP_FOLDER; }
+[[ ! -f $BACKUP_FOLDER/docker_auth.json ]] && { echo "Make $BACKUP_FOLDER/docker_auth.json backup to $BACKUP_FOLDER"; cp docker_auth.json $BACKUP_FOLDER; }
 echo "$BACKUP_FOLDER:"
 ls -la $BACKUP_FOLDER
 
