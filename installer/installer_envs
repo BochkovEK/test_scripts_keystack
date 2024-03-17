@@ -5,8 +5,8 @@ export CLIENT_NEXUS_ADMIN=admin;
 export CLIENT_NEXUS_PASSWORD=496e4e0b-f756-4850-b947-f370cbbc29ad;
 export KS_INSTALL_DOMAIN=test.domain
 export KS_SELF_SIG=n
-export $INSTALL_HOME="/installer"
-export $NEXUS_NAME
-export $GITLAB_NAME
-export $VAULT_NAME
-export $NETBOX_NAME
+export INSTALL_HOME="/installer"
+export NEXUS_NAME
+export GITLAB_NAME
+export VAULT_NAME
+export NETBOX_NAME
