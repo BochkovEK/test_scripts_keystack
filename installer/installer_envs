@@ -4,3 +4,4 @@ export CLIENT_NEXUS_NAME=nexus.test.domain;
 export CLIENT_NEXUS_ADMIN=admin;
 export CLIENT_NEXUS_PASSWORD=496e4e0b-f756-4850-b947-f370cbbc29ad;
 export KS_INSTALL_DOMAIN=test.domain
+export KS_SELF_SIG=n

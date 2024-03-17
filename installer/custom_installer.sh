@@ -126,7 +126,8 @@ export NETBOX_NAME=${NETBOX_NAME:-"netbox"}
 
 # get Use Self-signed certificate y/N
 if [[ -z "${KS_SELF_SIG}" ]]; then
-  unset SELF_SIG
+  #Custom
+  #unset SELF_SIG
   read -rp "Use installer Self-signed certificate y/n [y]: " SELF_SIG
 else
   SELF_SIG=$KS_SELF_SIG
