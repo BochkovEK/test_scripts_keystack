@@ -133,10 +133,10 @@ check_container_on_lcm () {
   done
 }
 
-#check_container_on_lcm
+check_container_on_lcm
 
 srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}')
-echo $srv
+[ -z $srv ] && { echo "Sting with pattern: $nodes_to_find NOT found"; }
 for host in $srv; do
     echo "Check $host node..."
     #cmpt_pattern_clip="${cmpt_pattern#*|}"
