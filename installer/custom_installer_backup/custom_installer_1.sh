@@ -59,15 +59,18 @@ fi
 export CLIENT_NEXUS=${CLIENT_NEXUS:-"n"}
 
 if [[ $CLIENT_NEXUS == "y" ]]; then
-  unset CLIENT_NEXUS_NAME
+  #Custom
+  #unset CLIENT_NEXUS_NAME
   while [ -z $CLIENT_NEXUS_NAME ]; do
     read -rp "Enter the client Artifactory full domain name for the KeyStack: " CLIENT_NEXUS_NAME
   done
-  unset CLIENT_NEXUS_ADMIN
+  #Custom
+  #unset CLIENT_NEXUS_ADMIN
   while [ -z $CLIENT_NEXUS_ADMIN ]; do
     read -rp "Enter the client Nexus admin name for the KeyStack: " CLIENT_NEXUS_ADMIN
   done
-  unset CLIENT_NEXUS_PASSWORD
+  #Custom
+  #unset CLIENT_NEXUS_PASSWORD
   while [ -z $CLIENT_NEXUS_PASSWORD ]; do
     read -rp "Enter the client Nexus password for the KeyStack: " CLIENT_NEXUS_PASSWORD
   done
@@ -75,7 +78,8 @@ fi
 
 # get installer root domain name
 if [[ -z "${KS_INSTALL_DOMAIN}" ]]; then
-  unset DOMAIN
+  #Custom
+  #unset DOMAIN
   while [ -z $DOMAIN ]; do
     read -rp "Enter the root domain name for the KeyStack: " DOMAIN
   done
@@ -85,7 +89,8 @@ fi
 
 # get Nexus domain name
 if [[ -z "${KS_NEXUS_NAME}" ]]; then
-  unset NEXUS_NAME
+  #Custom
+  #unset NEXUS_NAME
   read -rp "Enter the Nexus domain name for the KeyStack [nexus]: " NEXUS_NAME
 else
   NEXUS_NAME=$KS_NEXUS_NAME
@@ -121,7 +126,8 @@ export NETBOX_NAME=${NETBOX_NAME:-"netbox"}
 
 # get Use Self-signed certificate y/N
 if [[ -z "${KS_SELF_SIG}" ]]; then
-  unset SELF_SIG
+  #Custom
+  #unset SELF_SIG
   read -rp "Use installer Self-signed certificate y/n [y]: " SELF_SIG
 else
   SELF_SIG=$KS_SELF_SIG
@@ -134,6 +140,10 @@ cat <<-END
 Installer HOME: $INSTALL_HOME
 LCM IP: $lcm_ip
 KeyStack Root Domain: $DOMAIN
+
+#Custom
+KeyStack Client Nexus: $CLIENT_NEXUS
+
 KeyStack Nexus Domain: $NEXUS_NAME.$DOMAIN
 KeyStack Gitlab Domain: $GITLAB_NAME.$DOMAIN
 KeyStack Vault Domain: $VAULT_NAME.$DOMAIN
@@ -246,8 +256,13 @@ mkdir -p $CA_HOME/{root,cert}
 if [[ $SELF_SIG == "y" ]]; then
   gencrt
 else
+  #Custom
+  echo "ls -la ./certs"
+  ls -la ./certs
+
   for ca in $NEXUS_NAME $GITLAB_NAME $VAULT_NAME $NETBOX_NAME; do
-    [[ ! -f certs/$ca.crt ]] || [[ ! -f certs/$ca.key ]] && echo "Certificate or private key $ca.crt/$ca.key not found in certs" && exit 1
+    #Custom
+    [[ ! -f ./certs/$ca.crt ]] || [[ ! -f certs/$ca.key ]] && echo "Certificate or private key $ca.crt/$ca.key not found in certs" && exit 1
   done
   [[ ! -f certs/ca.crt ]] && echo "CA certificate ca.crt not found in certs" && exit 1
   for ca in $NEXUS_NAME $GITLAB_NAME $VAULT_NAME $NETBOX_NAME; do
@@ -343,10 +358,13 @@ if [ "$os" == "sberlinux" ] && [ -f lcmpackages-sberlinux.gz ]; then
   systemctl start docker
 fi
 
-if [ -f nexus-$LCM_R.tar ]; then
-  echo "Nexus image exist => loading"
-  docker load -i nexus-$LCM_R.tar
-fi
+#Custom
+#if [ ! "$KS_CLIENT_NEXUS" = y ]; then
+  if [ -f nexus-$LCM_R.tar ]; then
+    echo "Nexus image exist => loading"
+    docker load -i nexus-$LCM_R.tar
+  fi
+#fi
 
 if [ -f nginx-$LCM_R.tar ]; then
   echo "Nginx image exist => loading"
@@ -409,18 +427,31 @@ chmod 600 /root/.ssh/id_rsa
 # save install root domain
 echo $DOMAIN > $CFG_HOME/root_domain
 
+#Custom start
 # copy docker auth config
-mkdir -p /root/.docker
-cp docker_auth.json /root/.docker/config.json
+echo "CFG_HOME: $CFG_HOME"
+echo "CLIENT_NEXUS_PASSWORD: $CLIENT_NEXUS_PASSWORD"
 cp docker_auth.json $CFG_HOME/
-sed -i "s/DOMAIN/$DOMAIN/g" /root/.docker/config.json
 sed -i "s/DOMAIN/$DOMAIN/g" $CFG_HOME/docker_auth.json
-sed -i "s/NEXUS_NAME/$NEXUS_NAME/g" /root/.docker/config.json
 sed -i "s/NEXUS_NAME/$NEXUS_NAME/g" $CFG_HOME/docker_auth.json
+#if [ "$KS_CLIENT_NEXUS" = y ]; then
+#  sed -i "s/YWRtaW46Y2RmOWYxNjctZjYwZS00MzYwLTg4ZDUtODRlNDVmYTAyYTk5/$CLIENT_NEXUS_PASSWORD/g" $CFG_HOME/docker_auth.json
+#fi
+
+mkdir -p /root/.docker
+cp $CFG_HOME/docker_auth.json /root/.docker/config.json
+
 chmod 600 /root/.docker/config.json
 if [[ $CLIENT_NEXUS == "y" ]]; then
+cat /root/.docker/config.json
+echo "
+CLIENT_NEXUS_NAME: $CLIENT_NEXUS_NAME
+CLIENT_NEXUS_ADMIN: $CLIENT_NEXUS_ADMIN
+CLIENT_NEXUS_PASSWORD: $CLIENT_NEXUS_PASSWORD
+"
   docker login $CLIENT_NEXUS_NAME -u $CLIENT_NEXUS_ADMIN -p $CLIENT_NEXUS_PASSWORD
 fi
+#Custom end
 
 # copy daemon.json
 cp daemon.json /etc/docker/daemon.json
@@ -447,7 +478,12 @@ cd $NEXUS_HOME/restore-from-backup && sudo tar -xzf $NEXUS_HOME/data/nexus-db-of
 cd $INSTALL_DIR && rm -rf $NEXUS_HOME/data
 echo
 chown -R 200:200 $NEXUS_HOME
-$DOCKER_COMPOSE_COMMAND -f $CFG_HOME/compose.yaml up -d nexus
+
+#Custom
+if [[ ! $CLIENT_NEXUS == "y" ]]; then
+  $DOCKER_COMPOSE_COMMAND -f $CFG_HOME/compose.yaml up -d nexus
+fi
+
 $DOCKER_COMPOSE_COMMAND -f $CFG_HOME/compose.yaml up -d nginx
 # check for nexus readiness
 echo -n Waiting for Nexus readiness

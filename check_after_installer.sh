@@ -136,6 +136,7 @@ check_container_on_lcm () {
 check_container_on_lcm
 
 srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}')
+echo $srv
 for host in $srv; do
     echo "Check $host node..."
     #cmpt_pattern_clip="${cmpt_pattern#*|}"
