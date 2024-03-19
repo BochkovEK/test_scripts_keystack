@@ -133,7 +133,7 @@ check_container_on_lcm () {
   done
 }
 
-check_container_on_lcm
+#check_container_on_lcm
 
 srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}')
 echo $srv
