@@ -19,7 +19,6 @@ if [[ -z "${OUTPUT_CERTS_DIR}" ]]; then
   read -rp "Enter certs output folder for installer [$HOME/central_auth_service]: " OUTPUT_CERTS_DIR
 fi
 export OUTPUT_CERTS_DIR=${OUTPUT_CERTS_DIR:-"$HOME/certs"}
-eval "export OUTPUT_CERTS_DIR=$OUTPUT_CERTS_DIR"
 
 # get domain name
 if [[ -z "${DOMAIN}" ]]; then
