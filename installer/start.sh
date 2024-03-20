@@ -28,8 +28,10 @@ cd $INSTALL_DIR || { echo "$INSTALL_DIR not found"; exit 1; }
 echo "Current dir: $PWD"
 
 if [ "$1" = custom ]; then
+  echo "Start custom installer..."
   bash ./custom_installer.sh
 else
+  echo "Start installer..."
   bash ./installer.sh
 fi
 
