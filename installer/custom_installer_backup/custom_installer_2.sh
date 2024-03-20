@@ -30,6 +30,7 @@ IFS="-"; read -r LCM_R < version_lcm; unset IFS
 
 echo $'\n\n'"*** KeyStack Installer v1.0 ($RELEASE) ***"$'\n\n'
 
+# get installer home dir
 if [[ -z "${KS_INSTALL_HOME}" ]]; then
   unset INSTALL_HOME
   read -rp "Enter the home dir for the installation [/installer]: " INSTALL_HOME
@@ -58,37 +59,25 @@ fi
 export CLIENT_NEXUS=${CLIENT_NEXUS:-"n"}
 
 if [[ $CLIENT_NEXUS == "y" ]]; then
-  if [[ -z "${KS_CLIENT_NEXUS_NAME}" ]]; then
-    unset CLIENT_NEXUS_NAME
-    while [ -z $CLIENT_NEXUS_NAME ]; do
-      read -rp "Enter the client Artifactory full domain name for the KeyStack: " CLIENT_NEXUS_NAME
-    done
-  else
-    CLIENT_NEXUS_NAME=$KS_CLIENT_NEXUS_NAME
-  fi
-  if [[ -z "${KS_CLIENT_NEXUS_ADMIN}" ]]; then
-    unset CLIENT_NEXUS_ADMIN
-    while [ -z $CLIENT_NEXUS_ADMIN ]; do
-      read -rp "Enter the client Artifactory user name: " CLIENT_NEXUS_ADMIN
-    done
-  else
-    CLIENT_NEXUS_ADMIN=$KS_CLIENT_NEXUS_ADMIN
-  fi
-  if [[ -z "${KS_CLIENT_NEXUS_PASSWORD}" ]]; then
-    unset CLIENT_NEXUS_PASSWORD
-    while [ -z $CLIENT_NEXUS_PASSWORD ]; do
-      read -rp "Enter the client Artifactory password: " CLIENT_NEXUS_PASSWORD
-    done
-  else
-    CLIENT_NEXUS_PASSWORD=$KS_CLIENT_NEXUS_PASSWORD
-  fi
+  unset CLIENT_NEXUS_NAME
+  while [ -z $CLIENT_NEXUS_NAME ]; do
+    read -rp "Enter the client Artifactory full domain name for the KeyStack: " CLIENT_NEXUS_NAME
+  done
+  unset CLIENT_NEXUS_ADMIN
+  while [ -z $CLIENT_NEXUS_ADMIN ]; do
+    read -rp "Enter the client Nexus admin name for the KeyStack: " CLIENT_NEXUS_ADMIN
+  done
+  unset CLIENT_NEXUS_PASSWORD
+  while [ -z $CLIENT_NEXUS_PASSWORD ]; do
+    read -rp "Enter the client Nexus password for the KeyStack: " CLIENT_NEXUS_PASSWORD
+  done
 fi
 
 # get installer root domain name
 if [[ -z "${KS_INSTALL_DOMAIN}" ]]; then
   unset DOMAIN
   while [ -z $DOMAIN ]; do
-    read -rp "Enter the LCM root domain name for the KeyStack [demo.local]: " DOMAIN
+    read -rp "Enter the root domain name for the KeyStack: " DOMAIN
   done
 else
   DOMAIN=$KS_INSTALL_DOMAIN
@@ -97,7 +86,7 @@ fi
 # get Nexus domain name
 if [[ -z "${KS_NEXUS_NAME}" ]]; then
   unset NEXUS_NAME
-  read -rp "Enter the LCM Nexus domain name for the KeyStack [nexus]: " NEXUS_NAME
+  read -rp "Enter the Nexus domain name for the KeyStack [nexus]: " NEXUS_NAME
 else
   NEXUS_NAME=$KS_NEXUS_NAME
 fi
@@ -106,7 +95,7 @@ export NEXUS_NAME=${NEXUS_NAME:-"nexus"}
 # get Gitlab domain name
 if [[ -z "${KS_GITLAB_NAME}" ]]; then
   unset GITLAB_NAME
-  read -rp "Enter the LCM Gitlab domain name for the KeyStack [ks-lcm]: " GITLAB_NAME
+  read -rp "Enter the Gitlab domain name for the KeyStack [ks-lcm]: " GITLAB_NAME
 else
   GITLAB_NAME=$KS_GITLAB_NAME
 fi
@@ -115,7 +104,7 @@ export GITLAB_NAME=${GITLAB_NAME:-"ks-lcm"}
 # get Vault domain name
 if [[ -z "${KS_VAULT_NAME}" ]]; then
   unset VAULT_NAME
-  read -rp "Enter the LCM Vault domain name for the KeyStack [vault]: " VAULT_NAME
+  read -rp "Enter the Vault domain name for the KeyStack [vault]: " VAULT_NAME
 else
   VAULT_NAME=$KS_VAULT_NAME
 fi
@@ -124,7 +113,7 @@ export VAULT_NAME=${VAULT_NAME:-"vault"}
 # get Netbox domain name
 if [[ -z "${KS_NETBOX_NAME}" ]]; then
   unset NETBOX_NAME
-  read -rp "Enter the LCM Netbox domain name for the KeyStack [netbox]: " NETBOX_NAME
+  read -rp "Enter the Netbox domain name for the KeyStack [netbox]: " NETBOX_NAME
 else
   NETBOX_NAME=$KS_NETBOX_NAME
 fi
@@ -133,7 +122,7 @@ export NETBOX_NAME=${NETBOX_NAME:-"netbox"}
 # get Use Self-signed certificate y/N
 if [[ -z "${KS_SELF_SIG}" ]]; then
   unset SELF_SIG
-  read -rp "Generate Self-signed certificates for KeyStack LCM services y/n [y]: " SELF_SIG
+  read -rp "Use installer Self-signed certificate y/n [y]: " SELF_SIG
 else
   SELF_SIG=$KS_SELF_SIG
 fi
