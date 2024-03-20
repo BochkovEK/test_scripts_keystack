@@ -6,6 +6,8 @@
 # OUTPUT_CERTS_DIR
 # DOMAIN
 
+script_dir=$(dirname $0)
+
 # get Central Authentication Service folder
 if [[ -z "${CERTS_DIR}" ]]; then
   read -rp "Enter Central Authentication Service folder [\$HOME/central_auth_service]: " CERTS_DIR
@@ -77,7 +79,7 @@ mkdir -p $HOME/certs
 #export SAN=DNS:$DOMAIN,DNS:*.$DOMAIN,IP:$CA_IP
 #
 #openssl x509 -req -in $CERTS_DIR/certs/cert.csr \
-#        -extfile $CERTS_DIR/cert.cnf -CA $CERTS_DIR/root/ca.crt \
+#        -extfile $script_dir/cert.cnf -CA $CERTS_DIR/root/ca.crt \
 #        -CAkey $CERTS_DIR/root/ca.key -CAcreateserial \
 #        -out $CERTS_DIR/certs/cert.crt -days 728 -sha256
 #
