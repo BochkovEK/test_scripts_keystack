@@ -309,11 +309,13 @@ grep SUPERUSER_PASSWORD $NETBOX_HOME/env/netbox.env | awk -F '=' '{print $2}' > 
 ########################
 
 mkdir -p $NEXUS_HOME/{data,blobs,restore-from-backup}
+#Custom
 mkdir -p /etc/docker/certs.d/$NEXUS_NAME.$DOMAIN
 cp $CA_HOME/cert/chain-ca.pem /etc/docker/certs.d/$NEXUS_NAME.$DOMAIN/ca.crt
 if [[ $CLIENT_NEXUS == "y" ]]; then
   cp $CA_HOME/cert/$CLIENT_NEXUS_NAME.pem /etc/docker/certs.d/$CLIENT_NEXUS_NAME/$CLIENT_NEXUS_NAME.crt
 fi
+#Custom_end
 chown -R 200:200 $NEXUS_HOME
 
 #######################

@@ -99,7 +99,7 @@ cat $CERTS_DIR/certs/cert.crt $CERTS_DIR/root/ca.crt > $CERTS_DIR/certs/chain-ce
 cp $CERTS_DIR/root/ca.crt $OUTPUT_CERTS_DIR;
 # for remote nexus
 cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/cert.key;
-#cp $CERTS_DIR/certs/chain-cert.pem $OUTPUT_CERTS_DIR/chain-ca.pem;
+cp $CERTS_DIR/certs/chain-cert.pem $OUTPUT_CERTS_DIR/nexus.$DOMAIN.pem;
 
 cp $CERTS_DIR/certs/chain-cert.pem $OUTPUT_CERTS_DIR;
 
