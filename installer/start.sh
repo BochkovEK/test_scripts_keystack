@@ -1,6 +1,10 @@
 #!/bin/bash
 
 # The script launches a custom installer and adds the original one to backup folder (~/installer/backup)
+# Before starting be ensure that /etc/hosts has strings:
+# <ip_lcm> <lcm-nexus>.<domain> <lcm-gitlab>.<domain> gitlab-runner.<domain> <lcm-vault>.<domain> <lcm-netbox>.<domain>
+# 10.224.129.239 ebochkov-keystack-lcm-01 lcm-gitlab.test.domain gitlab-runner.test.domain lcm-vault.test.domain lcm-netbox.test.domain lcm-nexus.test.domain
+# 10.224.129.234 ebochkov-keystack-comp-01 comp-01 nexus.test.domain
 # startup example: bash start.sh custom - execute custom_installer.sh
 
 CUSTOM_INSTALLER=custom_installer.sh
