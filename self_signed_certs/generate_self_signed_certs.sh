@@ -58,41 +58,42 @@ export LCM_NETBOX_NAME=${LCM_NETBOX_NAME:-"lcm-netbox"}
 
 # Create Wildcard
 mkdir -p $CERTS_DIR/{root,certs}
+mkdir -p $HOME/certs
 
-openssl genrsa -out $CERTS_DIR/root/ca.key 2048
-chmod 400 $CERTS_DIR/root/ca.key
-
-openssl req -new -x509 -nodes -subj "/C=RU/ST=Msk/L=Moscow/O=ITKey/OU=KeyStack/CN=KeyStack Root CA" \
-        -key $CERTS_DIR/root/ca.key -sha256 \
-        -days 3650 -out $CERTS_DIR/root/ca.crt
-chmod 444 $CERTS_DIR/root/ca.crt
-
-openssl genrsa -out $CERTS_DIR/certs/cert.key 2048
-chmod 400 $CERTS_DIR/certs/cert.key
-
-openssl req -new -subj "/C=RU/ST=Msk/L=Moscow/O=ITKey/OU=KeyStack/CN=*.$DOMAIN" \
-        -key $CERTS_DIR/certs/cert.key -out $CERTS_DIR/certs/cert.csr
-
-export SAN=DNS:$DOMAIN,DNS:*.$DOMAIN,IP:$CA_IP
-
-openssl x509 -req -in $CERTS_DIR/certs/cert.csr \
-        -extfile $CERTS_DIR/cert.cnf -CA $CERTS_DIR/root/ca.crt \
-        -CAkey $CERTS_DIR/root/ca.key -CAcreateserial \
-        -out $CERTS_DIR/certs/cert.crt -days 728 -sha256
-
-cat $CERTS_DIR/certs/cert.crt $CERTS_DIR/root/ca.crt > $CERTS_DIR/certs/chain-cert.pem
-
-# Copying certs to certs output folder for installer
-cp $CERTS_DIR/root/ca.crt $OUTPUT_CERTS_DIR;
-cp $CERTS_DIR/certs/cert.crt $OUTPUT_CERTS_DIR;
-cp $CERTS_DIR/certs/chain-cert.pem $OUTPUT_CERTS_DIR/chain-ca.pem;
-#cp $CERTS_DIR/certs/chain-cert.pem $OUTPUT_CERTS_DIR/$REMOTE_NEXUS_NAME.pem;
-cp $CERTS_DIR/certs/cert.crt $OUTPUT_CERTS_DIR/$LCM_NEXUS_NAME.crt;
-cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/$LCM_NEXUS_NAME.key;
-cp $CERTS_DIR/certs/cert.crt $OUTPUT_CERTS_DIR/$LCM_GITLAB_NAME.crt;
-cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/$LCM_GITLAB_NAME.key;
-cp $CERTS_DIR/certs/cert.crt $OUTPUT_CERTS_DIR/$LCM_VAULT_NAME.crt;
-cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/$LCM_VAULT_NAME.key;
-cp $CERTS_DIR/certs/cert.crt $OUTPUT_CERTS_DIR/$LCM_NETBOX_NAME.crt;
-cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/$LCM_NETBOX_NAME.key
+#openssl genrsa -out $CERTS_DIR/root/ca.key 2048
+#chmod 400 $CERTS_DIR/root/ca.key
+#
+#openssl req -new -x509 -nodes -subj "/C=RU/ST=Msk/L=Moscow/O=ITKey/OU=KeyStack/CN=KeyStack Root CA" \
+#        -key $CERTS_DIR/root/ca.key -sha256 \
+#        -days 3650 -out $CERTS_DIR/root/ca.crt
+#chmod 444 $CERTS_DIR/root/ca.crt
+#
+#openssl genrsa -out $CERTS_DIR/certs/cert.key 2048
+#chmod 400 $CERTS_DIR/certs/cert.key
+#
+#openssl req -new -subj "/C=RU/ST=Msk/L=Moscow/O=ITKey/OU=KeyStack/CN=*.$DOMAIN" \
+#        -key $CERTS_DIR/certs/cert.key -out $CERTS_DIR/certs/cert.csr
+#
+#export SAN=DNS:$DOMAIN,DNS:*.$DOMAIN,IP:$CA_IP
+#
+#openssl x509 -req -in $CERTS_DIR/certs/cert.csr \
+#        -extfile $CERTS_DIR/cert.cnf -CA $CERTS_DIR/root/ca.crt \
+#        -CAkey $CERTS_DIR/root/ca.key -CAcreateserial \
+#        -out $CERTS_DIR/certs/cert.crt -days 728 -sha256
+#
+#cat $CERTS_DIR/certs/cert.crt $CERTS_DIR/root/ca.crt > $CERTS_DIR/certs/chain-cert.pem
+#
+## Copying certs to certs output folder for installer
+#cp $CERTS_DIR/root/ca.crt $OUTPUT_CERTS_DIR;
+#cp $CERTS_DIR/certs/cert.crt $OUTPUT_CERTS_DIR;
+#cp $CERTS_DIR/certs/chain-cert.pem $OUTPUT_CERTS_DIR/chain-ca.pem;
+##cp $CERTS_DIR/certs/chain-cert.pem $OUTPUT_CERTS_DIR/$REMOTE_NEXUS_NAME.pem;
+#cp $CERTS_DIR/certs/cert.crt $OUTPUT_CERTS_DIR/$LCM_NEXUS_NAME.crt;
+#cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/$LCM_NEXUS_NAME.key;
+#cp $CERTS_DIR/certs/cert.crt $OUTPUT_CERTS_DIR/$LCM_GITLAB_NAME.crt;
+#cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/$LCM_GITLAB_NAME.key;
+#cp $CERTS_DIR/certs/cert.crt $OUTPUT_CERTS_DIR/$LCM_VAULT_NAME.crt;
+#cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/$LCM_VAULT_NAME.key;
+#cp $CERTS_DIR/certs/cert.crt $OUTPUT_CERTS_DIR/$LCM_NETBOX_NAME.crt;
+#cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/$LCM_NETBOX_NAME.key
 
