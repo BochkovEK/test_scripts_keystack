@@ -19,6 +19,7 @@ if [[ -z "${OUTPUT_CERTS_DIR}" ]]; then
   read -rp "Enter certs output folder for installer [$HOME/central_auth_service]: " OUTPUT_CERTS_DIR
 fi
 export OUTPUT_CERTS_DIR=${OUTPUT_CERTS_DIR:-"$HOME/certs"}
+eval "export OUTPUT_CERTS_DIR=$OUTPUT_CERTS_DIR"
 
 # get domain name
 if [[ -z "${DOMAIN}" ]]; then
@@ -57,6 +58,16 @@ fi
 export LCM_NETBOX_NAME=${LCM_NETBOX_NAME:-"lcm-netbox"}
 
 #Export envs...
+cat > $script_dir/certs_envs <<-END
+export CERTS_DIR=$CERTS_DIR
+export OUTPUT_CERTS_DIR=$OUTPUT_CERTS_DIR
+export DOMAIN=$DOMAIN
+export CA_IP=$CA_IP
+export LCM_NEXUS_NAME=$LCM_NEXUS_NAME
+export LCM_GITLAB_NAME=$LCM_GITLAB_NAME
+export LCM_VAULT_NAME=$LCM_VAULT_NAME
+export LCM_NETBOX_NAME=$LCM_NETBOX_NAME
+END
 
 # Create Wildcard
 mkdir -p $CERTS_DIR/{root,certs}
