@@ -18,6 +18,7 @@ services:
     restart: always
 
   nexus:
+    #docker exec -it nexus cat /nexus-data/admin.password
     container_name: nexus
     image: sonatype/nexus3
     restart: always
