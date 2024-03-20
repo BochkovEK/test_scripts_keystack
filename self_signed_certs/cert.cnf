@@ -1,0 +1,12 @@
+[default]
+authorityKeyIdentifier=keyid,issuer
+basicConstraints = CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+extendedKeyUsage = serverAuth, clientAuth
+subjectAltName = \${ENV::SAN}
+[req]
+req_extensions = req_ext
+[req_distinguished_name]
+commonName_default = Wildcard
+[req_ext]
+subjectAltName = \${ENV::SAN}

@@ -12,7 +12,7 @@ services:
 #      - "443:443"
     volumes:
       - ./nginx_https.conf:/etc/nginx/nginx.conf
-      - /root/certs:/etc/certs
+      - $CERTS_FOLDER:/etc/certs
 #      - ./default.conf:/etc/nginx/conf.d/default.conf:ro
     network_mode: "host"
     restart: always
