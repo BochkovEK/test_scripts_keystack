@@ -101,7 +101,7 @@ cp $CERTS_DIR/root/ca.crt $OUTPUT_CERTS_DIR;
 cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/cert.key;
 cp $CERTS_DIR/certs/chain-cert.pem $OUTPUT_CERTS_DIR/nexus.$DOMAIN.pem;
 
-cp $CERTS_DIR/certs/chain-cert.pem $OUTPUT_CERTS_DIR;
+cp $CERTS_DIR/certs/chain-ca.pem $OUTPUT_CERTS_DIR;
 
 cp $CERTS_DIR/certs/cert.crt $OUTPUT_CERTS_DIR/$LCM_NEXUS_NAME.crt;
 cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/$LCM_NEXUS_NAME.key;
