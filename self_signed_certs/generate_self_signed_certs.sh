@@ -93,13 +93,13 @@ openssl x509 -req -in $CERTS_DIR/certs/cert.csr \
         -CAkey $CERTS_DIR/root/ca.key -CAcreateserial \
         -out $CERTS_DIR/certs/cert.crt -days 728 -sha256
 
-cat $CERTS_DIR/certs/cert.crt $CERTS_DIR/root/ca.crt > $CERTS_DIR/certs/chain-cert.pem
+cat $CERTS_DIR/certs/cert.crt $CERTS_DIR/root/ca.crt > $CERTS_DIR/certs/chain-ca.pem
 
 # Copying certs to certs output folder for installer
 cp $CERTS_DIR/root/ca.crt $OUTPUT_CERTS_DIR;
 # for remote nexus
 cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/cert.key;
-cp $CERTS_DIR/certs/chain-cert.pem $OUTPUT_CERTS_DIR/nexus.$DOMAIN.pem;
+cp $CERTS_DIR/certs/chain-ca.pem $OUTPUT_CERTS_DIR/nexus.$DOMAIN.pem;
 
 cp $CERTS_DIR/certs/chain-ca.pem $OUTPUT_CERTS_DIR;
 
