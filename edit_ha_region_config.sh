@@ -1,6 +1,6 @@
-# The script change alive_threshold in consul region config
-# openrc file required in ~/
-# Start scrip: bash ha_region_config.sh -a 2
+# The script for change or check consul log
+# openrc file required in $HOME/ for getting region name
+# Start scrip to change alive_threshold in consul conf: bash edit_ha_region_config.sh -a 2
 
 ctrl_pattern="\-ctrl\-..$"
 consul_conf_dir=kolla/consul
@@ -34,6 +34,7 @@ do
         -a,   -alive_threshold          <alive_threshold>
         -d,   -dead_compute_threshold   <dead_compute_threshold>
         -i,   -ipmi_fencing             <true\false>
+        -v,   -debug                    without value, set DEBUG=\"true\"
 
         start script with parameter suffix: bash ha_region_config.sh suffix - return bmc suffix
         "
@@ -49,7 +50,7 @@ do
           echo "Found the -ipmi_fencing <true\false> option, with parameter value $IPMI_FENCING"
           shift ;;
         -v|-debug) DEBUG="true"
-	        echo "Found the -debug, with parameter value $DEBUG"
+	        echo "Found the -debug, parameter set $DEBUG"
           ;;
         --) shift
           break ;;
@@ -74,7 +75,7 @@ Check_openrc_file () {
     [[ -z "$check_openrc_file" ]] && { echo "openrc file not found in $OPENRC_PATH"; exit 1; }
 }
 
-cat_consul_conf () {
+cat_conf () {
   echo "Cat all consul configs..."
   bash $script_dir/command_on_nodes.sh -nt ctrl -c "echo \"cat /etc/kolla/consul/region-config_${REGION}.json\"; cat /etc/kolla/consul/region-config_${REGION}.json"
 }
@@ -147,7 +148,7 @@ check_bmc_suffix () {
 
 only_conf_check () {
 #  pull_consul_conf
-  cat_consul_conf
+  cat_conf
 }
 
 [ "$CHECK_SUFFIX" = true ] && { check_bmc_suffix; exit 0; }
@@ -156,6 +157,6 @@ only_conf_check () {
 [ -n "$ALIVE_THRSHOLD" ] && change_alive_threshold $ALIVE_THRSHOLD
 [ -n "$DEAD_THRSHOLD" ] && change_dead_threshold $DEAD_THRSHOLD
 [ -n "$IPMI_FENCING" ] && change_ipmi_fencing $IPMI_FENCING
-cat_consul_conf
+cat_conf
 [ -n "$conf_id_changed" ] && { echo "Restart consul containers..."; bash command_on_nodes.sh -nt ctrl -c "docker restart consul"; }
 ##cat_consul_conf

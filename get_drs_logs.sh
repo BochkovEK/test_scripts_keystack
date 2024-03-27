@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script for get logs
+# Script for get DRS logs
 
 #On home pc:
 # scp root@<lcm_ip>:~/test_scripts_keystack/drs_logs/* C:\Users\<path>
