@@ -104,7 +104,7 @@ change_alive_threshold () {
    ${consul_conf_dir}/region-config_${REGION}.json
   push_consul_conf
 #  cat_consul_conf
-  conf_id_changed="true"
+  conf_changed="true"
 }
 
 change_dead_threshold () {
@@ -122,7 +122,7 @@ change_dead_threshold () {
   fi
   push_consul_conf
 #  cat_consul_conf
-  conf_id_changed="true"
+  conf_changed="true"
 }
 
 change_ipmi_fencing () {
@@ -134,7 +134,7 @@ change_ipmi_fencing () {
     echo "$1 - is not valid ipmi parameter"
     return 1
   fi
-  conf_id_changed="true"
+  conf_changed="true"
 }
 
 check_bmc_suffix () {
@@ -146,17 +146,17 @@ check_bmc_suffix () {
   echo "${suffix_string_raw_2%%,*}"|awk '{print $2}'
 }
 
-only_conf_check () {
-#  pull_consul_conf
-  cat_conf
-}
+#only_conf_check () {
+##  pull_consul_conf
+#  cat_conf
+#}
 
 [ "$CHECK_SUFFIX" = true ] && { check_bmc_suffix; exit 0; }
-[ "$ONLY_CONF_CHECK" = true ] && { only_conf_check; exit 0; }
+[ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
 ##pull_consul_conf
 [ -n "$ALIVE_THRSHOLD" ] && change_alive_threshold $ALIVE_THRSHOLD
 [ -n "$DEAD_THRSHOLD" ] && change_dead_threshold $DEAD_THRSHOLD
 [ -n "$IPMI_FENCING" ] && change_ipmi_fencing $IPMI_FENCING
 cat_conf
-[ -n "$conf_id_changed" ] && { echo "Restart consul containers..."; bash command_on_nodes.sh -nt ctrl -c "docker restart consul"; }
+[ -n "$conf_changed" ] && { echo "Restart consul containers..."; bash command_on_nodes.sh -nt ctrl -c "docker restart consul"; }
 ##cat_consul_conf

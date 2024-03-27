@@ -85,18 +85,15 @@ push_conf () {
   done
 }
 
-only_conf_check () {
-  cat_conf
-}
-
 #change_foo_param () {
 #  <logics>
 #  conf_changed=true
 #}
 
 
-[ "$ONLY_CONF_CHECK" = true ] && { only_conf_check; exit 0; }
+#[ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
 
 #[ -n "$CHANGE_FOO_PARAM" ] && change_foo_param $foo_param_value
+[ -n "$conf_changed" ] && { cat_conf; echo "Restart $service_name containers..."; bash command_on_nodes.sh -nt ctrl -c "docker restart $service_name"; exit 0; }
 cat_conf
-[ -n "$conf_changed" ] && { echo "Restart $service_name containers..."; bash command_on_nodes.sh -nt ctrl -c "docker restart $service_name"; }
+
