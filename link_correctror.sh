@@ -7,4 +7,4 @@
 
 [ -z $1 ] && { echo "To run the script, you need to pass a link to as an argument"; exit 1; }
 
-echo $1 | sed -e "s#%2#/#g" | cat -
+echo $1 | sed -e "s#%2F#/#g" | cat -
