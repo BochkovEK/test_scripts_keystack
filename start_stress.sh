@@ -16,7 +16,7 @@ normal=$(tput sgr0)
 [[ -z $RAM ]] && RAM="4"
 [[ -z $TYPE_TEST ]] && TYPE_TEST="cpu"
 [[ -z $PROJECT ]] && PROJECT="admin"
-[[ -z $USER_VM ]] && PROJECT="ubuntu"
+[[ -z $USER_VM ]] && USER_VM="ubuntu"
 
 while [ -n "$1" ]; do
   case "$1" in
