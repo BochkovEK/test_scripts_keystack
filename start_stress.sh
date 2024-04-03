@@ -102,6 +102,7 @@ Stress test: $MODE will be launched on the hypervisor ($HV_STRING) VMs
         Hypervisor:           $HV
         Key:                  $KEY_NAME
         Stress test type:     $MODE
+        User on VM (SSH):     $USER_VM
         $load_string
         "
 
