@@ -16,6 +16,7 @@ normal=$(tput sgr0)
 [[ -z $RAM ]] && RAM="4"
 [[ -z $TYPE_TEST ]] && TYPE_TEST="cpu"
 [[ -z $PROJECT ]] && PROJECT="admin"
+[[ -z $USER_VM ]] && PROJECT="ubuntu"
 
 while [ -n "$1" ]; do
   case "$1" in
@@ -25,7 +26,8 @@ while [ -n "$1" ]; do
       -cpu              <number_cpus_for_stress>
       -ram              <gb_ram_stress>
       -key              <path_to_key>
-      -p, project       <project_name>
+      -p, -project      <project_name>
+      -u, -user_vm      <user_vm>
       "
       exit 0
       break ;;
@@ -47,6 +49,9 @@ while [ -n "$1" ]; do
     -p|-project) PROJECT="$2"
       echo "Found the -project option, with parameter value $PROJECT"
       shift;;
+    -u|-user_vm) USER_VM="$2"
+      echo "Found the -user_vm option, with parameter value $USER_VM"
+      shift;;
     --) shift
       break ;;
     *) echo "$1 is not an option";;
@@ -61,17 +66,17 @@ copy_and_stress() {
     local MODE=$2
 
     echo "Copy stress to $VM_IP..."
-    scp -o StrictHostKeyChecking=no -i $KEY_NAME stress ubuntu@$VM_IP:~
-    ssh -t -o StrictHostKeyChecking=no -i $KEY_NAME ubuntu@$VM_IP "chmod +x ~/stress"
+    scp -o StrictHostKeyChecking=no -i $KEY_NAME stress $USER_VM@$VM_IP:~
+    ssh -t -o StrictHostKeyChecking=no -i $KEY_NAME USER_VM@$VM_IP "chmod +x ~/stress"
 
     case $MODE in
         cpu)
             echo "Starting cpu stress on $VM_IP..."
-            ssh -o StrictHostKeyChecking=no -i $KEY_NAME ubuntu@$VM_IP "nohup ./stress -c $CPUS > /dev/null 2>&1 &"
+            ssh -o StrictHostKeyChecking=no -i $KEY_NAME USER_VM@$VM_IP "nohup ./stress -c $CPUS > /dev/null 2>&1 &"
             ;;
         ram)
             echo "Starting ram stress on $VM_IP..."
-            ssh -o StrictHostKeyChecking=no -i $KEY_NAME ubuntu@$VM_IP "nohup ./stress --vm 1 --vm-bytes '$RAM'G > /dev/null 2>&1 &"
+            ssh -o StrictHostKeyChecking=no -i $KEY_NAME USER_VM@$VM_IP "nohup ./stress --vm 1 --vm-bytes '$RAM'G > /dev/null 2>&1 &"
             ;;
     esac
 }
