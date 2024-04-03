@@ -67,16 +67,16 @@ copy_and_stress() {
 
     echo "Copy stress to $VM_IP..."
     scp -o StrictHostKeyChecking=no -i $KEY_NAME stress $USER_VM@$VM_IP:~
-    ssh -t -o StrictHostKeyChecking=no -i $KEY_NAME USER_VM@$VM_IP "chmod +x ~/stress"
+    ssh -t -o StrictHostKeyChecking=no -i $KEY_NAME $USER_VM@$VM_IP "chmod +x ~/stress"
 
     case $MODE in
         cpu)
             echo "Starting cpu stress on $VM_IP..."
-            ssh -o StrictHostKeyChecking=no -i $KEY_NAME USER_VM@$VM_IP "nohup ./stress -c $CPUS > /dev/null 2>&1 &"
+            ssh -o StrictHostKeyChecking=no -i $KEY_NAME $USER_VM@$VM_IP "nohup ./stress -c $CPUS > /dev/null 2>&1 &"
             ;;
         ram)
             echo "Starting ram stress on $VM_IP..."
-            ssh -o StrictHostKeyChecking=no -i $KEY_NAME USER_VM@$VM_IP "nohup ./stress --vm 1 --vm-bytes '$RAM'G > /dev/null 2>&1 &"
+            ssh -o StrictHostKeyChecking=no -i $KEY_NAME $USER_VM@$VM_IP "nohup ./stress --vm 1 --vm-bytes '$RAM'G > /dev/null 2>&1 &"
             ;;
     esac
 }
