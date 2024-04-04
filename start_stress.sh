@@ -9,6 +9,8 @@ red=$(tput setaf 1)
 violet=$(tput setaf 5)
 normal=$(tput sgr0)
 
+script_dir=$(dirname $0)
+
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $KEY_NAME ]] && KEY_NAME="key_test.pem"
 [[ -z $HYPERVISOR_NAME ]] && HYPERVISOR_NAME="false"
@@ -16,7 +18,7 @@ normal=$(tput sgr0)
 [[ -z $RAM ]] && RAM="4"
 [[ -z $TYPE_TEST ]] && TYPE_TEST="cpu"
 [[ -z $PROJECT ]] && PROJECT="admin"
-[[ -z $USER_VM ]] && USER_VM="ubuntu"
+[[ -z $VM_USER ]] && VM_USER="ubuntu"
 
 while [ -n "$1" ]; do
   case "$1" in
@@ -27,7 +29,7 @@ while [ -n "$1" ]; do
       -ram              <gb_ram_stress>
       -key              <path_to_key>
       -p, -project      <project_name>
-      -u, -user_vm      <user_vm>
+      -u, -vm_user      <vm_user>
       "
       exit 0
       break ;;
@@ -49,8 +51,8 @@ while [ -n "$1" ]; do
     -p|-project) PROJECT="$2"
       echo "Found the -project option, with parameter value $PROJECT"
       shift;;
-    -u|-user_vm) USER_VM="$2"
-      echo "Found the -user_vm option, with parameter value $USER_VM"
+    -u|-vm_user) VM_USER="$2"
+      echo "Found the -vm_user option, with parameter value $VM_USER"
       shift;;
     --) shift
       break ;;
@@ -66,17 +68,17 @@ copy_and_stress() {
     local MODE=$2
 
     echo "Copy stress to $VM_IP..."
-    scp -o StrictHostKeyChecking=no -i $KEY_NAME stress $USER_VM@$VM_IP:~
-    ssh -t -o StrictHostKeyChecking=no -i $KEY_NAME $USER_VM@$VM_IP "chmod +x ~/stress"
+    scp -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME stress $VM_USER@$VM_IP:~
+    ssh -t -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$VM_IP "chmod +x ~/stress"
 
     case $MODE in
         cpu)
             echo "Starting cpu stress on $VM_IP..."
-            ssh -o StrictHostKeyChecking=no -i $KEY_NAME $USER_VM@$VM_IP "nohup ./stress -c $CPUS > /dev/null 2>&1 &"
+            ssh -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$VM_IP "nohup ./stress -c $CPUS > /dev/null 2>&1 &"
             ;;
         ram)
             echo "Starting ram stress on $VM_IP..."
-            ssh -o StrictHostKeyChecking=no -i $KEY_NAME $USER_VM@$VM_IP "nohup ./stress --vm 1 --vm-bytes '$RAM'G > /dev/null 2>&1 &"
+            ssh -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$VM_IP "nohup ./stress --vm 1 --vm-bytes '$RAM'G > /dev/null 2>&1 &"
             ;;
     esac
 }
@@ -102,7 +104,7 @@ Stress test: $MODE will be launched on the hypervisor ($HV_STRING) VMs
         Hypervisor:           $HV
         Key:                  $KEY_NAME
         Stress test type:     $MODE
-        User on VM (SSH):     $USER_VM
+        User on VM (SSH):     $VM_USER
         $load_string
         "
 

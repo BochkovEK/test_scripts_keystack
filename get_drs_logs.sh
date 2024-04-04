@@ -10,12 +10,14 @@ comp_pattern="\-comp\-..$"
 ctrl_pattern="\-ctrl\-..$"
 net_pattern="\-net\-..$"
 
+script_dir=$(dirname $0)
+
 [[ -z $TAIL_NUM ]] && TAIL_NUM=100
 [[ -z $NODES_TO_FIND ]] && NODES_TO_FIND=$ctrl_pattern
 [[ -z $DRS_LOGS_SRC ]] && DRS_LOGS_SRC=/var/log/kolla/drs/drs.log
-[[ -z $DRS_LOGS_DEST ]] && DRS_LOGS_DEST=./drs_logs
+[[ -z $DRS_LOGS_DEST ]] && DRS_LOGS_DEST=$script_dir/drs_logs
 [[ -z $AUTOEVA_LOGS_SRC ]] && AUTOEVA_LOGS_SRC=/var/log/kolla/autoevacuate.log
-[[ -z $AUTOEVA_LOGS_DEST ]] && AUTOEVA_LOGS_DEST=./autoeva_logs
+[[ -z $AUTOEVA_LOGS_DEST ]] && AUTOEVA_LOGS_DEST=$script_dir/autoeva_logs
 [[ -z $LOGS_TYPE ]] && LOGS_TYPE='drs'
 
 #======================
@@ -76,6 +78,12 @@ get_drs_logs () {
 	  echo $tail_strins > $DRS_LOGS_DEST/drs_log_from_${host_name}_tail_${TAIL_NUM}.txt
 	  echo "Copy drs.ini from $host_name..."
     scp -o "StrictHostKeyChecking=no" $host:/etc/kolla/drs/drs.ini $DRS_LOGS_DEST/drs_ini_${host_name}.txt
+    echo "Save optimization list..."
+    drs optimization list | tee $script_dir/drs_logs/optimization.list
+    echo "Save recommendation list..."
+    drs recommendation list | tee $script_dir/drs_logs/recommendation.list
+    echo "Save recommendation list..."
+    drs migration list | tee $script_dir/drs_logs/migration.list
   done
 }
 
