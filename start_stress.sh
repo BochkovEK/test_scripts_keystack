@@ -68,7 +68,7 @@ copy_and_stress() {
     local MODE=$2
 
     echo "Copy stress to $VM_IP..."
-    scp -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME stress $VM_USER@$VM_IP:~
+    scp -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $script_dir/stress $VM_USER@$VM_IP:~
     ssh -t -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$VM_IP "chmod +x ~/stress"
 
     case $MODE in
