@@ -9,15 +9,15 @@ ff02::2 ip6-allrouters
 ff02::3 ip6-allhosts
 
 #[compute]
-10.224.140.106  ebochkov-ks-sber-comp-01
-10.224.140.107  ebochkov-ks-sber-comp-02
-10.224.140.108  ebochkov-ks-sber-comp-03
-10.224.140.109  ebochkov-ks-sber-comp-04
+10.224.143.106  ebochkov-ks-sber-comp-01
+10.224.143.107  ebochkov-ks-sber-comp-02
+10.224.143.108  ebochkov-ks-sber-comp-03
+10.224.143.109  ebochkov-ks-sber-comp-04
 10.224.51.14    ebochkov-ks-sber-comp-05
 10.220.17.114   ebochkov-ks-sber-comp-05-rmi
 10.224.51.15    ebochkov-ks-sber-comp-06
 10.220.17.115     ebochkov-ks-sber-comp-06-rmi
 #[control]
-10.224.140.101  ebochkov-ks-sber-ctrl-01
-10.224.140.102  ebochkov-ks-sber-ctrl-02
-10.224.140.103  ebochkov-ks-sber-ctrl-03
+10.224.143.101  ebochkov-ks-sber-ctrl-01
+10.224.143.102  ebochkov-ks-sber-ctrl-02
+10.224.143.103  ebochkov-ks-sber-ctrl-03
