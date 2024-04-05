@@ -77,6 +77,14 @@ done
 
 
 # functions
+
+# Check_openstack_cli
+Check_openstack_cli () {
+  if openstack | grep -q 'command not found'; then
+  echo -e "\033[31mOpenstack cli not installed\033[0m"
+fi
+}
+
 # Check openrc file
 Check_openrc_file () {
     echo "Check openrc file here: $OPENRC_PATH"
@@ -278,8 +286,10 @@ Check_consul_logs () {
 Check_consul_config () {
   echo "Check consul config..."
   [ -n "$OS_REGION_NAME" ] && REGION=$OS_REGION_NAME
-  [ "$DEBUG" = true ] && echo -e "[DEBUG]: \"\$OS_REGION_NAME\": $OS_REGION_NAME\n
-  [DEBUG]: \"\$leader_ctrl_node\": $leader_ctrl_node"
+  [ "$DEBUG" = true ] && echo -e "
+  [DEBUG]: \"\$OS_REGION_NAME\": $OS_REGION_NAME\n
+  [DEBUG]: \"\$leader_ctrl_node\": $leader_ctrl_node\n
+  "
   echo -e "${ORANGE}ssh -t -o StrictHostKeyChecking=no $leader_ctrl_node cat /etc/kolla/consul/region-config_${REGION}.json${NC}"
   ipmi_fencing_state=$(ssh -o StrictHostKeyChecking=no "$leader_ctrl_node" cat /etc/kolla/consul/region-config_"${REGION}".json| \
   grep -E '"bmc": \w|"ipmi": \w|alive_compute_threshold|dead_compute_threshold|"ceph": \w|"nova": \w')
@@ -294,6 +304,7 @@ Check_consul_config () {
 
 #clear
 Check_openrc_file
+Check_openstack_cli
 
 source $OPENRC_PATH
 nova_state_list=$(openstack compute service list)
