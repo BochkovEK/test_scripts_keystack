@@ -80,9 +80,13 @@ done
 
 # Check_openstack_cli
 Check_openstack_cli () {
-  if openstack | grep -q 'command not found'; then
-  echo -e "\033[31mOpenstack cli not installed\033[0m"
+  echo "Check openstack cli..."
+  if { openstack 2>&1 >&3 3>&- | grep '^' >&2; } 3>&1; then
+  echo echo -e "\033[31mOpenstack cli not installed\033[0m"
 fi
+#  if openstack | grep -q 'command not found'; then
+#  echo -e "\033[31mOpenstack cli not installed\033[0m"
+#fi
 }
 
 # Check openrc file
