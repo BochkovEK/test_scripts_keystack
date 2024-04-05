@@ -300,6 +300,11 @@ nova_state_list=$(openstack compute service list)
 #comp_and_ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)|(nova-scheduler)" | awk '{print $6}')
 ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
 comp_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
+[ "$DEBUG" = true ] && echo -e "
+  [DEBUG]: \"\$nova_state_list\": $nova_state_list\n
+  [DEBUG]: \"\$ctrl_nodes\": $ctrl_nodes\n
+  [DEBUG]: \"\$comp_nodes\": $comp_nodes
+  "
 for i in $ctrl_nodes; do ctrl_node_array+=("$i"); done;
 
 [ "$CHECK" = nova ] && { echo "Nova checking..."; Check_nova_srvice_list; Check_disabled_computes_in_nova; exit 0; }
