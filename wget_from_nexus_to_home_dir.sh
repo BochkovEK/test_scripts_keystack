@@ -11,6 +11,6 @@ echo $1 | sed -e "
   s,%2F,/,g; \
   s,#browse/browse:,repository/,;
   s,:,/packages/,2" | tee /tmp/link_to_wget.txt
-#wget -i /tmp/link_to_wget.txt -P $HOME/
+wget -i /tmp/link_to_wget.txt -P $HOME/
 
 #browse/browse:
