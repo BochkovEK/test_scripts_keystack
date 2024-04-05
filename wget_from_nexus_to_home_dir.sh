@@ -9,8 +9,7 @@
 
 echo $1 | sed -e "
   s,%2F,/,; \
-  s,#browse/browse:,repository/,; \
-  s#:#/#" | tee /tmp/link_to_wget.txt
+  s,#browse/browse:,repository/,; s#:#/#" | tee /tmp/link_to_wget.txt
 #wget -i /tmp/link_to_wget.txt -P $HOME/
 
 #browse/browse:
