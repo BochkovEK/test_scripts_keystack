@@ -133,6 +133,7 @@ Check_connection_to_nodes () {
         return
         ;;
     esac
+
     for host in $nodes; do
         host $host
         sleep 1
@@ -237,6 +238,9 @@ Check_docker_container () {
         return
         ;;
     esac
+    [ "$DEBUG" = true ] && echo -e "
+  [DEBUG]: \"\$nodes\": $nodes\n
+  "
     for host in $nodes;do
         echo "consul on $host"
         docker=$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no $host "docker ps | grep $2")
