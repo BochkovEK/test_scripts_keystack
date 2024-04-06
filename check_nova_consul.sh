@@ -100,8 +100,8 @@ Check_host_command () {
   if [ -z $command_exist ]; then
     echo -e "\033[33mbind-utils not installed\033[0m"
     read -p "Press enter to install bind-utils"
-    is_sber_os=$(cat /etc/os-realease| grep 'NAME="SberLinux"')
-    if [ -z $is_sber_os ]; then
+    is_sber_os=$(cat /etc/os-release| grep 'NAME="SberLinux"')
+    if [ -n "${is_sber_os}" ]; then
       yum in -y bind-utils
     fi
   fi
