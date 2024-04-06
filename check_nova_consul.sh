@@ -118,10 +118,11 @@ Check_connection_to_node () {
   fi
 }
 
-# Check connection to nova nodes
-Check_connection_to_nodes () {
-    echo "Check connection to $1 nodes..."
-    case $1 in
+Switch_case_nodes_type () {
+  [ "$DEBUG" = true ] && echo -e "
+  Switch case nodes type...
+  "
+  case $1 in
       controls)
         nodes=$ctrl_nodes
         ;;
@@ -132,7 +133,18 @@ Check_connection_to_nodes () {
         echo "Unknown node type define"
         return
         ;;
-    esac
+  esac
+  [ "$DEBUG" = true ] && echo -e "
+    [DEBUG]: \"\$nodes\": $nodes\n
+  "
+  return $nodes
+}
+
+# Check connection to nova nodes
+Check_connection_to_nodes () {
+    echo "Check connection to $1 nodes..."
+
+    nodes=$(Switch_case_nodes_type $1)
 
     for host in $nodes; do
         host $host
@@ -226,18 +238,7 @@ Check_disabled_computes_in_nova () {
 # Check docker container
 Check_docker_container () {
     echo "Check $2 docker on $1 nodes..."
-    case $1 in
-      controls)
-        nodes=$ctrl_nodes
-        ;;
-      computes)
-        nodes=$comp_nodes
-        ;;
-      *)
-        echo "Unknown node type define"
-        return
-        ;;
-    esac
+    nodes=$(Switch_case_nodes_type $1)
     [ "$DEBUG" = true ] && echo -e "
   [DEBUG]: \"\$nodes\": $nodes\n
   "
