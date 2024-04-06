@@ -81,12 +81,9 @@ done
 # Check_command
 Check_command () {
     echo "Check $1 command..."
-if ! command -v $1 &> /dev/null
-then
+  if ! command -v $1 &> /dev/null; then
     command_exist=""
-    echo -e "\033[31m$1 command not found\033[0m"
-    exit 1
-fi
+  fi
 }
 
 # Check_openstack_cli
