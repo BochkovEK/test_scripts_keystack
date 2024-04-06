@@ -78,14 +78,35 @@ done
 
 # functions
 
+# Check_command
+Check_command () {
+    echo "Check $1 command..."
+if ! command -v $1 &> /dev/null
+then
+    command_exist=""
+    echo -e "\033[31m$1 command not found\033[0m"
+    exit 1
+fi
+}
+
 # Check_openstack_cli
 Check_openstack_cli () {
   echo "Check openstack cli..."
-if ! command -v openstack &> /dev/null
-then
-    echo -e "\033[31mOpenstack cli not installed\033[0m"
-    exit 1
-fi
+  Check_command openstack
+  [ -z $command_exist ]  &&  { echo -e "\033[31mOpenstack cli not installed\033[0m"; exit 1; }
+}
+
+# Check_host_command
+Check_host_command () {
+  Check_command host
+  if [ -z $command_exist ]; then
+    echo -e "\033[33mbind-utils not installed\033[0m"
+    read -p "Press enter to install bind-utils"
+    is_sber_os=$(cat /etc/os-realease| grep 'NAME="SberLinux"')
+    if [ -z $is_sber_os ]; then
+      yum in -y bind-utils
+    fi
+  fi
 }
 
 # Check openrc file
@@ -312,6 +333,7 @@ Check_consul_config () {
 #clear
 Check_openrc_file
 Check_openstack_cli
+Check_host_command
 
 source $OPENRC_PATH
 nova_state_list=$(openstack compute service list)
