@@ -22,7 +22,7 @@ script_dir=$(dirname $0)
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $REGION ]] && REGION="region-ps"
 [[ -z $CHECK_IPMI ]] && CHECK_IPMI="false"
-[[ -z $DEBUG ]] && DEBUG="true"
+[[ -z $DEBUG ]] && DEBUG="false"
 
 #======================
 
