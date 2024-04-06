@@ -80,7 +80,8 @@ done
 
 # Check_command
 Check_command () {
-    echo "Check $1 command..."
+  echo "Check $1 command..."
+  command_exist="foo"
   if ! command -v $1 &> /dev/null; then
     command_exist=""
   fi
