@@ -120,7 +120,7 @@ Check_connection_to_node () {
 
 Switch_case_nodes_type () {
   [ "$DEBUG" = true ] && echo -e "
-  Switch case nodes type...
+  [DEBUG]: Switch case nodes type...
   "
   case $1 in
       controls)
@@ -137,14 +137,13 @@ Switch_case_nodes_type () {
   [ "$DEBUG" = true ] && echo -e "
     [DEBUG]: \"\$nodes\": $nodes\n
   "
-  return $nodes
 }
 
 # Check connection to nova nodes
 Check_connection_to_nodes () {
     echo "Check connection to $1 nodes..."
 
-    nodes=$(Switch_case_nodes_type $1)
+    Switch_case_nodes_type $1
 
     for host in $nodes; do
         host $host
