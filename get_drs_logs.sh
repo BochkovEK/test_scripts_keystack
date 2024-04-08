@@ -3,7 +3,9 @@
 # Script for get DRS logs
 
 #On home pc:
-# scp root@<lcm_ip>:~/test_scripts_keystack/drs_logs/* C:\Users\<path>
+# scp root@<lcm_ip>:~/test_scripts_keystack/drs_logs/*.gz .
+
+#cleanup on drs_logs folder rm -f drs*.txt drs*.log migration.list optimization.list recommendation.list
 
 
 comp_pattern="\-comp\-..$"
@@ -89,8 +91,8 @@ get_drs_logs () {
   done
   echo "Add logs to archive... drs-logs-"`date +"%d-%m-%Y"`""
   archive_logs_name=$(echo drs-logs-"`date +"%d-%m-%Y"`")
-  echo "tar -czvf $ABSOLUTE_DRS_LOGS_DEST/$archive_logs_name.tar.gz -P $ABSOLUTE_DRS_LOGS_DEST"
-  tar -czvf $ABSOLUTE_DRS_LOGS_DEST/$archive_logs_name.tar.gz -P $ABSOLUTE_DRS_LOGS_DEST
+  echo "tar -czvf $script_dir/$archive_logs_name.tar.gz -P $ABSOLUTE_DRS_LOGS_DEST"
+  tar -czvf $script_dir/$archive_logs_name.tar.gz -C $DRS_LOGS_DEST
 }
 
 get_ha_logs () {
