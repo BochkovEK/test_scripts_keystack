@@ -5,7 +5,9 @@
 #On home pc:
 # scp root@<lcm_ip>:~/test_scripts_keystack/drs_logs/*.gz .
 
-#cleanup on drs_logs folder rm -f drs*.txt drs*.log migration.list optimization.list recommendation.list
+# unpacking: tar -xvzf drs-logs-08-04-2024.tar.gz -C ./
+
+#cleanup on drs_logs folder: rm -f drs*.txt drs*.log migration.list optimization.list recommendation.list
 
 
 comp_pattern="\-comp\-..$"
