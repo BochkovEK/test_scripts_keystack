@@ -78,11 +78,11 @@ get_drs_logs () {
 	  echo $tail_strins > $DRS_LOGS_DEST/drs_log_from_${host_name}_tail_${TAIL_NUM}.txt
 	  echo "Copy drs.ini from $host_name..."
     scp -o "StrictHostKeyChecking=no" $host:/etc/kolla/drs/drs.ini $DRS_LOGS_DEST/drs_ini_${host_name}.txt
-    echo "Save optimization list..."
+    echo "Save optimization list from $host_name..."
     drs optimization list > $script_dir/drs_logs/optimization.list
-    echo "Save recommendation list..."
+    echo "Save recommendation list from $host_name..."
     drs recommendation list > $script_dir/drs_logs/recommendation.list
-    echo "Save recommendation list..."
+    echo "Save migration list from $host_name..."
     drs migration list > $script_dir/drs_logs/migration.list
   done
     echo "Add logs to archive... drs-logs-"`date +"%d-%m-%Y"`""
