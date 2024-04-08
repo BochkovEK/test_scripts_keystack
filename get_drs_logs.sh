@@ -67,7 +67,7 @@ do
 done
 
 get_drs_logs () {
-  mkdir $DRS_LOGS_DEST
+  mkdir -p $DRS_LOGS_DEST
   srv=$(cat /etc/hosts | grep -E ${NODES_TO_FIND} | awk '{print $2}')
   for host in $srv; do
 	  host_name=$(cat /etc/hosts | grep -E ${host} | awk '{print $2}')
