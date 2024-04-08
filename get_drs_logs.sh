@@ -71,26 +71,26 @@ get_drs_logs () {
   ABSOLUTE_DRS_LOGS_DEST=$(realpath $DRS_LOGS_DEST)
   echo "distinction drs logs: $DRS_LOGS_DEST"
   srv=$(cat /etc/hosts | grep -E ${NODES_TO_FIND} | awk '{print $2}')
-#  for host in $srv; do
-#	  host_name=$(cat /etc/hosts | grep -E ${host} | awk '{print $2}')
-#    echo "Copy drs logs from $host_name..."
-#    scp -o "StrictHostKeyChecking=no" $host:$DRS_LOGS_SRC $DRS_LOGS_DEST/drs_log_from_$host_name.log
-#    echo "Copy drs logs tail: ${TAIL_NUM} from $host_name..."
-#	  tail_strins=$(ssh  -o "StrictHostKeyChecking=no" $host tail -$TAIL_NUM $DRS_LOGS_SRC)
-#	  echo $tail_strins > $DRS_LOGS_DEST/drs_log_from_${host_name}_tail_${TAIL_NUM}.txt
-#	  echo "Copy drs.ini from $host_name..."
-#    scp -o "StrictHostKeyChecking=no" $host:/etc/kolla/drs/drs.ini $DRS_LOGS_DEST/drs_ini_${host_name}.txt
-#    echo "Save optimization list from $host_name..."
-#    drs optimization list > $script_dir/drs_logs/optimization.list
-#    echo "Save recommendation list from $host_name..."
-#    drs recommendation list > $script_dir/drs_logs/recommendation.list
-#    echo "Save migration list from $host_name..."
-#    drs migration list > $script_dir/drs_logs/migration.list
-#  done
+  for host in $srv; do
+	  host_name=$(cat /etc/hosts | grep -E ${host} | awk '{print $2}')
+    echo "Copy drs logs from $host_name..."
+    scp -o "StrictHostKeyChecking=no" $host:$DRS_LOGS_SRC $DRS_LOGS_DEST/drs_log_from_$host_name.log
+    echo "Copy drs logs tail: ${TAIL_NUM} from $host_name..."
+	  tail_strins=$(ssh  -o "StrictHostKeyChecking=no" $host tail -$TAIL_NUM $DRS_LOGS_SRC)
+	  echo $tail_strins > $DRS_LOGS_DEST/drs_log_from_${host_name}_tail_${TAIL_NUM}.txt
+	  echo "Copy drs.ini from $host_name..."
+    scp -o "StrictHostKeyChecking=no" $host:/etc/kolla/drs/drs.ini $DRS_LOGS_DEST/drs_ini_${host_name}.txt
+    echo "Save optimization list from $host_name..."
+    drs optimization list > $script_dir/drs_logs/optimization.list
+    echo "Save recommendation list from $host_name..."
+    drs recommendation list > $script_dir/drs_logs/recommendation.list
+    echo "Save migration list from $host_name..."
+    drs migration list > $script_dir/drs_logs/migration.list
+  done
   echo "Add logs to archive... drs-logs-"`date +"%d-%m-%Y"`""
   archive_logs_name=$(echo drs-logs-"`date +"%d-%m-%Y"`")
-  echo "tar -czvf $archive_logs_name.tar.gz --absolute-names $ABSOLUTE_DRS_LOGS_DEST --directory $ABSOLUTE_DRS_LOGS_DEST"
-  tar -czvf $archive_logs_name.tar.gz --absolute-names $ABSOLUTE_DRS_LOGS_DEST --directory $ABSOLUTE_DRS_LOGS_DEST
+  echo "tar -czvf $ABSOLUTE_DRS_LOGS_DEST/$archive_logs_name.tar.gz -P $ABSOLUTE_DRS_LOGS_DEST"
+  tar -czvf $ABSOLUTE_DRS_LOGS_DEST/$archive_logs_name.tar.gz -P $ABSOLUTE_DRS_LOGS_DEST
 }
 
 get_ha_logs () {
