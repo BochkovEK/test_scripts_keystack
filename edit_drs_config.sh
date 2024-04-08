@@ -86,7 +86,7 @@ push_conf () {
 #}
 
 change_add_debug_param () {
-  pull_consul_conf
+  pull_conf
   sed -i 's/\[DEFAULT\]/\[DEFAULT\]\ndebug = true/' $script_dir/$test_node_conf_dir/$conf_name
   push_conf
   conf_changed="true"
