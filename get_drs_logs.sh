@@ -90,7 +90,7 @@ get_drs_logs () {
   echo "Add logs to archive... drs-logs-"`date +"%d-%m-%Y"`""
   archive_logs_name=$(echo drs-logs-"`date +"%d-%m-%Y"`")
   echo "tar -czvf $archive_logs_name.tar.gz -C $ABSOLUTE_DRS_LOGS_DEST $ABSOLUTE_DRS_LOGS_DEST"
-  tar -czvf $archive_logs_name.tar.gz -C $DRS_LOGS_DEST $DRS_LOGS_DEST
+  tar -czvf $archive_logs_name.tar.gz -C $ABSOLUTE_DRS_LOGS_DEST $ABSOLUTE_DRS_LOGS_DEST
 }
 
 get_ha_logs () {
