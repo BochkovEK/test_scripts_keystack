@@ -84,6 +84,9 @@ get_drs_logs () {
     drs recommendation list | tee $script_dir/drs_logs/recommendation.list
     echo "Save recommendation list..."
     drs migration list | tee $script_dir/drs_logs/migration.list
+    echo "Add logs to archive... drs-logs-"`date +"%d-%m-%Y"`""
+    archive_logs_name=$(echo drs-logs--"`date +"%d-%m-%Y"`")
+    tar -czvf $archive_logs_name.tar.gz -C $DRS_LOGS_DEST $script_dir
   done
 }
 
