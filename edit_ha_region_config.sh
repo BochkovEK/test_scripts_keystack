@@ -63,10 +63,6 @@ source $OPENRC_PATH
 REGION=$OS_REGION_NAME
 [[ -z "${REGION}" ]] && { echo "Region name not found"; exit 1; }
 
-debug_echo () {
-  echo "[DEBUG] \$1: $1"
-}
-
 Check_openrc_file () {
     echo "Check openrc file here: $OPENRC_PATH"
     check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
@@ -83,7 +79,6 @@ cat_conf () {
 pull_consul_conf () {
   [ ! -d $consul_conf_dir ] && { mkdir -p $consul_conf_dir; }
   ctrl_node=$(cat /etc/hosts | grep -m 1 -E ${ctrl_pattern} | awk '{print $2}')
-  [ "$DEBUG" = true ] && debug_echo $ctrl_node
 
   echo "Сopying consul conf from $ctrl_node:/etc/kolla/consul/region-config_${REGION}.json"
   scp -o StrictHostKeyChecking=no $ctrl_node:/etc/kolla/consul/region-config_${REGION}.json $consul_conf_dir
@@ -110,10 +105,10 @@ change_alive_threshold () {
 change_dead_threshold () {
   pull_consul_conf
   dead_threshold_string_exist=$(cat ${consul_conf_dir}/region-config_${REGION}.json| grep 'dead_compute_threshold')
-  [ "$DEBUG" = true ] && debug_echo "${dead_threshold_string_exist}"
+
   if [ -z "$dead_threshold_string_exist" ]; then
     alive_threshold_string=$(cat ${consul_conf_dir}/region-config_${REGION}.json| grep 'alive_compute_threshold')
-    [ "$DEBUG" = true ] && debug_echo "${alive_threshold_string}"
+
     sed -i --regexp-extended "s/$alive_threshold_string/${alive_threshold_string}\n   \"dead_compute_threshold\": \"$1\",/" \
     ${consul_conf_dir}/region-config_${REGION}.json
   else
