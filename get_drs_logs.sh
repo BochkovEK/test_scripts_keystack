@@ -92,6 +92,7 @@ get_drs_logs () {
 #    drs migration list > $script_dir/drs_logs/migration.list
 #  done
   echo "Add logs to archive... drs-logs-"`date +"%d-%m-%Y"`""
+  [ -e $script_dir/$archive_logs_name.tar.gz ] && rm $script_dir/$archive_logs_name.tar.gz
   archive_logs_name=$(echo drs-logs-"`date +"%d-%m-%Y"`")
   echo "tar -czvf $script_dir/$archive_logs_name.tar.gz $DRS_LOGS_DEST"
   tar -czvf $script_dir/$archive_logs_name.tar.gz $DRS_LOGS_DEST
