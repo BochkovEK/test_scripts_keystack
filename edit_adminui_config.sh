@@ -11,7 +11,8 @@ script_dir=$(dirname $0)
 conf_changed=""
 
 #[[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
-[[ -z $ADD_DEBUG ]] && ADD_DEBUG="false"
+#[[ -z $ADD_DEBUG ]] && ADD_DEBUG="false"
+[[ -z $GITLAB_TOKEN ]] && GITLAB_TOKEN=""
 [[ -z $DEBUG ]] && DEBUG="false"
 [[ -z $ONLY_CONF_CHECK ]] && ONLY_CONF_CHECK="false"
 #[[ -z $FOO_PARAM ]] && FOO_PARAM=""
@@ -42,7 +43,7 @@ do
           ;;
         -gt|-gitlab_token) GITLAB_TOKEN=$2
 	        echo "Found the-gitlab_token, parameter set $GITLAB_TOKEN"
-          ;;
+          shift ;;
         --) shift
           break ;;
         *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
@@ -94,7 +95,8 @@ change_gitlab_password_param () {
 
 
 [ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
-[ "$ADD_DEBUG" = true ] && { change_add_debug_param; }
+#[ "$ADD_DEBUG" = true ] && { change_add_debug_param; }
+[ -n "$GITLAB_TOKEN" ] && { change_gitlab_password_param; }
 #[ -n "$CHANGE_FOO_PARAM" ] && change_foo_param $foo_param_value
 [ -n "$conf_changed" ] && { container_service_name=$(echo "$service_name" | sed 's/-/_/g' ); cat_conf; echo "Restart $container_service_name containers..."; bash command_on_nodes.sh -nt ctrl -c "docker restart $container_service_name"; exit 0; }
 cat_conf
