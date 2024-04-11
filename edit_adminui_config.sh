@@ -1,6 +1,8 @@
 # The script change and check drs config
 # Start scrip to check conf: bash edit_drs_config.sh check
 
+#adminui config: /etc/kolla/adminui-backend/adminui-backend-regions.conf
+
 ctrl_pattern="\-ctrl\-..$"
 service_name=adminui-backend
 conf_name=adminui-backend-regions.conf

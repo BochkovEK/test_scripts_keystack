@@ -56,6 +56,7 @@ while [ -n "$1" ]
 do
     case "$1" in
         --help) echo -E "
+        -or           -openrc_path  <openrc_path>
         -q,           -qty          <number_of_VMs>
         -i,           -image        <image_name>
         -f,           -flavor       <flavor_name>
@@ -108,6 +109,10 @@ do
           echo "Found the -volume_size <volume_size_in_GB> option, with parameter value $volume_size"
           VOLUME_SIZE=$volume_size
           shift ;;
+        -or|-openrc_path) openrc_path="$2"
+          echo "Found the -openrc_path <openrc_path> option, with parameter value $openrc_path"
+          OPENRC_PATH=$openrc_path
+          shift ;;
         -n|-name) name="$2"
           echo "Found the -name <vm_base_name> option, with parameter value $name"
           VM_BASE_NAME=$name
@@ -144,20 +149,21 @@ done
 output_of_initial_parameters () {
       echo -E "
 VMs will be created with the following parameters:
-        VM base name: $VM_BASE_NAME
-        Number of VMs: $VM_QTY
-        Image name: $IMAGE
-        Flavor name: $FLAVOR
-        Security group 1: $SECURITY_GR: $SECURITY_GR_ID
-        Key name: $KEY_NAME
-        Project: $PROJECT
-        User: $TEST_USER
-        User role: $ROLE
-        Hypervisor name: $HYPERVISOR_HOSTNAME
-        Network name: $NETWORK
-        Volume size: $VOLUME_SIZE
+        OPENRC file path:       $OPENRC_PATH
+        VM base name:           $VM_BASE_NAME
+        Number of VMs:          $VM_QTY
+        Image name:             $IMAGE
+        Flavor name:            $FLAVOR
+        Security group 1:       $SECURITY_GR: $SECURITY_GR_ID
+        Key name:               $KEY_NAME
+        Project:                $PROJECT
+        User:                   $TEST_USER
+        User role:              $ROLE
+        Hypervisor name:        $HYPERVISOR_HOSTNAME
+        Network name:           $NETWORK
+        Volume size:            $VOLUME_SIZE
         OS compute api version: $API_VERSION
-        Addition key: $ADD_KEY
+        Addition key:           $ADD_KEY
         Creating VMs without a timeout (bool): $BATCH
         "
 
