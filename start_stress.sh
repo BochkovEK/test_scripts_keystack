@@ -16,6 +16,7 @@ script_dir=$(dirname $0)
 [[ -z $HYPERVISOR_NAME ]] && HYPERVISOR_NAME="false"
 [[ -z $CPUS ]] && CPUS="4"
 [[ -z $RAM ]] && RAM="4"
+[[ -z $TIME_OUT ]] && TIME_OUT=""
 [[ -z $TYPE_TEST ]] && TYPE_TEST="cpu"
 [[ -z $PROJECT ]] && PROJECT="admin"
 [[ -z $VM_USER ]] && VM_USER="ubuntu"
@@ -27,6 +28,7 @@ while [ -n "$1" ]; do
       -tt, -type_test   <type_of_stress_test 'cpu' or 'ram'>
       -cpu              <number_cpus_for_stress>
       -ram              <gb_ram_stress>
+      -t, -time_out     <time_during_which_the_load_will_be_applied_in_sec>
       -key              <path_to_key>
       -p, -project      <project_name>
       -u, -vm_user      <vm_user>
@@ -54,6 +56,9 @@ while [ -n "$1" ]; do
     -u|-vm_user) VM_USER="$2"
       echo "Found the -vm_user option, with parameter value $VM_USER"
       shift;;
+    -t|-time_out) TIME_OUT="$2"
+      echo "Found the -time_out option, with parameter value $TIME_OUT"
+      shift;;
     --) shift
       break ;;
     *) echo "$1 is not an option";;
@@ -74,11 +79,11 @@ copy_and_stress() {
     case $MODE in
         cpu)
             echo "Starting cpu stress on $VM_IP..."
-            ssh -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$VM_IP "nohup ./stress -c $CPUS > /dev/null 2>&1 &"
+            ssh -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$VM_IP "nohup ./stress -c $CPUS $time_out_string > /dev/null 2>&1 &"
             ;;
         ram)
             echo "Starting ram stress on $VM_IP..."
-            ssh -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$VM_IP "nohup ./stress --vm 1 --vm-bytes '$RAM'G > /dev/null 2>&1 &"
+            ssh -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$VM_IP "nohup ./stress --vm 1 --vm-bytes '$RAM'G $time_out_string > /dev/null 2>&1 &"
             ;;
     esac
 }
@@ -98,6 +103,11 @@ batch_run_stress() {
     else
       load_string="RAM:                  $RAM"
     fi
+    # time_out_help_string, time_out_string
+    if [ -n "$TIME_OUT" ]; then
+      time_out_help_string="time out stress loading:                  $TIME_OUT"
+      time_out_string="-t $TIME_OUT"
+    fi
     echo -E "
 Stress test: $MODE will be launched on the hypervisor ($HV_STRING) VMs
     Stress test parameters:
@@ -106,6 +116,7 @@ Stress test: $MODE will be launched on the hypervisor ($HV_STRING) VMs
         Stress test type:     $MODE
         User on VM (SSH):     $VM_USER
         $load_string
+        $time_out_help_string
         "
 
     read -p "Press enter to continue"
