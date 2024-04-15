@@ -79,21 +79,11 @@ copy_and_stress() {
   local VM_IP=$1
   local MODE=$2
 
-  [ "$DEBUG" = true ] && echo -e "
-  [DEBUG]: VM_IP: $VM_IP
-  [DEBUG]: MODE: $MODE
-  [DEBUG]: CPUS: $CPUS
-  [DEBUG]: RAM: $RAM
-  [DEBUG]: time_out_string: $time_out_string
-  [DEBUG]: key path: $script_dir/$KEY_NAME
-  [DEBUG]: VM_USER: $VM_USER
-  "
-
   echo "Start checking $VM_IP..."
   sleep 1
   if ping -c 2 $VM_IP &> /dev/null; then
     printf "%40s\n" "${green}There is a connection with $VM_IP - success${normal}"
-    ssh -o StrictHostKeyChecking=no $VM_IP "echo 2>&1"
+    ssh -o StrictHostKeyChecking=no $VM_USER@$VM_IP "echo 2>&1"
     test $? -eq 0 && printf "%40s\n" "${green}There is a SSH connection with $VM_IP - success${normal}" || \
     { printf "%40s\n" "${red}No SSH connection with $VM_IP - error!${normal}"; return; }
   else
@@ -118,26 +108,26 @@ copy_and_stress() {
 }
 
 batch_run_stress() {
-    if [ "${1}" = false ]; then
-      HV="start stress test on all VMs on project: $PROJECT"
-      HV_STRING=""
-    else
-      HV=${1}
-      HV_STRING="--host $HV"
-    fi
-    local MODE=$2
-    # load_string
-    if [ "$MODE" = cpu ]; then
-      load_string="CPU:                      $CPUS"
-    else
-      load_string="RAM:                      $RAM"
-    fi
-    # time_out_help_string, time_out_string
-    if [ -n "$TIME_OUT" ]; then
-      time_out_help_string="time out stress loading:  $TIME_OUT"
-      time_out_string="-t $TIME_OUT"
-    fi
-    echo -E "
+  if [ "${1}" = false ]; then
+    HV="start stress test on all VMs on project: $PROJECT"
+    HV_STRING=""
+  else
+    HV=${1}
+    HV_STRING="--host $HV"
+  fi
+  local MODE=$2
+  # load_string
+  if [ "$MODE" = cpu ]; then
+    load_string="CPU:                      $CPUS"
+  else
+    load_string="RAM:                      $RAM"
+  fi
+  # time_out_help_string, time_out_string
+  if [ -n "$TIME_OUT" ]; then
+    time_out_help_string="time out stress loading:  $TIME_OUT"
+    time_out_string="-t $TIME_OUT"
+  fi
+  echo -E "
 Stress test: $MODE will be launched on the hypervisor ($HV_STRING) VMs
     Stress test parameters:
         Hypervisor:               $HV
@@ -146,15 +136,26 @@ Stress test: $MODE will be launched on the hypervisor ($HV_STRING) VMs
         User on VM (SSH):         $VM_USER
         $load_string
         $time_out_help_string
-        "
+  "
 
-    read -p "Press enter to continue"
-    VMs_IPs=$(openstack server list $HV_STRING --project $PROJECT |grep ACTIVE |awk '{print $8}')
-    [[ -z $VMs_IPs ]] && { echo "No instance found in the $PROJECT project"; exit 1; }
-    for raw_string_ip in $VMs_IPs; do
-        IP="${raw_string_ip##*=}"
-        copy_and_stress $IP $MODE
-    done
+  read -p "Press enter to continue"
+  VMs_IPs=$(openstack server list $HV_STRING --project $PROJECT |grep ACTIVE |awk '{print $8}')
+  [[ -z $VMs_IPs ]] && { echo "No instance found in the $PROJECT project"; exit 1; }
+
+  [ "$DEBUG" = true ] && echo -e "
+  [DEBUG]: VM_IP: $VM_IP
+  [DEBUG]: MODE: $MODE
+  [DEBUG]: CPUS: $CPUS
+  [DEBUG]: RAM: $RAM
+  [DEBUG]: time_out_string: $time_out_string
+  [DEBUG]: key path: $script_dir/$KEY_NAME
+  [DEBUG]: VM_USER: $VM_USER
+  "
+
+  for raw_string_ip in $VMs_IPs; do
+    IP="${raw_string_ip##*=}"
+    copy_and_stress $IP $MODE
+  done
 }
 
 # Check openrc file
