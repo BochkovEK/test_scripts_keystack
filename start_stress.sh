@@ -128,13 +128,13 @@ batch_run_stress() {
     local MODE=$2
     # load_string
     if [ "$MODE" = cpu ]; then
-      load_string="CPU:                  $CPUS"
+      load_string="CPU:                   $CPUS"
     else
-      load_string="RAM:                  $RAM"
+      load_string="RAM:                   $RAM"
     fi
     # time_out_help_string, time_out_string
     if [ -n "$TIME_OUT" ]; then
-      time_out_help_string="time out stress loading:                $TIME_OUT"
+      time_out_help_string="time out stress loading:  $TIME_OUT"
       time_out_string="-t $TIME_OUT"
     fi
     echo -E "
