@@ -20,6 +20,9 @@ script_dir=$(dirname $0)
 [[ -z $TYPE_TEST ]] && TYPE_TEST="cpu"
 [[ -z $PROJECT ]] && PROJECT="admin"
 [[ -z $VM_USER ]] && VM_USER="ubuntu"
+[[ -z $DEBUG ]] && DEBUG="false"
+
+#======================
 
 while [ -n "$1" ]; do
   case "$1" in
@@ -32,6 +35,7 @@ while [ -n "$1" ]; do
       -key              <path_to_key>
       -p, -project      <project_name>
       -u, -vm_user      <vm_user>
+      -v, -debug        enabled debug output (without parameter)
       "
       exit 0
       break ;;
@@ -59,6 +63,9 @@ while [ -n "$1" ]; do
     -t|-time_out) TIME_OUT="$2"
       echo "Found the -time_out option, with parameter value $TIME_OUT"
       shift;;
+    -v|-debug) DEBUG="true"
+	    echo "Found the -debug, with parameter value $DEBUG"
+      ;;
     --) shift
       break ;;
     *) echo "$1 is not an option";;
@@ -69,23 +76,45 @@ done
 # Functions
 
 copy_and_stress() {
-    local VM_IP=$1
-    local MODE=$2
+  local VM_IP=$1
+  local MODE=$2
 
-    echo "Copy stress to $VM_IP..."
-    scp -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $script_dir/stress $VM_USER@$VM_IP:~
-    ssh -t -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$VM_IP "chmod +x ~/stress"
+  [ "$DEBUG" = true ] && echo -e "
+  [DEBUG]: VM_IP: $VM_IP
+  [DEBUG]: MODE: $MODE
+  [DEBUG]: CPUS: $CPUS
+  [DEBUG]: RAM: $RAM
+  [DEBUG]: time_out_string: $time_out_string
+  [DEBUG]: key path: $script_dir/$KEY_NAME
+  [DEBUG]: VM_USER: $VM_USER
+  "
 
-    case $MODE in
-        cpu)
-            echo "Starting cpu stress on $VM_IP..."
-            ssh -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$VM_IP "nohup ./stress -c $CPUS $time_out_string > /dev/null 2>&1 &"
-            ;;
-        ram)
-            echo "Starting ram stress on $VM_IP..."
-            ssh -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$VM_IP "nohup ./stress --vm 1 --vm-bytes '$RAM'G $time_out_string > /dev/null 2>&1 &"
-            ;;
-    esac
+  echo "Start checking $VM_IP..."
+  sleep 1
+  if ping -c 2 $VM_IP &> /dev/null; then
+    printf "%40s\n" "${green}There is a connection with $VM_IP - success${normal}"
+    ssh $VM_IP "echo 2>&1"
+    test $? -eq 0 && printf "%40s\n" "${green}There is a SSH connection with $VM_IP - success${normal}" || \
+    { printf "%40s\n" "${red}No SSH connection with $VM_IP - error!${normal}"; return; }
+  else
+    printf "%40s\n" "${red}No connection with $VM_IP - error!${normal}"
+    return
+  fi
+
+  echo "Copy stress to $VM_IP..."
+  scp -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $script_dir/stress $VM_USER@$VM_IP:~
+  ssh -t -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$VM_IP "chmod +x ~/stress"
+
+  case $MODE in
+    cpu)
+      echo "Starting cpu stress on $VM_IP..."
+      ssh -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$VM_IP "nohup ./stress -c $CPUS $time_out_string > /dev/null 2>&1 &"
+      ;;
+    ram)
+      echo "Starting ram stress on $VM_IP..."
+      ssh -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$VM_IP "nohup ./stress --vm 1 --vm-bytes '$RAM'G $time_out_string > /dev/null 2>&1 &"
+      ;;
+  esac
 }
 
 batch_run_stress() {
