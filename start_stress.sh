@@ -134,16 +134,16 @@ batch_run_stress() {
     fi
     # time_out_help_string, time_out_string
     if [ -n "$TIME_OUT" ]; then
-      time_out_help_string="time out stress loading:                  $TIME_OUT"
+      time_out_help_string="time out stress loading:                $TIME_OUT"
       time_out_string="-t $TIME_OUT"
     fi
     echo -E "
 Stress test: $MODE will be launched on the hypervisor ($HV_STRING) VMs
     Stress test parameters:
-        Hypervisor:           $HV
-        Key:                  $KEY_NAME
-        Stress test type:     $MODE
-        User on VM (SSH):     $VM_USER
+        Hypervisor:               $HV
+        Key:                      $KEY_NAME
+        Stress test type:         $MODE
+        User on VM (SSH):         $VM_USER
         $load_string
         $time_out_help_string
         "
