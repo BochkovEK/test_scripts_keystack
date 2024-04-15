@@ -93,7 +93,7 @@ copy_and_stress() {
   sleep 1
   if ping -c 2 $VM_IP &> /dev/null; then
     printf "%40s\n" "${green}There is a connection with $VM_IP - success${normal}"
-    ssh $VM_IP "echo 2>&1"
+    ssh -o StrictHostKeyChecking=no $VM_IP "echo 2>&1"
     test $? -eq 0 && printf "%40s\n" "${green}There is a SSH connection with $VM_IP - success${normal}" || \
     { printf "%40s\n" "${red}No SSH connection with $VM_IP - error!${normal}"; return; }
   else
