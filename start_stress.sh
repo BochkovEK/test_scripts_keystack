@@ -91,20 +91,20 @@ copy_and_stress() {
     return
   fi
 
-#  echo "Copy stress to $VM_IP..."
-#  scp -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $script_dir/stress $VM_USER@$VM_IP:~
-#  ssh -t -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$VM_IP "chmod +x ~/stress"
-#
-#  case $MODE in
-#    cpu)
-#      echo "Starting cpu stress on $VM_IP..."
-#      ssh -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$VM_IP "nohup ./stress -c $CPUS $time_out_string > /dev/null 2>&1 &"
-#      ;;
-#    ram)
-#      echo "Starting ram stress on $VM_IP..."
-#      ssh -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$VM_IP "nohup ./stress --vm 1 --vm-bytes '$RAM'G $time_out_string > /dev/null 2>&1 &"
-#      ;;
-#  esac
+  echo "Copy stress to $VM_IP..."
+  scp -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $script_dir/stress $VM_USER@$VM_IP:~
+  ssh -t -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$VM_IP "chmod +x ~/stress"
+
+  case $MODE in
+    cpu)
+      echo "Starting cpu stress on $VM_IP..."
+      ssh -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$VM_IP "nohup ./stress -c $CPUS $time_out_string > /dev/null 2>&1 &"
+      ;;
+    ram)
+      echo "Starting ram stress on $VM_IP..."
+      ssh -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$VM_IP "nohup ./stress --vm 1 --vm-bytes '$RAM'G $time_out_string > /dev/null 2>&1 &"
+      ;;
+  esac
 }
 
 batch_run_stress() {
