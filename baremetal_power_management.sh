@@ -96,7 +96,7 @@ check_connection_to_ipmi () {
 
 check_module_exist () {
   for module in "${required_modules[@]}"; do
-    module_exists=$(pip list| grep module)
+    module_exists=$(pip list| grep $module)
 
     [ "$DEBUG" = true ] && echo -e "
     [DEBUG]: module: $module
