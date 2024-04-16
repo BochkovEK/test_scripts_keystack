@@ -22,6 +22,7 @@ script_dir=$(dirname $0)
 [[ -z $USER_NAME ]] && USER_NAME=""
 [[ -z $PASSWORD ]] && PASSWORD=""
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
+[[ -z $DEBUG ]] && DEBUG="false"
 #=============================================
 
 # Define parameters
@@ -35,31 +36,36 @@ define_parameters () {
 count=1
 while [ -n "$1" ]
 do
-    case "$1" in
-        --help) echo -E "
-        The power management script
-        -host_name,   -h  <host_name>     Host name for power management (ipmi)
-        -power_state, -p  <power_state>   check, on, off, restart
-        Example to start script:
+  case "$1" in
+  --help) echo -E "
+    The power management script
+      -host_name,   -h      <host_name>     Host name for power management (ipmi)
+      -power_state, -p      <power_state>   check, on, off, restart
+      -v,           -debug  enabled debug output (without parameter)
+
+      Example to start script:
            bash baremetal_power_management.sh ebochkov-ks-sber-comp-05-rmi check
            bash baremetal_power_management.sh ebochkov-ks-sber-comp-05-rmi on
-        "
-          exit 0
-          break ;;
-        -host_name|-h) HOST_NAME="$2"
-          echo "Found the -host_name <host_name> option, with parameter value $HOST_NAME"
-          shift ;;
-        -user_name|-u) HOST_NAME="$2"
-          echo "Found the -user_name <host_name> option, with parameter value $USER_NAME"
-          shift ;;
-        -password|-pswd) PASSWORD="$2"
-          echo "Found the -password <host_name> option, with parameter value $PASSWORD"
-          shift ;;
-        --) shift
-          break ;;
-        *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
-        esac
-        shift
+"
+    exit 0
+    break ;;
+  -host_name|-h) HOST_NAME="$2"
+    echo "Found the -host_name <host_name> option, with parameter value $HOST_NAME"
+    shift ;;
+  -user_name|-u) HOST_NAME="$2"
+    echo "Found the -user_name <host_name> option, with parameter value $USER_NAME"
+    shift ;;
+  -password|-pswd) PASSWORD="$2"
+    echo "Found the -password <host_name> option, with parameter value $PASSWORD"
+    shift ;;
+  -v|-debug) DEBUG="true"
+	  echo "Found the -debug, with parameter value $DEBUG"
+    ;;
+  --) shift
+      break ;;
+  *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
+   esac
+   shift
 done
 
 # Check openrc file
@@ -84,6 +90,12 @@ check_connection_to_ipmi () {
 check_module_exist () {
   for module in "${required_modules[@]}"; do
     module_exists=$(pip list| grep module)
+
+    [ "$DEBUG" = true ] && echo -e "
+    [DEBUG]: module: $module
+    [DEBUG]: module_exists: $module_exists
+  "
+
     [ -z "$module_exists" ] && { echo "Install $module"; pip install $module; }
   done
 }
