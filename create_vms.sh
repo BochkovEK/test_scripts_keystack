@@ -332,9 +332,14 @@ create_image () {
   || { echo "File ./$1.img does not exist. Try to download it..."; \
   wget https://repo.itkey.com/repository/images/"$1".img; }
   image_exists_in_openstack
+  if [ "$1" = "$CIRROS_IMAGE_NAME" ]; then
+    min_disk=1
+  else
+    min_disk=5
+  fi
   openstack image create "$1" \
     --disk-format qcow2 \
-    --min-disk 5 \
+    --min-disk $min_disk \
     --container-format bare \
     --public \
     --file ./"$1".img

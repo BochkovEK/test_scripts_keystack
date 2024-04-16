@@ -31,12 +31,13 @@ do
         The script change consul region config
         openrc file required in ~/
 
-        -a,   -alive_threshold          <alive_threshold>
-        -d,   -dead_compute_threshold   <dead_compute_threshold>
+        -a,   -alive_threshold          <alive_compute_threshold>
+        -d,   -dead_threshold           <dead_compute_threshold>
         -i,   -ipmi_fencing             <true\false>
         -v,   -debug                    without value, set DEBUG=\"true\"
 
         start script with parameter suffix: bash ha_region_config.sh suffix - return bmc suffix
+        start script with parameter suffix: bash ha_region_config.sh check  - return contents of the config file
         "
           exit 0
           break ;;
