@@ -23,6 +23,7 @@ script_dir=$(dirname $0)
 [[ -z $PASSWORD ]] && PASSWORD=""
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $DEBUG ]] && DEBUG="false"
+[[ -z $POSTFIX ]] && POSTFIX="rmi"
 #=============================================
 
 # Define parameters
@@ -39,28 +40,32 @@ do
   case "$1" in
   --help) echo -E "
     The power management script
-      -host_name,   -h      <host_name>     Host name for power management (ipmi)
-      -power_state, -p      <power_state>   check, on, off, restart
-      -v,           -debug  enabled debug output (without parameter)
+      -hv, -host_name,       <host_name>     Host name for power management (ipmi)
+      -p,  -power_state      <power_state>   check, on, off, restart
+      -pf, -postfix          <postfix>       Postfix for host name power management (ipmi; example: rmi)
+      -v,  -debug  enabled debug output (without parameter)
 
       Example to start script:
-           bash baremetal_power_management.sh ebochkov-ks-sber-comp-05-rmi check
-           bash baremetal_power_management.sh ebochkov-ks-sber-comp-05-rmi on
+           bash baremetal_power_management.sh ebochkov-ks-sber-comp-05 check
+           bash baremetal_power_management.sh ebochkov-ks-sber-comp-05 on
 "
     exit 0
     break ;;
-  -host_name|-h) HOST_NAME="$2"
+  -hv|-host_name) HOST_NAME="$2"
     echo "Found the -host_name <host_name> option, with parameter value $HOST_NAME"
     shift ;;
-  -user_name|-u) HOST_NAME="$2"
+  -u|-user_name) HOST_NAME="$2"
     echo "Found the -user_name <host_name> option, with parameter value $USER_NAME"
     shift ;;
-  -password|-pswd) PASSWORD="$2"
+  -pswd|-password) PASSWORD="$2"
     echo "Found the -password <host_name> option, with parameter value $PASSWORD"
     shift ;;
   -v|-debug) DEBUG="true"
 	  echo "Found the -debug, with parameter value $DEBUG"
     ;;
+  -p|-power_state) POWER_STATE="$2"
+	  echo "Found the -power_state, with parameter value $POWER_STATE"
+    shift ;;
   --) shift
       break ;;
   *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
