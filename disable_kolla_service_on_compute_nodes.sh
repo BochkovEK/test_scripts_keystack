@@ -37,11 +37,12 @@ echo "${NODES[*]}"
 for host in "${NODES[@]}"; do
   echo "Edit config kolla service on ${host}"
   if ping -c 2 $host &> /dev/null; then
-    printf "%40s\n" "There is a connection with $host - ok!"
+    printf "%40s\n" "${green}There is a connection with $host - ok!${normal}"
     ssh -o StrictHostKeyChecking=no $host sed -i 's/Restart=always/Restart=no/' /etc/systemd/system/kolla-consul-container.service
     ssh -o StrictHostKeyChecking=no $host cat /etc/systemd/system/kolla-consul-container.service
     ssh -o StrictHostKeyChecking=no $host sed -i 's/Restart=always/Restart=no/' /etc/systemd/system/kolla-nova_compute-container.service
     ssh -o StrictHostKeyChecking=no $host cat /etc/systemd/system/kolla-nova_compute-container.service
+    echo "Daemon reloading on ${host}..."
     ssh -o StrictHostKeyChecking=no $host systemctl daemon-reload
   fi
 done
