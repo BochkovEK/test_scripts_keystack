@@ -52,7 +52,7 @@ do
         -e 's/\(.*Starting fence.*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*IPMI "power off".*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*CRITICAL.*\)/\o033[31m\1\o033[39m/' \
-        -e 's/\(.*not enough.*\)/\o033[31m\1\o033[39m/' \
+        -e 's/\(.*Not enough.*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*too many.*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*disabled,.*\)/\o033[33m\1\o033[39m/' \
         -e 's/\(.*down.*\)/\o033[33m\1\o033[39m/' \
