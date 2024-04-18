@@ -103,7 +103,7 @@ change_add_debug_param () {
 change_add_prometheus_alerting () {
   echo "Add prometheus alerting to drs.ini..."
   pull_conf
-  sed -i 's/\[prometheus\]/\[prometheus\]\nenable_prometheus_alert_manager_auth = true\nprometheus_alert_manager_user = admin\nprometheus_alert_manager_password = $PROMETHEUS_PASS/' $script_dir/$test_node_conf_dir/$conf_name
+  sed -i "s/\[prometheus\]/\[prometheus\]\nenable_prometheus_alert_manager_auth = true\nprometheus_alert_manager_user = admin\nprometheus_alert_manager_password = $PROMETHEUS_PASS/" $script_dir/$test_node_conf_dir/$conf_name
   push_conf
   conf_changed="true"
 }
