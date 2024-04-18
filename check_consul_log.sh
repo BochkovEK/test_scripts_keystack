@@ -11,14 +11,51 @@ violet=$(tput setaf 5)
 normal=$(tput sgr0)
 yallow=$(tput setaf 3)
 
-[[ -z $LOG_LAST_LINES_NUMBER ]] && LOG_LAST_LINES_NUMBER=15
+[[ -z $LOG_LAST_LINES_NUMBER ]] && LOG_LAST_LINES_NUMBER=25
 [[ -z $OUTPUT_PERIOD ]] && OUTPUT_PERIOD=10
+[[ -z $NODE_NAME ]] && NODE_NAME=""
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
 #========================
 
-[[ -n "${2}" ]] && OUTPUT_PERIOD=${2}
+# Define parameters
+define_parameters () {
+  [ "$count" = 1 ] && [[ -n $1 ]] && { NODE_NAME=$1; echo "Node name parameter found with value $NODE_NAME"; }
+  [ "$count" = 2 ] && [[ -n $1 ]] && { OUTPUT_PERIOD=$1; echo "Check period parameter found with value $OUTPUT_PERIOD"; }
+  [ "$count" = 3 ] && [[ -n $1 ]] && { LOG_LAST_LINES_NUMBER=$1; echo "log last lines number parameter found with value $LOG_LAST_LINES_NUMBER"; }
+}
 
-if [ -z "${1}" ]; then
+count=1
+while [ -n "$1" ]; do
+  case "$1" in
+    --help) echo -E "
+      -ln,  -line_numbers     <log_last_lines_number>
+      -n,   -node_name        <node_name>
+      -o,   -output_period    <output_period>
+      Example satart command:
+        bash $HOME/test_scripts_keystack/chack_consul_log.sh <ctrl_01> <check_period> <log last lines number>
+        bash $HOME/test_scripts_keystack/chack_consul_log.sh ebochkov-ks-sber-ctrl-01 10 25
+"
+#      -e,   -send_env       \"<ENV_NAME=env_value>\"
+        exit 0
+        break ;;
+    -ln|-line_numbers) LOG_LAST_LINES_NUMBER="$2"
+      echo "Found the -line_numbers option, with parameter value $LOG_LAST_LINES_NUMBER"
+      shift ;;
+    -n|-node_name) NODE_NAME="$2"
+      echo "Found the -node_name option, with parameter value $NODE_NAME"
+      shift ;;
+    -o|-output_period) OUTPUT_PERIOD="$2"
+      echo "Found the -output_period option, with parameter value $OUTPUT_PERIOD"
+      shift ;;
+    --) shift
+      break ;;
+    *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
+    esac
+    shift
+done
+
+
+if [ -z "${NODE_NAME}" ]; then
     check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
     [[ -z "$check_openrc_file" ]] && { echo "openrc file not found in $OPENRC_PATH"; exit 1; }
 
