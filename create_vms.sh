@@ -476,16 +476,21 @@ create_vms () {
     fi
     echo "Creating VM: $INSTANCE_NAME"
 
-#  echo "openstack server create " \
-#    "--image '$IMAGE' " \
-#    "--flavor '$FLAVOR' " \
-#    "--security-group '$SECURITY_GR_ID' " \
-#    "--key-name '$KEY_NAME' " \
-#    "'$host' " \
-#    "--os-compute-api-version '$API_VERSION' " \
-#    "--network '$NETWORK' " \
-#    "--boot-from-volume '$VOLUME_SIZE' " \
-#    "'$INSTANCE_NAME'"
+  [ "$DEBUG" = true ] && echo -e "
+  Openstack server create command:
+  openstack server create \
+    $VM_BASE_NAME \
+    --image $IMAGE \
+    --flavor $FLAVOR \
+    --security-group $SECURITY_GR_ID \
+    --key-name $KEY_NAME \
+    $host \
+    --os-compute-api-version $API_VERSION \
+    --network $NETWORK \
+    --boot-from-volume $VOLUME_SIZE \
+    --max $VM_QTY \
+    $ADD_KEY
+"
 
     openstack server create \
       $INSTANCE_NAME \
@@ -511,14 +516,11 @@ create_vms_batch () {
 #  echo "Create VM: \"$VM_BASE_NAME\" in project \"$PROJECT\"?"
 #  read -r -p "Press enter to continue"
 
-  echo "Creating VMs..."
+  echo "Creating VMs (batch)..."
 
   FLAVOR=$(openstack flavor list| grep $FLAVOR| head -n 1| awk '{print $4}')
 
-
   [ "$DEBUG" = true ] && echo -e "
-  FALVOR: $FALVOR
-
   Openstack server create command:
   openstack server create \
     $VM_BASE_NAME \
