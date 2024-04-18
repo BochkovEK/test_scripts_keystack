@@ -4,16 +4,17 @@
 # The node from which the log is checked is determined by the NODE_NAME variable. This variable can be set as the first parameter when running the script
 # The check period is determined by the OUTPUT_PERIOD variable. This variable can be set as the second parameter when running the script
 
-LOG_LAST_LINES_NUMBER=15
-OUTPUT_PERIOD=10
-OPENRC_PATH=$HOME/openrc
-
 #Colors
 green=$(tput setaf 2)
 red=$(tput setaf 1)
 violet=$(tput setaf 5)
 normal=$(tput sgr0)
 yallow=$(tput setaf 3)
+
+[[ -z $LOG_LAST_LINES_NUMBER ]] && LOG_LAST_LINES_NUMBER=15
+[[ -z $OUTPUT_PERIOD ]] && OUTPUT_PERIOD=10
+[[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
+#========================
 
 [[ -n "${2}" ]] && OUTPUT_PERIOD=${2}
 
