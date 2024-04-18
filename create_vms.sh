@@ -170,6 +170,7 @@ VMs will be created with the following parameters:
         OS compute api version: $API_VERSION
         Addition key:           $ADD_KEY
         Creating VMs without a timeout (bool): $BATCH
+        Debug:                  $DEBUG
         "
 
     [[ ! $DONT_ASK = "true" ]] && { read -p "Press enter to continue: "; }
