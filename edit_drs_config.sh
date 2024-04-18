@@ -14,6 +14,7 @@ conf_changed=""
 [[ -z $ADD_DEBUG ]] && ADD_DEBUG="false"
 [[ -z $DEBUG ]] && DEBUG="false"
 [[ -z $ONLY_CONF_CHECK ]] && ONLY_CONF_CHECK="false"
+[[ -z $PROMETHEUS_PASS ]] && PROMETHEUS_PASS=""
 #[[ -z $FOO_PARAM ]] && FOO_PARAM=""
 
 
@@ -29,9 +30,10 @@ do
         --help) echo -E "
         The script change and check drs config
 
-        -foo,       -bar          <baz>
-        -add_debug                without value, add DEBUG level to log by drs config
-        -v,         -debug        without value, set DEBUG=\"true\"
+        -foo,       -bar                  <baz>
+        -add_debug                        without value, add DEBUG level to log by drs config
+        -v,         -debug                without value, set DEBUG=\"true\"
+        -pa,        -prometheus_alerting  <prometheus_password>
 
         Start the scrip with parameter check to check conf: bash edit_drs_config.sh check
         "
@@ -43,6 +45,9 @@ do
         -add_debug) ADD_DEBUG="true"
 	        echo "Found the -debug, parameter set $ADD_DEBUG"
           ;;
+        -pa|-prometheus_alerting) PROMETHEUS_PASS="$2"
+	        echo "Found the -prometheus_alerting, parameter set $PROMETHEUS_PASS"
+          shift;;
         --) shift
           break ;;
         *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
@@ -92,9 +97,17 @@ change_add_debug_param () {
   conf_changed="true"
 }
 
+change_add_prometheus_alerting () {
+  pull_conf
+  sed -i 's/\[prometheus\]/\[prometheus\]\nenable_prometheus_alert_manager_auth = true\nprometheus_alert_manager_user = admin\nprometheus_alert_manager_password = \$PROMETHEUS_PASS/' $script_dir/$test_node_conf_dir/$conf_name
+  push_conf
+  conf_changed="true"
+}
+
 
 [ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
 [ "$ADD_DEBUG" = true ] && { change_add_debug_param; }
+[ -z "$PROMETHEUS_PASS" ] && { change_add_prometheus_alerting; }
 #[ -n "$CHANGE_FOO_PARAM" ] && change_foo_param $foo_param_value
 [ -n "$conf_changed" ] && { cat_conf; echo "Restart $service_name containers..."; bash command_on_nodes.sh -nt ctrl -c "docker restart $service_name"; exit 0; }
 cat_conf
