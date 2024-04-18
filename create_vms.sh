@@ -504,7 +504,7 @@ create_vms () {
       --boot-from-volume $VOLUME_SIZE \
       $ADD_KEY
 
-    [[ $i -ne $(seq $VM_QTY) ]] && sleep $TIMEOUT_BEFORE_NEXT_CREATION
+    [[ $i -ne $(seq $VM_QTY) ]] && { sleep $TIMEOUT_BEFORE_NEXT_CREATION; }
   done
 
   check_vms_list
