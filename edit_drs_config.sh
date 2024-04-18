@@ -61,6 +61,7 @@ cat_conf () {
 }
 
 pull_conf () {
+  echo "Pulling drs.ini..."
   [ ! -d $test_node_conf_dir ] && { mkdir -p $test_node_conf_dir; }
   ctrl_node=$(cat /etc/hosts | grep -m 1 -E ${ctrl_pattern} | awk '{print $2}')
   [ "$DEBUG" = true ] && echo -e "
@@ -72,6 +73,7 @@ pull_conf () {
 }
 
 push_conf () {
+  echo "Pushing drs.ini..."
   ctrl_nodes=$(cat /etc/hosts | grep -E ${ctrl_pattern} | awk '{print $2}')
 
   for node in $ctrl_nodes; do
