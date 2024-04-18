@@ -50,6 +50,7 @@ CIRROS_IMAGE_NAME="cirros-0.6.2-x86_64-disk"
 [[ -z $BATCH ]] && BATCH="false"
 [[ -z $DONT_CHECK ]] && DONT_CHECK="false"
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
+[[ -z $DEBUG ]] && DEBUG="false"
 #======================
 
 while [ -n "$1" ]
@@ -71,6 +72,7 @@ do
         -dont_ask                   all actions will be performed automatically (without value)
         -add                        <add command key>
         -b            -batch        creating VMs without a timeout (without value)
+        -debug                      enabled debug output (without parameter)
         "
           exit 0
           break ;;
@@ -131,6 +133,9 @@ do
           echo "Found the -add <add command key> option, with parameter value $add_key"
           ADD_KEY=$add_key
           shift ;;
+        -debug) DEBUG="true"
+	        echo "Found the -debug, with parameter value $DEBUG"
+          ;;
         --) shift
           break ;;
         *) echo "$1 is not an option";;
@@ -508,6 +513,26 @@ create_vms_batch () {
   echo "Creating VMs..."
 
   FLAVOR=$(openstack flavor list| grep $FLAVOR| head -n 1| awk '{print $4}')
+
+
+  [ "$DEBUG" = true ] && echo -e "
+  FALVOR: $FALVOR
+
+  Openstack server create command:
+  openstack server create \
+    $VM_BASE_NAME \
+    --image $IMAGE \
+    --flavor $FLAVOR \
+    --security-group $SECURITY_GR_ID \
+    --key-name $KEY_NAME \
+    $host \
+    --os-compute-api-version $API_VERSION \
+    --network $NETWORK \
+    --boot-from-volume $VOLUME_SIZE \
+    --max $VM_QTY \
+    $ADD_KEY
+"
+
   openstack server create \
     $VM_BASE_NAME \
     --image $IMAGE \

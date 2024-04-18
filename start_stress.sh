@@ -21,7 +21,6 @@ script_dir=$(dirname $0)
 [[ -z $PROJECT ]] && PROJECT="admin"
 [[ -z $VM_USER ]] && VM_USER="ubuntu"
 [[ -z $DEBUG ]] && DEBUG="false"
-
 #======================
 
 while [ -n "$1" ]; do
