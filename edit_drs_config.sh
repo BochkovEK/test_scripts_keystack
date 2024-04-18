@@ -111,7 +111,7 @@ change_add_prometheus_alerting () {
 
 [ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
 [ "$ADD_DEBUG" = true ] && { change_add_debug_param; }
-[ -z "$PROMETHEUS_PASS" ] && { change_add_prometheus_alerting; }
+[ -n "$PROMETHEUS_PASS" ] && { change_add_prometheus_alerting; }
 #[ -n "$CHANGE_FOO_PARAM" ] && change_foo_param $foo_param_value
 [ -n "$conf_changed" ] && { cat_conf; echo "Restart $service_name containers..."; bash command_on_nodes.sh -nt ctrl -c "docker restart $service_name"; exit 0; }
 cat_conf
