@@ -31,9 +31,10 @@ while [ -n "$1" ]; do
         -ln,  -line_numbers     <log_last_lines_number>
         -n,   -node_name        <node_name>
         -o,   -output_period    <output_period>
+        -v,   -debug            enable debug output (without parameters)
 "
-          exit 0
-        break ;;
+      exit 0
+      break ;;
     -ln|-line_numbers) LOG_LAST_LINES_NUMBER="$2"
       echo "Found the -line_numbers option, with parameter value $LOG_LAST_LINES_NUMBER"
       shift ;;
@@ -43,6 +44,9 @@ while [ -n "$1" ]; do
     -o|-output_period) OUTPUT_PERIOD="$2"
       echo "Found the -output_period option, with parameter value $OUTPUT_PERIOD"
       shift ;;
+    -v|-debug) DEBUG="true"
+      echo "Found the -debug option, with parameter value $DEBUG"
+      ;;
     --) shift
       break ;;
     *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
@@ -72,15 +76,28 @@ if [ -z "${NODE_NAME}" ]; then
   echo "Try to define DRS leader ctrl node..."
 
   srv=$(cat /etc/hosts | grep -E "$CTRL_NODES" | awk '{print $1}')
+  [ "$DEBUG" = true ] && echo -e "
+  [DEBUG]: srv: $srv
+  "
   leader_1_exist=""
   leader_2_exist=""
   for host in $srv;do
 #    echo -e "${CYAN}Drs logs on $(cat /etc/hosts | grep -E ${host} | awk '{print $2}'):${NC}"
+    [ "$DEBUG" = true ] && echo -e "
+    [DEBUG]: host: $host
+    "
     if [ -z "${leader_1_exist}" ]; then
       leader_1_exist=$(find_leader $host)
+      leader_drs_ctrl=$host
+      [ "$DEBUG" = true ] && echo -e "
+      [DEBUG]: leader_1_exist: $leader_1_exist
+      "
     else
       leader_2_exist=$(find_leader $host)
       if [ -n "${leader_2_exist}" ]; then
+        [ "$DEBUG" = true ] && echo -e "
+        [DEBUG]: leader_2_exist: $leader_2_exist
+        "
         echo -e "${ORANGE}Leader node could not be found${NC}"
         return
       fi
@@ -88,8 +105,10 @@ if [ -z "${NODE_NAME}" ]; then
   done
   if [ -z "${leader_1_exist}" ]; then
     echo -e "${ORANGE}Leader node could not be found${NC}"
-  else
     read_logs_from_all_ctrl
+  else
+    echo -e "${ORANGE}Leader node is: $leader_drs_ctrl${NC}"
+    read_logs $leader_drs_ctrl
   fi
 else
   read_logs $NODE_NAME
