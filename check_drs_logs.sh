@@ -62,6 +62,14 @@ read_logs () {
   echo -e "${ORANGE}ssh -t -o StrictHostKeyChecking=no $1 less $DRS_LOG_FOLDER/$DRS_LOG_FILE${NC}"
 }
 
+periodic_read_logs () {
+  while true; do
+    echo -e "Output period check: $OUTPUT_PERIOD sec"
+    read_logs $1
+    sleep $OUTPUT_PERIOD
+  done
+}
+
 read_logs_from_all_ctrl () {
   for host in $srv;do
     read_logs $host
@@ -110,7 +118,7 @@ if [ -z "${NODE_NAME}" ]; then
     read_logs_from_all_ctrl
   else
     echo -e "${ORANGE}Leader node is: $leader_drs_ctrl${NC}"
-    read_logs $leader_drs_ctrl
+    periodic_read_logs $leader_drs_ctrl
   fi
 else
   read_logs $NODE_NAME
