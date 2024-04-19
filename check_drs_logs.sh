@@ -55,7 +55,7 @@ while [ -n "$1" ]; do
 done
 
 read_logs () {
-  echo -e "${CYAN}Drs logs from $1${NC}"
+  echo -e "${CYAN}Drs $LOG_LAST_LINES_NUMBER lines logs from $1${NC}"
   ssh -o StrictHostKeyChecking=no $1 tail -${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE
   echo -e "${BLUE}`date`${NC}"
   echo -e "For read all log on $host:"
