@@ -84,19 +84,19 @@ if [ -z "${NODE_NAME}" ]; then
   for host in $srv;do
 #    echo -e "${CYAN}Drs logs on $(cat /etc/hosts | grep -E ${host} | awk '{print $2}'):${NC}"
     [ "$DEBUG" = true ] && echo -e "
-    [DEBUG]: host: $host
+  [DEBUG]: host: $host
     "
     if [ -z "${leader_1_exist}" ]; then
       leader_1_exist=$(find_leader $host)
       leader_drs_ctrl=$host
       [ "$DEBUG" = true ] && echo -e "
-      [DEBUG]: leader_1_exist: $leader_1_exist
+  [DEBUG]: leader_1_exist: $leader_1_exist
       "
     else
       leader_2_exist=$(find_leader $host)
       if [ -n "${leader_2_exist}" ]; then
         [ "$DEBUG" = true ] && echo -e "
-        [DEBUG]: leader_2_exist: $leader_2_exist
+  [DEBUG]: leader_2_exist: $leader_2_exist
         "
         echo -e "${ORANGE}Leader node could not be found${NC}"
         return
