@@ -31,6 +31,7 @@ while [ -n "$1" ]; do
       -ln,  -line_numbers     <log_last_lines_number>
       -n,   -node_name        <node_name>
       -o,   -output_period    <output_period>
+
       Example satart command:
         bash $HOME/test_scripts_keystack/chack_consul_log.sh <ctrl_01> <check_period> <log last lines number>
         bash $HOME/test_scripts_keystack/chack_consul_log.sh ebochkov-ks-sber-ctrl-01 10 25
