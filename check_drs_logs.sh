@@ -87,6 +87,8 @@ if [ -z "${NODE_NAME}" ]; then
   [DEBUG]: host: $host
     "
     if [ -z "${leader_1_exist}" ]; then
+      [ "$DEBUG" = true ] && { echo -e "
+  [DEBUG]: find_leader:"; find_leader; }
       leader_1_exist=$(find_leader $host)
       leader_drs_ctrl=$host
       [ "$DEBUG" = true ] && echo -e "
