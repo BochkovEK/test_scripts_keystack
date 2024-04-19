@@ -69,7 +69,7 @@ read_logs_from_all_ctrl () {
 }
 
 find_leader () {
-  ssh -o StrictHostKeyChecking=no $1 tail -${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE|grep -e 'leadership updated|becomes a leader'
+  ssh -o StrictHostKeyChecking=no $1 tail -${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE|grep -E 'leadership updated|becomes a leader'
 }
 
 if [ -z "${NODE_NAME}" ]; then
