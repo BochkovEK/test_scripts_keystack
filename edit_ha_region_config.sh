@@ -78,7 +78,7 @@ cat_conf () {
 }
 
 pull_consul_conf () {
-  echo "Check and create folder $script_dir in $script_dir folder"
+  echo "Check and create folder $consul_conf_dir in $script_dir folder"
   [ ! -d $consul_conf_dir ] && { mkdir -p $script_dir/$consul_conf_dir; pwd ; ls -la; }
   ctrl_node=$(cat /etc/hosts | grep -m 1 -E ${ctrl_pattern} | awk '{print $2}')
 
