@@ -357,6 +357,11 @@ create_image () {
 }
 
 image_exists_in_openstack () {
+  [ "$DEBUG" = true ] && echo -e "
+  [DEBUG]
+  function: image_exists_in_openstack
+  \$1: $1
+  "
   openstack image list| grep "$1"| awk '{print $2}'
 }
 
@@ -364,15 +369,26 @@ image_exists_in_openstack () {
 check_image () {
   echo "Check for exist image: \"$IMAGE\""
   IMAGE_NAME_EXIST=$(image_exists_in_openstack $IMAGE)
-#  echo $IMAGE_NAME_EXIST
-#  echo $IMAGE|grep -E 'ubuntu|$UBUNTU_IMAGE_NAME|cirros|$CIRROS_IMAGE_NAME'
-#  echo $IMAGE|grep -E 'ubuntu|$UBUNTU_IMAGE_NAME'
-#  echo $IMAGE|grep -E 'cirros|$CIRROS_IMAGE_NAME'
-#  exit 1
-  if [ -z "$IMAGE_NAME_EXIST" ] && [ -z "$(echo $IMAGE|grep -E 'ubuntu|$UBUNTU_IMAGE_NAME|cirros|$CIRROS_IMAGE_NAME')" ]; then
+  [ "$DEBUG" = true ] && echo -e "
+  [DEBUG]
+  IMAGE: $IMAGE
+  IMAGE_NAME_EXIST: $IMAGE_NAME_EXIST
+  "
+
+  is_cirros_or_ubuntu=$(echo $IMAGE|grep -E "ubuntu|$UBUNTU_IMAGE_NAME|cirros|$CIRROS_IMAGE_NAME")
+  is_cirros=$(echo $IMAGE|grep -E "cirros|$CIRROS_IMAGE_NAME")
+  is_ubuntu=$(echo $IMAGE|grep -E "ubuntu|$UBUNTU_IMAGE_NAME")
+
+  [ "$DEBUG" = true ] && echo -e "
+  [DEBUG]
+  is_cirros_or_ubuntu: $is_cirros_or_ubuntu
+  is_cirros: $is_cirros
+  is_ubuntu: $is_ubuntu
+  "
+  if [ -z "$IMAGE_NAME_EXIST" ] && [ -z "$is_cirros_or_ubuntu" ]; then
     printf "%s\n" "${red}Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
     exit 1
-  elif [ -z "$IMAGE_NAME_EXIST" ] && [ -n "$(echo $IMAGE|grep -E 'ubuntu|$UBUNTU_IMAGE_NAME')" ]; then
+  elif [ -z "$IMAGE_NAME_EXIST" ] && [ -n "$is_ubuntu" ]; then
     printf "%s\n" "${orange}Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
     if [ -z "$(image_exists_in_openstack $UBUNTU_IMAGE_NAME)" ]; then
       create_image $UBUNTU_IMAGE_NAME
@@ -381,7 +397,7 @@ check_image () {
       [[ ! $DONT_ASK = "true" ]] && read -p "Press enter to use this image and continue: "
       IMAGE=$UBUNTU_IMAGE_NAME
     fi
-  elif [ -z "$IMAGE_NAME_EXIST" ] && [ -n "$(echo $IMAGE|grep -E 'cirros|$CIRROS_IMAGE_NAME')" ]; then
+  elif [ -z "$IMAGE_NAME_EXIST" ] && [ -n "$is_cirros" ]; then
     printf "%s\n" "${orange}Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
     if [ -z "$(image_exists_in_openstack $CIRROS_IMAGE_NAME)" ]; then
       create_image $CIRROS_IMAGE_NAME
@@ -480,6 +496,19 @@ create_vms () {
     echo "Creating VM: $INSTANCE_NAME"
 
   [ "$DEBUG" = true ] && echo -e "
+  [DEBUG]
+  VM_BASE_NAME: $VM_BASE_NAME
+  IMAGE: $IMAGE
+  FLAVOR: $FLAVOR
+  SECURITY_GR_ID: $SECURITY_GR_ID
+  KEY_NAME: $KEY_NAME
+  host: $host
+  API_VERSION: $API_VERSION
+  NETWORK: $NETWORK
+  VOLUME_SIZE: $VOLUME_SIZE
+  VM_QTY: $VM_QTY
+  ADD_KEY: $ADD_KEY
+
   Openstack server create command:
   openstack server create \
     $VM_BASE_NAME \
@@ -524,6 +553,19 @@ create_vms_batch () {
   FLAVOR=$(openstack flavor list| grep $FLAVOR| head -n 1| awk '{print $4}')
 
   [ "$DEBUG" = true ] && echo -e "
+  [DEBUG]
+  VM_BASE_NAME: $VM_BASE_NAME
+  IMAGE: $IMAGE
+  FLAVOR: $FLAVOR
+  SECURITY_GR_ID: $SECURITY_GR_ID
+  KEY_NAME: $KEY_NAME
+  host: $host
+  API_VERSION: $API_VERSION
+  NETWORK: $NETWORK
+  VOLUME_SIZE: $VOLUME_SIZE
+  VM_QTY: $VM_QTY
+  ADD_KEY: $ADD_KEY
+
   Openstack server create command:
   openstack server create \
     $VM_BASE_NAME \
