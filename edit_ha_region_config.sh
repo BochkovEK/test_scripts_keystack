@@ -78,11 +78,11 @@ cat_conf () {
 }
 
 pull_consul_conf () {
-  [ ! -d $consul_conf_dir ] && { mkdir -p $consul_conf_dir; }
+  [ ! -d $consul_conf_dir ] && { mkdir -p $script_dir/$consul_conf_dir; }
   ctrl_node=$(cat /etc/hosts | grep -m 1 -E ${ctrl_pattern} | awk '{print $2}')
 
-  echo "Сopying consul conf from $ctrl_node:/etc/kolla/consul/region-config_${REGION}.json"
-  scp -o StrictHostKeyChecking=no $ctrl_node:/etc/kolla/consul/region-config_${REGION}.json $consul_conf_dir
+  echo "Сopying consul conf from $ctrl_node:/etc/$consul_conf_dir/region-config_${REGION}.json"
+  scp -o StrictHostKeyChecking=no $ctrl_node:/etc/$consul_conf_dir/region-config_${REGION}.json $consul_conf_dir
 }
 
 push_consul_conf () {
