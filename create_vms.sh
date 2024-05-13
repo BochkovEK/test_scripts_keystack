@@ -27,6 +27,9 @@ orange=$(tput setaf 3)
 violet=$(tput setaf 5)
 normal=$(tput sgr0)
 
+#Script_dir, current folder
+script_dir=$(dirname $0)
+
 # Constants
 TIMEOUT_BEFORE_NEXT_CREATION=10
 UBUNTU_IMAGE_NAME="ubuntu-20.04-server-cloudimg-amd64"
@@ -307,9 +310,9 @@ check_and_add_keypair () {
       }
 
     echo "Creating \"$KEY_NAME\" in project \"$PROJECT\"..."
-    touch ./$KEY_NAME.pem
+    touch $script_dir/$KEY_NAME.pem
     openstack keypair create $KEY_NAME --public-key ./"$KEY_NAME".pub #> ./$KEY_NAME.pem
-    chmod 400 ./$KEY_NAME.pem
+    chmod 400 $script_dir/$KEY_NAME.pem
     echo "Keypair \"$KEY_NAME\" was created in project \"$PROJECT\""
   else
     printf "%s\n" "${green}Keypair \"$KEY_NAME\" already exist in project \"$PROJECT\"${normal}"
@@ -334,8 +337,8 @@ create_image () {
     read -p "Press enter to continue: "; }
 
   echo "Creating image \"$1\" in project \"$PROJECT\"..."
-  [ -f ./"$1".img ] && echo "File ./$1.img exist." \
-  || { echo "File ./$1.img does not exist. Try to download it..."; \
+  [ -f $script_dir/"$1".img ] && echo "File $script_dir/$1.img exist." \
+  || { echo "File $script_dir/$1.img does not exist. Try to download it..."; \
   wget https://repo.itkey.com/repository/images/"$1".img; }
   image_exists_in_openstack
   if [ "$1" = "$CIRROS_IMAGE_NAME" ]; then
@@ -348,7 +351,7 @@ create_image () {
     --min-disk $min_disk \
     --container-format bare \
     --public \
-    --file ./"$1".img
+    --file $script_dir/"$1".img
 
   IMAGE=$1
 }
