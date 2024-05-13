@@ -362,7 +362,7 @@ image_exists_in_openstack () {
   function: image_exists_in_openstack
   \$1: $1
   "
-  openstack image list| grep "$1"| awk '{print $2}'
+  openstack image list| grep -m 1 "$1"| awk '{print $2}'
 }
 
 # Check image
