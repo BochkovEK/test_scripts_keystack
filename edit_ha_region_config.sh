@@ -74,12 +74,12 @@ Check_openrc_file () {
 
 cat_conf () {
   echo "Cat all consul configs..."
-  bash $script_dir/command_on_nodes.sh -nt ctrl -c "echo \"cat /etc/kolla/consul/region-config_${REGION}.json\"; cat /etc/kolla/consul/region-config_${REGION}.json"
+  bash $script_dir/command_on_nodes.sh -nt ctrl -c "echo \"cat /etc/$consul_conf_dir/region-config_${REGION}.json\"; cat /etc/$consul_conf_dir/region-config_${REGION}.json"
 }
 
 pull_consul_conf () {
   echo "Check and create folder $consul_conf_dir in $script_dir folder"
-  [ ! -d $consul_conf_dir ] && { mkdir -p $script_dir/$consul_conf_dir; pwd ; ls -la; }
+  [ ! -d $consul_conf_dir ] && { mkdir -p $script_dir/$consul_conf_dir; }
   ctrl_node=$(cat /etc/hosts | grep -m 1 -E ${ctrl_pattern} | awk '{print $2}')
 
   echo "Сopying consul conf from $ctrl_node:/etc/$consul_conf_dir/region-config_${REGION}.json"
@@ -90,8 +90,8 @@ push_consul_conf () {
   ctrl_nodes=$(cat /etc/hosts | grep -E ${ctrl_pattern} | awk '{print $2}')
   [ "$DEBUG" = true ] && { for string in $ctrl_nodes; do debug_echo $string; done; }
   for node in $ctrl_nodes; do
-    echo "Сopying consul conf to $node:/etc/kolla/consul/region-config_${REGION}.json"
-    scp -o StrictHostKeyChecking=no ${consul_conf_dir}/region-config_${REGION}.json $node:/etc/kolla/consul/region-config_${REGION}.json
+    echo "Сopying consul conf to $node:/etc/$consul_conf_dir/region-config_${REGION}.json"
+    scp -o StrictHostKeyChecking=no ${consul_conf_dir}/region-config_${REGION}.json $node:/etc/$consul_conf_dir/region-config_${REGION}.json
   done
 }
 
@@ -124,9 +124,9 @@ change_dead_threshold () {
 
 change_ipmi_fencing () {
   if [ "$1" = true ]; then
-    bash $script_dir/command_on_nodes.sh -nt ctrl -c "sed -i 's/\"bmc\": false/\"bmc\": true/' /etc/kolla/consul/region-config_${REGION}.json"
+    bash $script_dir/command_on_nodes.sh -nt ctrl -c "sed -i 's/\"bmc\": false/\"bmc\": true/' /etc/$consul_conf_dir/region-config_${REGION}.json"
   elif [ "$1" = false ]; then
-    bash $script_dir/command_on_nodes.sh -nt ctrl -c "sed -i 's/\"bmc\": true/\"bmc\": false/' /etc/kolla/consul/region-config_${REGION}.json"
+    bash $script_dir/command_on_nodes.sh -nt ctrl -c "sed -i 's/\"bmc\": true/\"bmc\": false/' /etc/$consul_conf_dir/region-config_${REGION}.json"
   else
     echo "$1 - is not valid ipmi parameter"
     return 1
@@ -136,7 +136,15 @@ change_ipmi_fencing () {
 
 check_bmc_suffix () {
   #pull_consul_conf
+  [ "$DEBUG" = true ] && echo -e "
+  [DEBUG]
+  script_dir: $script_dir
+  REGION: $REGION
+  consul_conf_dir: $consul_conf_dir
+  "
+
   [ ! -f $script_dir/$consul_conf_dir/region-config_${REGION}.json ] && { echo "Config exists in: $script_dir/$consul_conf_dir/region-config_${REGION}.json"; pull_consul_conf; }
+  [ "$DEBUG" = true ] && { echo -e "[DEBUG]\n"; pwd ; ls -la; }
   [ ! -f $script_dir/$consul_conf_dir/region-config_${REGION}.json ] && { echo "Config not found"; exit 1; }
   suffix_string_raw_1=$(cat $consul_conf_dir/region-config_${REGION}.json|grep 'suffix')
   suffix_string_raw_2=${suffix_string_raw_1//\"/}
