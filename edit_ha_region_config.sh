@@ -79,7 +79,7 @@ cat_conf () {
 
 pull_consul_conf () {
   echo "Check and create folder $consul_conf_dir in $script_dir folder"
-  [ ! -d $consul_conf_dir ] && { mkdir -p $script_dir/$consul_conf_dir; }
+  [ ! -d $script_dir/$consul_conf_dir ] && { mkdir -p $script_dir/$consul_conf_dir; }
   ctrl_node=$(cat /etc/hosts | grep -m 1 -E ${ctrl_pattern} | awk '{print $2}')
 
   echo "Сopying consul conf from $ctrl_node:/etc/$consul_conf_dir/region-config_${REGION}.json"
