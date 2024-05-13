@@ -88,6 +88,7 @@ pull_consul_conf () {
 
 push_consul_conf () {
   ctrl_nodes=$(cat /etc/hosts | grep -E ${ctrl_pattern} | awk '{print $2}')
+  ctrl_nodes=$(cat /etc/hosts | grep -E ${ctrl_pattern} | awk '{print $2}')
   [ "$DEBUG" = true ] && { for string in $ctrl_nodes; do debug_echo $string; done; }
   for node in $ctrl_nodes; do
     echo "Сopying consul conf to $node:/etc/$consul_conf_dir/region-config_${REGION}.json"
@@ -144,7 +145,7 @@ check_bmc_suffix () {
   "
 
   [ ! -f $script_dir/$consul_conf_dir/region-config_${REGION}.json ] && { echo "Config exists in: $script_dir/$consul_conf_dir/region-config_${REGION}.json"; pull_consul_conf; }
-  [ "$DEBUG" = true ] && { echo -e "[DEBUG]\n"; pwd ; ls -la; }
+  [ "$DEBUG" = true ] && { echo -e "[DEBUG]\n"; ls -la $script_dir; }
   [ ! -f $script_dir/$consul_conf_dir/region-config_${REGION}.json ] && { echo "Config not found"; exit 1; }
   suffix_string_raw_1=$(cat $consul_conf_dir/region-config_${REGION}.json|grep 'suffix')
   suffix_string_raw_2=${suffix_string_raw_1//\"/}
