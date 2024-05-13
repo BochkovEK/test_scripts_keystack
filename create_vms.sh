@@ -357,11 +357,6 @@ create_image () {
 }
 
 image_exists_in_openstack () {
-  [ "$DEBUG" = true ] && echo -e "
-  [DEBUG]
-  function: image_exists_in_openstack
-  \$1: $1
-  "
   openstack image list| grep -m 1 "$1"| awk '{print $2}'
 }
 
