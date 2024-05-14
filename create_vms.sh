@@ -262,6 +262,7 @@ check_project () {
           echo "Сreate role: \"$ROLE\" in project: \"$PROJECT\"?";
           read -p "Press enter to continue: ";
           }
+        echo "Сreating role: \"$ROLE\" in project..."
         openstack role add --project $PROJECT --user $TEST_USER $ROLE
         #Add admin user to project to view it in horizon by admin user authorization
         openstack role add --project $PROJECT --user admin admin
@@ -440,7 +441,7 @@ check_and_add_flavor () {
       read -p "Press enter to continue: ";
       }
 
-    echo "Creating \"$FLAVOR\" in project \"$PROJECT\" with $CPU_QTY cpus and $RAM_MB Mb...";
+    echo "Creating flavor \"$FLAVOR\" in project \"$PROJECT\" with $CPU_QTY cpus and $RAM_MB Mb...";
     openstack flavor create --private --project $PROJECT --vcpus $CPU_QTY --ram $RAM_MB --disk 0 ${FLAVOR}_${PROJECT}
   else
     printf "%s\n" "${green}Flavor \"$FLAVOR\" already exist in project: \"$PROJECT\"${normal}"
