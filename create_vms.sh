@@ -238,6 +238,7 @@ check_project () {
           echo "Сreate a Project with name: \"$PROJECT\"?";
           read -p "Press enter to continue: ";
           }
+        echo "Сreating project: \"$PROJECT\"..."
         openstack project create $PROJECT
     else
         printf "%s\n" "${green}Project: \"$PROJECT\" exist${normal}"
