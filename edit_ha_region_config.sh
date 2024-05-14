@@ -96,6 +96,7 @@ push_consul_conf () {
 }
 
 change_alive_threshold () {
+  echo "Changing alive threshold..."
   pull_consul_conf
   sed -i --regexp-extended "s/\"alive_compute_threshold\":\s+\"[0-9]+\"/\"alive_compute_threshold\": \"$1\"/" \
    $script_dir/$consul_conf_dir/region-config_${REGION}.json
@@ -104,6 +105,7 @@ change_alive_threshold () {
 }
 
 change_dead_threshold () {
+  echo "Changing dead threshold..."
   pull_consul_conf
   dead_threshold_string_exist=$(cat $script_dir/$consul_conf_dir/region-config_${REGION}.json| grep 'dead_compute_threshold')
 
