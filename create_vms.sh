@@ -341,7 +341,7 @@ create_image () {
   echo "Creating image \"$1\" in project \"$PROJECT\"..."
   [ -f $script_dir/"$1".img ] && echo "File $script_dir/$1.img exist." \
   || { echo "File $script_dir/$1.img does not exist. Try to download it..."; \
-  wget https://repo.itkey.com/repository/images/"$1".img -o $script_dir/"$1".img; }
+  wget https://repo.itkey.com/repository/images/"$1".img -O $script_dir/"$1".img; }
   image_exists_in_openstack
   if [ "$1" = "$CIRROS_IMAGE_NAME" ]; then
     min_disk=1
