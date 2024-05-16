@@ -16,6 +16,15 @@ script_dir=$(dirname "$script_file_path")
 parentdir=$(dirname "$script_dir")
 #parentdir=$(builtin cd $script_dir; pwd)
 
+#Install docker if need
+if ! command -v docker &> /dev/null; then
+  is_ubuntu=$(cat /etc/os-realase|grep ubuntu)
+  if [ -n "$is_ubuntu" ]; then
+    echo "Installing docker on ubuntu"
+    bash $script_dir/docker_ubuntu_installation.sh
+  fi
+fi
+
 source $parentdir/self_signed_certs/certs_envs
 
   [ "$DEBUG" = true ] && echo -e "
@@ -32,6 +41,7 @@ source $parentdir/self_signed_certs/certs_envs
   LCM_NETBOX_NAME: $LCM_NETBOX_NAME
   "
 
+#Change in envs LCM_NEXUS_NAME var
 lcm_nexus_name_string=$(cat $parentdir/self_signed_certs/certs_envs|grep -m 1 "LCM_NEXUS_NAME")
 
   [ "$DEBUG" = true ] && echo -e "
@@ -50,10 +60,12 @@ if [ -z "$nexus_string_exists" ]; then
   sed -i "s/127.0.0.1 localhost/127.0.0.1 localhost $REMOTE_NEXUS.$DOMAIN/" /etc/hosts
 fi
 
+#Generating certs
 bash $parentdir/self_signed_certs/generate_self_signed_certs.sh
 
 sed -i "s/DOMAIN/$DOMAIN/g" $script_dir/nginx_https.conf
 sed -i "s/LCM_NEXUS_NAME/$LCM_NEXUS_NAME/g" $script_dir/nginx_https.conf
 #sed -i -e "s@OUTPUT_CERTS_DIR@$OUTPUT_CERTS_DIR@g" $script_dir/nginx_https.conf
 
+#Conatiners up
 docker compose -f $script_dir/docker-compose.yaml up -d
