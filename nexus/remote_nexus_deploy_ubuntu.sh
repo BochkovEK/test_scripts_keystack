@@ -44,7 +44,11 @@ sed -i "s/$lcm_nexus_name_string/LCM_NEXUS_NAME=$REMOTE_NEXUS/" $parentdir/self_
 echo "Sourcing envs after sed"
 source $parentdir/self_signed_certs/certs_envs
 
-sed -i "s/127.0.0.1 localhost/127.0.0.1 localhost $REMOTE_NEXUS.$DOMAIN/" /etc/hosts
+#Add string to hosts
+nexus_string_exists=$(cat /etc/hosts|grep $REMOTE_NEXUS)
+if [ -z "$nexus_string_exists" ]; then
+  sed -i "s/127.0.0.1 localhost/127.0.0.1 localhost $REMOTE_NEXUS.$DOMAIN/" /etc/hosts
+fi
 
 bash $parentdir/self_signed_certs/generate_self_signed_certs.sh
 
