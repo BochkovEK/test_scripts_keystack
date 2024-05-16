@@ -29,9 +29,7 @@ echo -E "
   LCM_NETBOX_NAME: $LCM_NETBOX_NAME
 "
 
-echo "Generating certificates..."
-read -p "Press enter to continue"
-
+generate_certs () {
 # get Central Authentication Service folder
 if [[ -z "${CERTS_DIR}" ]]; then
   read -rp "Enter Central Authentication Service folder [$HOME/central_auth_service]: " CERTS_DIR
@@ -135,4 +133,19 @@ cp $CERTS_DIR/certs/cert.crt $OUTPUT_CERTS_DIR/$LCM_VAULT_NAME.crt;
 cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/$LCM_VAULT_NAME.key;
 cp $CERTS_DIR/certs/cert.crt $OUTPUT_CERTS_DIR/$LCM_NETBOX_NAME.crt;
 cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/$LCM_NETBOX_NAME.key
+}
 
+while true; do
+  read -p "Do you want to Generating certs? [Yes]: " yn
+  yn=${yn:-"Yes"}
+  echo $yn
+  case $yn in
+    [Yy]* ) yes_no_input="true"; break;;
+    [Nn]* ) yes_no_input="false"; break ;;
+    * ) echo "Please answer yes or no.";;
+  esac
+done
+
+if [ "$yes_no_input" = "true" ]; then
+   generate_certs
+fi

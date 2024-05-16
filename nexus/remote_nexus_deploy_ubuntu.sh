@@ -2,7 +2,9 @@
 
 # Script for deploy nexus to ubuntu\ may be sber linux
 
-#!!! Script сhanging LCM_NEXUS_NAME into $parentdir/self_signed_certs/certs_envs to $REMOTE_NEXUS
+#Script сhanging LCM_NEXUS_NAME into $parentdir/self_signed_certs/certs_envs to $REMOTE_NEXUS
+#!!! After nexus deploy copy remote-nexus.test.domain.pem to installer/certs on lcm
+#scp $HOME/certs/remote-nexus.test.domain.pem $lcm:/root/installer/certs
 
 [[ -z $DEBUG ]] && DEBUG="true"
 
@@ -48,4 +50,4 @@ sed -i "s/DOMAIN/$DOMAIN/g" $script_dir/nginx_https.conf
 sed -i "s/LCM_NEXUS_NAME/$LCM_NEXUS_NAME/g" $script_dir/nginx_https.conf
 sed -i "s/OUTPUT_CERTS_DIR/$OUTPUT_CERTS_DIR/g" $script_dir/nginx_https.conf
 
-docker compose up -f $script_dir/docker-compose.yaml -d
+docker compose -f $script_dir/docker-compose.yaml up -d
