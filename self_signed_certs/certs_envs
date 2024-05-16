@@ -1,4 +1,4 @@
-#!/bin/env bash
+#/bin/env bash
 
 #Envs list
 #export CERTS_DIR=$HOME/central_auth_service
@@ -10,4 +10,4 @@
 #export LCM_VAULT_NAME=vault
 #export LCM_NETBOX_NAME=netbox
 
-LCM_NETBOX_NAME="netbox"
+LCM_NETBOX_NAME=netbox
