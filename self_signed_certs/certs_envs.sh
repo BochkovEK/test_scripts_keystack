@@ -9,3 +9,5 @@ export LCM_GITLAB_NAME=ks-lcm
 export LCM_NEXUS_NAME=nexus
 export LCM_VAULT_NAME=vault
 export LCM_NETBOX_NAME=netbox
+
+LCM_NETBOX_NAME=netbox
