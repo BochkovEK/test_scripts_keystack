@@ -2,9 +2,9 @@
 
 # The script generate selfsigned wildcard from domain
 # env list:
-# CERTS_DIR
-# OUTPUT_CERTS_DIR
-# DOMAIN
+#   CERTS_DIR: $HOME/central_auth_service
+#   OUTPUT_CERTS_DIR: $HOME/certs
+#   DOMAIN: test.domain
 
 script_dir=$(dirname $0)
 
