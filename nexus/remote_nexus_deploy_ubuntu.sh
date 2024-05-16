@@ -39,7 +39,7 @@ lcm_nexus_name_string=$(cat $parentdir/self_signed_certs/certs_envs|grep -m 1 "L
   lcm_nexus_name_string: $lcm_nexus_name_string
   REMOTE_NEXUS: $REMOTE_NEXUS
   "
-sed -i "s/$lcm_nexus_name_string/LCM_NEXUS_NAME=$REMOTE_NEXUS/" $parentdir/self_signed_certs/certs_envs
+sed -i "s/$lcm_nexus_name_string/export LCM_NEXUS_NAME=$REMOTE_NEXUS/" $parentdir/self_signed_certs/certs_envs
 
 echo "Sourcing envs after sed"
 source $parentdir/self_signed_certs/certs_envs
