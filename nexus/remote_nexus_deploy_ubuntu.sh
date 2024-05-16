@@ -50,4 +50,4 @@ sed -i "s/DOMAIN/$DOMAIN/g" $script_dir/nginx_https.conf
 sed -i "s/LCM_NEXUS_NAME/$LCM_NEXUS_NAME/g" $script_dir/nginx_https.conf
 sed -i -e "s@OUTPUT_CERTS_DIR@$OUTPUT_CERTS_DIR@g" $script_dir/nginx_https.conf
 
-#docker compose -f $script_dir/docker-compose.yaml up -d
+docker compose -f $script_dir/docker-compose.yaml up -d
