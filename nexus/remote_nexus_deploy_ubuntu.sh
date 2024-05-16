@@ -30,7 +30,7 @@ source $parentdir/cert_envs
   LCM_NETBOX_NAME: $LCM_NETBOX_NAME
   "
 
-lcm_nexus_name_string=$(cat $parentdir/self_signed_certs/certs_envs|grep -m "LCM_NEXUS_NAME")
+lcm_nexus_name_string=$(cat $parentdir/self_signed_certs/certs_envs|grep -m 1 "LCM_NEXUS_NAME")
 
   [ "$DEBUG" = true ] && echo -e "
   [DEBUG]
