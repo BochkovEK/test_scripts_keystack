@@ -17,15 +17,29 @@
 
 script_dir=$(dirname $0)
 
+echo -E "
+  env list:
+  CERTS_DIR: $CERTS_DIR
+  OUTPUT_CERTS_DIR: $OUTPUT_CERTS_DIR
+  DOMAIN: $DOMAIN
+  CA_IP: $CA_IP
+  LCM_NEXUS_NAME: $LCM_NEXUS_NAME
+  LCM_GITLAB_NAME: $LCM_GITLAB_NAME
+  LCM_VAULT_NAME: $LCM_VAULT_NAME
+  LCM_NETBOX_NAME: $LCM_NETBOX_NAME
+"
+
+read -p "Press enter to continue"
+
 # get Central Authentication Service folder
 if [[ -z "${CERTS_DIR}" ]]; then
-  read -rp "Enter Central Authentication Service folder [$CERTS_DIR]: " CERTS_DIR
+  read -rp "Enter Central Authentication Service folder [$HOME/central_auth_service]: " CERTS_DIR
 fi
 export CERTS_DIR=${CERTS_DIR:-"$HOME/central_auth_service"}
 
 # get Output certs folder for installer.sh
 if [[ -z "${OUTPUT_CERTS_DIR}" ]]; then
-  read -rp "Enter certs output folder for installer [$OUTPUT_CERTS_DIR]: " OUTPUT_CERTS_DIR
+  read -rp "Enter certs output folder for installer [$HOME/certs]: " OUTPUT_CERTS_DIR
 fi
 export OUTPUT_CERTS_DIR=${OUTPUT_CERTS_DIR:-"$HOME/certs"}
 
