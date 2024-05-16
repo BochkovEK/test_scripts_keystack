@@ -5,6 +5,11 @@
 #   CERTS_DIR: $HOME/central_auth_service
 #   OUTPUT_CERTS_DIR: $HOME/certs
 #   DOMAIN: test.domain
+#   CA_IP: 10.224.129.234 # any ip
+#   LCM_NEXUS_NAME: lcm-nexus
+#   LCM_GITLAB_NAME: lcm-gitlab
+#   LCM_VAULT_NAME: lcm-vault
+#   LCM_NETBOX_NAME: lcm-netbox
 
 script_dir=$(dirname $0)
 
