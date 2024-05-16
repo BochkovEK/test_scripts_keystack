@@ -1,3 +1,5 @@
+#!/bin/bash
+
 #Envs list
 export CERTS_DIR=$HOME/central_auth_service
 export OUTPUT_CERTS_DIR=$HOME/certs
