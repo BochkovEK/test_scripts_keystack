@@ -11,17 +11,21 @@
 #   LCM_VAULT_NAME: lcm-vault
 #   LCM_NETBOX_NAME: lcm-netbox
 
+# !!! to start:
+# source $HOME/test_scripts_keystack/self_signed_certs/certs_envs
+# bash $HOME/test_scripts_keystack/self_signed_certs/generate_self_signed_certs.sh
+
 script_dir=$(dirname $0)
 
 # get Central Authentication Service folder
 if [[ -z "${CERTS_DIR}" ]]; then
-  read -rp "Enter Central Authentication Service folder [$HOME/central_auth_service]: " CERTS_DIR
+  read -rp "Enter Central Authentication Service folder [$CERTS_DIR]: " CERTS_DIR
 fi
 export CERTS_DIR=${CERTS_DIR:-"$HOME/central_auth_service"}
 
 # get Output certs folder for installer.sh
 if [[ -z "${OUTPUT_CERTS_DIR}" ]]; then
-  read -rp "Enter certs output folder for installer [$HOME/central_auth_service]: " OUTPUT_CERTS_DIR
+  read -rp "Enter certs output folder for installer [$OUTPUT_CERTS_DIR]: " OUTPUT_CERTS_DIR
 fi
 export OUTPUT_CERTS_DIR=${OUTPUT_CERTS_DIR:-"$HOME/certs"}
 
