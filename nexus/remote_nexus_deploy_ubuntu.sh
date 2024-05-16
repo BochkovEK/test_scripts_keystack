@@ -2,13 +2,19 @@
 
 # Script for deploy nexus to ubuntu\ may be sber linux
 
-#!!! Change LCM_NEXUS_NAME into $parentdir/self_signed_certs/certs_envs to "remote-nexus"
+#!!! Script сhanging LCM_NEXUS_NAME into $parentdir/self_signed_certs/certs_envs to $REMOTE_NEXUS
+
+REMOTE_NEXUS=remote-nexus
 
 #Script_dir, current folder
 script_dir=$(dirname $0)
 parentdir="$(dirname "$script_dir")"
 
 source $parentdir/cert_envs
+
+lcm_nexus_name_string=$(cat $parentdir/self_signed_certs/certs_envs|grep -m "LCM_NEXUS_NAME")
+
+sed -i "s/$lcm_nexus_name_string/LCM_NEXUS_NAME=$REMOTE_NEXUS/" $parentdir/self_signed_certs/certs_envs
 
 bash $parentdir/self_signed_certs/generate_self_signed_certs.sh
 
