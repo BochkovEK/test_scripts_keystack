@@ -14,7 +14,7 @@ script_dir=$(dirname "$script_file_path")
 parentdir=$(dirname "$script_dir")
 #parentdir=$(builtin cd $script_dir; pwd)
 
-source $parentdir/self_signed_certs/cert_envs
+source $parentdir/self_signed_certs/cert_envs.sh
 
   [ "$DEBUG" = true ] && echo -e "
   [DEBUG]
