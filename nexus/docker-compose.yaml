@@ -11,7 +11,7 @@ services:
 #      - "80:80"
 #      - "443:443"
     volumes:
-      - ./nginx_https.conf:/etc/nginx/nginx.conf
+      - $HOME/test_scripts_keystack/nexus/nginx_https.conf:/etc/nginx/nginx.conf
       - $HOME/certs:/etc/certs
 #      - ./default.conf:/etc/nginx/conf.d/default.conf:ro
     network_mode: "host"
