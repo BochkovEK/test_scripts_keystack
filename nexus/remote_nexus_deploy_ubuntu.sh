@@ -10,7 +10,7 @@ REMOTE_NEXUS=remote-nexus
 
 #Script_dir, current folder
 script_dir=$(dirname $0)
-parentdir="$(dirname "$script_dir")"
+parentdir=$(dirname "$script_dir")
 
 source $parentdir/cert_envs
 
