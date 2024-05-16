@@ -18,7 +18,7 @@ parentdir=$(dirname "$script_dir")
 
 #Install docker if need
 if ! command -v docker &> /dev/null; then
-  is_ubuntu=$(cat /etc/os-realase|grep ubuntu)
+  is_ubuntu=$(cat /etc/os-release|grep ubuntu)
   if [ -n "$is_ubuntu" ]; then
     echo "Installing docker on ubuntu"
     bash $script_dir/docker_ubuntu_installation.sh
