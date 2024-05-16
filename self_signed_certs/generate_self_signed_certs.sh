@@ -29,6 +29,7 @@ echo -E "
   LCM_NETBOX_NAME: $LCM_NETBOX_NAME
 "
 
+echo "Generating certificates..."
 read -p "Press enter to continue"
 
 # get Central Authentication Service folder
