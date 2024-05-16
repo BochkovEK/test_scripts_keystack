@@ -39,9 +39,14 @@ lcm_nexus_name_string=$(cat $parentdir/self_signed_certs/certs_envs|grep -m 1 "L
   "
 sed -i "s/$lcm_nexus_name_string/LCM_NEXUS_NAME=$REMOTE_NEXUS/" $parentdir/self_signed_certs/certs_envs
 
+echo "Sourcing envs after sed"
+source $parentdir/self_signed_certs/certs_envs
+
 bash $parentdir/self_signed_certs/generate_self_signed_certs.sh
 
 sed -i "s/DOMAIN/$DOMAIN/g" $script_dir/nginx_https.conf
 sed -i "s/LCM_NEXUS_NAME/$LCM_NEXUS_NAME/g" $script_dir/nginx_https.conf
+
+
 
 docker compose up -f $script_dir/docker-compose.yaml -d
