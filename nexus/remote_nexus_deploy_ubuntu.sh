@@ -4,7 +4,7 @@
 
 #Script сhanging LCM_NEXUS_NAME into $parentdir/self_signed_certs/certs_envs to $REMOTE_NEXUS
 #!!! After nexus deploy copy remote-nexus.test.domain.pem to installer/certs on lcm
-#scp $HOME/certs/remote-nexus.test.domain.pem $lcm:/root/installer/certs
+#scp $remote_nexus_node:$HOME/certs/remote-nexus.test.domain.pem $HOME/certs
 
 [[ -z $DEBUG ]] && DEBUG="true"
 
@@ -61,8 +61,10 @@ if [ -z "$nexus_string_exists" ]; then
 fi
 
 #Generating certs
-bash $parentdir/self_signed_certs/generate_self_signed_certs.sh
+#bash $parentdir/self_signed_certs/generate_self_signed_certs.sh
 
+#Change nginx conf
+echo "Changing nginx conf..."
 sed -i "s/DOMAIN/$DOMAIN/g" $script_dir/nginx_https.conf
 sed -i "s/LCM_NEXUS_NAME/$LCM_NEXUS_NAME/g" $script_dir/nginx_https.conf
 #sed -i -e "s@OUTPUT_CERTS_DIR@$OUTPUT_CERTS_DIR@g" $script_dir/nginx_https.conf
