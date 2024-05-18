@@ -3,8 +3,8 @@
 # Script for deploy nexus to ubuntu\ may be sber linux
 
 #Script сhanging LCM_NEXUS_NAME into $parentdir/self_signed_certs/certs_envs to $REMOTE_NEXUS
-#!!! After nexus deploy copy remote-nexus.test.domain.pem to installer/certs on lcm
-#scp $remote_nexus_node:$HOME/certs/remote-nexus.test.domain.pem $HOME/certs
+#!!! After nexus deploy copy $HOME/certs to $HOME/installer/ on lcm
+#scp -r $HOME/certs $lcm:$HOME/installer/
 
 [[ -z $DEBUG ]] && DEBUG="true"
 
@@ -61,7 +61,7 @@ if [ -z "$nexus_string_exists" ]; then
 fi
 
 #Generating certs
-#bash $parentdir/self_signed_certs/generate_self_signed_certs.sh
+bash $parentdir/self_signed_certs/generate_self_signed_certs.sh
 
 #Change nginx conf
 echo "Changing nginx conf..."
