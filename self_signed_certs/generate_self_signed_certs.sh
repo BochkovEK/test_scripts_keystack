@@ -60,6 +60,12 @@ if [[ -z "${LCM_NEXUS_NAME}" ]]; then
 fi
 export LCM_NEXUS_NAME=${LCM_NEXUS_NAME:-"lcm-nexus"}
 
+# get Remote Nexus domain nama
+if [[ -z "${REMOTE_NEXUS_NAME}" ]]; then
+  read -rp "Enter the Remote Nexus domain name [remote-nexus]: " REMOTE_NEXUS_NAME
+fi
+export REMOTE_NEXUS_NAME=${REMOTE_NEXUS_NAME:-"remote-nexus"}
+
 # get Gitlab domain name
 if [[ -z "${LCM_GITLAB_NAME}" ]]; then
   read -rp "Enter the LCM Gitlab domain name [lcm-gitlab]: " LCM_GITLAB_NAME
@@ -85,6 +91,7 @@ export OUTPUT_CERTS_DIR=$OUTPUT_CERTS_DIR
 export DOMAIN=$DOMAIN
 export CA_IP=$CA_IP
 export LCM_NEXUS_NAME=$LCM_NEXUS_NAME
+export $REMOTE_NEXUS_NAME=$REMOTE_NEXUS_NAME
 export LCM_GITLAB_NAME=$LCM_GITLAB_NAME
 export LCM_VAULT_NAME=$LCM_VAULT_NAME
 export LCM_NETBOX_NAME=$LCM_NETBOX_NAME

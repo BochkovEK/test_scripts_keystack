@@ -8,7 +8,7 @@
 
 [[ -z $DEBUG ]] && DEBUG="true"
 
-REMOTE_NEXUS=remote-nexus
+#REMOTE_NEXUS=remote-nexus
 
 #Script_dir, current folder
 script_file_path=$(realpath $0)
@@ -36,6 +36,7 @@ source $parentdir/self_signed_certs/certs_envs
   DOMAIN: $DOMAIN
   CA_IP: $CA_IP
   LCM_NEXUS_NAME: $LCM_NEXUS_NAME
+  REMOTE_NEXUS_NAME: $REMOTE_NEXUS_NAME
   LCM_GITLAB_NAME: $LCM_GITLAB_NAME
   LCM_VAULT_NAME: $LCM_VAULT_NAME
   LCM_NETBOX_NAME: $LCM_NETBOX_NAME
@@ -55,9 +56,9 @@ echo "Sourcing envs after sed"
 source $parentdir/self_signed_certs/certs_envs
 
 #Add string to hosts
-nexus_string_exists=$(cat /etc/hosts|grep $REMOTE_NEXUS)
+nexus_string_exists=$(cat /etc/hosts|grep $REMOTE_NEXUS_NAME)
 if [ -z "$nexus_string_exists" ]; then
-  sed -i "s/127.0.0.1 localhost/127.0.0.1 localhost $REMOTE_NEXUS.$DOMAIN/" /etc/hosts
+  sed -i "s/127.0.0.1 localhost/127.0.0.1 localhost $REMOTE_NEXUS_NAME.$DOMAIN/" /etc/hosts
 fi
 
 #Generating certs
