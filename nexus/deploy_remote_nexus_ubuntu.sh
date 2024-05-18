@@ -42,14 +42,14 @@ source $parentdir/self_signed_certs/certs_envs
   "
 
 #Change in envs LCM_NEXUS_NAME var
-lcm_nexus_name_string=$(cat $parentdir/self_signed_certs/certs_envs|grep -m 1 "LCM_NEXUS_NAME")
+#lcm_nexus_name_string=$(cat $parentdir/self_signed_certs/certs_envs|grep -m 1 "LCM_NEXUS_NAME")
 
-  [ "$DEBUG" = true ] && echo -e "
-  [DEBUG]
-  lcm_nexus_name_string: $lcm_nexus_name_string
-  REMOTE_NEXUS: $REMOTE_NEXUS
-  "
-sed -i "s/$lcm_nexus_name_string/export LCM_NEXUS_NAME=$REMOTE_NEXUS/" $parentdir/self_signed_certs/certs_envs
+#  [ "$DEBUG" = true ] && echo -e "
+#  [DEBUG]
+#  lcm_nexus_name_string: $lcm_nexus_name_string
+#  REMOTE_NEXUS: $REMOTE_NEXUS
+#  "
+#sed -i "s/$lcm_nexus_name_string/export LCM_NEXUS_NAME=$REMOTE_NEXUS/" $parentdir/self_signed_certs/certs_envs
 
 echo "Sourcing envs after sed"
 source $parentdir/self_signed_certs/certs_envs
@@ -66,7 +66,7 @@ bash $parentdir/self_signed_certs/generate_self_signed_certs.sh
 #Change nginx conf
 echo "Changing nginx conf..."
 sed -i "s/DOMAIN/$DOMAIN/g" $script_dir/nginx_https.conf
-sed -i "s/LCM_NEXUS_NAME/$LCM_NEXUS_NAME/g" $script_dir/nginx_https.conf
+sed -i "s/LCM_NEXUS_NAME/$REMOTE_NEXUS_NAME/g" $script_dir/nginx_https.conf
 #sed -i -e "s@OUTPUT_CERTS_DIR@$OUTPUT_CERTS_DIR@g" $script_dir/nginx_https.conf
 
 #Conatiners up
