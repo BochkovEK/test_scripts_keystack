@@ -122,6 +122,7 @@ cp $CERTS_DIR/root/ca.crt $OUTPUT_CERTS_DIR;
 # for remote nexus
 cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/cert.key;
 cp $CERTS_DIR/certs/chain-ca.pem $OUTPUT_CERTS_DIR/$LCM_NEXUS_NAME.$DOMAIN.pem;
+cp $CERTS_DIR/certs/chain-ca.pem $OUTPUT_CERTS_DIR/$REMOTE_NEXUS_NAME.$DOMAIN.pem;
 
 cp $CERTS_DIR/certs/chain-ca.pem $OUTPUT_CERTS_DIR;
 
@@ -147,5 +148,6 @@ while true; do
 done
 
 if [ "$yes_no_input" = "true" ]; then
-   generate_certs
+  source $script_dir/certs_envs
+  generate_certs
 fi
