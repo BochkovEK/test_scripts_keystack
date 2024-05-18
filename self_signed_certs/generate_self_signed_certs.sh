@@ -24,12 +24,15 @@ echo -E "
   DOMAIN: $DOMAIN
   CA_IP: $CA_IP
   LCM_NEXUS_NAME: $LCM_NEXUS_NAME
+  REMOTE_NEXUS_NAME: $REMOTE_NEXUS_NAME
   LCM_GITLAB_NAME: $LCM_GITLAB_NAME
   LCM_VAULT_NAME: $LCM_VAULT_NAME
   LCM_NETBOX_NAME: $LCM_NETBOX_NAME
 "
 
 generate_certs () {
+
+echo "Generating certification..."
 # get Central Authentication Service folder
 if [[ -z "${CERTS_DIR}" ]]; then
   read -rp "Enter Central Authentication Service folder [$HOME/central_auth_service]: " CERTS_DIR
