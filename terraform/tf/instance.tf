@@ -3,7 +3,7 @@ module "ubuntu-vm" {
     name            = "ubuntu-vm"
     flavor          = "2c-2r_admin"
     image           = "ubuntu-20.04-server-cloudimg-amd64"
-    ssh_key_name    = "key-test"
+    key_pair        = "key_test"
     metadata        = {
             os_ver  = "ubuntu20"
         }
@@ -31,7 +31,6 @@ module "cirros-vm" {
     name            = "cirros-vm"
     flavor          = "2c-2r_admin"
     image           = "cirros-0.6.2-x86_64-disk"
-    ssh_key_name    = "key-test"
     metadata        = {
             os_ver  = "cirros6"
         }
