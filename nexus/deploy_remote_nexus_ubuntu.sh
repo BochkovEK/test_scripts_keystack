@@ -6,6 +6,8 @@
 #!!! After nexus deploy copy $HOME/certs to $HOME/installer/ on lcm
 #scp -r $HOME/certs $lcm:$HOME/installer/
 
+#!!! docker exec -it nexus cat /nexus-data/admin.password
+
 [[ -z $DEBUG ]] && DEBUG="true"
 
 #REMOTE_NEXUS=remote-nexus
