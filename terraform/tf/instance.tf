@@ -3,7 +3,8 @@ module "ubuntu-vm" {
     name            = "ubuntu-vm"
     flavor          = "2c-2r_admin"
     image           = "ubuntu-20.04-server-cloudimg-amd64"
-    key_pair        = "key_test"
+    ssh_key_name    = "key_test"
+    az              = "nova"
     metadata        = {
             os_ver  = "ubuntu20"
         }

@@ -33,7 +33,8 @@ variable "metadata" {
 }
 variable "az" {
   type = string
-  default = "nova"
+  default = null
+#  default = "nova"
   description = "Computing instance avaliability zone"
 }
 variable "region" {
