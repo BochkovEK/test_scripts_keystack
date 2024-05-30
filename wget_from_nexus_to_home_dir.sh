@@ -3,7 +3,7 @@
 # 1) Go nexus web portal repo
 # 2) Select image
 # 3) Summary -> Path -> RCM Copy link address
-# To start: bash wgetfrom_nexus_to_home_dir.sh <link_from_nexus_web_portal>
+# To start: bash wget_from_nexus_to_home_dir.sh <link_from_nexus_web_portal>
 
 [ -z $1 ] && { echo "To run the script, you need to pass a link to as an argument"; exit 1; }
 
