@@ -26,15 +26,14 @@ network_stress() {
     case $LOAD in
         on)
             echo "Starting network load on $VM_IP..."
-            ssh -t -o StrictHostKeyChecking=no -i $script_dir/$key_name ubuntu@"$VM_IP" "sudo sh -c 'echo \"@reboot root ping -f -s 1024 8.8.8.8\" >> /etc/crontab && reboot'"
+            ssh -t -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME ubuntu@"$VM_IP" "sudo sh -c 'echo \"@reboot root ping -f -s 1024 8.8.8.8\" >> /etc/crontab && reboot'"
             ;;
         off)
             echo "Stopping network load on $VM_IP..."
-            ssh -t -o StrictHostKeyChecking=no -i $script_dir/$key_name ubuntu@"$VM_IP" "sudo sh -c 'sed -i '/ping/d' /etc/crontab && reboot'"
+            ssh -t -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME ubuntu@"$VM_IP" "sudo sh -c 'sed -i '/ping/d' /etc/crontab && reboot'"
             ;;
         *) echo "load equals invalid value: $LOAD";;
     esac
-
 }
 
 batch_run_stress() {
