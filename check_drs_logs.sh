@@ -58,7 +58,7 @@ read_logs () {
   echo -e "${CYAN}Drs $LOG_LAST_LINES_NUMBER lines logs from $1${NC}"
   ssh -o StrictHostKeyChecking=no $1 tail -${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE
   echo -e "${BLUE}`date`${NC}"
-  echo -e "For read all log on $host:"
+  echo -e "For read all log on $1:"
   echo -e "${ORANGE}ssh -t -o StrictHostKeyChecking=no $1 less $DRS_LOG_FOLDER/$DRS_LOG_FILE${NC}"
 }
 
