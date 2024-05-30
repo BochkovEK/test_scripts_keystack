@@ -15,7 +15,7 @@
 script_dir=$(dirname $0)
 
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
-[[ -z $KEY_NAME ]] && KEY_NAME="key_test"
+[[ -z $KEY_NAME ]] && KEY_NAME="key_test.pem"
 [[ -z $HYPERVISOR_HOSTNAME ]] && HYPERVISOR_HOSTNAME=""
 [[ -z $LOAD ]] && LOAD="on"
 
