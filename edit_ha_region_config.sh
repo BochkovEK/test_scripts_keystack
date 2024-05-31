@@ -11,6 +11,7 @@ script_dir=$(dirname $0)
 [[ -z $ALIVE_THRSHOLD ]] && ALIVE_THRSHOLD=""
 [[ -z $DEAD_THRSHOLD ]] && DEAD_THRSHOLD=""
 [[ -z $IPMI_FENCING ]] && IPMI_FENCING=""
+[[ -z $NOVA_FENCING ]] && NOVA_FENCING=""
 [[ -z $DEBUG ]] && DEBUG="false"
 [[ -z $CHECK_SUFFIX ]] && CHECK_SUFFIX="false"
 [[ -z $ONLY_CONF_CHECK ]] && ONLY_CONF_CHECK="false"
@@ -34,6 +35,7 @@ do
         -a,   -alive_threshold          <alive_compute_threshold>
         -d,   -dead_threshold           <dead_compute_threshold>
         -i,   -ipmi_fencing             <true\false>
+        -n,   -nova_fencing             <true\false>
         -v,   -debug                    without value, set DEBUG=\"true\"
 
         start script with parameter suffix: bash ha_region_config.sh suffix - return bmc suffix
@@ -49,6 +51,9 @@ do
           shift ;;
         -i|-ipmi_fencing) IPMI_FENCING="$2"
           echo "Found the -ipmi_fencing <true\false> option, with parameter value $IPMI_FENCING"
+          shift ;;
+        -n|-nova_fencing) NOVA_FENCING="$2"
+          echo "Found the -nova_fencing <true\false> option, with parameter value $NOVA_FENCING"
           shift ;;
         -v|-debug) DEBUG="true"
 	        echo "Found the -debug, parameter set $DEBUG"
@@ -135,6 +140,18 @@ change_ipmi_fencing () {
   conf_changed="true"
 }
 
+change_nova_fencing () {
+  if [ "$1" = true ]; then
+    bash $script_dir/command_on_nodes.sh -nt ctrl -c "sed -i 's/\"nova\": false/\"nova\": true/' /etc/$consul_conf_dir/region-config_${REGION}.json"
+  elif [ "$1" = false ]; then
+    bash $script_dir/command_on_nodes.sh -nt ctrl -c "sed -i 's/\"nova\": true/\"nova\": false/' /etc/$consul_conf_dir/region-config_${REGION}.json"
+  else
+    echo "$1 - is not valid nova parameter"
+    return 1
+  fi
+  conf_changed="true"
+}
+
 check_bmc_suffix () {
   #pull_consul_conf
   [ "$DEBUG" = true ] && echo -e "
@@ -163,6 +180,7 @@ check_bmc_suffix () {
 [ -n "$ALIVE_THRSHOLD" ] && change_alive_threshold $ALIVE_THRSHOLD
 [ -n "$DEAD_THRSHOLD" ] && change_dead_threshold $DEAD_THRSHOLD
 [ -n "$IPMI_FENCING" ] && change_ipmi_fencing $IPMI_FENCING
+[ -n "$NOVA_FENCING" ] && change_nova_fencing $NOVA_FENCING
 cat_conf
 [ -n "$conf_changed" ] && { echo "Restart consul containers..."; bash $script_dir/command_on_nodes.sh -nt ctrl -c "docker restart consul"; }
 ##cat_consul_conf
