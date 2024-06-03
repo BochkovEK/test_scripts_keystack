@@ -69,7 +69,7 @@ pull_conf () {
   "
 
   echo "Сopying $service_name conf from $ctrl_node:$conf_dir/$conf_name"
-  scp -o StrictHostKeyChecking=no $ctrl_node:$conf_dir/$conf_name $test_node_conf_dir
+  scp -o StrictHostKeyChecking=no $ctrl_node:$conf_dir/$conf_name $script_dir/$test_node_conf_dir
 }
 
 push_conf () {
@@ -83,7 +83,7 @@ push_conf () {
   "
     fi
     echo "Сopying $service_name conf to $node:$conf_dir/$conf_name"
-    scp -o StrictHostKeyChecking=no $test_node_conf_dir/$conf_name $node:$conf_dir/$conf_name
+    scp -o StrictHostKeyChecking=no $script_dir/$test_node_conf_dir/$conf_name $node:$conf_dir/$conf_name
   done
 }
 
