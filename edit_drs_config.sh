@@ -62,7 +62,7 @@ cat_conf () {
 
 pull_conf () {
   echo "Pulling drs.ini..."
-  [ ! -d $test_node_conf_dir ] && { mkdir -p $test_node_conf_dir; }
+  [ ! -d $scrpt_dir/$test_node_conf_dir ] && { mkdir -p $scrpt_dir/$test_node_conf_dir; }
   ctrl_node=$(cat /etc/hosts | grep -m 1 -E ${ctrl_pattern} | awk '{print $2}')
   [ "$DEBUG" = true ] && echo -e "
   [DEBUG]: \"\$ctrl_node\": $ctrl_node\n
