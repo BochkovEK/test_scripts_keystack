@@ -89,7 +89,7 @@ push_conf () {
   "
     fi
     echo "Сopying $service_name conf to $node:$conf_dir/$CONF_NAME"
-    scp -o StrictHostKeyChecking=no $test_node_conf_dir/$CONF_NAME $node:$conf_dir/$CONF_NAME
+    scp -o StrictHostKeyChecking=no $script_dir/$test_node_conf_dir/$CONF_NAME $node:$conf_dir/$CONF_NAME
   done
 }
 
