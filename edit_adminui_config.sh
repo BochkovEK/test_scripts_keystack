@@ -39,6 +39,7 @@ do
         -v,        -debug         without value, set DEBUG=\"true\"
         -p,        -push          without value, set PUSH=\"true\"; push config from $script_dir/$test_node_conf_dir/$conf_name
         -cn,       -conf_name     <config_name>; example adminui-backend-regions.conf\adminui-backend-osloconf.conf
+        -check                    without value, set ONLY_CONF_CHECK=\"true\"
 
         Start the scrip with parameter check to check conf: bash edit_drs_config.sh check
         "
@@ -55,6 +56,9 @@ do
           shift ;;
         -p|-push) PUSH="true"
 	        echo "Found the -push, parameter set $PUSH"
+          ;;
+        -check) ONLY_CONF_CHECK="true"
+	        echo "Found the -check, parameter set $ONLY_CONF_CHECK"
           ;;
         --) shift
           break ;;
