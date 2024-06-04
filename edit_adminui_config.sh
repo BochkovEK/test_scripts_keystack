@@ -36,7 +36,7 @@ do
         -foo,      -bar           <baz>
         -gt        -gitlab_token  <token> add token to gitlab_password = string if it empty
         -v,        -debug         without value, set DEBUG=\"true\"
-        -p,        -push          without value, set PUSH=\"true\"; push config from $script_dir/$test_node_conf_dir
+        -p,        -push          without value, set PUSH=\"true\"; push config from $script_dir/$test_node_conf_dir/$conf_name
 
         Start the scrip with parameter check to check conf: bash edit_drs_config.sh check
         "
