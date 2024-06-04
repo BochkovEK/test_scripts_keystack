@@ -5,7 +5,7 @@
 
 ctrl_pattern="\-ctrl\-..$"
 service_name=adminui-backend
-conf_name=adminui-backend-regions.conf
+#conf_name=adminui-backend-regions.conf
 test_node_conf_dir=kolla/$service_name
 conf_dir=/etc/kolla/$service_name
 
@@ -14,6 +14,7 @@ conf_changed=""
 
 #[[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 #[[ -z $ADD_DEBUG ]] && ADD_DEBUG="false"
+[[ -z $CONF_NAME ]] && CONF_NAME="adminui-backend-regions.conf"
 [[ -z $GITLAB_TOKEN ]] && GITLAB_TOKEN=""
 [[ -z $DEBUG ]] && DEBUG="false"
 [[ -z $ONLY_CONF_CHECK ]] && ONLY_CONF_CHECK="false"
@@ -37,6 +38,7 @@ do
         -gt        -gitlab_token  <token> add token to gitlab_password = string if it empty
         -v,        -debug         without value, set DEBUG=\"true\"
         -p,        -push          without value, set PUSH=\"true\"; push config from $script_dir/$test_node_conf_dir/$conf_name
+        -cn,       -conf_name     <config_name>; example adminui-backend-regions.conf\adminui-backend-osloconf.conf
 
         Start the scrip with parameter check to check conf: bash edit_drs_config.sh check
         "
@@ -47,6 +49,9 @@ do
           ;;
         -gt|-gitlab_token) GITLAB_TOKEN=$2
 	        echo "Found the-gitlab_token, parameter set $GITLAB_TOKEN"
+          shift ;;
+        -cn|-conf_name) CONF_NAME=$2
+	        echo "Found conf_name parameter set $CONF_NAME"
           shift ;;
         -p|-push) PUSH="true"
 	        echo "Found the -push, parameter set $PUSH"
@@ -60,7 +65,7 @@ done
 
 cat_conf () {
   echo "Cat all $service_name configs..."
-  bash $script_dir/command_on_nodes.sh -nt ctrl -c "echo \"cat $conf_dir/$conf_name\"; cat $conf_dir/$conf_name"
+  bash $script_dir/command_on_nodes.sh -nt ctrl -c "echo \"cat $conf_dir/$CONF_NAME\"; cat $conf_dir/$CONF_NAME"
 }
 
 pull_conf () {
@@ -70,8 +75,8 @@ pull_conf () {
   [DEBUG]: \"\$ctrl_node\": $ctrl_node\n
   "
 
-  echo "Сopying $service_name conf from $ctrl_node:$conf_dir/$conf_name"
-  scp -o StrictHostKeyChecking=no $ctrl_node:$conf_dir/$conf_name $test_node_conf_dir
+  echo "Сopying $service_name conf from $ctrl_node:$conf_dir/$CONF_NAME"
+  scp -o StrictHostKeyChecking=no $ctrl_node:$conf_dir/$CONF_NAME $test_node_conf_dir
 }
 
 push_conf () {
@@ -83,8 +88,8 @@ push_conf () {
   [DEBUG]: \"\$ctrl_nodes\": $string\n
   "
     fi
-    echo "Сopying $service_name conf to $node:$conf_dir/$conf_name"
-    scp -o StrictHostKeyChecking=no $test_node_conf_dir/$conf_name $node:$conf_dir/$conf_name
+    echo "Сopying $service_name conf to $node:$conf_dir/$CONF_NAME"
+    scp -o StrictHostKeyChecking=no $test_node_conf_dir/$CONF_NAME $node:$conf_dir/$CONF_NAME
   done
 }
 
@@ -95,7 +100,7 @@ push_conf () {
 
 change_gitlab_password_param () {
   pull_conf
-  sed -i -E "s,gitlab_password =$,gitlab_password = $GITLAB_TOKEN,g" $script_dir/$test_node_conf_dir/$conf_name
+  sed -i -E "s,gitlab_password =$,gitlab_password = $GITLAB_TOKEN,g" $script_dir/$test_node_conf_dir/$CONF_NAME
   push_conf
   conf_changed="true"
 }
