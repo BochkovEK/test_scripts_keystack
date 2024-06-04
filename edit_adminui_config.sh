@@ -37,7 +37,7 @@ do
         -foo,      -bar           <baz>
         -gt        -gitlab_token  <token> add token to gitlab_password = string if it empty
         -v,        -debug         without value, set DEBUG=\"true\"
-        -p,        -push          without value, set PUSH=\"true\"; push config from $script_dir/$test_node_conf_dir/$conf_name
+        -p,        -push          without value, set PUSH=\"true\"; push config from $script_dir/$test_node_conf_dir/$conf_name to ctrl nodes
         -cn,       -conf_name     <config_name>; example adminui-backend-regions.conf\adminui-backend-osloconf.conf
         -check                    without value, set ONLY_CONF_CHECK=\"true\"
 
