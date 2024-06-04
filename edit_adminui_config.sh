@@ -17,6 +17,7 @@ conf_changed=""
 [[ -z $GITLAB_TOKEN ]] && GITLAB_TOKEN=""
 [[ -z $DEBUG ]] && DEBUG="false"
 [[ -z $ONLY_CONF_CHECK ]] && ONLY_CONF_CHECK="false"
+[[ -z $PUSH ]] && PUSH="false"
 #[[ -z $FOO_PARAM ]] && FOO_PARAM=""
 
 
@@ -35,6 +36,7 @@ do
         -foo,      -bar           <baz>
         -gt        -gitlab_token  <token> add token to gitlab_password = string if it empty
         -v,        -debug         without value, set DEBUG=\"true\"
+        -p,        -push          without value, set PUSH=\"true\"; push config from $script_dir/$test_node_conf_dir
 
         Start the scrip with parameter check to check conf: bash edit_drs_config.sh check
         "
@@ -46,6 +48,9 @@ do
         -gt|-gitlab_token) GITLAB_TOKEN=$2
 	        echo "Found the-gitlab_token, parameter set $GITLAB_TOKEN"
           shift ;;
+        -p|-push) PUSH="true"
+	        echo "Found the -push, parameter set $PUSH"
+          ;;
         --) shift
           break ;;
         *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
@@ -97,6 +102,7 @@ change_gitlab_password_param () {
 
 
 [ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
+[ "$PUSH" = true ] && { push_conf; cat_conf; exit 0; }
 #[ "$ADD_DEBUG" = true ] && { change_add_debug_param; }
 [ -n "$GITLAB_TOKEN" ] && { change_gitlab_password_param; }
 #[ -n "$CHANGE_FOO_PARAM" ] && change_foo_param $foo_param_value
