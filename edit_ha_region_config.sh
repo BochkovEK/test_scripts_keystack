@@ -99,7 +99,7 @@ pull_consul_conf () {
   scp -o StrictHostKeyChecking=no $ctrl_node:/etc/$consul_conf_dir/region-config_${REGION}.json $script_dir/$consul_conf_dir
 }
 
-push_consul_conf () {
+push_conf () {
   [ -z $CONF_NAME ] && { CONF_NAME=region-config_${REGION}.json; }
   ctrl_nodes=$(cat /etc/hosts | grep -E ${ctrl_pattern} | awk '{print $2}')
   [ "$DEBUG" = true ] && { for string in $ctrl_nodes; do debug_echo $string; done; }
@@ -114,7 +114,7 @@ change_alive_threshold () {
   pull_consul_conf
   sed -i --regexp-extended "s/\"alive_compute_threshold\":\s+\"[0-9]+\"/\"alive_compute_threshold\": \"$1\"/" \
    $script_dir/$consul_conf_dir/region-config_${REGION}.json
-  push_consul_conf
+  push_conf
   conf_changed="true"
 }
 
@@ -132,7 +132,7 @@ change_dead_threshold () {
     sed -i --regexp-extended "s/\"dead_compute_threshold\":\s+\"[0-9]+\",/\"dead_compute_threshold\": \"$1\",/" \
       $script_dir/$consul_conf_dir/region-config_${REGION}.json
   fi
-  push_consul_conf
+  push_conf
 #  cat_consul_conf
   conf_changed="true"
 }
