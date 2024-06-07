@@ -130,9 +130,9 @@ start_python_power_management_script () {
         if [ "$actual_power_state" = "PowerState.OFF" ]; then
           Check_openrc_file
           source $OPENRC_PATH
-#          comp_host_name=$(echo "${HOST_NAME%%-*}")
-          echo "Trying set --disable-reason \"test disable\" to $HOST_NAME"
-          openstack compute service set --disable --disable-reason "test disable" $HOST_NAME nova-compute
+          # The next two lines are commented out because the functionality of the consul has been changed 2024.2-rc-1
+#          echo "Trying set --disable-reason \"test disable\" to $HOST_NAME"
+#          openstack compute service set --disable --disable-reason "test disable" $HOST_NAME nova-compute
           echo "Trying set power state \"on\" on $HOST_NAME"
           sent_launch_command=$(python_script_execute on)
           [ "$sent_launch_command" = "None" ] && { echo "The host: $HOST_NAME startup command has been successfully sent"; }
