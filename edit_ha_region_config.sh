@@ -63,6 +63,9 @@ do
         -v|-debug) DEBUG="true"
 	        echo "Found the -debug, parameter set $DEBUG"
           ;;
+        -p|-push) PUSH="true"
+	        echo "Found the -push, parameter set $PUSH"
+          ;;
         --) shift
           break ;;
         *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
