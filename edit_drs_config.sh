@@ -5,7 +5,7 @@ ctrl_pattern="\-ctrl\-..$"
 service_name=drs
 test_node_conf_dir=kolla/$service_name
 conf_dir=/etc/kolla/drs
-conf_name=drs.ini
+#conf_name=drs.ini
 
 script_dir=$(dirname $0)
 conf_changed=""
@@ -15,6 +15,8 @@ conf_changed=""
 [[ -z $DEBUG ]] && DEBUG="false"
 [[ -z $ONLY_CONF_CHECK ]] && ONLY_CONF_CHECK="false"
 [[ -z $PROMETHEUS_PASS ]] && PROMETHEUS_PASS=""
+[[ -z $PUSH ]] && PUSH="false"
+[[ -z $CONF_NAME ]] && CONF_NAME="drs.ini"
 #[[ -z $FOO_PARAM ]] && FOO_PARAM=""
 
 
@@ -34,6 +36,9 @@ do
         -add_debug                        without value, add DEBUG level to log by drs config
         -v,         -debug                without value, set DEBUG=\"true\"
         -pa,        -prometheus_alerting  <prometheus_password>
+        -p,         -push                 without value, push region-config_<region_name>.json from
+                                          $HOME/test_scripts_keystack/$test_node_conf_dir/$CONF_NAME to
+                                          $conf_dir/$CONF_NAME on ctrl nodes
 
         Start the scrip with parameter check to check conf: bash edit_drs_config.sh check
         "
@@ -115,6 +120,7 @@ change_add_prometheus_alerting () {
 
 
 [ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
+[ "$PUSH" = true ] && { push_conf; conf_changed=true; }
 [ "$ADD_DEBUG" = true ] && { change_add_debug_param; }
 [ -n "$PROMETHEUS_PASS" ] && { change_add_prometheus_alerting; }
 #[ -n "$CHANGE_FOO_PARAM" ] && change_foo_param $foo_param_value

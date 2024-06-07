@@ -15,6 +15,8 @@ script_dir=$(dirname $0)
 [[ -z $DEBUG ]] && DEBUG="false"
 [[ -z $CHECK_SUFFIX ]] && CHECK_SUFFIX="false"
 [[ -z $ONLY_CONF_CHECK ]] && ONLY_CONF_CHECK="false"
+[[ -z $PUSH ]] && PUSH="false"
+[[ -z $CONF_NAME ]] && CONF_NAME=""
 
 #[[ -z "${1}" ]] && { echo "Alive threshold value required as parameter script"; exit 1; }
 
@@ -37,9 +39,12 @@ do
         -i,   -ipmi_fencing             <true\false>
         -n,   -nova_fencing             <true\false>
         -v,   -debug                    without value, set DEBUG=\"true\"
+        -p,   -push                     without value, push region-config_<region_name>.json from
+                                        $HOME/test_scripts_keystack/kolla/consul to
+                                        /etc/kolla/consul/region-config_<region_name>.json on ctrl nodes
 
-        start script with parameter suffix: bash ha_region_config.sh suffix - return bmc suffix
-        start script with parameter suffix: bash ha_region_config.sh check  - return contents of the config file
+        start script with parameter suffix: bash edit_ha_region_config.sh suffix - return bmc suffix
+        start script with parameter suffix: bash edit_ha_region_config.sh check  - return contents of the config file
         "
           exit 0
           break ;;
@@ -92,11 +97,12 @@ pull_consul_conf () {
 }
 
 push_consul_conf () {
+  [ -z $CONF_NAME ] && { CONF_NAME=region-config_${REGION}.json; }
   ctrl_nodes=$(cat /etc/hosts | grep -E ${ctrl_pattern} | awk '{print $2}')
   [ "$DEBUG" = true ] && { for string in $ctrl_nodes; do debug_echo $string; done; }
   for node in $ctrl_nodes; do
-    echo "Push consul conf to $node:/etc/$consul_conf_dir/region-config_${REGION}.json"
-    scp -o StrictHostKeyChecking=no $script_dir/$consul_conf_dir/region-config_${REGION}.json $node:/etc/$consul_conf_dir/region-config_${REGION}.json
+    echo "Push consul conf to $node:/etc/$consul_conf_dir/$CONF_NAME"
+    scp -o StrictHostKeyChecking=no $script_dir/$consul_conf_dir/$CONF_NAME $node:/etc/$consul_conf_dir/$CONF_NAME
   done
 }
 
@@ -176,6 +182,7 @@ check_bmc_suffix () {
 
 [ "$CHECK_SUFFIX" = true ] && { check_bmc_suffix; exit 0; }
 [ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
+[ "$PUSH" = true ] && { push_conf; conf_changed=true; }
 ##pull_consul_conf
 [ -n "$ALIVE_THRSHOLD" ] && change_alive_threshold $ALIVE_THRSHOLD
 [ -n "$DEAD_THRSHOLD" ] && change_dead_threshold $DEAD_THRSHOLD
