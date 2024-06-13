@@ -62,7 +62,7 @@ done
 
 cat_conf () {
   echo "Cat all $service_name configs..."
-  bash $script_dir/command_on_nodes.sh -nt ctrl -c "echo \"cat $conf_dir/$conf_name\"; cat $conf_dir/$conf_name"
+  bash $script_dir/command_on_nodes.sh -nt ctrl -c "echo \"cat $conf_dir/$CONF_NAME\"; cat $conf_dir/$CONF_NAME"
 }
 
 pull_conf () {
@@ -73,8 +73,8 @@ pull_conf () {
   [DEBUG]: \"\$ctrl_node\": $ctrl_node\n
   "
 
-  echo "Сopying $service_name conf from $ctrl_node:$conf_dir/$conf_name"
-  scp -o StrictHostKeyChecking=no $ctrl_node:$conf_dir/$conf_name $script_dir/$test_node_conf_dir
+  echo "Сopying $service_name conf from $ctrl_node:$conf_dir/$CONF_NAME"
+  scp -o StrictHostKeyChecking=no $ctrl_node:$conf_dir/$CONF_NAME $script_dir/$test_node_conf_dir
 }
 
 push_conf () {
@@ -87,8 +87,8 @@ push_conf () {
   [DEBUG]: \"\$ctrl_nodes\": $string\n
   "
     fi
-    echo "Сopying $service_name conf to $node:$conf_dir/$conf_name"
-    scp -o StrictHostKeyChecking=no $script_dir/$test_node_conf_dir/$conf_name $node:$conf_dir/$conf_name
+    echo "Сopying $service_name conf to $node:$conf_dir/$CONF_NAME"
+    scp -o StrictHostKeyChecking=no $script_dir/$test_node_conf_dir/$CONF_NAME $node:$conf_dir/$CONF_NAME
   done
 }
 
@@ -100,7 +100,7 @@ push_conf () {
 change_add_debug_param () {
   echo "Add debug to drs.ini..."
   pull_conf
-  sed -i 's/\[DEFAULT\]/\[DEFAULT\]\ndebug = true/' $script_dir/$test_node_conf_dir/$conf_name
+  sed -i 's/\[DEFAULT\]/\[DEFAULT\]\ndebug = true/' $script_dir/$test_node_conf_dir/$CONF_NAME
   push_conf
   conf_changed="true"
 }
@@ -108,7 +108,7 @@ change_add_debug_param () {
 change_add_prometheus_alerting () {
   echo "Add prometheus alerting to drs.ini..."
   pull_conf
-  prom_pass_exists=$(cat $script_dir/$test_node_conf_dir/$conf_name|grep prometheus_alert_manager_password)
+  prom_pass_exists=$(cat $script_dir/$test_node_conf_dir/$CONF_NAME|grep prometheus_alert_manager_password)
   if [ -z "$prom_pass_exists" ]; then
 #    sed -i "s/\[prometheus\]/\[prometheus\]\nenable_prometheus_alert_manager_auth = true\nprometheus_alert_manager_user = admin\nprometheus_alert_manager_password = $PROMETHEUS_PASS/" $script_dir/$test_node_conf_dir/$conf_name
   sed -i "s/\[alerting\]/\[alerting\]\nenable_prometheus_alert_manager_auth = true\nprometheus_alert_manager_user = admin\nprometheus_alert_manager_password = $PROMETHEUS_PASS/" $script_dir/$test_node_conf_dir/$conf_name
