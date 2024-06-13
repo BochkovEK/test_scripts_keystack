@@ -154,6 +154,26 @@ do
         count=$(( $count + 1 ))
 done
 
+
+# Check openrc file
+check_and_source_openrc_file () {
+    echo "Check openrc file and source it..."
+    check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
+    if [ -z "$check_openrc_file" ]; then
+        printf "%s\n" "${red}openrc file not found in $OPENRC_PATH - ERROR!${normal}"
+        exit 1
+    fi
+    source $OPENRC_PATH
+    #export OS_PROJECT_NAME=$PROJECT
+}
+
+# check openstack cli
+check_openstack_cli () {
+  echo "Check openstack cli..."
+  Check_command openstack
+  [ -z $command_exist ]  &&  { echo -e "\033[31mOpenstack cli not installed\033[0m"; exit 1; }
+}
+
 output_of_initial_parameters () {
       echo -E "
 VMs will be created with the following parameters:
@@ -177,18 +197,6 @@ VMs will be created with the following parameters:
         "
 
     [[ ! $DONT_ASK = "true" ]] && { read -p "Press enter to continue: "; }
-}
-
-# Check openrc file
-check_and_source_openrc_file () {
-    echo "Check openrc file and source it..."
-    check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
-    if [ -z "$check_openrc_file" ]; then
-        printf "%s\n" "${red}openrc file not found in $OPENRC_PATH - ERROR!${normal}"
-        exit 1
-    fi
-    source $OPENRC_PATH
-    #export OS_PROJECT_NAME=$PROJECT
 }
 
 #Check Hypervizor
@@ -597,9 +605,9 @@ create_vms_batch () {
   check_vms_list
 }
 
-
-output_of_initial_parameters
+check_openstack_cli
 check_and_source_openrc_file
+output_of_initial_parameters
 chech_hv
 check_project
 check_and_add_secur_group
