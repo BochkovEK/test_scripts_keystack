@@ -181,7 +181,7 @@ check_openstack_cli () {
   echo "Check openstack cli..."
   check_command openstack
   #mock test
-  command_exist=""
+  #command_exist=""
   if [ -z $command_exist ]; then
     echo -e "\033[31mOpenstack cli not installed\033[0m
 For sberlinux 9.3.3 try these commands:
