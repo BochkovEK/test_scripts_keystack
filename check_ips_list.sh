@@ -7,7 +7,7 @@ END=126
 ## save $START, just in case if we need it later ##
 i=$START
 while [[ $i -le $END ]]; do
-	echo "$i"
+	echo "$BASE_IP.$i"
 	ping -c 2 $BASE_IP.$i &> /dev/null
         ((i = i + 1))
 done
