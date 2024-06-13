@@ -167,10 +167,19 @@ check_and_source_openrc_file () {
     #export OS_PROJECT_NAME=$PROJECT
 }
 
+# Check command
+check_command () {
+  echo "Check $1 command..."
+  command_exist="foo"
+  if ! command -v $1 &> /dev/null; then
+    command_exist=""
+  fi
+}
+
 # check openstack cli
 check_openstack_cli () {
   echo "Check openstack cli..."
-  Check_command openstack
+  check_command openstack
   [ -z $command_exist ]  &&  { echo -e "\033[31mOpenstack cli not installed\033[0m"; exit 1; }
 }
 
