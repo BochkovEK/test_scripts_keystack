@@ -193,6 +193,21 @@ For sberlinux 9.3.3 try these commands:
   fi
 }
 
+# check wget
+check_openstack_cli () {
+  echo "Check wget..."
+  check_command wget
+  #mock test
+  #command_exist=""
+  if [ -z $command_exist ]; then
+    echo -e "\033[31mwget not installed\033[0m
+For sberlinux 9.3.3 try these commands:
+  yum install -y wget
+"
+    exit 1
+  fi
+}
+
 output_of_initial_parameters () {
       echo -E "
 VMs will be created with the following parameters:
@@ -625,6 +640,7 @@ create_vms_batch () {
 }
 
 check_openstack_cli
+check_wget
 check_and_source_openrc_file
 output_of_initial_parameters
 chech_hv
