@@ -180,7 +180,17 @@ check_command () {
 check_openstack_cli () {
   echo "Check openstack cli..."
   check_command openstack
-  [ -z $command_exist ]  &&  { echo -e "\033[31mOpenstack cli not installed\033[0m"; exit 1; }
+  #mock test
+  command_exist=""
+  if [ -z $command_exist ]; then
+    echo -e "\033[31mOpenstack cli not installed\033[0m
+     For sberlinux 9.3.3 try these commands:
+      yum install -y python3-pip
+      python3 -m pip install openstackclient
+      export PATH=\$PATH:/usr/local/bin
+"
+    exit 1
+  fi
 }
 
 output_of_initial_parameters () {
