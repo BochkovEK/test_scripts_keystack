@@ -53,6 +53,9 @@ do
         -pa|-prometheus_alerting) PROMETHEUS_PASS="$2"
 	        echo "Found the -prometheus_alerting, parameter set $PROMETHEUS_PASS"
           shift;;
+        -p|-push) PUSH="true"
+	        echo "Found the -push, parameter set $PUSH"
+          ;;
         --) shift
           break ;;
         *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
