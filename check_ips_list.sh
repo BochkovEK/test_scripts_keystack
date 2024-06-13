@@ -8,8 +8,6 @@ END=126
 i=$START
 while [[ $i -le $END ]]; do
 	echo "$i"
-	ping -c 2 $IP &> /dev/null
+	ping -c 2 $BASE_IP.$i &> /dev/null
         ((i = i + 1))
 done
-
-ping -c 2 $BASE_IP.$i &> /dev/null
