@@ -14,6 +14,7 @@ NC='\033[0m' # No Color
 [[ -z $LOG_LAST_LINES_NUMBER ]] && LOG_LAST_LINES_NUMBER=100
 [[ -z $OUTPUT_PERIOD ]] && OUTPUT_PERIOD=10
 [[ -z $NODE_NAME ]] && NODE_NAME=""
+[[ -z $DEBUG_STRING_ONLY ]] && DEBUG_STRING_ONLY="false"
 #==============================
 
 # Define parameters
@@ -28,10 +29,11 @@ while [ -n "$1" ]; do
         --help) echo -E "
         The script output drs logs from $DRS_LOG_FOLDER/$DRS_LOG_FILE on control nodes
 
-        -ln,  -line_numbers     <log_last_lines_number>
-        -n,   -node_name        <node_name>
-        -o,   -output_period    <output_period>
-        -v,   -debug            enable debug output (without parameters)
+        -ln,  -line_numbers       <log_last_lines_number>
+        -n,   -node_name          <node_name>
+        -o,   -output_period      <output_period>
+        -dso  -debug_string_only  output from logs debug string only (without parameters)
+        -v,   -debug              enable debug output (without parameters)
 "
       exit 0
       break ;;
@@ -47,6 +49,9 @@ while [ -n "$1" ]; do
     -v|-debug) DEBUG="true"
       echo "Found the -debug option, with parameter value $DEBUG"
       ;;
+    -dso|-debug_string_only) DEBUG_STRING_ONLY="true"
+      echo "Found the -debug_string_only option, with parameter value $DEBUG_STRING_ONLY"
+      ;;
     --) shift
       break ;;
     *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
@@ -56,7 +61,12 @@ done
 
 read_logs () {
   echo -e "${CYAN}Drs $LOG_LAST_LINES_NUMBER lines logs from $1${NC}"
-  ssh -o StrictHostKeyChecking=no $1 tail -${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE
+  if [ "$DEBUG_STRING_ONLY" = true ]; then
+    echo -e "${ORANGE}DEBUG strings only${NC}"
+    ssh -o StrictHostKeyChecking=no $1 tail -${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE|grep "DEBUG"
+  else
+    ssh -o StrictHostKeyChecking=no $1 tail -${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE
+  fi
   echo -e "${BLUE}`date`${NC}"
   echo -e "For read all log on $1:"
   echo -e "${ORANGE}ssh -t -o StrictHostKeyChecking=no $1 less $DRS_LOG_FOLDER/$DRS_LOG_FILE${NC}"
