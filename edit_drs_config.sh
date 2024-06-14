@@ -82,7 +82,7 @@ pull_conf () {
 
 push_conf () {
   echo "Pushing drs.ini..."
-  ctrl_nodes=$(cat /etc/hosts | grep -E ${ctrl_pattern} | awk '{print $2}')
+  ctrl_nodes=$(cat /etc/hosts | grep -E ${ctrl_pattern} | awk '{print $1}')
 
   for node in $ctrl_nodes; do
     if [ "$DEBUG" = true ]; then
