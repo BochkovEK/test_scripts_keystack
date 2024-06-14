@@ -119,7 +119,7 @@ if [ -z "${NODE_NAME}" ]; then
   [DEBUG]: leader_2_exist: $leader_2_exist
         "
         echo -e "${ORANGE}Leader node could not be found${NC}"
-        return
+        break
       fi
     fi
   done
