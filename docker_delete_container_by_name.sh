@@ -52,8 +52,8 @@ while [ -n "$1" ]
 do
     case "$1" in
         --help) echo -E "
-        -c, 	-container_name   <container_name>
-        -nt, 	-type_of_nodes    <type_of_nodes> 'ctrl', 'comp', 'net'
+        -c,   -container_name   <container_name>
+        -nt,  -type_of_nodes    <type_of_nodes> 'ctrl', 'comp', 'net'
         -nn,  -node_name        <node_name>     <stand_name>-keystack-<type>-<number>
 "
       exit 0
