@@ -82,9 +82,12 @@ get_drs_logs () {
     echo "Copy drs logs tail: ${TAIL_NUM} from $host_name..."
 	  tail_strins=$(ssh -o "StrictHostKeyChecking=no" $host tail -$TAIL_NUM $DRS_LOGS_SRC)
 	  echo $tail_strins > $DRS_LOGS_DEST/drs_log_from_${host_name}_tail_${TAIL_NUM}.txt
-	  echo "Copy docker drs logs from $host_name..."
-	  docker_logs_drs_strins=$(ssh -o "StrictHostKeyChecking=no" $host docker logs drs)
-	  echo $docker_logs_drs_strins > $DRS_LOGS_DEST/docker_logs_drs_log_from_${host_name}.txt
+	  echo "Copy docker logs drs from $host_name..."
+	  docker_logs_drs_strings=$(ssh -o "StrictHostKeyChecking=no" $host docker logs drs)
+	  echo $docker_logs_drs_strings > $DRS_LOGS_DEST/docker_logs_drs_from_${host_name}.txt
+	  echo "Copy docker inspect drs from $host_name..."
+	  docker_inspect_drs_strings=$(ssh -o "StrictHostKeyChecking=no" $host docker inspect drs)
+	  echo $docker_inspect_drs_strings > $DRS_LOGS_DEST/docker_inspect_drs_from_${host_name}.txt
 	  echo "Copy drs.ini from $host_name..."
     scp -o "StrictHostKeyChecking=no" $host:/etc/kolla/drs/drs.ini $DRS_LOGS_DEST/drs_ini_${host_name}.txt
     echo "Save optimization list from $host_name..."
