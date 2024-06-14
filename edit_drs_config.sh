@@ -90,6 +90,10 @@ push_conf () {
   [DEBUG]: \"\$ctrl_nodes\": $string\n
   "
     fi
+    #change api_host = 10.224.132.178
+    echo "sed api_host = $node on $CONF_NAME"
+    sed -i --regexp-extended "s/api_host\s+=\s+[0-9]+.[0-9]+.[0-9]+.[0-9]+/api_host = $node/" \
+      $script_dir/$test_node_conf_dir/$CONF_NAME
     echo "Сopying $service_name conf to $node:$conf_dir/$CONF_NAME"
     scp -o StrictHostKeyChecking=no $script_dir/$test_node_conf_dir/$CONF_NAME $node:$conf_dir/$CONF_NAME
   done
@@ -102,6 +106,7 @@ push_conf () {
 
 change_add_debug_param () {
   echo "Add debug to drs.ini..."
+
   pull_conf
   sed -i 's/\[DEFAULT\]/\[DEFAULT\]\ndebug = true/' $script_dir/$test_node_conf_dir/$CONF_NAME
   push_conf
