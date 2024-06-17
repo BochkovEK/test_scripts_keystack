@@ -96,8 +96,10 @@ find_leader () {
 }
 
 if [ -n "${NODE_NAME}" ]; then
+  echo "Read logs from $NODE_NAME..."
   read_logs $NODE_NAME
 elif [ "$ALL_NODES" = true ]; then
+  echo "Read logs from all nodes..."
   read_logs_from_all_ctrl
 else
   echo "Try to define DRS leader ctrl node..."
