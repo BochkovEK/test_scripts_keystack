@@ -15,6 +15,7 @@ NC='\033[0m' # No Color
 [[ -z $OUTPUT_PERIOD ]] && OUTPUT_PERIOD=10
 [[ -z $NODE_NAME ]] && NODE_NAME=""
 [[ -z $DEBUG_STRING_ONLY ]] && DEBUG_STRING_ONLY="false"
+[[ -z $ALL_NODES ]] && ALL_NODES="false"
 #==============================
 
 # Define parameters
@@ -34,6 +35,7 @@ while [ -n "$1" ]; do
         -o,   -output_period      <output_period>
         -dso  -debug_string_only  output from logs debug string only (without parameters)
         -v,   -debug              enable debug output (without parameters)
+        -all                      check logs on all ctrl nodes
 "
       exit 0
       break ;;
@@ -51,6 +53,9 @@ while [ -n "$1" ]; do
       ;;
     -dso|-debug_string_only) DEBUG_STRING_ONLY="true"
       echo "Found the -debug_string_only option, with parameter value $DEBUG_STRING_ONLY"
+      ;;
+    -all) ALL_NODES="true"
+      echo "Found the -all option, with parameter value $ALL_NODES"
       ;;
     --) shift
       break ;;
@@ -130,8 +135,10 @@ if [ -z "${NODE_NAME}" ]; then
     echo -e "${ORANGE}Leader node is: $leader_drs_ctrl${NC}"
     periodic_read_logs $leader_drs_ctrl
   fi
-else
+elif [ -n "${NODE_NAME}" ]; then
   read_logs $NODE_NAME
+else
+  read_logs_from_all_ctrl
 fi
 
 #    ; echo -e "${BLUE}`date`${NC}"
