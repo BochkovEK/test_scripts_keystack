@@ -95,7 +95,11 @@ find_leader () {
   ssh -o StrictHostKeyChecking=no $1 tail -${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE|grep -E 'leadership updated|becomes a leader'
 }
 
-if [ -z "${NODE_NAME}" ]; then
+if [ -n "${NODE_NAME}" ]; then
+  read_logs $NODE_NAME
+elif [ "$ALL_NODES" = true ]; then
+  read_logs_from_all_ctrl
+else
   echo "Try to define DRS leader ctrl node..."
 
   srv=$(cat /etc/hosts | grep -E "$CTRL_NODES" | awk '{print $1}')
@@ -135,10 +139,6 @@ if [ -z "${NODE_NAME}" ]; then
     echo -e "${ORANGE}Leader node is: $leader_drs_ctrl${NC}"
     periodic_read_logs $leader_drs_ctrl
   fi
-elif [ -n "${NODE_NAME}" ]; then
-  read_logs $NODE_NAME
-else
-  read_logs_from_all_ctrl
 fi
 
 #    ; echo -e "${BLUE}`date`${NC}"
