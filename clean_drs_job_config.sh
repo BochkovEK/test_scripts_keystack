@@ -19,10 +19,10 @@ check_openrc_file
 jobs_list=$(drs jo list -c id|grep "|\s[0-9]\+\s|"|awk '{print $2}')
 configs_list=$(drs co list -c id|grep "|\s[0-9]\+\s|"|awk '{print $2}')
 
-for jo in jobs; do
+for jo in $jobs_list; do
   drs job delete $jo
 done
 
-for co in configs; do
+for co in $configs_list; do
   drs config delete $co
 done
