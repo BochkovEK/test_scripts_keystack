@@ -194,7 +194,7 @@ For sberlinux 9.3.3 try these commands:
 }
 
 # check wget
-check_openstack_cli () {
+check_wget () {
   echo "Check wget..."
   check_command wget
   #mock test
