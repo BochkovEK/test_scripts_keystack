@@ -144,7 +144,6 @@ else
   fi
 fi
 
-
 #    ; echo -e "${BLUE}`date`${NC}"
 #    echo -e "For read all log on $host:"
 #    echo -e "${ORANGE}ssh -t -o StrictHostKeyChecking=no $host less /var/log/kolla/drs/drs.log${NC}"
