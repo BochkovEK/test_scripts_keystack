@@ -6,9 +6,9 @@
 # example nodes list define
 # NODES=("<IP_1>" "<IP_2>" "<IP_3>" "...")
 
-comp_pattern="\-comp\-..$"
-ctrl_pattern="\-ctrl\-..$"
-net_pattern="\-net\-..$"
+comp_pattern="\-comp\-..($|\s)"
+ctrl_pattern="\-ctrl\-..($|\s)"
+net_pattern="\-net\-..($|\s)"
 nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
 
 #Colors
