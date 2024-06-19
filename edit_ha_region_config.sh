@@ -6,7 +6,7 @@ ctrl_pattern="\-ctrl\-..$"
 service_name=consul
 #consul_conf_dir=kolla/$service_name
 test_node_conf_dir=kolla/$service_name
-conf_dir=/etc/kolla/service_name
+conf_dir=/etc/kolla/$service_name
 script_dir=$(dirname $0)
 
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
