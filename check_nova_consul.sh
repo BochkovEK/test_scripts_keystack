@@ -256,7 +256,8 @@ Check_disabled_computes_in_nova () {
 # Check docker container
 Check_docker_container () {
     echo "Check $2 docker on $1 nodes..."
-    nodes=$(Switch_case_nodes_type $1)
+#    nodes=$(Switch_case_nodes_type $1)
+    Switch_case_nodes_type $1
     [ "$DEBUG" = true ] && echo -e "
   [DEBUG]: \"\$nodes\": $nodes\n
   "
