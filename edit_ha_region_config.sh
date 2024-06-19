@@ -106,7 +106,7 @@ push_conf () {
   ctrl_nodes=$(cat /etc/hosts | grep -E ${ctrl_pattern} | awk '{print $1}')
   [ "$DEBUG" = true ] && { for string in $ctrl_nodes; do debug_echo $string; done; }
 
-  "bind_address": "10.224.132.178",
+#  "bind_address": "10.224.132.178",
 
   for node in $ctrl_nodes; do
     echo "\"bind_address\": \"$node\" on $CONF_NAME"
