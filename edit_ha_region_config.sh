@@ -162,7 +162,7 @@ change_nova_fencing () {
 }
 
 check_bmc_suffix () {
-  #pull_consul_conf
+  pull_consul_conf
   [ "$DEBUG" = true ] && echo -e "
   [DEBUG]
   script_dir: $script_dir
