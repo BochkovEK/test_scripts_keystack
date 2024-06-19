@@ -4,7 +4,7 @@
 ctrl_pattern="\-ctrl\-..$"
 service_name=drs
 test_node_conf_dir=kolla/$service_name
-conf_dir=/etc/kolla/drs
+conf_dir=/etc/kolla/service_name
 #conf_name=drs.ini
 
 script_dir=$(dirname $0)

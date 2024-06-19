@@ -3,8 +3,10 @@
 # Start scrip to change alive_threshold in consul conf: bash edit_ha_region_config.sh -a 2
 
 ctrl_pattern="\-ctrl\-..$"
-consul_conf_dir=kolla/consul
-
+service_name=consul
+#consul_conf_dir=kolla/$service_name
+test_node_conf_dir=kolla/$service_name
+conf_dir=/etc/kolla/service_name
 script_dir=$(dirname $0)
 
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
@@ -86,26 +88,32 @@ Check_openrc_file () {
 }
 
 cat_conf () {
-  echo "Cat all consul configs..."
-  bash $script_dir/command_on_nodes.sh -nt ctrl -c "echo \"cat /etc/$consul_conf_dir/region-config_${REGION}.json\"; cat /etc/$consul_conf_dir/region-config_${REGION}.json"
+  echo "Cat all $service_name configs..."
+  bash $script_dir/command_on_nodes.sh -nt ctrl -c "echo \"cat $conf_dir/region-config_${REGION}.json\"; cat $conf_dir/region-config_${REGION}.json"
 }
 
 pull_consul_conf () {
-  echo "Check and create folder $consul_conf_dir in $script_dir folder"
-  [ ! -d $script_dir/$consul_conf_dir ] && { mkdir -p $script_dir/$consul_conf_dir; }
-  ctrl_node=$(cat /etc/hosts | grep -m 1 -E ${ctrl_pattern} | awk '{print $2}')
+  echo "Check and create folder $test_node_conf_dir in $script_dir folder"
+  [ ! -d $script_dir/$test_node_conf_dir ] && { mkdir -p $script_dir/$test_node_conf_dir; }
+  ctrl_node=$(cat /etc/hosts | grep -m 1 -E ${ctrl_pattern} | awk '{print $1}')
 
-  echo "Pull consul conf from $ctrl_node:/etc/$consul_conf_dir/region-config_${REGION}.json"
-  scp -o StrictHostKeyChecking=no $ctrl_node:/etc/$consul_conf_dir/region-config_${REGION}.json $script_dir/$consul_conf_dir
+  echo "Pull consul conf from $ctrl_node:$conf_dir/region-config_${REGION}.json"
+  scp -o StrictHostKeyChecking=no $ctrl_node:$conf_dir/region-config_${REGION}.json $script_dir/$test_node_conf_dir
 }
 
 push_conf () {
   [ -z $CONF_NAME ] && { CONF_NAME=region-config_${REGION}.json; }
-  ctrl_nodes=$(cat /etc/hosts | grep -E ${ctrl_pattern} | awk '{print $2}')
+  ctrl_nodes=$(cat /etc/hosts | grep -E ${ctrl_pattern} | awk '{print $1}')
   [ "$DEBUG" = true ] && { for string in $ctrl_nodes; do debug_echo $string; done; }
+
+  "bind_address": "10.224.132.178",
+
   for node in $ctrl_nodes; do
-    echo "Push consul conf to $node:/etc/$consul_conf_dir/$CONF_NAME"
-    scp -o StrictHostKeyChecking=no $script_dir/$consul_conf_dir/$CONF_NAME $node:/etc/$consul_conf_dir/$CONF_NAME
+    echo "\"bind_address\": \"$node\" on $CONF_NAME"
+    sed -i --regexp-extended "s/bind_address\s+:\s+\"[0-9]+.[0-9]+.[0-9]+.[0-9]+\"\,/\"bind_address\": \"$node\",/" \
+      $script_dir/$test_node_conf_dir/$CONF_NAME
+    echo "Push consul conf to $node:$conf_dir/$CONF_NAME"
+    scp -o StrictHostKeyChecking=no $script_dir/$test_node_conf_dir/$CONF_NAME $node:$conf_dir/$CONF_NAME
   done
 }
 
@@ -113,7 +121,7 @@ change_alive_threshold () {
   echo "Changing alive threshold..."
   pull_consul_conf
   sed -i --regexp-extended "s/\"alive_compute_threshold\":\s+\"[0-9]+\"/\"alive_compute_threshold\": \"$1\"/" \
-   $script_dir/$consul_conf_dir/region-config_${REGION}.json
+   $script_dir/$test_node_conf_dir/region-config_${REGION}.json
   push_conf
   conf_changed="true"
 }
@@ -121,16 +129,16 @@ change_alive_threshold () {
 change_dead_threshold () {
   echo "Changing dead threshold..."
   pull_consul_conf
-  dead_threshold_string_exist=$(cat $script_dir/$consul_conf_dir/region-config_${REGION}.json| grep 'dead_compute_threshold')
+  dead_threshold_string_exist=$(cat $script_dir/$test_node_conf_dir/region-config_${REGION}.json| grep 'dead_compute_threshold')
 
   if [ -z "$dead_threshold_string_exist" ]; then
-    alive_threshold_string=$(cat $script_dir/$consul_conf_dir/region-config_${REGION}.json| grep 'alive_compute_threshold')
+    alive_threshold_string=$(cat $script_dir/$test_node_conf_dir/region-config_${REGION}.json| grep 'alive_compute_threshold')
 
     sed -i --regexp-extended "s/$alive_threshold_string/${alive_threshold_string}\n   \"dead_compute_threshold\": \"$1\",/" \
-    $script_dir/$consul_conf_dir/region-config_${REGION}.json
+    $script_dir/$test_node_conf_dir/region-config_${REGION}.json
   else
     sed -i --regexp-extended "s/\"dead_compute_threshold\":\s+\"[0-9]+\",/\"dead_compute_threshold\": \"$1\",/" \
-      $script_dir/$consul_conf_dir/region-config_${REGION}.json
+      $script_dir/$test_node_conf_dir/region-config_${REGION}.json
   fi
   push_conf
 #  cat_consul_conf
@@ -139,9 +147,9 @@ change_dead_threshold () {
 
 change_ipmi_fencing () {
   if [ "$1" = true ]; then
-    bash $script_dir/command_on_nodes.sh -nt ctrl -c "sed -i 's/\"bmc\": false/\"bmc\": true/' /etc/$consul_conf_dir/region-config_${REGION}.json"
+    bash $script_dir/command_on_nodes.sh -nt ctrl -c "sed -i 's/\"bmc\": false/\"bmc\": true/' $conf_dir/region-config_${REGION}.json"
   elif [ "$1" = false ]; then
-    bash $script_dir/command_on_nodes.sh -nt ctrl -c "sed -i 's/\"bmc\": true/\"bmc\": false/' /etc/$consul_conf_dir/region-config_${REGION}.json"
+    bash $script_dir/command_on_nodes.sh -nt ctrl -c "sed -i 's/\"bmc\": true/\"bmc\": false/' $conf_dir/region-config_${REGION}.json"
   else
     echo "$1 - is not valid ipmi parameter"
     return 1
@@ -151,9 +159,9 @@ change_ipmi_fencing () {
 
 change_nova_fencing () {
   if [ "$1" = true ]; then
-    bash $script_dir/command_on_nodes.sh -nt ctrl -c "sed -i 's/\"nova\": false/\"nova\": true/' /etc/$consul_conf_dir/region-config_${REGION}.json"
+    bash $script_dir/command_on_nodes.sh -nt ctrl -c "sed -i 's/\"nova\": false/\"nova\": true/' $conf_dir/region-config_${REGION}.json"
   elif [ "$1" = false ]; then
-    bash $script_dir/command_on_nodes.sh -nt ctrl -c "sed -i 's/\"nova\": true/\"nova\": false/' /etc/$consul_conf_dir/region-config_${REGION}.json"
+    bash $script_dir/command_on_nodes.sh -nt ctrl -c "sed -i 's/\"nova\": true/\"nova\": false/' $conf_dir/region-config_${REGION}.json"
   else
     echo "$1 - is not valid nova parameter"
     return 1
@@ -167,13 +175,13 @@ check_bmc_suffix () {
   [DEBUG]
   script_dir: $script_dir
   REGION: $REGION
-  consul_conf_dir: $consul_conf_dir
+  ${service_name}_conf_dir: $conf_dir
   "
 
-  [ ! -f $script_dir/$consul_conf_dir/region-config_${REGION}.json ] && { echo "Config exists in: $script_dir/$consul_conf_dir/region-config_${REGION}.json"; pull_consul_conf; }
+  [ ! -f $script_dir/$test_node_conf_dir/region-config_${REGION}.json ] && { echo "Config exists in: $script_dir/$test_node_conf_dir/region-config_${REGION}.json"; pull_consul_conf; }
   [ "$DEBUG" = true ] && { echo -e "[DEBUG]\n"; ls -la $script_dir; }
-  [ ! -f $script_dir/$consul_conf_dir/region-config_${REGION}.json ] && { echo "Config not found"; exit 1; }
-  suffix_string_raw_1=$(cat $script_dir/$consul_conf_dir/region-config_${REGION}.json|grep 'suffix')
+  [ ! -f $script_dir/$test_node_conf_dir/region-config_${REGION}.json ] && { echo "Config not found"; exit 1; }
+  suffix_string_raw_1=$(cat $script_dir/$test_node_conf_dir/region-config_${REGION}.json|grep 'suffix')
   suffix_string_raw_2=${suffix_string_raw_1//\"/}
   echo "${suffix_string_raw_2%%,*}"|awk '{print $2}'
 }
