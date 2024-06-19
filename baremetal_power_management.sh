@@ -124,7 +124,7 @@ start_python_power_management_script () {
       check)
         python_script_execute check
         ;;
-      on)
+      on|start)
         actual_power_state=$(python_script_execute check| tail -n1)
         echo "Actual ipmi satus: $actual_power_state"
         if [ "$actual_power_state" = "PowerState.OFF" ]; then
