@@ -18,7 +18,7 @@ def fence_redfish(hostname, power_state='on', username='root', password='r00tme'
     elif power_state == 'restart':
         return system.reset_system(sushy.RESET_MANAGER_FORCE_RESTART)
     elif power_state == 'off':
-        return system.reset_system(sushy.RESET_OFF)
+        return system.reset_system(sushy.FORCE_OFF)
     elif power_state == 'check':
         print("Check power state...")
         return system.power_state
