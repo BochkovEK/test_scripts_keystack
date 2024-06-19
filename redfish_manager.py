@@ -11,7 +11,7 @@ def fence_redfish(hostname, power_state='on', username='root', password='r00tme'
     s = sushy.Sushy(url, auth=basic_auth, verify=verify)
     system = s.get_system()
     # current_state = system.power_state
-    if power_state == 'on':
+    if power_state == 'on' or power_state == 'start':
         # print(f"Try to power ON {hostname}...\nNone is ok output")
         return system.reset_system(sushy.RESET_ON)
         # return power_on
