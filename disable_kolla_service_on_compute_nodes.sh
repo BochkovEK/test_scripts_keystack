@@ -1,8 +1,8 @@
 # The scrip disable autorestart nova_compute and consul docker containers
 
-comp_pattern="\-comp\-..$"
-ctrl_pattern="\-ctrl\-..$"
-net_pattern="\-net\-..$"
+comp_pattern="\-comp\-..($|\s)"
+ctrl_pattern="\-ctrl\-..($|\s)"
+net_pattern="\-net\-..($|\s)"
 nodes_to_find="$comp_pattern"
 
 #Colors
