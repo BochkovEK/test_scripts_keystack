@@ -110,7 +110,7 @@ push_conf () {
 
   for node in $ctrl_nodes; do
     echo "\"bind_address\": \"$node\" on $CONF_NAME"
-    sed -i --regexp-extended "s/bind_address\s+:\s+\"[0-9]+.[0-9]+.[0-9]+.[0-9]+\"\,/\"bind_address\": \"$node\",/" \
+    sed -i --regexp-extended "s/\"bind_address\"\s+:\s+\"[0-9]+.[0-9]+.[0-9]+.[0-9]+\"\,/\"bind_address\": \"$node\",/" \
       $script_dir/$test_node_conf_dir/$CONF_NAME
     echo "Push consul conf to $node:$conf_dir/$CONF_NAME"
     scp -o StrictHostKeyChecking=no $script_dir/$test_node_conf_dir/$CONF_NAME $node:$conf_dir/$CONF_NAME
