@@ -234,6 +234,7 @@ VMs will be created with the following parameters:
         Addition key:           $ADD_KEY
         Creating VMs without a timeout (bool): $BATCH
         Debug:                  $DEBUG
+        Wait for creating       $WAIT_FOR_CREATED
         "
 
     [[ ! $DONT_ASK = "true" ]] && { read -p "Press enter to continue: "; }
