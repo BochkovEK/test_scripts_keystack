@@ -525,7 +525,7 @@ wait_vms_created () {
   [DEBUG]
   bilding_id_vms_list: $bilding_id_vms_list
 "
-  while [ $building_vms -ne 0 ]; do
+  while [ $building_vms -eq 0 ]; do
     building_vms=$VM_QTY
     echo "Wait for $building_vms vms created..."
     for id in $bilding_id_vms_list; do
