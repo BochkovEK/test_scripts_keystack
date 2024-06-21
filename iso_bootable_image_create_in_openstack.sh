@@ -51,7 +51,6 @@ if [ -z $iso_in_openstack ]; then
     --disk-format iso \
     --container-format bare \
     --property hw_rescue_device=cdrom \
-    --property hw_rescue_device=cdrom \
     --property hw_rescue_bus=usb
 else
   echo "bootable iso image already exists in openstack"

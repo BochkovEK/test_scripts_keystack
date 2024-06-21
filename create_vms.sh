@@ -54,6 +54,7 @@ CIRROS_IMAGE_NAME="cirros-0.6.2-x86_64-disk"
 [[ -z $DONT_CHECK ]] && DONT_CHECK="false"
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
 [[ -z $DEBUG ]] && DEBUG="false"
+[[ -z $WAIT_FOR_CREATED ]] && WAIT_FOR_CREATED="true"
 #======================
 
 while [ -n "$1" ]
@@ -76,6 +77,7 @@ do
         -add                        <add command key>
         -b            -batch        creating VMs without a timeout (without value)
         -debug                      enabled debug output (without parameter)
+        -wait                       wait for vms created <true\false>
         "
           exit 0
           break ;;
@@ -135,6 +137,10 @@ do
         -add) add_key="$2"
           echo "Found the -add <add command key> option, with parameter value $add_key"
           ADD_KEY=$add_key
+          shift ;;
+        -wait) wait_for_created="$2"
+          echo "Found the -wait <true/false> option, with parameter value $wait_for_created"
+          WAIT_FOR_CREATED=$wait_for_created
           shift ;;
         -debug) DEBUG="true"
 	        echo "Found the -debug, with parameter value $DEBUG"
@@ -511,7 +517,23 @@ check_vms_list () {
   fi
 }
 
-# VM create (old)
+# Wait vms created...
+wait_vms_created () {
+  building_vms=$VM_QTY
+  while [ $building_vms -ne 0 ]; do
+    echo "Wait for $building_vms vms created..."
+    id_vms_list=$(openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks|grep BUILD|awk '{print $2}')
+    for id in $id_vms_list; do
+      status=""
+      status=$(openstack server show $id |grep -E "\|\s+status\s+\|\s+\w+")
+      if [ "$status" = ACTIVE ]; then
+        building_vms=$(( $building_vms - 1 ))
+      fi
+    done
+  done
+}
+
+# VM create with timeout
 create_vms () {
 
   echo "Creating VMs with timeout: $TIMEOUT_BEFORE_NEXT_CREATION..."
@@ -578,7 +600,11 @@ create_vms () {
     [[ $i -ne $VM_QTY ]] && { sleep $TIMEOUT_BEFORE_NEXT_CREATION; }
   done
 
-  check_vms_list
+  if [ "$WAIT_FOR_CREATED" = true ]; then
+    wait_vms_created
+  else
+    check_vms_list
+  fi
 }
 
 # VM create
