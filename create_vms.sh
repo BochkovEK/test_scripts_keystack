@@ -691,8 +691,8 @@ building_vms=$VM_QTY
 while [ $building_vms -ne 0 ]; do
         echo $building_vms
         building_vms=$(( $building_vms - 1 ))
-        exit
 done
+exit
 
 chech_hv
 check_project
