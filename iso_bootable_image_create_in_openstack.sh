@@ -4,6 +4,8 @@
 
 script_dir=$(dirname $0)
 
+[[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
+
 while [ -n "$1" ]
 do
     case "$1" in
@@ -19,9 +21,22 @@ do
         shift
 done
 
+# Check openrc file
+check_and_source_openrc_file () {
+    echo "Check openrc file and source it..."
+    check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
+    if [ -z "$check_openrc_file" ]; then
+        printf "%s\n" "${red}openrc file not found in $OPENRC_PATH - ERROR!${normal}"
+        exit 1
+    fi
+    source $OPENRC_PATH
+    #export OS_PROJECT_NAME=$PROJECT
+}
+
+check_and_source_openrc_file
 wget https://repo.itkey.com/repository/images/gparted-live-1.5.0-6-amd64.iso -O $script_dir/gpart-live.iso
 openstack image create gpart-live.iso \
-  --file gparted-live-1.5.0-6-amd64.iso \
+  --file gpart-live.iso \
   --disk-format iso \
   --container-format bare \
   --property hw_rescue_device=cdrom \
