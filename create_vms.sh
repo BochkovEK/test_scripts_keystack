@@ -680,6 +680,12 @@ create_vms_batch () {
   check_vms_list
 }
 
+
+check_openstack_cli
+check_wget
+check_and_source_openrc_file
+output_of_initial_parameters
+
 building_vms=$VM_QTY
 
 while [ $building_vms -ne 0 ]; do
@@ -688,10 +694,6 @@ while [ $building_vms -ne 0 ]; do
         exit
 done
 
-check_openstack_cli
-check_wget
-check_and_source_openrc_file
-output_of_initial_parameters
 chech_hv
 check_project
 check_and_add_secur_group
