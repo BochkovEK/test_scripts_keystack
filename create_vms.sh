@@ -525,17 +525,16 @@ wait_vms_created () {
   [DEBUG]
   bilding_id_vms_list: $bilding_id_vms_list
 "
-
   building_vms=$VM_QTY
   while [ $building_vms -ne 0 ]; do
     building_vms=$VM_QTY
     echo "Wait for $building_vms vms created..."
     for id in $bilding_id_vms_list; do
       status=""
-      server_show_strings=""
-      server_show_strings=$(openstack server show $id)
-      status=$(echo $server_show_strings|grep -E "\|\s+status\s+\|\s+\w+"| awk '{print $4}')
-      name=$(echo $server_show_strings|grep -E "\|\s+name\s+\|\s+\w+"| awk '{print $4}')
+      name=""
+
+      status=$(openstack server show $id|grep -E "\|\s+status\s+\|\s+\w+"| awk '{print $4}')
+      name=$(openstack server show $id|grep -E "\|\s+name\s+\|\s+\w+"| awk '{print $4}')
 
       echo "server_name: $name"
       echo "status: $status"| \
