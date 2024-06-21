@@ -520,25 +520,27 @@ check_vms_list () {
 
 # Wait vms created...
 wait_vms_created () {
-  building_vms=$VM_QTY
-  while [ $building_vms -ne 0 ]; do
-    echo "Wait for $building_vms vms created..."
-    bilding_id_vms_list=$(openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks|grep BUILD|awk '{print $2}')
-
+  bilding_id_vms_list=$(openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks|grep BUILD|awk '{print $2}')
   [ "$DEBUG" = true ] && echo -e "
   [DEBUG]
   bilding_id_vms_list: $bilding_id_vms_list
 "
-
+  while [ $building_vms -ne 0 ]; do
+    building_vms=$VM_QTY
+    echo "Wait for $building_vms vms created..."
     for id in $bilding_id_vms_list; do
       status=""
-      status=$(openstack server show $id |grep -E "\|\s+status\s+\|\s+\w+"| awk '{print $4}')
+      server_show_strings=""
+      server_show_strings=$(openstack server show $id)
+      status=$(echo $server_show_strings|grep -E "\|\s+status\s+\|\s+\w+"| awk '{print $4}')
+      name=$(echo $server_show_strings|grep -E "\|\s+name\s+\|\s+\w+"| awk '{print $4}')
 
-      [ "$DEBUG" = true ] && echo -e "
-  [DEBUG]
-  id:       $id
-  status:   $status
-"
+      echo "server_name: $name"
+      echo "status: $status"| \
+        sed --unbuffered \
+        -e 's/\(.*BUILD.*\)/\o033[33m\1\o033[39m/' \
+        -e 's/\(.*ACTIVE.*\)/\o033[32m\1\o033[39m/' \
+        -e 's/\(.*ERROR.*\)/\o033[31m\1\o033[39m/'
 
       if [ "$status" = ACTIVE ]; then
         building_vms=$(( $building_vms - 1 ))
