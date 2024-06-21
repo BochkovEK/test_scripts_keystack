@@ -525,6 +525,8 @@ wait_vms_created () {
   [DEBUG]
   bilding_id_vms_list: $bilding_id_vms_list
 "
+
+  building_vms=$VM_QTY
   while [ $building_vms -ne 0 ]; do
     building_vms=$VM_QTY
     echo "Wait for $building_vms vms created..."
@@ -686,13 +688,13 @@ check_wget
 check_and_source_openrc_file
 output_of_initial_parameters
 
-building_vms=$VM_QTY
+#building_vms=$VM_QTY
 
-while [ $building_vms -ne 0 ]; do
-        echo $building_vms
-        building_vms=$(( $building_vms - 1 ))
-done
-exit
+#while [ $building_vms -ne 0 ]; do
+#        echo $building_vms
+#        building_vms=$(( $building_vms - 1 ))
+#done
+#exit
 
 chech_hv
 check_project
