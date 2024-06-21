@@ -680,7 +680,7 @@ create_vms_batch () {
   check_vms_list
 }
 
-building_vms=VM_QTY
+building_vms=$VM_QTY
 
 while [ $building_vms -ne 0 ]; do
         echo $building_vms
