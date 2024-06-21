@@ -680,6 +680,14 @@ create_vms_batch () {
   check_vms_list
 }
 
+building_vms=VM_QTY
+
+while [ $building_vms -ne 0 ]; do
+        echo $building_vms
+        building_vms=$(( $building_vms - 1 ))
+        exit
+done
+
 check_openstack_cli
 check_wget
 check_and_source_openrc_file
