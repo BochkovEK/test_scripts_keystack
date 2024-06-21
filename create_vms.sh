@@ -595,7 +595,6 @@ create_vms () {
     --os-compute-api-version $API_VERSION \
     --network $NETWORK \
     --boot-from-volume $VOLUME_SIZE \
-    --max $VM_QTY \
     $ADD_KEY
 "
 
