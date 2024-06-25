@@ -2,6 +2,7 @@ version: '2'
 services:
   dns:
     restart: always
+    container_name: dnsmasq
     image: strm/dnsmasq
     volumes:
       - ./dnsmasq.conf:/etc/dnsmasq.conf
