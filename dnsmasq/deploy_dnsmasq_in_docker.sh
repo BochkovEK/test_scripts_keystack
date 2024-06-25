@@ -8,7 +8,7 @@ script_dir=$(dirname $0)
 
 [[ -z $DOMAIN ]] && DOMAIN=""
 [[ -z $IP_LCM ]] && IP_LCM=""
-[[ -z $CONF_NAME ]] && $CONF_NAME="dnsmasq.conf"
+[[ -z $CONF_NAME ]] && CONF_NAME="dnsmasq.conf"
 
 get_var () {
   echo "Get vars..."
