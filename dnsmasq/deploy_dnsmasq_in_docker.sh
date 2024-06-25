@@ -51,6 +51,6 @@ deploy_dnsmasq_cont () {
 get_var
 sed_var_in_conf
 cat_conf
-read -p "Press enter to continue: "
+read -p "\nPress enter to continue: "
 deploy_dnsmasq_cont
 
