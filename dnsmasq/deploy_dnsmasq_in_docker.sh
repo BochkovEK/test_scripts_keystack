@@ -45,7 +45,7 @@ cat_conf () {
 }
 
 deploy_dnsmasq_cont () {
-  docker compose -f $script_dir/docker-compose.yaml up -d
+  docker compose -f $script_dir/docker-compose.yml up -d
 }
 
 
