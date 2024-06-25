@@ -41,6 +41,7 @@ sed_var_in_conf () {
 cat_conf () {
   echo "Cat conf..."
   cat $script_dir/$CONF_NAME
+  echo
 }
 
 deploy_dnsmasq_cont () {
@@ -51,6 +52,6 @@ deploy_dnsmasq_cont () {
 get_var
 sed_var_in_conf
 cat_conf
-read -p "\nPress enter to continue: "
+read -p "Press enter to continue: "
 deploy_dnsmasq_cont
 
