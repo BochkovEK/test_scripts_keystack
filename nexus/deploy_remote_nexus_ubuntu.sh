@@ -2,12 +2,16 @@
 
 # Script for deploy nexus to ubuntu\ may be sber linux
 
-# Before nexus deploy:
-# 1) Change vi $HOME/test_scripts_keystack/self_signed_certs/certs_envs
-# 2) source $HOME/test_scripts_keystack/self_signed_certs/certs_envs
-# 3) Generate certs in $HOME/certs: bash $HOME/test_scripts_keystack/self_signed_certs/generate_self_signed_certs.sh
-# After nexus deploy:
-# copy $HOME/certs to $HOME/installer/ on lcm:
+# Remote nexus deploy
+# 1) Change certs_envs:
+# vi $HOME/test_scripts_keystack/self_signed_certs/certs_envs
+# 2) Source envs:
+# source $HOME/test_scripts_keystack/self_signed_certs/certs_envs
+# 3) Generate certs in $HOME/certs:
+# bash $HOME/test_scripts_keystack/self_signed_certs/generate_self_signed_certs.sh
+# 4) Deploy nexus:
+# bash $HOME/test_scripts_keystack/deploy_remote_nexus_ubuntu.sh
+# 5) For installer.sh use remote nexus copy $HOME/certs to $HOME/installer/ on lcm:
 # scp -r $HOME/certs $lcm:$HOME/installer/
 
 #!!! docker exec -it nexus cat /nexus-data/admin.password

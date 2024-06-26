@@ -14,6 +14,7 @@
 # !!! to start:
 # source $HOME/test_scripts_keystack/self_signed_certs/certs_envs
 # bash $HOME/test_scripts_keystack/self_signed_certs/generate_self_signed_certs.sh
+# After generate $HOME/certs will be created
 
 script_dir=$(dirname $0)
 
