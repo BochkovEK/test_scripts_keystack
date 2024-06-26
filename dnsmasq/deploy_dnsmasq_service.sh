@@ -81,7 +81,9 @@ copy_dnsmasq_conf () {
   systemctl restart dnsmasq
   srv=$(cat /etc/hosts | grep -E "$nodes_to_find" | awk '{print $1}')
   for host in $srv;do
-    echo "Copy resolve.conf to $(cat /etc/hosts | grep -E ${host} | awk '{print $2}'):"
+    echo "Remove resolv.conf from $(cat /etc/hosts | grep -E ${host} | awk '{print $2}'):"
+    ssh -o StrictHostKeyChecking=no -t $host "rm /etc/resolv.conf"
+    echo "Copy resolv.conf to $(cat /etc/hosts | grep -E ${host} | awk '{print $2}'):"
     scp /etc/resolv.conf $host:/etc/resolv.conf
   done
 }
