@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# The scrip install dnsmasq
+# The script install dnsmasq
 # for mapping "ip - name" add string to dns_ip_mapping.txt file like /etc/hosts
 
 #Error starting userland proxy: listen udp4 0.0.0.0:53: bind: address already in use
@@ -94,7 +94,7 @@ while [ -n "$1" ]
 do
     case "$1" in
         --help) echo -E "
-        The scrip install dnsmasq
+        The script install dnsmasq
         To deploy dnsmasq on DNS server:
         1) Edit dns_ip_mapping.txt file like /etc/hosts to mapping <ip> <nameserver>
         2) bash $HOME/test_script_keystack/dnsmasq/deploy_dnsmasq_service.sh
