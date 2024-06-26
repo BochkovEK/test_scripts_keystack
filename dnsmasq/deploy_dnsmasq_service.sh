@@ -11,6 +11,8 @@
 
 script_dir=$(dirname $0)
 nodes_to_find='\-ctrl\-..( |$)|\-comp\-..( |$)|\-net\-..( |$)'
+yellow=`tput setaf 3`
+reset=`tput sgr0`
 
 [[ -z $DOMAIN ]] && DOMAIN=""
 [[ -z $DNS_SERVER_IP ]] && DNS_SERVER_IP=""
@@ -24,8 +26,10 @@ get_var () {
   fi
   export DOMAIN=${DOMAIN:-"test.domain"}
 
-  echo "Output ip a"
+  echo "${yellow}Output ip a:${reset}"
+  echo "-----------------------"
   ip a
+  echo -e "-----------------------\n"
 
   # get DNS_SERVER_IP
   while [ -z "${DNS_SERVER_IP}" ]; do

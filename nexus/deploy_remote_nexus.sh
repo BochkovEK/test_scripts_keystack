@@ -16,6 +16,9 @@
 
 #!!! docker exec -it nexus cat /nexus-data/admin.password
 
+yellow=`tput setaf 3`
+reset=`tput sgr0`
+
 [[ -z $DEBUG ]] && DEBUG="true"
 
 #Script_dir, current folder
@@ -85,3 +88,6 @@ sed -i "s/LCM_NEXUS_NAME/$REMOTE_NEXUS_NAME/g" $script_dir/nginx_https.conf
 
 #Conatiners up
 docker compose -f $script_dir/docker-compose.yaml up -d
+
+echo "${yellow}To get initial nexus admin password:${reset}"
+echo "docker exec -it nexus cat /nexus-data/admin.password"

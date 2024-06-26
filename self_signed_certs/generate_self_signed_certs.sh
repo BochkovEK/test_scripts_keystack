@@ -17,6 +17,8 @@
 # After generate $HOME/certs will be created
 
 script_dir=$(dirname $0)
+yellow=`tput setaf 3`
+reset=`tput sgr0`
 
 echo -E "
   env list:
