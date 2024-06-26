@@ -10,7 +10,7 @@
 # 3) Generate certs in $HOME/certs:
 # bash $HOME/test_scripts_keystack/self_signed_certs/generate_self_signed_certs.sh
 # 4) Deploy nexus:
-# bash $HOME/test_scripts_keystack/deploy_remote_nexus_ubuntu.sh
+# bash $HOME/test_scripts_keystack/deploy_remote_nexus.sh
 # 5) For installer.sh use remote nexus copy $HOME/certs to $HOME/installer/ on lcm:
 # scp -r $HOME/certs $lcm:$HOME/installer/
 
@@ -30,6 +30,11 @@ if ! command -v docker &> /dev/null; then
   if [ -n "$is_ubuntu" ]; then
     echo "Installing docker on ubuntu"
     bash $script_dir/docker_ubuntu_installation.sh
+  fi
+  is_sberlinux=$(cat /etc/os-release|grep sberlinux)
+  if [ -n "$is_sberlinux" ]; then
+    echo "Installing docker on sberlinux"
+    bash $script_dir/docker_sberlinux_installation.sh
   fi
 fi
 
