@@ -618,6 +618,7 @@ create_vms () {
 
   if [ "$WAIT_FOR_CREATED" = true ]; then
     wait_vms_created
+    check_vms_list
   else
     check_vms_list
   fi
@@ -677,8 +678,12 @@ create_vms_batch () {
 
   sleep $TIMEOUT_BEFORE_NEXT_CREATION
 
-# Check vms list...
-  check_vms_list
+  if [ "$WAIT_FOR_CREATED" = true ]; then
+    wait_vms_created
+    check_vms_list
+  else
+    check_vms_list
+  fi
 }
 
 
