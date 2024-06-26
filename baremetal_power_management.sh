@@ -18,7 +18,7 @@ required_modules=(
 script_dir=$(dirname $0)
 
 [[ -z $HOST_NAME ]] && HOST_NAME=""
-[[ -z $POWER_STATE ]] && POWER_STATE="on"
+[[ -z $POWER_STATE ]] && POWER_STATE="check"
 [[ -z $USER_NAME ]] && USER_NAME=""
 [[ -z $PASSWORD ]] && PASSWORD=""
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
