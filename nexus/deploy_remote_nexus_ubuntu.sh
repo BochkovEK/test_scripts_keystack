@@ -18,8 +18,6 @@
 
 [[ -z $DEBUG ]] && DEBUG="true"
 
-#REMOTE_NEXUS=remote-nexus
-
 #Script_dir, current folder
 script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
