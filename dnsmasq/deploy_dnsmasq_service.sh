@@ -77,7 +77,9 @@ install_dnsmasq () {
 copy_dnsmasq_conf () {
   cp $script_dir/$CONF_NAME /etc/$CONF_NAME
   cat $script_dir/dns_ip_mapping.txt >> /etc/hosts
-  echo "nameserver $DNS_SERVER_IP" >> /etc/resolv.conf
+  sed -i --regexp-extended "s/nameserver(\s+|)[0-9]+.[0-9]+.[0-9]+.[0-9]+/nameserver $DNS_SERVER_IP/" \
+      /etc/resolv.conf
+#  echo "nameserver $DNS_SERVER_IP" >> /etc/resolv.conf
   systemctl restart dnsmasq
   srv=$(cat /etc/hosts | grep -E "$nodes_to_find" | awk '{print $1}')
   for host in $srv;do
