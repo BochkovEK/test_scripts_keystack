@@ -3,8 +3,8 @@
 # Script for deploy nexus to ubuntu\ may be sber linux
 
 # Before nexus deploy:
-# 1) Change $parentdir/self_signed_certs/certs_envs
-# 2) Generate certs in $HOME/certs: $parentdir/self_signed_certs/generate_self_signed_certs.sh
+# 1) Change vi $HOME/test_scripts_keystack/self_signed_certs/certs_envs
+# 2) Generate certs in $HOME/certs: bash $HOME/test_scripts_keystack/self_signed_certs/generate_self_signed_certs.sh
 # After nexus deploy copy $HOME/certs to $HOME/installer/ on lcm:
 # scp -r $HOME/certs $lcm:$HOME/installer/
 
