@@ -4,10 +4,16 @@
 # docker installed needed
 # /etc/hosts
 
+#Error starting userland proxy: listen udp4 0.0.0.0:53: bind: address already in use
+#sudo systemctl stop systemd-resolved
+#sudo systemctl disable systemd-resolved
+
+#nc -vzu <IP> 53
+
 script_dir=$(dirname $0)
 
 [[ -z $DOMAIN ]] && DOMAIN=""
-[[ -z $IP_LCM ]] && IP_LCM=""
+[[ -z $DNS_SERVER_IP ]] && DNS_SERVER_IP=""
 [[ -z $CONF_NAME ]] && CONF_NAME="dnsmasq.conf"
 
 get_var () {
@@ -18,16 +24,16 @@ get_var () {
   fi
   export DOMAIN=${DOMAIN:-"test.domain"}
 
-  # get IP_LCM
-  while [ -z "${IP_LCM}" ]; do
-    if [[ -z "${IP_LCM}" ]]; then
-      read -rp "Enter LCM IP: " IP_LCM
+  # get DNS_SERVER_IP
+  while [ -z "${DNS_SERVER_IP}" ]; do
+    if [[ -z "${DNS_SERVER_IP}" ]]; then
+      read -rp "Enter DNS SERVER IP: " $DNS_SERVER_IP
     fi
-    export IP_LCM=${IP_LCM}
+    export DNS_SERVER_IP=${DNS_SERVER_IP}
   done
 
   echo $DOMAIN
-  echo $IP_LCM
+  echo $DNS_SERVER_IP
 }
 
 sed_var_in_conf () {
