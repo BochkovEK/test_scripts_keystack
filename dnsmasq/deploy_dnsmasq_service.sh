@@ -90,6 +90,23 @@ copy_dnsmasq_conf () {
   done
 }
 
+while [ -n "$1" ]
+do
+    case "$1" in
+        --help) echo -E "
+        The scrip install dnsmasq
+        To deploy dnsmasq on DNS server:
+        1) Edit dns_ip_mapping.txt file like /etc/hosts to mapping <ip> <nameserver>
+        2) bash $HOME/test_script_keystack/dnsmasq/deploy_dnsmasq_service.sh
+        "
+          exit 0
+          break ;;
+	      --) shift
+          break ;;
+        *) echo "$1 is not an option";;
+        esac
+        shift
+done
 
 get_var
 sed_var_in_conf
