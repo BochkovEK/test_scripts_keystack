@@ -26,7 +26,7 @@ get_var () {
   fi
   export DOMAIN=${DOMAIN:-"test.domain"}
 
-  echo "${yellow}Output ip a:${reset}"
+  echo -e "\n${yellow}Output ip a:${reset}"
   echo "-----------------------"
   ip a
   echo -e "-----------------------\n"
