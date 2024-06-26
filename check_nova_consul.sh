@@ -319,7 +319,7 @@ Check_consul_config () {
   "
   echo -e "${ORANGE}ssh -t -o StrictHostKeyChecking=no $leader_ctrl_node cat /etc/kolla/consul/region-config_${REGION}.json${NC}"
   ipmi_fencing_state=$(ssh -o StrictHostKeyChecking=no "$leader_ctrl_node" cat /etc/kolla/consul/region-config_"${REGION}".json| \
-  grep -E '"bmc": \w|"ipmi": \w|alive_compute_threshold|dead_compute_threshold|"ceph": \w|"nova": \w|"power_fence_mode": \w')
+  grep -E '"bmc": \w|"ipmi": \w|alive_compute_threshold|dead_compute_threshold|"ceph": \w|"nova": \w|"power_fence_mode"')
   echo "Fencing list:"
   echo "$ipmi_fencing_state" | \
             sed --unbuffered \
