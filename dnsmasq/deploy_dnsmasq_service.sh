@@ -24,6 +24,9 @@ get_var () {
   fi
   export DOMAIN=${DOMAIN:-"test.domain"}
 
+  echo "Output ip a"
+  ip a
+
   # get DNS_SERVER_IP
   while [ -z "${DNS_SERVER_IP}" ]; do
     if [[ -z "${DNS_SERVER_IP}" ]]; then
