@@ -2,9 +2,11 @@
 
 # Script for deploy nexus to ubuntu\ may be sber linux
 
-#Script сhanging LCM_NEXUS_NAME into $parentdir/self_signed_certs/certs_envs to $REMOTE_NEXUS
-#!!! After nexus deploy copy $HOME/certs to $HOME/installer/ on lcm
-#scp -r $HOME/certs $lcm:$HOME/installer/
+# Before nexus deploy:
+# 1) Change $parentdir/self_signed_certs/certs_envs
+# 2) Generate certs in $HOME/certs: $parentdir/self_signed_certs/generate_self_signed_certs.sh
+# After nexus deploy copy $HOME/certs to $HOME/installer/ on lcm:
+# scp -r $HOME/certs $lcm:$HOME/installer/
 
 #!!! docker exec -it nexus cat /nexus-data/admin.password
 
