@@ -56,12 +56,12 @@ install_dnsmasq () {
     is_ubuntu=$(cat /etc/os-release|grep ubuntu)
     if [ -n "$is_ubuntu" ]; then
       echo "Installing dnsmasq on ubuntu"
-      apt install -y dnsmasq
+      sudo apt install -y dnsmasq
     fi
     is_sberlinux=$(cat /etc/os-release|grep sberlinux)
     if [ -n "$is_sberlinux" ]; then
       echo "Installing dnsmasq on sberlinux"
-      yum in -y dnsmasq
+      sudo yum in -y dnsmasq
     fi
     systemctl enable dnsmasq --now
   fi
