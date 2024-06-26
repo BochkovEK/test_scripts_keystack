@@ -60,8 +60,8 @@ source $parentdir/self_signed_certs/certs_envs
 #  "
 #sed -i "s/$lcm_nexus_name_string/export LCM_NEXUS_NAME=$REMOTE_NEXUS/" $parentdir/self_signed_certs/certs_envs
 
-echo "Sourcing envs after sed"
-source $parentdir/self_signed_certs/certs_envs
+#echo "Sourcing envs after sed"
+#source $parentdir/self_signed_certs/certs_envs
 
 #Add string to hosts
 nexus_string_exists=$(cat /etc/hosts|grep $REMOTE_NEXUS_NAME)
