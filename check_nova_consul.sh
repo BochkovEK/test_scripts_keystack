@@ -10,6 +10,7 @@ green=$(tput setaf 2)
 red=$(tput setaf 1)
 violet=$(tput setaf 5)
 normal=$(tput sgr0)
+yellow=$(tput setaf 3)
 
 CYAN='\033[0;36m'
 BLUE='\033[0;34m'
@@ -119,6 +120,7 @@ Check_openrc_file () {
 # Check nova srvice list
 Check_nova_srvice_list () {
     echo "Check nova srvice list..."
+    printf "%40s\n" "${yellow}openstack compute service list${normal}"
     nova_state_list=$(openstack compute service list)
     echo "$nova_state_list" | \
         sed --unbuffered \
