@@ -1,7 +1,7 @@
 # ----- ADD from deploy_dnsmasq_service.sh -----
 10.224.129.227 int.ebochkov.test.domain
 10.224.129.228 ext.ebochkov.test.domain
-10.224.129.251 remote-nexus.test.domain
+10.224.129.231 remote-nexus.test.domain
 10.224.129.253 ebochkov-keystack-ctrl-01 ctrl-01
 10.224.129.232 ebochkov-keystack-ctrl-02 ctrl-02
 10.224.129.233 ebochkov-keystack-ctrl-03 ctrl-03
