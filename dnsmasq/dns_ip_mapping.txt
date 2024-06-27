@@ -1,11 +1,13 @@
 # ----- ADD from deploy_dnsmasq_service.sh -----
+10.224.129.227 int.ebochkov.test.domain
+10.224.129.228 ext.ebochkov.test.domain
 10.224.129.251 remote-nexus.test.domain
-10.224.129.231 ebochkov-keystack-ctrl-01 ctrl-01
-10.224.129.242 ebochkov-keystack-ctrl-02 ctrl-02
-10.224.129.237 ebochkov-keystack-ctrl-03 ctrl-03
-10.224.129.232 ebochkov-keystack-comp-01 comp-01 c-lcm-nexus.test.domain c-netbox.test.domain c-gitlab.test.domain c-vault.test.domain
-10.224.129.241 ebochkov-keystack-comp-02 comp-02
-10.224.129.247 ebochkov-keystack-comp-03 comp-03
-10.224.129.235 ebochkov-keystack-comp-04 comp-04
-10.224.129.246 ebochkov-keystack-net-01 net-01
-10.224.129.249 ebochkov-keystack-lcm-01 lcm-01 lcm-nexus.test.domain netbox.test.domain gitlab.test.domain vault.test.domain
+10.224.129.253 ebochkov-keystack-ctrl-01 ctrl-01
+10.224.129.232 ebochkov-keystack-ctrl-02 ctrl-02
+10.224.129.233 ebochkov-keystack-ctrl-03 ctrl-03
+10.224.129.250 ebochkov-keystack-comp-01 comp-01 c-lcm-nexus.test.domain c-netbox.test.domain c-gitlab.test.domain c-vault.test.domain
+10.224.129.239 ebochkov-keystack-comp-02 comp-02
+10.224.129.249 ebochkov-keystack-comp-03 comp-03
+10.224.129.246 ebochkov-keystack-comp-04 comp-04
+10.224.129.234 ebochkov-keystack-net-01 net-01
+10.224.129.236 ebochkov-keystack-lcm-01 lcm-01 lcm-nexus.test.domain netbox.test.domain gitlab.test.domain vault.test.domain
