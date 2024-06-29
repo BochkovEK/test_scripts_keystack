@@ -16,6 +16,16 @@
 # bash $HOME/test_scripts_keystack/self_signed_certs/generate_self_signed_certs.sh
 # After generate $HOME/certs will be created
 
+# Hand made generate example for installer.sh
+#openssl genrsa -out ext_vip.key 2048
+#openssl x509 -req -in ./external_VIP.csr -extfile /root/installer/cert.cnf -CA /installer/data/ca/root/ca.crt -CAkey /installer/data/ca/root/ca.key -CAcreateserial -out ./external_VIP.crt -days 728 -sha256
+#export SAN=DNS:ext.ebochkov.test.domain,IP:10.224.129.228
+#openssl x509 -req -in ./external_VIP.csr \
+#  -extfile /root/installer/cert.cnf \
+#  -CA /installer/data/ca/root/ca.crt \
+#  -CAkey /installer/data/ca/root/ca.key \
+#  -CAcreateserial -out ./external_VIP.crt -days 728 -sha256
+
 script_dir=$(dirname $0)
 yellow=`tput setaf 3`
 reset=`tput sgr0`
