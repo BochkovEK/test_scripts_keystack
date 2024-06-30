@@ -18,6 +18,10 @@ variable "network_name" {
   type        = string
 }
 
+variable "vm_qty" {
+  type        = string
+}
+
 variable "security_groups" {
   description = "Security group name"
   type        = list(string)

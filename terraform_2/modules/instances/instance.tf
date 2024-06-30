@@ -4,6 +4,7 @@ resource "openstack_compute_instance_v2" "test_tf_vm_1" {
   flavor_name     = var.flavor_name
   key_pair        = var.keypair_name
   security_groups = var.security_groups
+  count           = var.vm_qty
 
   metadata = {
     this = "that"

@@ -27,3 +27,8 @@ variable "security_groups" {
   description = "Security group name"
   type        = list(string)
 }
+
+variable "vm_qty" {
+  description = "Count vms created"
+  type        = string
+}
