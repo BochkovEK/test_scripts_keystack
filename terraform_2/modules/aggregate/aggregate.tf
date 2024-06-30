@@ -1,7 +1,7 @@
 resource "openstack_compute_aggregate_v2" "aggr" {
 #  region = "RegionOne"
-  name   = var.name_aggr #"aggr_1"
-  zone   = var.name_az #"az_1"
+  name   = var.aggr_name #"aggr_1"
+  zone   = var.az_name #"az_1"
   metadata = {
 #    cpus = "56"
   }

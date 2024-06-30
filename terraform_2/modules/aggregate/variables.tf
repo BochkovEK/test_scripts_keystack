@@ -1,8 +1,8 @@
-variable "name_aggr" {
+variable "aggr_name" {
   type = string
 }
 
-variable "name_az" {
+variable "az_name" {
   type = string
 }
 
