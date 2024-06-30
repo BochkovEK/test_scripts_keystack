@@ -9,8 +9,7 @@ required_version = ">= 0.14.0"
 }
 
 provider "openstack" {
-#  cl
-    cloud = "../clouds.yml"
+     cloud = "../clouds.yml"
 #    endpoint_overrides = {
 #        "volumev3" = var.volumev3
 #    }
