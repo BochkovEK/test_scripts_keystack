@@ -5,7 +5,7 @@ resource "openstack_compute_instance_v2" "vm" {
   key_pair                    = var.keypair_name
   security_groups             = var.security_groups
   availability_zone_hints     = var.az_hints
-
+  count = var.vm_qty
   metadata = {
     this = "that"
   }
@@ -15,9 +15,9 @@ resource "openstack_compute_instance_v2" "vm" {
   }
 }
 
-output "az" {
-  value = openstack_compute_instance_v2.vm.availability_zone
-}
+#output "az" {
+#  value = openstack_compute_instance_v2.vm.availability_zone
+#}
 
 #data "openstack_images_image_ids_v2" "images" {
 #  name_regex = "^Ubuntu 16\\.04.*-amd64"

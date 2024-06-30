@@ -7,8 +7,8 @@ module "vm_in_az_1" {
     flavor_name     = var.flavor_name
     security_groups = var.security_groups
     az_hints        = var.name_az_1
-    count           = var.vms_count_1
-    #    vm_qty          = var.vms_count_1
+#    count           = var.vms_count_1
+        vm_qty          = var.vms_count_1
     #    depends_on      = [module.aggr_1]
 }
 
@@ -22,7 +22,7 @@ module "vm_in_az_2" {
     security_groups = var.security_groups
     count           = var.vms_count_2
     az_hints        = var.name_az_2
-    #    vm_qty          = var.vms_count_2
+        vm_qty          = var.vms_count_2
     #    depends_on      = [module.aggr_2]
 }
 
