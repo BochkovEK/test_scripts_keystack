@@ -37,7 +37,7 @@ variable "name_aggr_1" {
 variable "name_az_1" {
   type = string
 }
-variable "hosts_list" {
+variable "hosts_list_1" {
   type = list(string)
 }
 variable "vms_count_1" {
