@@ -27,6 +27,7 @@ variable "security_groups" {
 
 variable "vm_qty" {
   description = "Count vms created"
+  default     = "1"
   type        = string
 }
 

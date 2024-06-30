@@ -28,7 +28,7 @@ module "aggr_1" {
     source          = "../../modules/aggregate"
     name_aggr   = var.name_aggr_1
     name_az     = var.name_az_1
-    hosts_list  = var.hosts_list
+    hosts_list  = var.hosts_list_1
 }
 
 module "aggr_2" {
