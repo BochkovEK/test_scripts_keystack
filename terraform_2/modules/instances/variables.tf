@@ -19,5 +19,6 @@ variable "network_name" {
 }
 
 variable "security_groups" {
-  type        = string
+  description = "Security group name"
+  type        = list(string)
 }
