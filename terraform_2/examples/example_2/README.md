@@ -1,4 +1,4 @@
 ## Features
-- Create two AZs
+- Create 2 (two) AZs
 - Create VMs in AZ
 - ### Without module  

@@ -6,7 +6,7 @@ module "vm_in_az_1" {
     network_name    = var.network_name
     flavor_name     = var.flavor_name
     security_groups = var.security_groups
-    vm_qty          = var.vm_qty
+    vm_qty          = var.vms_count_1
     az_hints        = var.name_az_1
     depends_on      = [module.aggr_1]
 }
@@ -19,7 +19,7 @@ module "vm_in_az_2" {
     network_name    = var.network_name
     flavor_name     = var.flavor_name
     security_groups = var.security_groups
-    vm_qty          = var.vm_qty
+    vm_qty          = var.vms_count_2
     az_hints        = var.name_az_2
     depends_on      = [module.aggr_2]
 }
