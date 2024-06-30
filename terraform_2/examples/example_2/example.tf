@@ -6,7 +6,7 @@ module "vm_in_az_1" {
     network_name    = var.network_name
     flavor_name     = var.flavor_name
     security_groups = var.security_groups
-    az_hints        = var.name_az_1
+    az_hints        = var.az_name_1
     vm_qty          = var.vms_count_1
     #    count           = var.vms_count_1
     #    depends_on      = [module.aggr_1]
@@ -20,7 +20,7 @@ module "vm_in_az_2" {
     network_name    = var.network_name
     flavor_name     = var.flavor_name
     security_groups = var.security_groups
-    az_hints        = var.name_az_2
+    az_hints        = var.az_name_2
     vm_qty          = var.vms_count_2
     #    count           = var.vms_count_2
     #    depends_on      = [module.aggr_2]
@@ -28,14 +28,14 @@ module "vm_in_az_2" {
 
 module "aggr_1" {
     source          = "../../modules/aggregate"
-    name_aggr   = var.name_aggr_1
-    name_az     = var.name_az_1
+    name_aggr   = var.aggr_name_1
+    name_az     = var.az_name_1
     hosts_list  = var.hosts_list_1
 }
 
 module "aggr_2" {
     source          = "../../modules/aggregate"
-    name_aggr   = var.name_aggr_2
-    name_az     = var.name_az_2
+    name_aggr   = var.aggr_name_2
+    name_az     = var.az_name_2
     hosts_list  = var.hosts_list_2
 }

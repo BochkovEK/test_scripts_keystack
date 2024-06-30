@@ -7,6 +7,7 @@ module "ubuntu-vm" {
     flavor_name     = var.flavor_name
     security_groups = var.security_groups
     vm_qty          = var.vm_qty
+    az_hints        = var.az_name
 }
 
 #module "ubuntu-vm" { #foo

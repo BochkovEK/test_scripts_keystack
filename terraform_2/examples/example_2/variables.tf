@@ -32,10 +32,10 @@ variable "vm_qty" {
 }
 
 # AZ_1
-variable "name_aggr_1" {
+variable "aggr_name_1" {
   type = string
 }
-variable "name_az_1" {
+variable "az_name_1" {
   type = string
 }
 variable "hosts_list_1" {
@@ -50,10 +50,10 @@ variable "vm_name_1" {
 
 
 # AZ_2
-variable "name_aggr_2" {
+variable "aggr_name_2" {
   type = string
 }
-variable "name_az_2" {
+variable "az_name_2" {
   type = string
 }
 variable "hosts_list_2" {

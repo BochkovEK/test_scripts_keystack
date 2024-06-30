@@ -32,3 +32,8 @@ variable "vm_qty" {
   description = "Count vms created"
   type        = string
 }
+
+variable "az_name" {
+  default = ""
+  type = string
+}
