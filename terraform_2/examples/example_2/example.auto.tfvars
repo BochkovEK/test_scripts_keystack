@@ -7,8 +7,8 @@ keypair_name    = "key_test"
 #vm_qty          = "2"
 
 # First AZ
-name_aggr_1   = "aggr_1"
-name_az_1     = "az_1"
+aggr_name_1   = "aggr_1"
+az_name_1     = "az_1"
 hosts_list_1  = [
   "ebochkov-ks-sber-comp-01",
   "ebochkov-ks-sber-comp-02",
@@ -17,8 +17,8 @@ vms_count_1   = "2"
 vm_name_1     = "VM_1"
 
 # Second AZ
-name_aggr_2   = "aggr_2"
-name_az_2     = "az_2"
+aggr_name_2   = "aggr_2"
+az_name_2     = "az_2"
 hosts_list_2  = [
   "ebochkov-ks-sber-comp-03",
   "ebochkov-ks-sber-comp-04",
