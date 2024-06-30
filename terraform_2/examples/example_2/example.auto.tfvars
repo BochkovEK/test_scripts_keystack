@@ -1,5 +1,6 @@
 # VM
 image_name      = "ubuntu-20.04-server-cloudimg-amd64"
+#image_name      = "cirros-0.6.2-x86_64-disk.img"
 flavor_name     = "2c-2r"
 network_name    = "pub_net"
 security_groups = ["test_security_group"]
