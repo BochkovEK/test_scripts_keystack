@@ -28,14 +28,14 @@ module "vm_in_az_2" {
 
 module "aggr_1" {
     source          = "../../modules/aggregate"
-    name_aggr   = var.aggr_name_1
-    name_az     = var.az_name_1
+    aggr_name   = var.aggr_name_1
+    az_name     = var.az_name_1
     hosts_list  = var.hosts_list_1
 }
 
 module "aggr_2" {
     source          = "../../modules/aggregate"
-    name_aggr   = var.aggr_name_2
-    name_az     = var.az_name_2
+    aggr_name   = var.aggr_name_2
+    az_name     = var.az_name_2
     hosts_list  = var.hosts_list_2
 }
