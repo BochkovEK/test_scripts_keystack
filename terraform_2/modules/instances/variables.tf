@@ -26,3 +26,7 @@ variable "security_groups" {
   description = "Security group name"
   type        = list(string)
 }
+
+variable "az_hints" {
+  type        = string
+}
