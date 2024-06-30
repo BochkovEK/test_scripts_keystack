@@ -8,7 +8,7 @@ module "vm_in_az_1" {
     security_groups = var.security_groups
     vm_qty          = var.vms_count_1
     az_hints        = var.name_az_1
-    depends_on      = [module.aggr_1]
+#    depends_on      = [module.aggr_1]
 }
 
 module "vm_in_az_2" {
@@ -21,7 +21,7 @@ module "vm_in_az_2" {
     security_groups = var.security_groups
     vm_qty          = var.vms_count_2
     az_hints        = var.name_az_2
-    depends_on      = [module.aggr_2]
+#    depends_on      = [module.aggr_2]
 }
 
 module "aggr_1" {
