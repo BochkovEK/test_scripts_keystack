@@ -5,6 +5,7 @@ resource "openstack_compute_instance_v2" "test_tf_vm_1" {
   key_pair        = var.keypair_name
   security_groups = var.security_groups
   count           = var.vm_qty
+  availability_zone_hints = ""
 
   metadata = {
     this = "that"
