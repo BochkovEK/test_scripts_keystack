@@ -9,7 +9,7 @@ required_version = ">= 0.14.0"
 }
 
 provider "openstack" {
-     cloud = "../../clouds.yml"
+     cloud = "/root/test_scripts_keystack/terraform_2/clouds.yml"
 #    endpoint_overrides = {
 #        "volumev3" = var.volumev3
 #    }
