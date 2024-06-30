@@ -1,4 +1,4 @@
-resource "openstack_compute_instance_v2" "test_tf_vm_1" {
+resource "openstack_compute_instance_v2" "vm" {
   name            = format("%s-%02d", var.vm_name, count.index+1)
   image_name      = var.image_name
   flavor_name     = var.flavor_name
