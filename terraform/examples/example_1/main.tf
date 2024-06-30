@@ -1,4 +1,4 @@
-module "ubuntu-vm" {
+module "ubuntu-vm" { #foo
     source          = "../../modules/instance" #
     name            = "ubuntu-vm"
     flavor          = "2c-2r_admin"
