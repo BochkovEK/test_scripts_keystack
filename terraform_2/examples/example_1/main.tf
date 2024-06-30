@@ -6,6 +6,7 @@ module "ubuntu-vm" {
     network_name    = var.network_name
     flavor_name     = var.flavor_name
     security_groups = var.security_groups
+    tfvars = true
 }
 
 #module "ubuntu-vm" { #foo
