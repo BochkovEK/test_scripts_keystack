@@ -4,7 +4,6 @@ resource "openstack_compute_instance_v2" "vm" {
   flavor_name                 = var.flavor_name
   key_pair                    = var.keypair_name
   security_groups             = var.security_groups
-  count                       = var.vm_qty
   availability_zone_hints     = var.az_hints
 
   metadata = {
