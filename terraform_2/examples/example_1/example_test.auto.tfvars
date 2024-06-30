@@ -4,5 +4,5 @@ flavor_name     = "2c-2r"
 network_name    = "pub_net"
 security_groups = ["test_security_group"]
 keypair_name    = "key_test"
-vm_qty          = "2"
+vm_qty          = "1"
 az_name         = "az_2"
