@@ -28,6 +28,11 @@
 #    #    depends_on      = [module.aggr_2]
 #}
 
+module "VMs" {
+    source = "../../modules/instances"
+    VMs = var.VMs
+}
+
 module "AZs" {
     source          = "../../modules/aggregate"
     AZs = var.AZs

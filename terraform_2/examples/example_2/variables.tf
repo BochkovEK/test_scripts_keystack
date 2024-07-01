@@ -1,7 +1,8 @@
-## VM
-#variable "image_name" {
-#  description = "Image name"
+### VM
+#variable "default_image_name" {
+#  description = "Default image name"
 #  type        = string
+#  default = "cirros-0.6.2-x86_64-disk"
 #}
 #variable "flavor_name" {
 #  description = "Flavor name"
@@ -32,6 +33,21 @@
 #  type        = string
 #}
 
+variable "VMs"{
+  description = "List of VMs"
+  type = map (object({
+    vm_name         = string
+    image_name      = string
+    flavor_name     = string
+    keypair_name    = string
+    volume_size     = number
+    network_name    = string
+    security_groups = list(string)
+    vm_qty          = number
+  }))
+  default = {}
+}
+
 variable "AZs"{
   description = "List of AZs"
   type = map (object({
@@ -39,10 +55,6 @@ variable "AZs"{
     hosts_list = list(string)
   }))
   default = {}
-#    default ({
-#      az_name    = ""
-#      hosts_list = []
-#    })
 }
 
 ## AZ_1

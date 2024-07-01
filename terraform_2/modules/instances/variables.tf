@@ -1,38 +1,45 @@
-variable "vm_name" {
+## VM
+variable "default_image_name" {
+  description = "Default image name"
   type        = string
+  default = "cirros-0.6.2-x86_64-disk"
 }
 
-variable "image_name" {
+variable "default_flavor_name" {
+  description = "Default flavor name"
   type        = string
+  default = "2c-2r"
 }
 
-variable "flavor_name" {
+variable "default_volume_size" {
+  description = "Default volume size"
+  type        = number
+  default = 5
+}
+
+variable "default_network_name" {
+  description = "Default network name"
   type        = string
+  default = "pub_net"
 }
 
-variable "keypair_name" {
-  type        = string
-}
+#variable "default_az_hints" {
+#  description = "Default availability zone hints"
+#  type        = string
+#  default     = ""
+#}
 
-# Volume size in GB
-variable "volume_size" {
-  type = number
-#  default = 5
-}
-
-variable "network_name" {
-  type        = string
-}
-
-variable "vm_qty" {
-  type        = string
-}
-
-variable "security_groups" {
-  description = "Security group name"
-  type        = list(string)
-}
-
-variable "az_hints" {
-  type        = string
+variable "VMs"{
+  description = "List of VMs"
+  type = map (object({
+    vm_name         = string
+    image_name      = string
+    flavor_name     = string
+    keypair_name    = string
+    volume_size     = number
+    network_name    = string
+    security_groups = list(string)
+    az_hint         = string
+    vm_qty          = number
+  }))
 }
