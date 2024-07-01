@@ -15,7 +15,7 @@ resource "openstack_compute_instance_v2" "vm" {
     source_type           = "image"
     volume_size           = each.value.volume_size
     boot_index            = 0
-#    destination_type      = "volume"
+    destination_type      = "volume"
     delete_on_termination = true
   }
   network {
