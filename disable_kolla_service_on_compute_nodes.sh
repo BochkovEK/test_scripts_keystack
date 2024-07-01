@@ -3,7 +3,7 @@
 comp_pattern="\-comp\-..($|\s)"
 ctrl_pattern="\-ctrl\-..($|\s)"
 net_pattern="\-net\-..($|\s)"
-nodes_to_find="$comp_pattern"
+nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
 
 #Colors
 green=$(tput setaf 2)
