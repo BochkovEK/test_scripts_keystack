@@ -1,10 +1,10 @@
 resource "openstack_compute_instance_v2" "vm" {
   for_each     = { for k, v in local.instances : v.name => v
-  if try(v.image_name, null) != null
+#  if try(v.image_name, null) != null
   }
 #  for_each = var.VMs # == {} ? null : var.VMs
   name                        = each.value.name
-  image_name                  = each.value.image_name
+  image_name                  = try(each.value.image_name, var.default_image_name)
   flavor_name                 = each.value.flavor_name
   key_pair                    = each.value.keypair_name
   security_groups             = each.value.security_groups
