@@ -11,7 +11,7 @@ resource "openstack_compute_instance_v2" "vm" {
     this = "that"
   }
   block_device {
-    uuid                  = data.openstack_images_image_v2.image_id.id
+    uuid                  = data.openstack_images_image_v2.image_id[each.key].id
     source_type           = "image"
     volume_size           = each.value.volume_size
     boot_index            = 0
