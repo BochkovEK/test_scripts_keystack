@@ -1,7 +1,7 @@
 resource "openstack_compute_instance_v2" "vm" {
   for_each     = { for k, v in local.instances : v.name => v }
 #  for_each = var.VMs # == {} ? null : var.VMs
-  name                        = format("%s-%02d", each.value.vm_name) #, count.index+1)
+  name                        = each.value.name
   image_name                  = each.value.image_name == null ? var.default_image_name : each.value.image_name
   flavor_name                 = each.value.flavor_name == null ? var.default_flavor_name : each.value.flavor_name
   key_pair                    = each.value.keypair_name
