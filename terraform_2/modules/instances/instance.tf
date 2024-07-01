@@ -11,15 +11,15 @@ resource "openstack_compute_instance_v2" "vm" {
     this = "that"
   }
   block_device {
-    uuid                  = each.value.image_name == null ? var.default_image_name : each.value.image_name
+    uuid                  = each.value.image_name
     source_type           = "image"
-    volume_size           = each.value.volume_size == null ? var.default_volume_size : each.value.volume_size
+    volume_size           = each.value.volume_size
     boot_index            = 0
 #    destination_type      = "volume"
     delete_on_termination = true
   }
   network {
-    name = each.value.network_name == null ? var.default_network_name : each.value.network_name
+    name = each.value.network_name
   }
 }
 

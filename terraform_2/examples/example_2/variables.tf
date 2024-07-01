@@ -59,20 +59,26 @@
 #}
 
 
-variable "VMs"{
-  description = "List of VMs"
-  type = map (object({
-    vm_name         = string
-    image_name      = string
-    flavor_name     = string
-    keypair_name    = string
-    volume_size     = number
-    network_name    = string
-    security_groups = list(string)
-    vm_qty          = number
-    az_hint         = string
-  }))
-  default = {}
+#variable "VMs"{
+#  description = "List of VMs"
+#  type = map (object({
+#    vm_name         = string
+#    image_name      = string
+#    flavor_name     = string
+#    keypair_name    = string
+#    volume_size     = number
+#    network_name    = string
+#    security_groups = list(string)
+#    vm_qty          = number
+#    az_hint         = string
+#  }))
+#  default = {}
+#}
+
+variable "VMs" {
+  description = "Inventory source"
+  default = {
+  }
 }
 
 variable "AZs"{

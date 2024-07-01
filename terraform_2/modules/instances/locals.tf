@@ -10,6 +10,8 @@ locals {
         key_pair                    = instance.value.keypair_name
         security_groups             = instance.value.security_groups
         availability_zone_hints     = instance.value.az_hint
+        volume_size                 = instance.value.volume_size == null ? var.default_volume_size : instance.volume_size
+        network_name                = instance.network_name == null ? var.default_network_name : instance.network_name
       }
     ]
   ])
