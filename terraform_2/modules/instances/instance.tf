@@ -1,5 +1,7 @@
 resource "openstack_compute_instance_v2" "vm" {
-  for_each     = { for k, v in local.instances : v.name => v }
+  for_each     = { for k, v in local.instances : v.name => v
+  if try(v.image_name, null) != null
+  }
 #  for_each = var.VMs # == {} ? null : var.VMs
   name                        = each.value.name
   image_name                  = each.value.image_name
