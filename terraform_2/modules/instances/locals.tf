@@ -5,7 +5,7 @@ locals {
     for instance_key, instance in var.VMs : [
       for iter in range(1,instance.vm_qty+1) : {
         name              = format("%s-%02d", instance_key, iter)
-        image_name        = instance.image_name == null ? var.default_image_name : instance.image_name
+        image_name        = try(instance.image_name, var.default_image_name) #instance.image_name == null ? var.default_image_name : instance.image_name
         flavor_name       = instance.flavor_name == null ? var.default_flavor_name : instance.flavor_name
         keypair_name      = instance.keypair_name
         security_groups   = instance.security_groups
