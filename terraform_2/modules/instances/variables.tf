@@ -32,7 +32,7 @@ variable "default_az_hints" {
 variable "VMs"{
   description = "List of VMs"
   type = map (object({
-    vm_name         = string
+#    vm_name         = string
     image_name      = string
     flavor_name     = string
     keypair_name    = string
@@ -43,6 +43,13 @@ variable "VMs"{
     vm_qty          = number
   }))
 }
+
+#variable "VMs" {
+#  description = "Inventory source"
+#  default = {
+#  }
+#}
+
 
 #variable "vm_name" {
 #  description = "VM name"
