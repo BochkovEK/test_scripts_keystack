@@ -11,7 +11,7 @@ locals {
         security_groups   = try(instance.security_groups, null)
         az_hint           = try(instance.az_hint, null)
         volume_size       = try(instance.volume_size, var.default_volume_size) # == null ? var.default_volume_size : instance.volume_size
-        network_name      = try(instance.network_name, null) # == null ? var.default_network_name : instance.network_name
+        network_name      = try(instance.network_name, var.default_network_name) # == null ? var.default_network_name : instance.network_name
       }
     ]
   ])
