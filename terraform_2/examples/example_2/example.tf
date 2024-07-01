@@ -28,16 +28,42 @@
 #    #    depends_on      = [module.aggr_2]
 #}
 
+#module "VMs" {
+#    source = "../../modules/instances"
+##    count = 2
+#    VMs = var.VMs
+#}
+
 module "VMs" {
     source = "../../modules/instances"
-    VMs = var.VMs
+    for_each = var.VMs # == {} ? null : var.VMs
+  vm_name                        = format("%s-%02d", each.value.vm_name) #, count.index+1)
+  image_name                  = each.value.image_name == null ? var.default_image_name : each.value.image_name
+  volume_size                 = each.value.volume_size == null ? var.default_volume_size : each.value.volume_size
+  flavor_name                 = each.value.flavor_name == null ? var.default_flavor_name : each.value.flavor_name
+  keypair_name                    = each.value.keypair_name
+  security_groups             = each.value.security_groups
+  availability_zone_hints     = each.value.az_hint
+
+  #  metadata = {
+#    this = "that"
+#  }
+#  block_device {
+#    uuid                  = each.value.image_name == null ? var.default_image_name : each.value.image_name
+#    source_type           = "image"
+#    volume_size           = each.value.volume_size == null ? var.default_volume_size : each.value.volume_size
+#    boot_index            = 0
+##    destination_type      = "volume"
+#    delete_on_termination = true
+#  }
+    network_name = each.value.network_name == null ? var.default_network_name : each.value.network_name
 }
 
-module "AZs" {
-    source          = "../../modules/aggregate"
-    AZs = var.AZs
-#  region = "RegionOne"
-}
+#module "AZs" {
+#    source          = "../../modules/aggregate"
+#    AZs = var.AZs
+##  region = "RegionOne"
+#}
 
 #module "aggr_2" {
 #    source          = "../../modules/aggregate"
