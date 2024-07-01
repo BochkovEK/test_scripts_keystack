@@ -29,14 +29,14 @@
 
 AZs = {
   aggr_1 = {
-    az_name = az_1
+    az_name = "az_1"
     hosts_list = [
       "ebochkov-ks-sber-comp-01",
       "ebochkov-ks-sber-comp-02",
     ]
   }
   aggr_2 = {
-    az_name    = az_2
+    az_name    = "az_2"
     hosts_list = [
       "ebochkov-ks-sber-comp-03",
       "ebochkov-ks-sber-comp-04",
