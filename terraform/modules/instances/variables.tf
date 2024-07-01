@@ -29,7 +29,7 @@ variable "default_security_groups" {
   default = ["test_security_group"]
 }
 
-variable "default_key_pair" {
+variable "default_key_pair_name" {
   description = "Default key pair"
   type        = string
   default = "key_test"
