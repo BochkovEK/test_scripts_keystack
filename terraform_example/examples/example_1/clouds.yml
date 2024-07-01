@@ -1,9 +1,9 @@
 clouds:
   openstack:
     auth:
-      auth_url: https://10.224.136.195:5000
+      auth_url: https://10.224.143.100:5000
       username: "admin"
-      project_id: 8cdbb6b9a0e945b8a9844f43f04159a9
+      project_id: 63f0b7d97e5347c1952bab9052c527f9
       project_name: "admin"
       user_domain_name: "Default"
       password: Z431wTgYTE2h52FJfghHGm3ntzAgUurY7v5nXuuM

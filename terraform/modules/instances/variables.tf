@@ -23,6 +23,18 @@ variable "default_network_name" {
   default = "pub_net"
 }
 
+variable "default_security_groups" {
+  description = "Default security_groups"
+  type        = list(string)
+  default = ["test_security_group"]
+}
+
+variable "default_key_pair" {
+  description = "Default key pair"
+  type        = string
+  default = "key_test"
+}
+
 variable "default_az_hints" {
   description = "Default availability zone hints"
   type        = string
