@@ -11,7 +11,7 @@ resource "openstack_compute_instance_v2" "vm" {
     this = "that"
   }
   block_device {
-    uuid                  = each.value.image_name
+    uuid                  = data.openstack_images_image_v2.image_id.id
     source_type           = "image"
     volume_size           = each.value.volume_size
     boot_index            = 0
@@ -21,6 +21,16 @@ resource "openstack_compute_instance_v2" "vm" {
   network {
     name = each.value.network_name
   }
+}
+
+data "openstack_images_image_v2" "image_id" {
+  for_each    = { for k, v in local.instances : v.name => v }
+  name        = each.value.image_name
+#  most_recent = true
+#
+#  properties = {
+#    key = "value"
+#  }
 }
 
 #resource "openstack_compute_instance_v2" "vm" {
