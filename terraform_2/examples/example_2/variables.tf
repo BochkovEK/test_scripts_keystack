@@ -38,6 +38,11 @@ variable "AZs"{
     az_name = string
     hosts_list = list(string)
   }))
+  default = {}
+#    default ({
+#      az_name    = ""
+#      hosts_list = []
+#    })
 }
 
 ## AZ_1

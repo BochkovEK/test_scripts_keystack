@@ -10,7 +10,7 @@
 #}
 
 resource "openstack_compute_aggregate_v2" "aggr" {
-  for_each = var.AZs
+  for_each = var.AZs == {} ? null : var.AZs
   name   = each.key
   zone   = each.value.az_name #"az_1"
   metadata = {
