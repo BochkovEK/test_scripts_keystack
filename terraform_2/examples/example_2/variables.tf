@@ -44,6 +44,7 @@ variable "VMs"{
     network_name    = string
     security_groups = list(string)
     vm_qty          = number
+    az_hint         = string
   }))
   default = {}
 }
