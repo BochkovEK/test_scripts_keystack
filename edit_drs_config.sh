@@ -4,7 +4,7 @@
 ctrl_pattern="\-ctrl\-..$"
 service_name=drs
 test_node_conf_dir=kolla/$service_name
-conf_dir=/etc/kolla/service_name
+conf_dir=/etc/kolla/$service_name
 #conf_name=drs.ini
 
 script_dir=$(dirname $0)
@@ -48,7 +48,7 @@ do
 	        echo "Found the -debug, parameter set $DEBUG"
           ;;
         -add_debug) ADD_DEBUG="true"
-	        echo "Found the -debug, parameter set $ADD_DEBUG"
+	        echo "Found the --add_debug, parameter set $ADD_DEBUG"
           ;;
         -pa|-prometheus_alerting) PROMETHEUS_PASS="$2"
 	        echo "Found the -prometheus_alerting, parameter set $PROMETHEUS_PASS"
@@ -106,7 +106,6 @@ push_conf () {
 
 change_add_debug_param () {
   echo "Add debug to drs.ini..."
-
   pull_conf
   sed -i 's/\[DEFAULT\]/\[DEFAULT\]\ndebug = true/' $script_dir/$test_node_conf_dir/$CONF_NAME
   push_conf
