@@ -4,10 +4,10 @@ data "openstack_images_image_v2" "image" {
 }
 
 # Create all Volumes except of 'root' volume if 'pinned_root_drive' flag is set
-resource "openstack_blockstorage_volume_v3" "volumes" {
-    for_each            = var.pinned_root_drive ? { 
+resource "openstack_blockstorage_volume_v2" "volumes" {
+    for_each            = var.pinned_root_drive ? {
         for k,v in var.volumes : k => v
-        if k != "root" 
+        if k != "root"
         } : var.volumes
     region              = var.region
     availability_zone   = var.az
@@ -36,5 +36,5 @@ resource "openstack_compute_volume_attach_v2" "volume_attach" {
         if k != "root"
     }
     instance_id         = openstack_compute_instance_v2.vm.id
-    volume_id           = openstack_blockstorage_volume_v3.volumes[each.key].id
+    volume_id           = openstack_blockstorage_volume_v2.volumes[each.key].id
 }

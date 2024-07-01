@@ -26,7 +26,7 @@ resource "openstack_compute_instance_v2" "vm" {
     # If 'pinned_root_drive' flag is set, create root volume instead of using volume created in 'volumes.tf'
     block_device {
         boot_index          = 0
-        uuid                = var.pinned_root_drive ? data.openstack_images_image_v2.image.id : openstack_blockstorage_volume_v3.volumes["root"].id
+        uuid                = var.pinned_root_drive ? data.openstack_images_image_v2.image.id : openstack_blockstorage_volume_v2.volumes["root"].id
         source_type         = var.pinned_root_drive ? "image" : "volume"
         destination_type    = "volume"
         volume_size         = var.pinned_root_drive ? var.volumes["root"].size : null

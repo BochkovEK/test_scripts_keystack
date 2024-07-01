@@ -9,10 +9,26 @@ resource "openstack_compute_instance_v2" "vm" {
   metadata = {
     this = "that"
   }
-
+  block_device {
+    uuid                  = var.image_name
+    source_type           = "image"
+    volume_size           = var.volume_size
+    boot_index            = 0
+#    destination_type      = "volume"
+    delete_on_termination = true
+  }
   network {
     name = var.network_name
   }
+}
+
+data "openstack_images_image_v2" "image" {
+  name        = var.image_name
+  most_recent = true
+
+#  properties = {
+#    key = "value"
+#  }
 }
 
 #output "az" {

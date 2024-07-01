@@ -18,6 +18,12 @@ variable "keypair_name" {
   type        = string
 }
 
+# Volume size in GB
+variable "volume_size" {
+  type = number
+  default = 5
+}
+
 variable "network_name" {
   description = "Network name"
   type        = string

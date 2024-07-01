@@ -4,7 +4,7 @@ output "vm" {
 }
 # Выхлоп с данными о дисках
 output "volumes" {
-    value               = openstack_blockstorage_volume_v3.volumes
+    value               = openstack_blockstorage_volume_v2.volumes
 }
 # Выхлоп в виде созданных портов
 output "ports" {

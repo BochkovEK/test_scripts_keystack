@@ -24,7 +24,6 @@ variable "winrm_cert_path" {
 variable "ssh_key_name" {
   type = string
   default = null
-#  default = "key_test"
   description = "SSH keypair in Openstack platform public key name"
 }
 variable "metadata" {
@@ -33,13 +32,12 @@ variable "metadata" {
 }
 variable "az" {
   type = string
-  default = null
-#  default = "nova"
+  default = "MS1"
   description = "Computing instance avaliability zone"
 }
 variable "region" {
   type = string
-  default = "ebochkov-ks-sber"
+  default = "RegionOne"
   description = "Openstack project Region"
 }
 variable "image" {
@@ -68,15 +66,10 @@ variable "ports"{
     security_groups_ids = list(string)
   }))
 }
-variable "volumes" {
+variable "volumes"{
   description = "List of Volumes to attach to Instance. Boot drive should always have 'root' name"
   type = map (object({
     type = string
     size = number
   }))
-}
-
-variable "volumev3" {
-  description = "API Access volumev3"
-  type        = string
 }

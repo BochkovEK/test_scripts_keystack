@@ -1,6 +1,5 @@
 ## Features
-- Create 2 (two) AZs
-- Create VMs in AZ
+- Create multiple VMs in specify AZ and hypervisor
 ### To start:
 - Install Terraform
 - Create base openstack resources:
