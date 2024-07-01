@@ -29,58 +29,12 @@ variable "default_az_hints" {
   default     = ""
 }
 
-#variable "VMs"{
-#  description = "List of VMs"
-#  type = map (object({
-##    vm_name         = string
-#    image_name      = string
-#    flavor_name     = string
-#    keypair_name    = string
-#    volume_size     = number
-#    network_name    = string
-#    security_groups = list(string)
-#    az_hint         = string
-#    vm_qty          = number
-#  }))
-#}
-
 variable "VMs" {
-  description = "Inventory source"
-  default = {
-  }
+  description = "VMs list source"
+  default = {}
 }
 
-
-#variable "vm_name" {
-#  description = "VM name"
-#  type        = string
-#}
-#variable "image_name" {
-#  description = "Image name"
-#  type        = string
-#}
-#variable "flavor_name" {
-#  description = "Flavor name"
-#  type        = string
-#}
-#variable "keypair_name" {
-#  description = "Key pair name"
-#  type        = string
-#}
-## Volume size in GB
-#variable "volume_size" {
-#  type = number
-#}
-#variable "network_name" {
-#  description = "Network name"
-#  type        = string
-#}
-#variable "security_groups" {
-#  description = "Security group name"
-#  type        = list(string)
-#}
-#variable "vm_qty" {
-#  description = "Count vms created"
-#  default     = "1"
-#  type        = string
-#}
+variable "AZs" {
+  description = "AZs list source"
+  default = {}
+}
