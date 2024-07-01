@@ -7,9 +7,9 @@ locals {
         name             = format("%s-%02d", instance_key, iter)
         image_name                  = instance.image_name == null ? var.default_image_name : instance.image_name
         flavor_name                 = instance.flavor_name == null ? var.default_flavor_name : instance.flavor_name
-        key_pair                    = each.value.keypair_name
-        security_groups             = each.value.security_groups
-        availability_zone_hints     = each.value.az_hint
+        key_pair                    = instance.value.keypair_name
+        security_groups             = instance.value.security_groups
+        availability_zone_hints     = instance.value.az_hint
       }
     ]
   ])
