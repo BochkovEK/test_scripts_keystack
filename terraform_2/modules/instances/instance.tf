@@ -2,12 +2,11 @@ resource "openstack_compute_instance_v2" "vm" {
   for_each     = { for k, v in local.instances : v.name => v }
 #  for_each = var.VMs # == {} ? null : var.VMs
   name                        = each.value.name
-  image_name                  = each.value.image_name == null ? var.default_image_name : each.value.image_name
-  flavor_name                 = each.value.flavor_name == null ? var.default_flavor_name : each.value.flavor_name
+  image_name                  = each.value.image_name
+  flavor_name                 = each.value.flavor_name
   key_pair                    = each.value.keypair_name
   security_groups             = each.value.security_groups
   availability_zone_hints     = each.value.az_hint
-#  bucket                      = each.value.vm_qty == null ? 1 : each.value.vm_qty
   metadata = {
     this = "that"
   }
