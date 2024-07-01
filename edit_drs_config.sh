@@ -94,10 +94,10 @@ push_conf () {
     echo "sed api_host = $node on $CONF_NAME"
     sed -i --regexp-extended "s/api_host\s+=\s+[0-9]+.[0-9]+.[0-9]+.[0-9]+/api_host = $node/" \
       $script_dir/$test_node_conf_dir/$CONF_NAME
-    sed -i --regexp-extended  "s/https\:\/\/[0-9]+.[0-9]+.[0-9]+.[0-9]+/https\:\/\/$node/" \
-      $script_dir/$test_node_conf_dir/$CONF_NAME
-    sed -i --regexp-extended  "s/\@[0-9]+.[0-9]+.[0-9]+.[0-9]+/@$node/" \
-      $script_dir/$test_node_conf_dir/$CONF_NAME
+#    sed -i --regexp-extended  "s/https\:\/\/[0-9]+.[0-9]+.[0-9]+.[0-9]+/https\:\/\/$node/" \
+#      $script_dir/$test_node_conf_dir/$CONF_NAME
+#    sed -i --regexp-extended  "s/\@[0-9]+.[0-9]+.[0-9]+.[0-9]+/@$node/" \
+#      $script_dir/$test_node_conf_dir/$CONF_NAME
     echo "Сopying $service_name conf to $node:$conf_dir/$CONF_NAME"
     scp -o StrictHostKeyChecking=no $script_dir/$test_node_conf_dir/$CONF_NAME $node:$conf_dir/$CONF_NAME
   done
