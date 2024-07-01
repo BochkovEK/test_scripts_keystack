@@ -29,26 +29,26 @@ variable "default_az_hints" {
   default     = ""
 }
 
-variable "VMs"{
-  description = "List of VMs"
-  type = map (object({
-#    vm_name         = string
-    image_name      = string
-    flavor_name     = string
-    keypair_name    = string
-    volume_size     = number
-    network_name    = string
-    security_groups = list(string)
-    az_hint         = string
-    vm_qty          = number
-  }))
-}
-
-#variable "VMs" {
-#  description = "Inventory source"
-#  default = {
-#  }
+#variable "VMs"{
+#  description = "List of VMs"
+#  type = map (object({
+##    vm_name         = string
+#    image_name      = string
+#    flavor_name     = string
+#    keypair_name    = string
+#    volume_size     = number
+#    network_name    = string
+#    security_groups = list(string)
+#    az_hint         = string
+#    vm_qty          = number
+#  }))
 #}
+
+variable "VMs" {
+  description = "Inventory source"
+  default = {
+  }
+}
 
 
 #variable "vm_name" {

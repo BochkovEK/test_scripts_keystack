@@ -1,8 +1,8 @@
 # VMs
 VMs = {
-  vm_1 = {
-  }
-  vm_2 ={
+#  vm_1 = {
+#  }
+  vm_2 = {
     image_name      = "ubuntu-20.04-server-cloudimg-amd64"
     flavor_name     = "4c-2r"
     network_name    = "pub_net"
