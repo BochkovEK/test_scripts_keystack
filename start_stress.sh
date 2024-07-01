@@ -14,7 +14,7 @@ script_dir=$(dirname $0)
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $KEY_NAME ]] && KEY_NAME="key_test.pem"
 [[ -z $HYPERVISOR_NAME ]] && HYPERVISOR_NAME="false"
-[[ -z $CPUS ]] && CPUS="4"
+[[ -z $CPUS ]] && CPUS="2"
 [[ -z $RAM ]] && RAM="4"
 [[ -z $TIME_OUT ]] && TIME_OUT=""
 [[ -z $TYPE_TEST ]] && TYPE_TEST="cpu"
@@ -27,7 +27,6 @@ while [ -n "$1" ]; do
   case "$1" in
     --help) echo -E "
       -hv               <hypervisor_name>
-      -tt, -type_test   <type_of_stress_test 'cpu' or 'ram'>
       -cpu              <number_cpus_for_stress>
       -ram              <gb_ram_stress>
       -t, -time_out     <time_during_which_the_load_will_be_applied_in_sec>
@@ -46,9 +45,6 @@ while [ -n "$1" ]; do
       shift ;;
     -ram) RAM="$2"; TYPE_TEST="ram"
       echo "Found the -ram option in Gb, with parameter value $RAM"
-      shift;;
-    -tt|-type_test) TYPE_TEST="$2"
-      echo "Found the -type_test option, with parameter value $TYPE_TEST"
       shift;;
     -key) KEY_NAME="$2"
       echo "Found the -key option, with parameter value key name: $KEY_NAME"
