@@ -10,7 +10,7 @@ locals {
         keypair_name      = try(instance.keypair_name, null)
         security_groups   = try(instance.security_groups, null)
         az_hint           = try(instance.az_hint, null)
-        volume_size       = try(instance.volume_size, null) # == null ? var.default_volume_size : instance.volume_size
+        volume_size       = try(instance.volume_size, var.default_volume_size) # == null ? var.default_volume_size : instance.volume_size
         network_name      = try(instance.network_name, null) # == null ? var.default_network_name : instance.network_name
       }
     ]
