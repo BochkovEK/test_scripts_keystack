@@ -7,6 +7,10 @@ test_node_conf_dir=kolla/$service_name
 conf_dir=/etc/kolla/$service_name
 #conf_name=drs.ini
 
+red=`tput setaf 1`
+green=`tput setaf 2`
+reset=`tput sgr0`
+
 script_dir=$(dirname $0)
 conf_changed=""
 
@@ -51,7 +55,7 @@ do
 	        echo "Found the --add_debug, parameter set $ADD_DEBUG"
           ;;
         -pa|-prometheus_alerting) PROMETHEUS_PASS="$2"
-	        echo "Found the -prometheus_alerting, parameter set $PROMETHEUS_PASS"
+	        echo "Found the -prometheus_alerting, \$PROMETHEUS_PASS: $PROMETHEUS_PASS"
           shift;;
         -p|-push) PUSH="true"
 	        echo "Found the -push, parameter set $PUSH"
@@ -118,15 +122,19 @@ change_add_debug_param () {
 
 change_add_prometheus_alerting () {
   echo "Add prometheus alerting to drs.ini..."
-  pull_conf
-  prom_pass_exists=$(cat $script_dir/$test_node_conf_dir/$CONF_NAME|grep prometheus_alert_manager_password)
-  if [ -z "$prom_pass_exists" ]; then
-#    sed -i "s/\[prometheus\]/\[prometheus\]\nenable_prometheus_alert_manager_auth = true\nprometheus_alert_manager_user = admin\nprometheus_alert_manager_password = $PROMETHEUS_PASS/" $script_dir/$test_node_conf_dir/$conf_name
-  sed -i "s/\[alerting\]/\[alerting\]\nenable_prometheus_alert_manager_auth = true\nprometheus_alert_manager_user = admin\nprometheus_alert_manager_password = $PROMETHEUS_PASS/" $script_dir/$test_node_conf_dir/$conf_name
-  sed -i "s/enable_alerting = false/enable_alerting = true/" $script_dir/$test_node_conf_dir/$conf_name
+  if [ -z "${PROMETHEUS_PASS}" ]; then
+    echo "${red}\$PROMETHEUS_PASS not set. Prometheus alerting not set in drs.ini${reset}"
+  else
+    pull_conf
+    prom_pass_exists=$(cat $script_dir/$test_node_conf_dir/$CONF_NAME|grep prometheus_alert_manager_password)
+    if [ -z "$prom_pass_exists" ]; then
+  #    sed -i "s/\[prometheus\]/\[prometheus\]\nenable_prometheus_alert_manager_auth = true\nprometheus_alert_manager_user = admin\nprometheus_alert_manager_password = $PROMETHEUS_PASS/" $script_dir/$test_node_conf_dir/$conf_name
+    sed -i "s/\[alerting\]/\[alerting\]\nenable_prometheus_alert_manager_auth = true\nprometheus_alert_manager_user = admin\nprometheus_alert_manager_password = $PROMETHEUS_PASS/" $script_dir/$test_node_conf_dir/$conf_name
+    sed -i "s/enable_alerting = false/enable_alerting = true/" $script_dir/$test_node_conf_dir/$conf_name
+    fi
+    push_conf
+    conf_changed="true"
   fi
-  push_conf
-  conf_changed="true"
 }
 
 
