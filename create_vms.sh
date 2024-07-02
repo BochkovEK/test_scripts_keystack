@@ -520,17 +520,24 @@ check_vms_list () {
 
 # Wait vms created...
 wait_vms_created () {
-  building_id_vms_list=$(openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks|grep BUILD|awk '{print $2}')
-  [ "$DEBUG" = true ] && echo -e "
-  [DEBUG]
-  bilding_id_vms_list: $building_id_vms_list
-"
+#  building_id_vms_list=$(openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks|grep BUILD|awk '{print $2}')
+#  [ "$DEBUG" = true ] && echo -e "
+#  [DEBUG]
+#  building_id_vms_list: $building_id_vms_list
+#"
   building_vms=$VM_QTY
-  if [ -n "${building_id_vms_list}" ]; then
+#  if [ -n "${building_id_vms_list}" ]; then
     while [ $building_vms -ne 0 ]; do
-      building_vms=$VM_QTY
       echo "Wait for $building_vms vms created..."
-      for id in $building_id_vms_list; do
+      building_id_vms_list=$(openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks|grep -E "BUILD|ACTIVE"|awk '{print $2}')
+        [ "$DEBUG" = true ] && echo -e "
+        [DEBUG]
+        building_id_vms_list: $building_id_vms_list
+      "
+      if [ -z "${building_id_vms_list}" ]; then
+        break
+      else
+        for id in $building_id_vms_list; do
         status=""
         name=""
 
@@ -547,9 +554,9 @@ wait_vms_created () {
         if [ "$status" = ACTIVE ]; then
           building_vms=$(( $building_vms - 1 ))
         fi
-      done
+        done
+      fi
     done
-  fi
 }
 
 # VM create with timeout
