@@ -21,6 +21,7 @@ script_dir=$(dirname $0)
 [[ -z $PROJECT ]] && PROJECT="admin"
 [[ -z $VM_USER ]] && VM_USER="ubuntu"
 [[ -z $DEBUG ]] && DEBUG="false"
+[[ -z $UNITS ]] && UNITS="G"
 #======================
 
 while [ -n "$1" ]; do
@@ -29,6 +30,7 @@ while [ -n "$1" ]; do
       -hv               <hypervisor_name>
       -cpu              <number_cpus_for_stress>
       -ram              <gb_ram_stress>
+      -units            <units for RAM stress: B,K,M,G (size). \"G - default\">
       -t, -time_out     <time_during_which_the_load_will_be_applied_in_sec>
       -key              <path_to_key>
       -p, -project      <project_name>
@@ -45,6 +47,9 @@ while [ -n "$1" ]; do
       shift ;;
     -ram) RAM="$2"; TYPE_TEST="ram"
       echo "Found the -ram option in Gb, with parameter value $RAM"
+      shift;;
+    -units) UNITS="$2"
+      echo "Found the -units option with parameter value $UNITS"
       shift;;
     -key) KEY_NAME="$2"
       echo "Found the -key option, with parameter value key name: $KEY_NAME"
@@ -97,7 +102,7 @@ copy_and_stress() {
       ;;
     ram)
       echo "Starting ram stress on $VM_IP..."
-      ssh -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$VM_IP "nohup ./stress --vm 1 --vm-bytes '$RAM'G $time_out_string > /dev/null 2>&1 &"
+      ssh -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$VM_IP "nohup ./stress --vm 1 --vm-bytes '$RAM'$UNITS $time_out_string > /dev/null 2>&1 &"
       ;;
   esac
 }
@@ -115,7 +120,7 @@ batch_run_stress() {
   if [ "$MODE" = cpu ]; then
     load_string="CPU:                      $CPUS"
   else
-    load_string="RAM:                      $RAM"
+    load_string="RAM:                      $RAM; $UNITS"
   fi
   # time_out_help_string, time_out_string
   if [ -n "$TIME_OUT" ]; then
