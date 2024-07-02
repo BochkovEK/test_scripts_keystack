@@ -529,7 +529,7 @@ wait_vms_created () {
 #  if [ -n "${building_id_vms_list}" ]; then
     while [ $building_vms -ne 0 ]; do
       echo "Wait for $building_vms vms created..."
-      building_id_vms_list=$(openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks|grep -E "BUILD|ACTIVE"|awk '{print $2}')
+      building_id_vms_list=$(openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks|grep -E "$1"|awk '{print $2}')
         [ "$DEBUG" = true ] && echo -e "
         [DEBUG]
         building_id_vms_list: $building_id_vms_list
@@ -632,7 +632,7 @@ create_vms () {
   done
 
   if [ "$WAIT_FOR_CREATED" = true ]; then
-    wait_vms_created
+    wait_vms_created $INSTANCE_NAME
     check_vms_list
   else
     check_vms_list
@@ -694,7 +694,7 @@ create_vms_batch () {
   sleep $TIMEOUT_BEFORE_NEXT_CREATION
 
   if [ "$WAIT_FOR_CREATED" = true ]; then
-    wait_vms_created
+    wait_vms_created $INSTANCE_NAME
     check_vms_list
   else
     check_vms_list
