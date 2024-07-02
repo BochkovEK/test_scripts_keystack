@@ -520,34 +520,36 @@ check_vms_list () {
 
 # Wait vms created...
 wait_vms_created () {
-  bilding_id_vms_list=$(openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks|grep BUILD|awk '{print $2}')
+  building_id_vms_list=$(openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks|grep BUILD|awk '{print $2}')
   [ "$DEBUG" = true ] && echo -e "
   [DEBUG]
-  bilding_id_vms_list: $bilding_id_vms_list
+  bilding_id_vms_list: $building_id_vms_list
 "
   building_vms=$VM_QTY
-  while [ $building_vms -ne 0 ]; do
-    building_vms=$VM_QTY
-    echo "Wait for $building_vms vms created..."
-    for id in $bilding_id_vms_list; do
-      status=""
-      name=""
+  if [ -n "${building_id_vms_list}" ]; then
+    while [ $building_vms -ne 0 ]; do
+      building_vms=$VM_QTY
+      echo "Wait for $building_vms vms created..."
+      for id in $building_id_vms_list; do
+        status=""
+        name=""
 
-      status=$(openstack server show $id|grep -E "\|\s+status\s+\|\s+\w+"| awk '{print $4}')
-      name=$(openstack server show $id|grep -E "\|\s+name\s+\|\s+\w+"| awk '{print $4}')
+        status=$(openstack server show $id|grep -E "\|\s+status\s+\|\s+\w+"| awk '{print $4}')
+        name=$(openstack server show $id|grep -E "\|\s+name\s+\|\s+\w+"| awk '{print $4}')
 
-      echo "server_name: $name"
-      echo "status: $status"| \
-        sed --unbuffered \
-        -e 's/\(.*BUILD.*\)/\o033[33m\1\o033[39m/' \
-        -e 's/\(.*ACTIVE.*\)/\o033[32m\1\o033[39m/' \
-        -e 's/\(.*ERROR.*\)/\o033[31m\1\o033[39m/'
+        echo "server_name: $name"
+        echo "status: $status"| \
+          sed --unbuffered \
+          -e 's/\(.*BUILD.*\)/\o033[33m\1\o033[39m/' \
+          -e 's/\(.*ACTIVE.*\)/\o033[32m\1\o033[39m/' \
+          -e 's/\(.*ERROR.*\)/\o033[31m\1\o033[39m/'
 
-      if [ "$status" = ACTIVE ]; then
-        building_vms=$(( $building_vms - 1 ))
-      fi
+        if [ "$status" = ACTIVE ]; then
+          building_vms=$(( $building_vms - 1 ))
+        fi
+      done
     done
-  done
+  fi
 }
 
 # VM create with timeout
