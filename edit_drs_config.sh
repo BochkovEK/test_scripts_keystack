@@ -18,6 +18,7 @@ conf_changed=""
 [[ -z $ADD_DEBUG ]] && ADD_DEBUG="false"
 [[ -z $DEBUG ]] && DEBUG="false"
 [[ -z $ONLY_CONF_CHECK ]] && ONLY_CONF_CHECK="false"
+[[ -z $ADD_PROM_ALERT ]] && ADD_PROM_ALERT=""
 [[ -z $PROMETHEUS_PASS ]] && PROMETHEUS_PASS=""
 [[ -z $PUSH ]] && PUSH="false"
 [[ -z $CONF_NAME ]] && CONF_NAME="drs.ini"
@@ -54,7 +55,7 @@ do
         -add_debug) ADD_DEBUG="true"
 	        echo "Found the --add_debug, parameter set $ADD_DEBUG"
           ;;
-        -pa|-prometheus_alerting) PROMETHEUS_PASS="$2"
+        -pa|-prometheus_alerting) PROMETHEUS_PASS="$2"; ADD_PROM_ALERT="true"
 	        echo "Found the -prometheus_alerting, \$PROMETHEUS_PASS: $PROMETHEUS_PASS"
           shift;;
         -p|-push) PUSH="true"
@@ -141,7 +142,7 @@ change_add_prometheus_alerting () {
 [ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
 [ "$PUSH" = true ] && { push_conf; conf_changed=true; }
 [ "$ADD_DEBUG" = true ] && { change_add_debug_param; }
-[ -n "$PROMETHEUS_PASS" ] && { change_add_prometheus_alerting; }
+[ -n "$ADD_PROM_ALERT" ] && { change_add_prometheus_alerting; }
 #[ -n "$CHANGE_FOO_PARAM" ] && change_foo_param $foo_param_value
 [ -n "$conf_changed" ] && { cat_conf; echo "Restart $service_name containers..."; bash $script_dir/command_on_nodes.sh -nt ctrl -c "docker restart $service_name"; exit 0; }
 cat_conf
