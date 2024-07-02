@@ -569,18 +569,12 @@ create_vms () {
       if [[ ! $DONT_ASK = "true" ]]; then
 #        echo "Сreate VM: \"$INSTANCE_NAME\" in project \"$PROJECT\"?"
 #        read -p "Press enter to continue: "
-        while true; do
-          read -p "Сreate VM: \"$INSTANCE_NAME\" in project \"$PROJECT\" [Yes]: " yn
+#        while true; do
+        read -p "Сreate VM: \"$INSTANCE_NAME\" in project \"$PROJECT\" [Yes]: " yn
           yn=${yn:-"Yes"}
-          case $yn in
-            [Yy]* ) break;;
-            [Nn]* ) break;;
-            * ) echo "Please answer yes or no.";;
-          esac
-        done
-        case $yn in
-          [Yy]* ) continue;;
-        esac
+        if [ "$yn" != Yes ]; then
+          continue
+        fi
       fi
     fi
     echo "Creating VM: $INSTANCE_NAME"
