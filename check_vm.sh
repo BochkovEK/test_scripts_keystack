@@ -40,7 +40,7 @@ batch_run_command() {
 
     echo "Start checking..."
     VMs_IPs=$(openstack server list --project $PROJECT $host_string |grep ACTIVE |awk '{print $8}')
-    [[ -z $VMs_IPs ]] && { echo -E "No instance found in the $PROJECT project\nProject list:"; openstack project list; exit 1; }
+    [[ -z $VMs_IPs ]] && { echo -e "No instance found in the $PROJECT project\nProject list:"; openstack project list; exit 1; }
     for raw_string_ip in $VMs_IPs; do
         FIRST_IP=$(echo "${raw_string_ip%%,*}")
 #        FIRST_IP=$(echo $raw_string_ip|awk '{print $1}')
