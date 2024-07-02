@@ -520,18 +520,24 @@ check_vms_list () {
 
 # Wait vms created...
 wait_vms_created () {
+  building_vms=$VM_QTY
   while [ $building_vms -ne 0 ]; do
-    building_vms=$VM_QTY
+#  building_id_vms_list=foo
+#  while [ -n "${building_id_vms_list}"  ]; do
+#    building=0
+#    done
+#    building_vms=$VM_QTY
+    active=0
     echo "Wait for $building_vms vms created..."
-    building_id_vms_list=$(openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks|grep -E "$1"|awk '{print $2}')
+    id_vms_list=$(openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks|grep -E "$1"|awk '{print $2}')
       [ "$DEBUG" = true ] && echo -e "
       [DEBUG]
-      building_id_vms_list: $building_id_vms_list
+      building_id_vms_list: $id_vms_list
     "
-    if [ -z "${building_id_vms_list}" ]; then
+    if [ -z "${id_vms_list}" ]; then
       break
     else
-      for id in $building_id_vms_list; do
+      for id in $id_vms_list; do
         [ "$DEBUG" = true ] && echo -e "
         [DEBUG]
         id: $id
@@ -550,9 +556,10 @@ wait_vms_created () {
           -e 's/\(.*ERROR.*\)/\o033[31m\1\o033[39m/'
 
         if [ "$status" = ACTIVE ]; then
-          building_vms=$(( $building_vms - 1 ))
+          active=$(( active + 1 ))
         fi
       done
+      building_vms=$(( building_vms - active ))
     fi
   done
 }
