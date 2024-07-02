@@ -125,6 +125,7 @@ change_add_prometheus_alerting () {
   echo "Add prometheus alerting to drs.ini..."
   if [ -z "${PROMETHEUS_PASS}" ]; then
     echo "${red}\$PROMETHEUS_PASS not set. Prometheus alerting not set in drs.ini${reset}"
+    $ONLY_CONF_CHECK="false"
   else
     pull_conf
     prom_pass_exists=$(cat $script_dir/$test_node_conf_dir/$CONF_NAME|grep prometheus_alert_manager_password)
