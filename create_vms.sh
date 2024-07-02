@@ -566,10 +566,19 @@ create_vms () {
     VM_EXIST=$(openstack server list| grep $INSTANCE_NAME| awk '{print $4}')
     if [ -n "$VM_EXIST" ]; then
       printf "%s\n" "${orange}VM: \"$INSTANCE_NAME\" is already exist in project \"$PROJECT\"${normal}"
-      [[ ! $DONT_ASK = "true" ]] && {
-        echo "Сreate VM: \"$INSTANCE_NAME\" in project \"$PROJECT\"?";
-        read -p "Press enter to continue: ";
-      }
+      if [[ ! $DONT_ASK = "true" ]]; then
+        echo "Сreate VM: \"$INSTANCE_NAME\" in project \"$PROJECT\"?"
+#        read -p "Press enter to continue: "
+        while true; do
+          read -p "Сreate VM: \"$INSTANCE_NAME\" in project \"$PROJECT\" [Yes]: " yn
+          yn=${yn:-"Yes"}
+          case $yn in
+            [Yy]* ) break;;
+            [Nn]* ) continue;;
+            * ) echo "Please answer yes or no.";;
+          esac
+        done
+      fi
     fi
     echo "Creating VM: $INSTANCE_NAME"
 

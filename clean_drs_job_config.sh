@@ -20,7 +20,7 @@ jobs_list=$(drs jo list -c id|grep -E "\|\s+[0-9]+\s+\|"|awk '{print $2}')
 configs_list=$(drs co list -c id|grep -E "\|\s+[0-9]+\s+\|"|awk '{print $2}')
 
 echo "Clear all drs jobs and config"
-read -p "Press enter to continue"
+read -p "Press enter to continue: "
 
 for jo in $jobs_list; do
   drs job delete $jo
