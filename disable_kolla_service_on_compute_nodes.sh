@@ -45,10 +45,10 @@ for host in "${NODES[@]}"; do
     for SERVICE in $SERVICE_NAME; do
     #if [ -z $SERVICE_NAME ]; then
       echo "Try sed Restart for $SERVICE"
-      ssh -o StrictHostKeyChecking=no $host sed -i \
+      ssh -o StrictHostKeyChecking=no $host "sed -i
         's/Restart=always/Restart=no/';
-        's/\-t 60//' \
-        /etc/systemd/system/kolla-$SERVICE-container.service
+        's/\-t 60//'
+        /etc/systemd/system/kolla-$SERVICE-container.service"
 #      ssh -o StrictHostKeyChecking=no $host cat /etc/systemd/system/kolla-consul-container.service
 #      ssh -o StrictHostKeyChecking=no $host sed -i 's/Restart=always/Restart=no/' /etc/systemd/system/kolla-nova_compute-container.service
 #      ssh -o StrictHostKeyChecking=no $host cat /etc/systemd/system/kolla-nova_compute-container.service
