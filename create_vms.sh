@@ -522,7 +522,7 @@ check_vms_list () {
 wait_vms_created () {
   building_vms=$VM_QTY
   while [ $building_vms -ne 0 ]; do
-    building_vms=$VM_QTY
+#    building_vms=$VM_QTY
     active=0
     echo "Wait for $building_vms vms created..."
     building_vms=$VM_QTY
