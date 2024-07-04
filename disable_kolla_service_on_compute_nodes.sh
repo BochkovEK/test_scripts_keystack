@@ -11,14 +11,14 @@ red=$(tput setaf 1)
 violet=$(tput setaf 5)
 normal=$(tput sgr0)
 
-[[ -z $SERVICE_NAME ]] && SERVICE_NAME=""
+[[ -z $SERVICE_NAME ]] && SERVICE_NAME="consul nova_compute"
 [[ -z $NODES ]] && NODES=()
 
 while [ -n "$1" ]
 do
   case "$1" in
     --help) echo -E "
-  The scrip disable autorestart nova_compute and consul docker containers
+  The scrip disable autorestart nova_compute and consul docker containers or specify service
   -s,           -service          <kolla service name>
 "
       exit 0
@@ -42,18 +42,23 @@ for host in "${NODES[@]}"; do
   echo "Edit config kolla service on ${host}"
   if ping -c 2 $host &> /dev/null; then
     printf "%40s\n" "${green}There is a connection with $host - ok!${normal}"
-    if [ -z $SERVICE_NAME ]; then
-      echo "Try sed Restart=always for nova_compute and consul"
-      ssh -o StrictHostKeyChecking=no $host sed -i 's/Restart=always/Restart=no/' /etc/systemd/system/kolla-consul-container.service
-      ssh -o StrictHostKeyChecking=no $host cat /etc/systemd/system/kolla-consul-container.service
-      ssh -o StrictHostKeyChecking=no $host sed -i 's/Restart=always/Restart=no/' /etc/systemd/system/kolla-nova_compute-container.service
-      ssh -o StrictHostKeyChecking=no $host cat /etc/systemd/system/kolla-nova_compute-container.service
-    else
-      echo "Try sed Restart=always for $SERVICE_NAME"
-      ssh -o StrictHostKeyChecking=no $host sed -i 's/Restart=always/Restart=no/' /etc/systemd/system/kolla-$SERVICE_NAME-container.service
-      ssh -o StrictHostKeyChecking=no $host cat /etc/systemd/system/kolla-$SERVICE_NAME-container.service
-      echo "Daemon reloading on ${host}..."
-      ssh -o StrictHostKeyChecking=no $host systemctl daemon-reload
-    fi
+    for SERVICE in $SERVICE_NAME; do
+    #if [ -z $SERVICE_NAME ]; then
+      echo "Try sed Restart for $SERVICE"
+      ssh -o StrictHostKeyChecking=no $host sed -i \
+        's/Restart=always/Restart=no/';
+        's/\-t 60//' \
+        /etc/systemd/system/kolla-$SERVICE-container.service
+#      ssh -o StrictHostKeyChecking=no $host cat /etc/systemd/system/kolla-consul-container.service
+#      ssh -o StrictHostKeyChecking=no $host sed -i 's/Restart=always/Restart=no/' /etc/systemd/system/kolla-nova_compute-container.service
+#      ssh -o StrictHostKeyChecking=no $host cat /etc/systemd/system/kolla-nova_compute-container.service
+#    else
+#      echo "Try sed Restart=always for $SERVICE_NAME"
+#      ssh -o StrictHostKeyChecking=no $host sed -i 's/Restart=always/Restart=no/' /etc/systemd/system/kolla-$SERVICE_NAME-container.service
+#      ssh -o StrictHostKeyChecking=no $host cat /etc/systemd/system/kolla-$SERVICE_NAME-container.service
+#      echo "Daemon reloading on ${host}..."
+#      ssh -o StrictHostKeyChecking=no $host systemctl daemon-reload
+#    fi
+    done
   fi
 done
