@@ -577,7 +577,7 @@ create_vms () {
   FLAVOR=$(openstack flavor list| grep $FLAVOR| head -n 1| awk '{print $4}')
   for i in $(seq $SEQ); do
 #    INSTANCE_NAME="${VM_BASE_NAME}_$i"
-    if [ "$VM_QTY" = 1 ]; then
+    if [ "$SEQ" = 1 ]; then
       INSTANCE_NAME="${VM_BASE_NAME}"
     else
       INSTANCE_NAME=$(printf "$VM_BASE_NAME-%02d" $i)
@@ -616,7 +616,7 @@ create_vms () {
 
   Openstack server create command:
   openstack server create \
-    $VM_BASE_NAME \
+    $INSTANCE_NAME \
     --image $IMAGE \
     --flavor $FLAVOR \
     --security-group $SECURITY_GR_ID \
