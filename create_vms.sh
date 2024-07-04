@@ -560,16 +560,27 @@ wait_vms_created () {
 }
 
 # VM create with timeout
+# Проработать вопрос ожидания ВМ по их ID и что будет в случае батч создания (откуда брать ID)
 create_vms () {
 
-  echo "Creating VMs with timeout: $TIMEOUT_BEFORE_NEXT_CREATION..."
+  if [ "$BATCH" = "true" ]; then
+    echo "Creating VMs (batch)..."
+    MAX_KEY="--max $VM_QTY"
+    SEQ=$VM_QTY
+    VM_QTY=1
+  else
+    echo "Creating VMs with timeout: $TIMEOUT_BEFORE_NEXT_CREATION..."
+    SEQ=$VM_QTY
+  fi
 
   #export OS_PROJECT_NAME=$PROJECT
   FLAVOR=$(openstack flavor list| grep $FLAVOR| head -n 1| awk '{print $4}')
-  for i in $(seq $VM_QTY); do
-    INSTANCE_NAME="${VM_BASE_NAME}_$i"
+  for i in $(seq $SEQ); do
+#    INSTANCE_NAME="${VM_BASE_NAME}_$i"
     if [ "$VM_QTY" = 1 ]; then
       INSTANCE_NAME="${VM_BASE_NAME}"
+    else
+      INSTANCE_NAME=$(printf "$VM_BASE_NAME-%02d" $i)
     fi
     echo "Check for VM: \"$INSTANCE_NAME\" exist"
     VM_EXIST=$(openstack server list| grep $INSTANCE_NAME| awk '{print $4}')
@@ -601,6 +612,7 @@ create_vms () {
   VOLUME_SIZE: $VOLUME_SIZE
   VM_QTY: $VM_QTY
   ADD_KEY: $ADD_KEY
+  MAX_KEY: $MAX_KEY
 
   Openstack server create command:
   openstack server create \
@@ -613,7 +625,7 @@ create_vms () {
     --os-compute-api-version $API_VERSION \
     --network $NETWORK \
     --boot-from-volume $VOLUME_SIZE \
-    $ADD_KEY
+    $ADD_KEY $MAX_KEY
 "
 
     openstack server create \
@@ -626,7 +638,7 @@ create_vms () {
       --os-compute-api-version $API_VERSION \
       --network $NETWORK \
       --boot-from-volume $VOLUME_SIZE \
-      $ADD_KEY
+      $ADD_KEY $MAX_KEY
 
     [[ $i -ne $VM_QTY ]] && { sleep $TIMEOUT_BEFORE_NEXT_CREATION; }
   done
@@ -639,67 +651,67 @@ create_vms () {
   fi
 }
 
-# VM create
-create_vms_batch () {
-
-#  echo "Create VM: \"$VM_BASE_NAME\" in project \"$PROJECT\"?"
-#  read -r -p "Press enter to continue"
-
-  echo "Creating VMs (batch)..."
-
-  FLAVOR=$(openstack flavor list| grep $FLAVOR| head -n 1| awk '{print $4}')
-
-  [ "$DEBUG" = true ] && echo -e "
-  [DEBUG]
-  VM_BASE_NAME: $VM_BASE_NAME
-  IMAGE: $IMAGE
-  FLAVOR: $FLAVOR
-  SECURITY_GR_ID: $SECURITY_GR_ID
-  KEY_NAME: $KEY_NAME
-  host: $host
-  API_VERSION: $API_VERSION
-  NETWORK: $NETWORK
-  VOLUME_SIZE: $VOLUME_SIZE
-  VM_QTY: $VM_QTY
-  ADD_KEY: $ADD_KEY
-
-  Openstack server create command:
-  openstack server create \
-    $VM_BASE_NAME \
-    --image $IMAGE \
-    --flavor $FLAVOR \
-    --security-group $SECURITY_GR_ID \
-    --key-name $KEY_NAME \
-    $host \
-    --os-compute-api-version $API_VERSION \
-    --network $NETWORK \
-    --boot-from-volume $VOLUME_SIZE \
-    --max $VM_QTY \
-    $ADD_KEY
-"
-
-  openstack server create \
-    $VM_BASE_NAME \
-    --image $IMAGE \
-    --flavor $FLAVOR \
-    --security-group $SECURITY_GR_ID \
-    --key-name $KEY_NAME \
-    $host \
-    --os-compute-api-version $API_VERSION \
-    --network $NETWORK \
-    --boot-from-volume $VOLUME_SIZE \
-    --max $VM_QTY \
-    $ADD_KEY
-
-  sleep $TIMEOUT_BEFORE_NEXT_CREATION
-
-  if [ "$WAIT_FOR_CREATED" = true ]; then
-    wait_vms_created $VM_BASE_NAME
-    check_vms_list
-  else
-    check_vms_list
-  fi
-}
+# Batch VM create (deprecate)
+#create_vms_batch () {
+#
+##  echo "Create VM: \"$VM_BASE_NAME\" in project \"$PROJECT\"?"
+##  read -r -p "Press enter to continue"
+#
+#  echo "Creating VMs (batch)..."
+#
+#  FLAVOR=$(openstack flavor list| grep $FLAVOR| head -n 1| awk '{print $4}')
+#
+#  [ "$DEBUG" = true ] && echo -e "
+#  [DEBUG]
+#  VM_BASE_NAME: $VM_BASE_NAME
+#  IMAGE: $IMAGE
+#  FLAVOR: $FLAVOR
+#  SECURITY_GR_ID: $SECURITY_GR_ID
+#  KEY_NAME: $KEY_NAME
+#  host: $host
+#  API_VERSION: $API_VERSION
+#  NETWORK: $NETWORK
+#  VOLUME_SIZE: $VOLUME_SIZE
+#  VM_QTY: $VM_QTY
+#  ADD_KEY: $ADD_KEY
+#
+#  Openstack server create command:
+#  openstack server create \
+#    $VM_BASE_NAME \
+#    --image $IMAGE \
+#    --flavor $FLAVOR \
+#    --security-group $SECURITY_GR_ID \
+#    --key-name $KEY_NAME \
+#    $host \
+#    --os-compute-api-version $API_VERSION \
+#    --network $NETWORK \
+#    --boot-from-volume $VOLUME_SIZE \
+#    --max $VM_QTY \
+#    $ADD_KEY
+#"
+#
+#  openstack server create \
+#    $VM_BASE_NAME \
+#    --image $IMAGE \
+#    --flavor $FLAVOR \
+#    --security-group $SECURITY_GR_ID \
+#    --key-name $KEY_NAME \
+#    $host \
+#    --os-compute-api-version $API_VERSION \
+#    --network $NETWORK \
+#    --boot-from-volume $VOLUME_SIZE \
+#    --max $VM_QTY \
+#    $ADD_KEY
+#
+#  sleep $TIMEOUT_BEFORE_NEXT_CREATION
+#
+#  if [ "$WAIT_FOR_CREATED" = true ]; then
+#    wait_vms_created $VM_BASE_NAME
+#    check_vms_list
+#  else
+#    check_vms_list
+#  fi
+#}
 
 
 check_openstack_cli
@@ -725,9 +737,9 @@ check_and_add_secur_group
   check_network
   check_and_add_keypair;
   }
-if [ "$BATCH" = "true" ]; then
-  create_vms_batch
-else
+#if [ "$BATCH" = "true" ]; then
+#  create_vms_batch
+#else
   create_vms
-fi
+#fi
 export OS_PROJECT_NAME='admin'
