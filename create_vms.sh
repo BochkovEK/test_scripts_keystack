@@ -525,6 +525,7 @@ wait_vms_created () {
     building_vms=$VM_QTY
     active=0
     echo "Wait for $building_vms vms created..."
+    building_vms=$VM_QTY
     id_vms_list=$(openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks|grep -E "$1"|awk '{print $2}')
       [ "$DEBUG" = true ] && echo -e "
       [DEBUG]
@@ -555,6 +556,9 @@ wait_vms_created () {
           active=$(( active + 1 ))
         fi
       done
+      if [ "$active" -ge "$VM_QTY" ]; then
+        break
+      fi
       building_vms=$(( building_vms - active ))
     fi
   done
