@@ -18,6 +18,7 @@ script_dir=$(dirname $0)
 [[ -z $CHECK_SUFFIX ]] && CHECK_SUFFIX="false"
 [[ -z $ONLY_CONF_CHECK ]] && ONLY_CONF_CHECK="false"
 [[ -z $PUSH ]] && PUSH="false"
+[[ -z $PULL ]] && PULL="false"
 [[ -z $CONF_NAME ]] && CONF_NAME=""
 
 #[[ -z "${1}" ]] && { echo "Alive threshold value required as parameter script"; exit 1; }
@@ -41,8 +42,11 @@ do
         -i,   -ipmi_fencing             <true\false>
         -n,   -nova_fencing             <true\false>
         -v,   -debug                    without value, set DEBUG=\"true\"
-        -p,   -push                     without value, push region-config_<region_name>.json from
-                                        $HOME/test_scripts_keystack/kolla/consul to
+        -pull                           without value, pull region-config_<region_name>.json from
+                                        /etc/kolla/consul/region-config_<region_name>.json on ctrl node to
+                                        $script_dir/$test_node_conf_dir
+        -push                           without value, push region-config_<region_name>.json from
+                                        $script_dir/$test_node_conf_dir to
                                         /etc/kolla/consul/region-config_<region_name>.json on ctrl nodes
 
         start script with parameter suffix: bash edit_ha_region_config.sh suffix - return bmc suffix
@@ -65,7 +69,10 @@ do
         -v|-debug) DEBUG="true"
 	        echo "Found the -debug, parameter set $DEBUG"
           ;;
-        -p|-push) PUSH="true"
+        -pull) PULL="true"
+	        echo "Found the -pull, parameter set $PULL"
+          ;;
+        -push) PUSH="true"
 	        echo "Found the -push, parameter set $PUSH"
           ;;
         --) shift
@@ -92,7 +99,7 @@ cat_conf () {
   bash $script_dir/command_on_nodes.sh -nt ctrl -c "echo \"cat $conf_dir/region-config_${REGION}.json\"; cat $conf_dir/region-config_${REGION}.json"
 }
 
-pull_consul_conf () {
+pull_conf () {
   echo "Check and create folder $test_node_conf_dir in $script_dir folder"
   [ ! -d $script_dir/$test_node_conf_dir ] && { mkdir -p $script_dir/$test_node_conf_dir; }
   ctrl_node=$(cat /etc/hosts | grep -m 1 -E ${ctrl_pattern} | awk '{print $1}')
@@ -119,7 +126,7 @@ push_conf () {
 
 change_alive_threshold () {
   echo "Changing alive threshold..."
-  pull_consul_conf
+  pull_conf
   sed -i --regexp-extended "s/\"alive_compute_threshold\":\s+\"[0-9]+\"/\"alive_compute_threshold\": \"$1\"/" \
    $script_dir/$test_node_conf_dir/region-config_${REGION}.json
   push_conf
@@ -128,7 +135,7 @@ change_alive_threshold () {
 
 change_dead_threshold () {
   echo "Changing dead threshold..."
-  pull_consul_conf
+  pull_conf
   dead_threshold_string_exist=$(cat $script_dir/$test_node_conf_dir/region-config_${REGION}.json| grep 'dead_compute_threshold')
 
   if [ -z "$dead_threshold_string_exist" ]; then
@@ -170,7 +177,7 @@ change_nova_fencing () {
 }
 
 check_bmc_suffix () {
-  pull_consul_conf
+  pull_conf
   [ "$DEBUG" = true ] && echo -e "
   [DEBUG]
   script_dir: $script_dir
@@ -178,7 +185,7 @@ check_bmc_suffix () {
   ${service_name}_conf_dir: $conf_dir
   "
 
-  [ ! -f $script_dir/$test_node_conf_dir/region-config_${REGION}.json ] && { echo "Config exists in: $script_dir/$test_node_conf_dir/region-config_${REGION}.json"; pull_consul_conf; }
+  [ ! -f $script_dir/$test_node_conf_dir/region-config_${REGION}.json ] && { echo "Config exists in: $script_dir/$test_node_conf_dir/region-config_${REGION}.json"; pull_conf; }
   [ "$DEBUG" = true ] && { echo -e "[DEBUG]\n"; ls -la $script_dir; }
   [ ! -f $script_dir/$test_node_conf_dir/region-config_${REGION}.json ] && { echo "Config not found"; exit 1; }
   suffix_string_raw_1=$(cat $script_dir/$test_node_conf_dir/region-config_${REGION}.json|grep 'suffix')
@@ -186,19 +193,14 @@ check_bmc_suffix () {
   echo "${suffix_string_raw_2%%,*}"|awk '{print $2}'
 }
 
-#only_conf_check () {
-##  pull_consul_conf
-#  cat_conf
-#}
 
 [ "$CHECK_SUFFIX" = true ] && { check_bmc_suffix; exit 0; }
 [ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
 [ "$PUSH" = true ] && { push_conf; conf_changed=true; }
-##pull_consul_conf
+[ "$PULL" = true ] && { pull_conf; exit 0; }
 [ -n "$ALIVE_THRSHOLD" ] && change_alive_threshold $ALIVE_THRSHOLD
 [ -n "$DEAD_THRSHOLD" ] && change_dead_threshold $DEAD_THRSHOLD
 [ -n "$IPMI_FENCING" ] && change_ipmi_fencing $IPMI_FENCING
 [ -n "$NOVA_FENCING" ] && change_nova_fencing $NOVA_FENCING
 cat_conf
 [ -n "$conf_changed" ] && { echo "Restart consul containers..."; bash $script_dir/command_on_nodes.sh -nt ctrl -c "docker restart consul"; }
-##cat_consul_conf
