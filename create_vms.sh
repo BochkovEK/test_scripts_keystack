@@ -566,8 +566,8 @@ create_vms () {
   if [ "$BATCH" = "true" ]; then
     echo "Creating VMs (batch)..."
     MAX_KEY="--max $VM_QTY"
-    SEQ=$VM_QTY
-    VM_QTY=1
+    SEQ=1
+#    VM_QTY=1
   else
     echo "Creating VMs with timeout: $TIMEOUT_BEFORE_NEXT_CREATION..."
     SEQ=$VM_QTY
