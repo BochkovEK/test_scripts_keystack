@@ -47,6 +47,7 @@ for host in "${NODES[@]}"; do
       echo "Try sed Restart for $SERVICE"
       ssh -o StrictHostKeyChecking=no $host "sed -i 's/Restart=always/Restart=no/' /etc/systemd/system/kolla-$SERVICE-container.service"
       ssh -o StrictHostKeyChecking=no $host "sed -i 's/-t 60//' /etc/systemd/system/kolla-$SERVICE-container.service"
+      ssh -o StrictHostKeyChecking=no $host cat /etc/systemd/system/kolla-$SERVICE-container.service
 #      ssh -o StrictHostKeyChecking=no $host cat /etc/systemd/system/kolla-consul-container.service
 #      ssh -o StrictHostKeyChecking=no $host sed -i 's/Restart=always/Restart=no/' /etc/systemd/system/kolla-nova_compute-container.service
 #      ssh -o StrictHostKeyChecking=no $host cat /etc/systemd/system/kolla-nova_compute-container.service
@@ -54,9 +55,9 @@ for host in "${NODES[@]}"; do
 #      echo "Try sed Restart=always for $SERVICE_NAME"
 #      ssh -o StrictHostKeyChecking=no $host sed -i 's/Restart=always/Restart=no/' /etc/systemd/system/kolla-$SERVICE_NAME-container.service
 #      ssh -o StrictHostKeyChecking=no $host cat /etc/systemd/system/kolla-$SERVICE_NAME-container.service
-#      echo "Daemon reloading on ${host}..."
+      echo "Daemon reloading on ${host}..."
 
-#      !!!ssh -o StrictHostKeyChecking=no $host systemctl daemon-reload
+      ssh -o StrictHostKeyChecking=no $host systemctl daemon-reload
 #    fi
     done
   fi
