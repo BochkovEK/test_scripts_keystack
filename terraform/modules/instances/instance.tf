@@ -10,7 +10,7 @@ resource "openstack_compute_instance_v2" "vm" {
   security_groups             = each.value.security_groups
   availability_zone_hints     = each.value.az_hint
   metadata = {
-    this = "that"
+    test_meta = "Created by Terraform"
   }
   block_device {
     uuid                  = data.openstack_images_image_v2.image_id[each.key].id
