@@ -1,2 +1,0 @@
-#foo
-volumev3 = "https://10.224.136.196:8776/v3/8cdbb6b9a0e945b8a9844f43f04159a9"
