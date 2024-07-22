@@ -1,0 +1,23 @@
+127.0.0.1 localhost
+
+# The following lines are desirable for IPv6 capable hosts
+::1 ip6-localhost ip6-loopback
+fe00::0 ip6-localnet
+ff00::0 ip6-mcastprefix
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+ff02::3 ip6-allhosts
+
+#[compute]
+10.224.143.106  ebochkov-ks-sber-comp-01
+10.224.143.107  ebochkov-ks-sber-comp-02
+10.224.143.108  ebochkov-ks-sber-comp-03
+10.224.143.109  ebochkov-ks-sber-comp-04
+10.224.51.14    ebochkov-ks-sber-comp-05
+10.220.17.114   ebochkov-ks-sber-comp-05-rmi
+10.224.51.15    ebochkov-ks-sber-comp-06
+10.220.17.115     ebochkov-ks-sber-comp-06-rmi
+#[control]
+10.224.143.101  ebochkov-ks-sber-ctrl-01
+10.224.143.102  ebochkov-ks-sber-ctrl-02
+10.224.143.103  ebochkov-ks-sber-ctrl-03
