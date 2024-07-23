@@ -95,7 +95,7 @@ cat_conf () {
   echo "Cat conf..."
   echo
   cat $script_dir/$CONF_NAME
-#  echo
+  echo ""
 }
 
 install_dnsmasq () {
@@ -135,7 +135,6 @@ copy_dnsmasq_conf () {
 get_var
 sed_var_in_conf
 cat_conf
-echo
 read -p "Press enter to continue: "
 install_dnsmasq
 copy_dnsmasq_conf
