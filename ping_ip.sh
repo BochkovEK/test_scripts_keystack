@@ -20,4 +20,5 @@ while true; do
     echo $dt >> $script_dir/ping_states_with_$IP
     echo "No connection with $IP - error!" >> $script_dir/ping_states_with_$IP
   fi
+  sleep 1
 done
