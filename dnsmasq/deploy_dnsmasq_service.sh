@@ -30,6 +30,20 @@ do
         The script install dnsmasq
         To deploy dnsmasq on DNS server:
         1) Edit dns_ip_mapping.txt file like /etc/hosts to mapping <ip> <nameserver>
+
+        cat <<-EOF > ~/test_scripts_keystack/dnsmasq/dns_ip_mapping.txt
+# ----- ADD from deploy_dnsmasq_service.sh -----
+10.224.129.227 int.ebochkov.test.domain
+10.224.129.228 ext.ebochkov.test.domain
+
+10.224.129.236 ebochkov-keystack-comp-01 comp-01 c-lcm-nexus.test.domain c-netbox.test.domain c-gitlab.test.domain c-vault.test.domain
+
+10.224.129.230 ebochkov-keystack-ctrl-01 ctrl-01
+
+10.224.129.235 ebochkov-keystack-lcm-01 lcm-01 lcm-nexus.test.domain netbox.test.domain gitlab.test.domain vault.test.domain
+10.224.129.246 ebochkov-keystack-net-01 net-01
+EOF
+
         2) bash $HOME/test_script_keystack/dnsmasq/deploy_dnsmasq_service.sh
         "
           exit 0
