@@ -11,6 +11,7 @@
 
 script_dir=$(dirname $0)
 nodes_to_find='\-ctrl\-..( |$)|\-comp\-..( |$)|\-net\-..( |$)|\-lcm\-..( |$)'
+dns_ip_mapping=dns_ip_mapping.txt
 #parses_file=$script_dir/dns_ip_mapping.txt
 parses_file=/etc/hosts
 yellow=`tput setaf 3`
@@ -29,7 +30,7 @@ do
         --help) echo -E "
         The script install dnsmasq
         To deploy dnsmasq on DNS server:
-        1) Edit dns_ip_mapping.txt file like /etc/hosts to mapping <ip> <nameserver>
+        1) Edit $dns_ip_mapping file like /etc/hosts to mapping <ip> <nameserver>
 
         cat <<-EOF > ~/test_scripts_keystack/dnsmasq/dns_ip_mapping.txt
 # ----- ADD from deploy_dnsmasq_service.sh -----
@@ -91,12 +92,12 @@ sed_var_in_conf () {
   echo
 }
 
-cat_conf () {
-  echo "Cat conf..."
-  echo
-  cat $script_dir/$CONF_NAME
-  echo ""
-}
+#cat_conf () {
+#  echo "Cat conf..."
+#  echo
+#  cat $script_dir/$CONF_NAME
+#  echo ""
+#}
 
 install_dnsmasq () {
   #Install docker if need
@@ -134,7 +135,13 @@ copy_dnsmasq_conf () {
 
 get_var
 sed_var_in_conf
-cat_conf
+echo "Cat conf..."
+echo
+cat $script_dir/$CONF_NAME
+echo "Cat $dns_ip_mapping..."
+echo
+cat $script_dir/$dns_ip_mapping
+echo
 read -p "Press enter to continue: "
 install_dnsmasq
 copy_dnsmasq_conf
