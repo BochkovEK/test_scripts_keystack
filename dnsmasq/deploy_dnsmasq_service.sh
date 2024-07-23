@@ -76,6 +76,7 @@ get_var () {
     export DNS_SERVER_IP=${DNS_SERVER_IP}
   done
 
+  echo
   echo DOMAIN: $DOMAIN
   echo DNS_SERVER_IP: $DNS_SERVER_IP
   echo
@@ -92,6 +93,7 @@ sed_var_in_conf () {
 
 cat_conf () {
   echo "Cat conf..."
+  echo
   cat $script_dir/$CONF_NAME
   echo
 }
