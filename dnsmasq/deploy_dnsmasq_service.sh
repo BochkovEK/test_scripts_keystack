@@ -36,7 +36,7 @@ do
 10.224.129.227 int.ebochkov.test.domain
 10.224.129.228 ext.ebochkov.test.domain
 
-10.224.129.236 ebochkov-keystack-comp-01 comp-01 c-lcm-nexus.test.domain c-netbox.test.domain c-gitlab.test.domain c-vault.test.domain
+10.224.129.236 ebochkov-keystack-comp-01 comp-01
 
 10.224.129.230 ebochkov-keystack-ctrl-01 ctrl-01
 
