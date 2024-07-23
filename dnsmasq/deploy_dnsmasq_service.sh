@@ -11,12 +11,35 @@
 
 script_dir=$(dirname $0)
 nodes_to_find='\-ctrl\-..( |$)|\-comp\-..( |$)|\-net\-..( |$)|\-lcm\-..( |$)'
+#parses_file=$script_dir/dns_ip_mapping.txt
+parses_file=/etc/hosts
 yellow=`tput setaf 3`
 reset=`tput sgr0`
 
 [[ -z $DOMAIN ]] && DOMAIN=""
 [[ -z $DNS_SERVER_IP ]] && DNS_SERVER_IP=""
 [[ -z $CONF_NAME ]] && CONF_NAME="dnsmasq.conf"
+
+#The script parses dns_ip_mapping.txt to find IPs for \$nodes_to_find and
+ #          add DNS IP to /etc/resolv.conf all of them
+
+while [ -n "$1" ]
+do
+    case "$1" in
+        --help) echo -E "
+        The script install dnsmasq
+        To deploy dnsmasq on DNS server:
+        1) Edit dns_ip_mapping.txt file like /etc/hosts to mapping <ip> <nameserver>
+        2) bash $HOME/test_script_keystack/dnsmasq/deploy_dnsmasq_service.sh
+        "
+          exit 0
+          break ;;
+	      --) shift
+          break ;;
+        *) echo "$1 is not an option";;
+        esac
+        shift
+done
 
 get_var () {
   echo "Get vars..."
@@ -81,32 +104,15 @@ copy_dnsmasq_conf () {
       /etc/resolv.conf
 #  echo "nameserver $DNS_SERVER_IP" >> /etc/resolv.conf
   systemctl restart dnsmasq
-  srv=$(cat /etc/hosts | grep -E "$nodes_to_find" | awk '{print $1}')
+  srv=$(cat $parses_file | grep -E "$nodes_to_find" | awk '{print $1}')
   for host in $srv;do
-    echo "Remove resolv.conf from $(cat /etc/hosts | grep -E ${host} | awk '{print $2}'):"
+    echo "Remove resolv.conf from $(cat $parses_file | grep -E ${host} | awk '{print $2}'):"
     ssh -o StrictHostKeyChecking=no -t $host "rm /etc/resolv.conf"
-    echo "Copy resolv.conf to $(cat /etc/hosts | grep -E ${host} | awk '{print $2}'):"
+    echo "Copy resolv.conf to $(cat $parses_file | grep -E ${host} | awk '{print $2}'):"
     scp /etc/resolv.conf $host:/etc/resolv.conf
   done
 }
 
-while [ -n "$1" ]
-do
-    case "$1" in
-        --help) echo -E "
-        The script install dnsmasq
-        To deploy dnsmasq on DNS server:
-        1) Edit dns_ip_mapping.txt file like /etc/hosts to mapping <ip> <nameserver>
-        2) bash $HOME/test_script_keystack/dnsmasq/deploy_dnsmasq_service.sh
-        "
-          exit 0
-          break ;;
-	      --) shift
-          break ;;
-        *) echo "$1 is not an option";;
-        esac
-        shift
-done
 
 get_var
 sed_var_in_conf
