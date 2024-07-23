@@ -138,7 +138,8 @@ sed_var_in_conf
 echo "Cat conf..."
 echo
 cat $script_dir/$CONF_NAME
-echo "Cat $dns_ip_mapping..."
+echo
+echo -e "\nCat $dns_ip_mapping..."
 echo
 cat $script_dir/$dns_ip_mapping
 echo
