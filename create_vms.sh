@@ -81,8 +81,8 @@ do
         "
           exit 0
           break ;;
-	      -t|-timeout) TIMEOUT_BEFORE_NEXT_CREATION="$2"
-	        echo "Found the -timeout <time_out_between_VM_create> option, with parameter value $TIMEOUT_BEFORE_NEXT_CREATION"
+              -t|-timeout) TIMEOUT_BEFORE_NEXT_CREATION="$2"
+                echo "Found the -timeout <time_out_between_VM_create> option, with parameter value $TIMEOUT_BEFORE_NEXT_CREATION"
           shift ;;
         -q|-qty) qty="$2"
           echo "Found the -qty <number_of_VMs> option, with parameter value $qty"
@@ -143,7 +143,7 @@ do
           WAIT_FOR_CREATED=$wait_for_created
           shift ;;
         -debug) DEBUG="true"
-	        echo "Found the -debug, with parameter value $DEBUG"
+                echo "Found the -debug, with parameter value $DEBUG"
           ;;
         --) shift
           break ;;
