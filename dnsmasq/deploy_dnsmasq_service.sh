@@ -77,14 +77,14 @@ get_var () {
     export DNS_SERVER_IP=${DNS_SERVER_IP}
   done
 
-  echo
+  echo -e "\n${yellow}vars:${reset}"
   echo DOMAIN: $DOMAIN
   echo DNS_SERVER_IP: $DNS_SERVER_IP
   echo
 }
 
 sed_var_in_conf () {
-  echo "Sed vars in conf..."
+  echo -e "\n${yellow}Sed vars in conf...${reset}"
   sed -i --regexp-extended "s/DOMAIN/$DOMAIN/" \
       $script_dir/$CONF_NAME
   sed -i --regexp-extended "s/DNS_SERVER_IP/$DNS_SERVER_IP/" \
@@ -135,11 +135,11 @@ copy_dnsmasq_conf () {
 
 get_var
 sed_var_in_conf
-echo "Cat conf..."
+echo -e "\n${yellow}Cat conf...${reset}"
 echo
 cat $script_dir/$CONF_NAME
 echo
-echo -e "\nCat $dns_ip_mapping..."
+echo -e "\n${yellow}Cat $dns_ip_mapping...${reset}"
 echo
 cat $script_dir/$dns_ip_mapping
 echo
