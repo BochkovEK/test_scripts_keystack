@@ -9,7 +9,7 @@ normal=$(tput sgr0)
 script_dir=$(dirname $0)
 
 IP=$1
-[[ -z ${IP} ]] && { printf "%40s\n" "${red}Pleas define IP with starter script parameters${normal}; exit 1; }
+[[ -z ${IP} ]] && { printf "%40s\n" "${red}Pleas define IP with starter script parameters${normal}"; exit 1; }
 
 while true; do
   if ping -c 2 $IP &> /dev/null; then
