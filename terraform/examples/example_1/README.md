@@ -2,6 +2,7 @@
 - Create AZs
 - Create VMs in AZ
 ### To start:
+- Install openstack cli
 - Install Terraform
 - Create base openstack resources:
   - <details>
@@ -11,8 +12,8 @@
 
            CIDR=$(ip r|grep "dev external proto kernel scope"| awk '{print $1}');
            last_digit=$(echo $CIDR | sed --regexp-extended 's/([0-9]+\.[0-9]+\.[0-9]+\.)|(\/[0-9]+)//g');
-           left_side=$(echo $CIDR | sed --regexp-extended 's/([0-9]+\/[0-9]+)//g')
-           GATEWAY=$left_side$(expr $last_digit + 1)
+           left_side=$(echo $CIDR | sed --regexp-extended 's/([0-9]+\/[0-9]+)//g');
+           GATEWAY=$left_side$(expr $last_digit + 1);
            echo "CIDR: $CIDR, GATEWAY: $GATEWAY"
     2. Define `--allocation-pool start=<start_IP> ,end=<end_IP>` from table for `/27`  mask:
    Network address Usable IP addresses  Broadcast address:
@@ -33,8 +34,8 @@
             allocation_end   = "10.224.128.30"
     3. Create network and subnet:
      
-           openstack network create --external --share --provider-network-type flat --provider-physical-network physnet1 pub_net
-           subnet create --subnet-range $CIDR --network pub_net --dhcp --gateway $GATEWAY --allocation-pool start=<start>,end=<end> pub_subnet
+           openstack network create --external --share --provider-network-type flat --provider-physical-network physnet1 pub_net;
+           openstack subnet create --subnet-range $CIDR --network pub_net --dhcp --gateway $GATEWAY --allocation-pool start=<start>,end=<end> pub_subnet
 
     </details>
   - Security group with allowed ping, ssh (test_security_group)

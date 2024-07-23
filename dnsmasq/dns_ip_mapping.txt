@@ -12,5 +12,5 @@
 10.224.129.233 ebochkov-keystack-ctrl-02 ctrl-02
 10.224.129.237 ebochkov-keystack-ctrl-03 ctrl-03
 
-10.224.129.230 ebochkov-keystack-lcm-01 lcm-01 lcm-nexus.test.domain netbox.test.domain gitlab.test.domain vault.test.domain
+10.224.129.230 ebochkov-keystack-lcm-01 lcm-01 nexus.test.domain lcm-nexus.test.domain netbox.test.domain gitlab.test.domain vault.test.domain
 10.224.129.235 ebochkov-keystack-net-01 net-01
