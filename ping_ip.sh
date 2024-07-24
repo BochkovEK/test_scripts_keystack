@@ -15,10 +15,10 @@ while true; do
   if ping -c 2 $IP &> /dev/null; then
     printf "%40s\n" "${green}There is a connection with $IP - success${normal}"
   else
-    printf "%40s\n" "${red}No connection with $IP - error!${normal}" >> $script_dir/ping_states_with_$IP
+    printf "%40s\n" "${red}No connection with $IP - error!${normal}"
     dt=$(date '+%d/%m/%Y %H:%M:%S')
-    echo $dt >> $script_dir/ping_states_with_$IP
-    echo "No connection with $IP - error!" >> $script_dir/ping_states_with_$IP
+    echo $dt >> $script_dir/ping_states_with_$IP.log
+    echo "No connection with $IP - error!" >> $script_dir/ping_states_with_$IP.log
   fi
   sleep 1
 done
