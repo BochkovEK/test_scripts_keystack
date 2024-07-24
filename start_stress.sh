@@ -1,4 +1,4 @@
-#!/bin/bashq!
+#!/bin/bash
 
 #The cpu/ram stress test will be launched on all VMs of hypervisor
 #Exapmple start command: ./stress_test_on_vms.sh -hv cmpt-1 -cpu 4
