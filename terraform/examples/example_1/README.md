@@ -71,7 +71,7 @@
     
     To crete test_security_group:
   
-        SECURITY_GR_ID=test_security_group
+        SECURITY_GR_ID=$(openstack security group create test_security_group|grep "id"| head -1 | awk '{print $4}')
         openstack security group rule create --egress --ethertype IPv4 --protocol tcp $SECURITY_GR_ID
         openstack security group rule create --ingress --ethertype IPv4 --protocol tcp $SECURITY_GR_ID
         openstack security group rule create --egress --ethertype IPv4 --protocol udp $SECURITY_GR_ID
@@ -108,6 +108,12 @@
 ### To create:
 - <details>
   <summary>Add <b>clouds.yml</b> to "main.tf" directory</summary>
+  
+  Create clouds.yml
+
+      vi clouds.yml
+  
+  Past into clouds.yml next template and define your parameters: VIP, project_id, password, region_name.
       
       clouds:
           openstack:
@@ -121,6 +127,15 @@
               region_name: "<region_name>"
               interface: "public"
               identity_api_version: 3
+
+  Vim shortcut:
+
+      I                           - Instrt text
+      Press "Esc" and type ":wq"  - Save and exit
+
+  Move the clouds.yml to $HOME/test_scripts_keystack/terraform/examples/example_1
+
+      mv ./clouds.yml $HOME/test_scripts_keystack/terraform/examples/example_1/clouds.yml
   </details>
 - <details>
   <summary>Define variables in <b>name.auto.tfvars</b></summary>
