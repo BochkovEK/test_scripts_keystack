@@ -188,6 +188,7 @@
 
   List of accepted VM properties:
 
+      vm_qty            = !!! Required parameter. Quantity of created VMs
       image_name        = The name of the image from the project specified in the cloud.yml (default: cirros-0.6.2-x86_64-disk)
       flavor_name       = The name of the flavor from the project specified in the cloud.yml (default: 2c-2r)
       keypair_name      = The key pair name for the user specified in the cloud.yml (default: key_test)
@@ -196,9 +197,17 @@
       volume_size       = Volume size (default: 5 GB)
       network_name      = The name of network (default: pub_net)
 
-  Example auto.vars file:
+  the <b>minimal</b> auto.vars file looks like:
 
-      foo
+      # VMs
+      VMs = {
+          TEST_VM = {
+              vm_qty = 1
+          }
+      }
+
+      # AZs
+      AZs = {}
 
   Example of creating an auto.vars file:
 
@@ -236,6 +245,7 @@
   - terraform init
   - terraform plan -var-file "\<name>.auto.tfvars"
   - terraform apply
+    - type "yes"
 
 ### To destroy terraform creation:
 - Run following command in folders with <main.tf>:
