@@ -250,3 +250,4 @@
 ### To destroy terraform creation:
 - Run following command in folders with <main.tf>:
   - terraform destroy
+    - type "yes"
