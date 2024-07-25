@@ -3,10 +3,38 @@
 - Create VMs in AZ
 ### To start:
 - Install openstack cli
-- Install Terraform
+- <details>
+  <summary>Install <b>Terraform</b></summary>
+  
+  Download Terraform binary from repo itkey:
+
+      wget https://repo.itkey.com/repository/images/terraform_1.8.5_linux_amd64
+  
+  Change the access permissions:
+
+      chmod 777 ./terraform_1.8.5_linux_amd64
+
+  Move binary to /usr/local/bin/:
+
+      mv terraform_1.8.5_linux_amd64 /usr/local/bin/terraform
+
+  Change terraform provider_installation:
+
+      cat <<-EOF > ~/.terraformrc
+      provider_installation {
+          network_mirror {
+              url = "https://terraform-mirror.yandexcloud.net/"
+              include = ["registry.terraform.io/*/*"]
+          }
+          direct {
+              exclude = ["registry.terraform.io/*/*"]
+          }
+      }
+      EOF
+  </details>
 - Create base openstack resources:
   - <details>
-    <summary><b>Network</b> (pub_net)</summary>
+    <summary>Network (<b>pub_net</b>)</summary>
 
     1. Define <b>CIDR</b> and <b>GATEWAY</b> (for itkey stands):
 
@@ -38,15 +66,127 @@
            openstack subnet create --subnet-range $CIDR --network pub_net --dhcp --gateway $GATEWAY --allocation-pool start=<start>,end=<end> pub_subnet
 
     </details>
-  - Security group with allowed ping, ssh (test_security_group)
-  - Images (ubuntu-20.04-server-cloudimg-amd64, cirros-0.6.2-x86_64-disk)
-  - Flavors (1c-1r, 2c-2r, ... 8c-2r)
-  - Key pair for access to VM (key_test)
+  - <details>
+    <summary>Security group with allowed ping, ssh (<b>test_security_group</b>)</summary>
+    
+    To crete test_security_group:
+  
+        SECURITY_GR_ID=test_security_group
+        openstack security group rule create --egress --ethertype IPv4 --protocol tcp $SECURITY_GR_ID
+        openstack security group rule create --ingress --ethertype IPv4 --protocol tcp $SECURITY_GR_ID
+        openstack security group rule create --egress --ethertype IPv4 --protocol udp $SECURITY_GR_ID
+        openstack security group rule create --ingress --ethertype IPv4 --protocol udp $SECURITY_GR_ID
+        openstack security group rule create --ingress --ethertype IPv4 --protocol icmp $SECURITY_GR_ID
+    </details>
+  - <details>
+    <summary>Image (<b>cirros-0.6.2-x86_64-disk</b>)</summary>
+    
+    To crete cirros-0.6.2-x86_64-disk:
+  
+        wget https://repo.itkey.com/repository/images/cirros-0.6.2-x86_64-disk.img -O cirros-0.6.2-x86_64-disk.img
+        openstack image create cirros-0.6.2-x86_64-disk --disk-format qcow2 --min-disk 1 --container-format bare --public --file ./cirros-0.6.2-x86_64-disk.img
+    To crete ubuntu-20.04-server-cloudimg-amd64:
+  
+        wget https://repo.itkey.com/repository/images/ubuntu-20.04-server-cloudimg-amd64.img -O ubuntu-20.04-server-cloudimg-amd64.img
+        openstack image create ubuntu-20.04-server-cloudimg-amd64 --disk-format qcow2 --min-disk 5 --container-format bare --public --file ./ubuntu-20.04-server-cloudimg-amd64.img
+    </details>
+  - <details>
+    <summary>Flavor (<b>2c-2r</b>)</summary>
+    
+    To crete flavor 2c-2r:
+  
+         openstack flavor create --vcpus 2 --ram 2048 --disk 0 2c-2r
+    </details>
+  - <details>  
+    <summary>Key pair for access to VM (<b>key_test</b>)</summary>
+    
+    To the key pair for the user, specified in the cloud.yml based on $HOME/test_scripts_keystack/key_test.pem:
+    
+         openstack keypair create key_test --public-key $HOME/test_scripts_keystack/key_test.pub
+    </details>
 
 ### To create:
 - <details>
-  <summary>Define variables in <b><name>.auto.tfvars</b></summary>
+  <summary>Add <b>clouds.yml</b> to "main.tf" directory</summary>
+      
+      clouds:
+          openstack:
+              auth:
+              auth_url: https://<VIP>:5000
+              username: "admin"
+              project_id: <project_id>
+              project_name: "admin"
+              user_domain_name: "Default"
+              password: <password>
+              region_name: "<region_name>"
+              interface: "public"
+              identity_api_version: 3
+  </details>
+- <details>
+  <summary>Define variables in <b>name.auto.tfvars</b></summary>
   
+  Creating a VMs is based on the following dictionaries:
+
+      # VMs
+      VMs = {
+          <base_VMs_name_1> = {
+              <porperties_1...>
+          }
+          <base_VMs_name_2> = {
+              <porperties_2...>
+          }
+          ...
+          <base_VMs_name_n> = {
+              <porperties_n...>
+          }
+      }
+    
+      # AZs
+      AZs = {
+          <aggr_name_1> = {
+              az_name = "<az_name_1>"
+              hosts_list = [
+                  "<comp_name_1_1>",
+                  "<comp_name_1_2>",
+                  ...,
+                 "<comp_name_1_n>"
+              ]
+          <aggr_name_2> = {
+              az_name = "<az_name_2>"
+              hosts_list = [
+                  "<comp_name_2_1>",
+                  "<comp_name_2_2>",
+                  ...,
+                 "<comp_name_2_n>"
+              ]
+          }
+         ...
+         <aggr_name_n> = {
+              az_name = "<az_name_n>"
+              hosts_list = [
+                  "<comp_name_n_1>",
+                  "<comp_name_n_2>",
+                  ...,
+                 "<comp_name_n_n>"
+              ]
+      }
+
+  List of accepted VM properties:
+
+      image_name        = The name of the image from the project specified in the cloud.yml (default: cirros-0.6.2-x86_64-disk)
+      flavor_name       = The name of the flavor from the project specified in the cloud.yml (default: 2c-2r)
+      keypair_name      = The key pair name for the user specified in the cloud.yml (default: key_test)
+      security_groups   = The name of the security group from the project specified in the cloud.yml (default: test_security_group)
+      az_hint           = The AZ name if neded
+      volume_size       = Volume size (default: 5 GB)
+      network_name      = The name of network (default: pub_net)
+
+  Example auto.vars file:
+
+      foo
+
+  Example of creating an auto.vars file:
+
       cat <<-EOF > ~/test_scripts_keystack/terraform/examples/example_1/foo.auto.tfvars
       # VMs
       VMs = {
@@ -76,22 +216,6 @@
           }
       }
       EOF
-  </details>
-- <details>
-  <summary>Add <b>clouds.yml</b> to "main.tf" directory</summary>
-      
-      clouds:
-          openstack:
-              auth:
-              auth_url: https://<VIP>:5000
-              username: "admin"
-              project_id: <project_id>
-              project_name: "admin"
-              user_domain_name: "Default"
-              password: <password>
-              region_name: "<region_name>"
-              interface: "public"
-              identity_api_version: 3
   </details>
 - Run following commands in folders with <main.tf>:
   - terraform init
