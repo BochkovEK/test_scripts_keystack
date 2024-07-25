@@ -193,7 +193,7 @@
       flavor_name       = The name of the flavor from the project specified in the cloud.yml (default: 2c-2r)
       keypair_name      = The key pair name for the user specified in the cloud.yml (default: key_test)
       security_groups   = The name of the security group from the project specified in the cloud.yml (default: test_security_group)
-      az_hint           = The AZ name if neded
+      az_hint           = The AZ name if neded. Valid format: "<az_name>" or "<az_name>:<hypervisor_name>" 
       volume_size       = Volume size (default: 5 GB)
       network_name      = The name of network (default: pub_net)
 
