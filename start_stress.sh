@@ -38,6 +38,10 @@ while [ -n "$1" ]; do
       -u, -vm_user      <vm_user>
       -v, -debug        enabled debug output (without parameter)
       -ip_list          path to file with VMs IP list
+                        Example: (cat ./ip_list_file)
+                          10.224.132.179
+                          10.224.132.175
+                          10.224.132.188
       "
       exit 0
       break ;;
