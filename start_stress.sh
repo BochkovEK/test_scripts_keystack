@@ -22,6 +22,7 @@ script_dir=$(dirname $0)
 [[ -z $VM_USER ]] && VM_USER="ubuntu"
 [[ -z $DEBUG ]] && DEBUG="false"
 [[ -z $UNITS ]] && UNITS="G"
+[[ -z $IP_LIST_FILE ]] && IP_LIST_FILE=""
 #======================
 
 while [ -n "$1" ]; do
@@ -36,6 +37,11 @@ while [ -n "$1" ]; do
       -p, -project      <project_name>
       -u, -vm_user      <vm_user>
       -v, -debug        enabled debug output (without parameter)
+      -ip_list          path to file with VMs IP list
+                        Example: (cat ./ip_list_file)
+                          10.224.132.179
+                          10.224.132.175
+                          10.224.132.188
       "
       exit 0
       break ;;
@@ -66,6 +72,9 @@ while [ -n "$1" ]; do
     -v|-debug) DEBUG="true"
 	    echo "Found the -debug, with parameter value $DEBUG"
       ;;
+    -ip_list) IP_LIST_FILE="$2"
+      echo "Found the -ip_list option, with parameter value $IP_LIST_FILE"
+      shift;;
     --) shift
       break ;;
     *) echo "$1 is not an option";;
@@ -134,16 +143,22 @@ Stress test: $MODE will be launched on the hypervisor ($HV_STRING) VMs
         Key:                      $KEY_NAME
         User on VM (SSH):         $VM_USER
         Stress test type:         $MODE
+        VMs IPs list file:        $IP_LIST_FILE
+        Debug:                    $DEBUG
         $load_string
         $time_out_help_string
   "
 
-  read -p "Press enter to continue"
-  VMs_IPs=$(openstack server list $HV_STRING --project $PROJECT |grep ACTIVE |awk '{print $8}')
-  [[ -z $VMs_IPs ]] && { echo "No instance found in the $PROJECT project"; exit 1; }
+  read -p "Press enter to continue:"
+  if [ -z $IP_LIST_FILE ]; then
+    VMs_IPs=$(openstack server list $HV_STRING --project $PROJECT |grep ACTIVE |awk '{print $8}')
+    [[ -z $VMs_IPs ]] && { echo "No instance found in the $PROJECT project"; exit 1; }
+  else
+    VMs_IPs=$(cat $IP_LIST_FILE)
+  fi
 
   [ "$DEBUG" = true ] && echo -e "
-  [DEBUG]: VM_IP: $VM_IP
+  [DEBUG]: VMs_IPs: $VMs_IPs
   [DEBUG]: MODE: $MODE
   [DEBUG]: CPUS: $CPUS
   [DEBUG]: RAM: $RAM
