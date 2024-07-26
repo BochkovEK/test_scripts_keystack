@@ -144,7 +144,7 @@ Stress test: $MODE will be launched on the hypervisor ($HV_STRING) VMs
         $time_out_help_string
   "
 
-  read -p "Press enter to continue"
+  read -p "Press enter to continue:"
   if [ -z $IP_LIST_FILE ]; then
     VMs_IPs=$(openstack server list $HV_STRING --project $PROJECT |grep ACTIVE |awk '{print $8}')
     [[ -z $VMs_IPs ]] && { echo "No instance found in the $PROJECT project"; exit 1; }
