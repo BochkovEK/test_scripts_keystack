@@ -41,7 +41,7 @@ resource "openstack_networking_port_v2" "fc_hdd" {
 resource "openstack_blockstorage_volume_v3" "fc_hdd_sda" {
   count = var.qty
   image_id             = data.openstack_images_image_v2.image.id
-  name         = "fc_hdd-itkey"
+  name         = "fc_hdd_sda"
   size                 = 1
   enable_online_resize = true
   lifecycle {
@@ -51,12 +51,38 @@ resource "openstack_blockstorage_volume_v3" "fc_hdd_sda" {
 
 resource "openstack_blockstorage_volume_v3" "fc_hdd_sdb" {
   count = var.qty
-  name         = "fc_hdd-eboimage"
+  name         = "fc_hdd_sdb"
   size                 = 1
   enable_online_resize = true
   lifecycle {
     ignore_changes  = [image_id, volume_type]
   }
+}
+
+resource "openstack_blockstorage_volume_v3" "fc_hdd_sdc" {
+  count = var.qty
+  name         = "fc_hdd_sdc"
+  size                 = 1
+  enable_online_resize = true
+  lifecycle {
+    ignore_changes  = [image_id, volume_type]
+  }
+}
+
+resource "openstack_blockstorage_volume_v3" "fc_hdd_sdd" {
+  count = var.qty
+  name         = "fc_hdd_sdd"
+  size                 = 1
+  enable_online_resize = true
+  lifecycle {
+    ignore_changes  = [image_id, volume_type]
+  }
+}
+
+resource "openstack_compute_volume_attach_v2" "fc_hdd_sda" {
+  count = var.qty
+  instance_id = openstack_compute_instance_v2.fc_hdd[count.index].id
+  volume_id   = openstack_blockstorage_volume_v3.fc_hdd_sda[count.index].id
 }
 
 resource "openstack_compute_volume_attach_v2" "fc_hdd_sdb" {
@@ -65,30 +91,10 @@ resource "openstack_compute_volume_attach_v2" "fc_hdd_sdb" {
   volume_id   = openstack_blockstorage_volume_v3.fc_hdd_sdb[count.index].id
 }
 
-resource "openstack_blockstorage_volume_v3" "fc_hdd_sdc" {
-  count = var.qty
-  name         = "fc_hdd-eboimage"
-  size                 = 1
-  enable_online_resize = true
-  lifecycle {
-    ignore_changes  = [image_id, volume_type]
-  }
-}
-
 resource "openstack_compute_volume_attach_v2" "fc_hdd_sdc" {
   count = var.qty
   instance_id = openstack_compute_instance_v2.fc_hdd[count.index].id
   volume_id   = openstack_blockstorage_volume_v3.fc_hdd_sdc[count.index].id
-}
-
-resource "openstack_blockstorage_volume_v3" "fc_hdd_sdd" {
-  count = var.qty
-  name         = "fc_hdd-eboimage"
-  size                 = 1
-  enable_online_resize = true
-  lifecycle {
-    ignore_changes  = [image_id, volume_type]
-  }
 }
 
 resource "openstack_compute_volume_attach_v2" "fc_hdd_sdd" {
