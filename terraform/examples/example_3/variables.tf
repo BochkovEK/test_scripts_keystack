@@ -26,6 +26,6 @@ variable "pub_net" {
 }
 
 variable "qty" {
-  default     = 20
+  default     = 5
 }
 
