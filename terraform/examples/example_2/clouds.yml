@@ -1,7 +1,7 @@
 clouds:
   openstack:
     auth:
-      auth_url: fc-lab1.lab.itkey.com:5000
+      auth_url:  https://fc-lab1.lab.itkey.com:5000
       username: "admin"
       project_id: a27951b07b6c41c0a18e31214f861d9f
       project_name: "admin"
