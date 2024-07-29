@@ -102,6 +102,8 @@ cat_conf () {
 pull_conf () {
   echo "Check and create folder $test_node_conf_dir in $script_dir folder"
   [ ! -d $script_dir/$test_node_conf_dir ] && { mkdir -p $script_dir/$test_node_conf_dir; }
+  echo "ctrl_pattern: $ctrl_pattern"
+  echo "Try parse /etc/hosts to find ctrl node..."
   ctrl_node=$(cat /etc/hosts | grep -m 1 -E ${ctrl_pattern} | awk '{print $1}')
 
   echo "Pull consul conf from $ctrl_node:$conf_dir/region-config_${REGION}.json"
