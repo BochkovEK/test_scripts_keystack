@@ -25,3 +25,7 @@ variable "pub_net" {
   default     = "pub_net"
 }
 
+variable "qty" {
+  default     = 40
+}
+
