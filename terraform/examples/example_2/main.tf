@@ -5,7 +5,7 @@ resource "openstack_compute_instance_v2" "vm" {
   key_pair                    = "key_test"
   security_groups             = ["allow_all"]
   availability_zone_hints     = "cpu:cdm-bl-pca11"
-  count                       = 5
+  count                       = 20
   metadata = {
     test_meta = "Created by Terraform"
   }
@@ -34,8 +34,15 @@ resource "openstack_compute_instance_v2" "vm" {
     volume_size = 1
     delete_on_termination = true
  }
+  block_device {
+    source_type = "blank"
+    destination_type = "volume"
+    boot_index = 3
+    volume_size = 1
+    delete_on_termination = true
+ }
 }
 
 data "openstack_images_image_v2" "image_id" {
-  name        = "cirros-0.5.2-x86_64-disk"
+  name        = "cirros-0.6.2-x86_64-disk"
 }
