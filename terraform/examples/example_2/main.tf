@@ -37,5 +37,5 @@ resource "openstack_compute_instance_v2" "vm" {
 }
 
 data "openstack_images_image_v2" "image_id" {
-  name        = cirros-0.5.2-x86_64-disk
+  name        = "cirros-0.5.2-x86_64-disk"
 }
