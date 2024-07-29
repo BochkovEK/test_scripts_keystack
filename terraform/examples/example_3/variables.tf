@@ -9,7 +9,7 @@ variable "keypair" {
 
 variable "image_name" {
   description = "Please image name"
-  default     = "cirros-0.6.2-x86_64-disk"
+  default     = "cirros-0.6.2-x86_64-disk_2"
 }
 
 variable "subnetpool" {
