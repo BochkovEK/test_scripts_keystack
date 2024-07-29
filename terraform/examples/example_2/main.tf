@@ -1,9 +1,9 @@
 resource "openstack_compute_instance_v2" "vm" {
-  name                        = test_vm_1
+  name                        = "test_vm_1"
 #  image_name                  = cirros-0.5.2-x86_64-disk
-  flavor_name                 = g1-cpu-1-1
-  key_pair                    = key_test
-  security_groups             = allow_all
+  flavor_name                 = "g1-cpu-1-1"
+  key_pair                    = "key_test"
+  security_groups             = "allow_all"
   availability_zone_hints     = "cpu:cdm-bl-pca11"
   count                       = 5
   metadata = {
