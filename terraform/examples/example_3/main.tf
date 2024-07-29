@@ -42,7 +42,7 @@ resource "openstack_blockstorage_volume_v3" "fc_hdd_sda" {
   count = var.qty
   image_id             = data.openstack_images_image_v2.image.id
   name         = "fc_hdd_sda"
-  size                 = 1
+  size                 = 2
   enable_online_resize = true
   lifecycle {
     ignore_changes  = [image_id, volume_type]
