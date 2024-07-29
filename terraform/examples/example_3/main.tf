@@ -18,6 +18,7 @@ resource "openstack_compute_instance_v2" "fc_hdd" {
   block_device {
 #    uuid                  = openstack_blockstorage_volume_v3.fc_hdd_sda[count.index].id
     uuid                  = data.openstack_images_image_v2.image.id
+    volume_size           = 1
     source_type           = "image"
     boot_index            = 0
     destination_type      = "volume"
