@@ -10,7 +10,7 @@ resource "openstack_compute_instance_v2" "vm" {
     test_meta = "Created by Terraform"
   }
   network {
-    name = 	pub_net
+    name = 	"pub_net"
   }
   block_device {
     uuid                  = data.openstack_images_image_v2.image_id.id
