@@ -9,16 +9,16 @@ resource "openstack_compute_flavor_v2" "g1-cpu-1-1" {
 
 resource "openstack_compute_instance_v2" "fc_hdd" {
   count = var.qty
-  name         = "fc_hdd-itkey"
+  name         = "fc_hdd-vm"
   flavor_name  = "g1-cpu-1-1"
   key_pair     = var.keypair
   network {
-    port = openstack_networking_port_v2.fc_hdd[count.index].id
+    port = openstack_networking_port_v2.fc_hdd_port[count.index].id
   }
   block_device {
 #    uuid                  = openstack_blockstorage_volume_v3.fc_hdd_sda[count.index].id
     uuid                  = data.openstack_images_image_v2.image.id
-    source_type           = "volume"
+    source_type           = "image"
     boot_index            = 0
     destination_type      = "volume"
     delete_on_termination = false
@@ -30,9 +30,9 @@ resource "openstack_compute_instance_v2" "fc_hdd" {
 }
 
 # Create network port
-resource "openstack_networking_port_v2" "fc_hdd" {
+resource "openstack_networking_port_v2" "fc_hdd_port" {
   count = var.qty
-  name         = "fc_hdd-itkey"
+  name         = "fc_hdd-port"
   network_id         = data.openstack_networking_network_v2.pub_net.id
   admin_state_up     = true
   security_group_ids = [ openstack_networking_secgroup_v2.allow_all.id ]
