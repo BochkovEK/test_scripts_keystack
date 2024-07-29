@@ -16,7 +16,8 @@ resource "openstack_compute_instance_v2" "fc_hdd" {
     port = openstack_networking_port_v2.fc_hdd[count.index].id
   }
   block_device {
-    uuid                  = openstack_blockstorage_volume_v3.fc_hdd_sda[count.index].id
+#    uuid                  = openstack_blockstorage_volume_v3.fc_hdd_sda[count.index].id
+    uuid                  = data.openstack_images_image_v2.image.id
     source_type           = "volume"
     boot_index            = 0
     destination_type      = "volume"
@@ -40,9 +41,9 @@ resource "openstack_networking_port_v2" "fc_hdd" {
 # Create volume
 resource "openstack_blockstorage_volume_v3" "fc_hdd_sda" {
   count = var.qty
-  image_id             = data.openstack_images_image_v2.image.id
+#  image_id             = data.openstack_images_image_v2.image.id
   name         = "fc_hdd_sda"
-  size                 = 2
+  size                 = 1
   enable_online_resize = true
   lifecycle {
     ignore_changes  = [image_id, volume_type]
