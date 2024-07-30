@@ -2,7 +2,7 @@
 # openrc file required in $HOME/ for getting region name
 # Start scrip to change alive_threshold in consul conf: bash edit_ha_region_config.sh -a 2
 
-ctrl_pattern="\-ctrl\-..$"
+#ctrl_pattern="\-ctrl\-..$"
 service_name=consul
 #consul_conf_dir=kolla/$service_name
 test_node_conf_dir=kolla/$service_name
@@ -102,10 +102,11 @@ cat_conf () {
 pull_conf () {
   echo "Check and create folder $test_node_conf_dir in $script_dir folder"
   [ ! -d $script_dir/$test_node_conf_dir ] && { mkdir -p $script_dir/$test_node_conf_dir; }
-  echo "ctrl_pattern: $ctrl_pattern"
+#  echo "ctrl_pattern: $ctrl_pattern"
   echo "Try parse /etc/hosts to find ctrl node..."
-  ctrl_node=$(cat /etc/hosts | grep -m 1 -E ${ctrl_pattern} | awk '{print $1}')
-
+#  ctrl_node=$(cat /etc/hosts | grep -m 1 -E ${ctrl_pattern} | awk '{print $1}')
+  nova_state_list=$(openstack compute service list)
+  ctrl_node=$(echo "$nova_state_list" | grep -m 1 -E "nova-scheduler" | awk '{print $6}')
   echo "Pull consul conf from $ctrl_node:$conf_dir/region-config_${REGION}.json"
   scp -o StrictHostKeyChecking=no $ctrl_node:$conf_dir/region-config_${REGION}.json $script_dir/$test_node_conf_dir
 }
