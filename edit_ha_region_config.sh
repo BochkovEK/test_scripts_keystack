@@ -113,7 +113,9 @@ pull_conf () {
 
 push_conf () {
   [ -z $CONF_NAME ] && { CONF_NAME=region-config_${REGION}.json; }
-  ctrl_nodes=$(cat /etc/hosts | grep -E ${ctrl_pattern} | awk '{print $1}')
+  nova_state_list=$(openstack compute service list)
+  ctrl_nodes=$(echo "$nova_state_list" | grep -E "nova-scheduler" | awk '{print $6}')
+#  ctrl_nodes=$(cat /etc/hosts | grep -E ${ctrl_pattern} | awk '{print $1}')
   [ "$DEBUG" = true ] && { for string in $ctrl_nodes; do debug_echo $string; done; }
 
 #  "bind_address": "10.224.132.178",

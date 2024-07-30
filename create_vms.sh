@@ -248,7 +248,7 @@ chech_hv () {
     host=""
   else
     host="--hypervisor-hostname $HYPERVISOR_HOSTNAME"
-    echo "Check Hypervizor: $HYPERVISOR_HOSTNAME..."
+    echo "Check Hypervisor: $HYPERVISOR_HOSTNAME..."
     echo "Ping $HYPERVISOR_HOSTNAME..."
     if ping -c 1 $HYPERVISOR_HOSTNAME &> /dev/null; then
             printf "%s\n" "${green}There is a connection with $HYPERVISOR_HOSTNAME - success${normal}"
