@@ -3,7 +3,9 @@
 # The script determines the node for which the nova service is disabled and trying to turn it on
 # This script can take the path to the "openrc" file as a parameter (./nova_up.sh /installer/config/openrc)
 
-OPENRC_PATH=$HOME/openrc
+#OPENRC_PATH=$HOME/openrc
+
+edit_ha_region_config="edit_ha_region_config.sh"
 
 #Colors
 green=$(tput setaf 2)
@@ -81,7 +83,7 @@ done
 
 # Check_command
 Check_command () {
-  echo "Check $1 command..."
+  printf "%40s\n" "${violet}Check $1 command...${normal}"
   command_exist="foo"
   if ! command -v $1 &> /dev/null; then
     command_exist=""
@@ -90,7 +92,7 @@ Check_command () {
 
 # Check_openstack_cli
 Check_openstack_cli () {
-  echo "Check openstack cli..."
+  printf "%40s\n" "${violet}Check openstack cli...${normal}"
   Check_command openstack
   [ -z $command_exist ]  &&  { echo -e "\033[31mOpenstack cli not installed\033[0m"; exit 1; }
 }
@@ -110,7 +112,7 @@ Check_host_command () {
 
 # Check openrc file
 Check_openrc_file () {
-    echo "Check openrc file here: $OPENRC_PATH"
+    printf "%40s\n" "${violet}Check openrc file here: $OPENRC_PATH${normal}"
     check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
     #echo $OPENRC_PATH
     #echo $check_openrc_file
@@ -119,7 +121,7 @@ Check_openrc_file () {
 
 # Check nova srvice list
 Check_nova_srvice_list () {
-    echo "Check nova srvice list..."
+    printf "%40s\n" "${violet}Check nova srvice list...${normal}"
     printf "%40s\n" "${yellow}openstack compute service list${normal}"
     nova_state_list=$(openstack compute service list)
     echo "$nova_state_list" | \
@@ -162,7 +164,7 @@ Switch_case_nodes_type () {
 
 # Check connection to nova nodes
 Check_connection_to_nodes () {
-    echo "Check connection to $1 nodes..."
+    printf "%40s\n" "${violet}Check connection to $1 nodes...${normal}"
 
     Switch_case_nodes_type $1
 
@@ -175,13 +177,13 @@ Check_connection_to_nodes () {
 
 # Check connection to impi
 Check_connection_to_ipmi () {
-  echo "Check connection from controls to compute impi"
+  printf "%40s\n" "${violet}Check connection from controls to compute impi${normal}"
 #  check_openrc_file
 #  source $OPENRC_PATH
   [ -z "$nova_state_list" ] && nova_state_list=$(openstack compute service list)
   [ -z "$ctrl_nodes" ] && ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
   [ -z "$nova_state_list" ] && comp_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
-  suffix_output=$(bash $script_dir/ha_region_config.sh suffix)
+  suffix_output=$(bash $script_dir/$edit_ha_region_config suffix)
   suffix=$(echo "$suffix_output" | tail -n1)
   echo "BMC_SUFFIX: $suffix"
 
@@ -201,7 +203,7 @@ Check_connection_to_ipmi () {
 
 # Check disabled computes in nova
 Check_disabled_computes_in_nova () {
-    echo "Check disabled computes in nova..."
+    printf "%40s\n" "${violet}Check disabled computes in nova...${normal}"
     cmpt_disabled_nova_list=$(echo "$nova_state_list" | grep -E "(nova-compute.+disable)|(nova-compute.+down)" | awk '{print $6}')
 
     # Trying to raise and enable nova service on cmpt
@@ -257,7 +259,7 @@ Check_disabled_computes_in_nova () {
 
 # Check docker container
 Check_docker_container () {
-    echo "Check $2 docker on $1 nodes..."
+    printf "%40s\n" "${violet}Check $2 docker on $1 nodes...${normal}"
 #    nodes=$(Switch_case_nodes_type $1)
     Switch_case_nodes_type $1
     [ "$DEBUG" = true ] && echo -e "
@@ -281,7 +283,7 @@ Check_docker_container () {
 # Check members list
 Check_members_list () {
     #ctrl_node=$(echo "$comp_and_ctrl_nodes" | grep -E "(nova-scheduler" | awk '{print $6}')
-    echo "Check members list on ${ctrl_node_array[0]}..."
+    printf "%40s\n" "${violet}Check members list on ${ctrl_node_array[0]}...${normal}"
     members_list=$(ssh -t -o StrictHostKeyChecking=no "${ctrl_node_array[0]}" "docker exec -it consul consul members list")
     echo "$members_list" | \
             sed --unbuffered \
@@ -293,7 +295,7 @@ Check_members_list () {
 
 # Check consul logs
 Check_consul_logs () {
-    echo "Check consul logs..."
+    printf "%40s\n" "${violet}Check consul logs...${normal}"
     #ctrl_node=$(echo "$nova_state_list" | grep -E "(nova-compute.+disable)" | awk '{print $6}')
     leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no "${ctrl_node_array[0]}" "docker exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
     echo "Leader consul node is $leader_ctrl_node"
@@ -313,7 +315,7 @@ Check_consul_logs () {
 
 # Check consul config
 Check_consul_config () {
-  echo "Check consul config..."
+  printf "%40s\n" "${violet}Check consul config...${normal}"
   [ -n "$OS_REGION_NAME" ] && REGION=$OS_REGION_NAME
   [ "$DEBUG" = true ] && echo -e "
   [DEBUG]: \"\$OS_REGION_NAME\": $OS_REGION_NAME\n
