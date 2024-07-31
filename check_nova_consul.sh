@@ -112,23 +112,23 @@ Check_host_command () {
 
 # Check openrc file
 Check_openrc_file () {
-    printf "%40s\n" "${violet}Check openrc file here: $OPENRC_PATH${normal}"
-    check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
-    #echo $OPENRC_PATH
-    #echo $check_openrc_file
-    [[ -z "$check_openrc_file" ]] && { echo "openrc file not found in $OPENRC_PATH"; exit 1; }
+  printf "%40s\n" "${violet}Check openrc file here: $OPENRC_PATH${normal}"
+  check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
+  #echo $OPENRC_PATH
+  #echo $check_openrc_file
+  [[ -z "$check_openrc_file" ]] && { echo "openrc file not found in $OPENRC_PATH"; exit 1; }
 }
 
 # Check nova srvice list
 Check_nova_srvice_list () {
-    printf "%40s\n" "${violet}Check nova srvice list...${normal}"
-    printf "%40s\n" "${yellow}openstack compute service list${normal}"
-    nova_state_list=$(openstack compute service list)
-    echo "$nova_state_list" | \
-        sed --unbuffered \
-            -e 's/\(.*disabled.*\)/\o033[31m\1\o033[39m/' \
-            -e 's/\(.*down.*\)/\o033[31m\1\o033[39m/'
-            #-e 's/\(.*enabled | up.*\)/\o033[92m\1\o033[39m/' \
+  printf "%40s\n" "${violet}Check nova srvice list...${normal}"
+  printf "%40s\n" "${yellow}openstack compute service list${normal}"
+  nova_state_list=$(openstack compute service list)
+  echo "$nova_state_list" | \
+    sed --unbuffered \
+      -e 's/\(.*disabled.*\)/\o033[31m\1\o033[39m/' \
+      -e 's/\(.*down.*\)/\o033[31m\1\o033[39m/'
+      #-e 's/\(.*enabled | up.*\)/\o033[92m\1\o033[39m/' \
 }
 
 # Check connection to node
