@@ -83,7 +83,7 @@ done
 
 # Check_command
 Check_command () {
-  printf "%40s\n" "${violet}Check $1 command...${normal}"
+  printf "%s\n" "${violet}Check $1 command...${normal}"
   command_exist="foo"
   if ! command -v $1 &> /dev/null; then
     command_exist=""
