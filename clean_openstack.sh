@@ -73,7 +73,7 @@ Delete all VMs?
         read -p "Press enter to continue: "
 #        openstack server delete $VMs_ID
         for id in $VMs_ID; do
-            delete_vms $id
+            delete_vm $id
         done
         echo "delete commands sent..."
         openstack server list --project $PROJECT
