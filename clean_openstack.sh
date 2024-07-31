@@ -29,13 +29,17 @@ delete_vm () {
     openstack server delete $1
 }
 
-delete_volumes () {
-    attached_to=$(openstack volume list --project $PROJECT |grep $1 |awk '{print $11}')
-    if [ -z $attached_to ]; then
-        attached_to="None"
-    fi
-    echo "Deleting volume $1 Attached to \"$attached_to\"..."
-    openstack volume delete $1
+delete_volume () {
+
+#    attached_to=$(openstack volume list --project $PROJECT |grep $1 |awk '{print $11}')
+#    if [ -z $attached_to ]; then
+#        attached_to="None"
+#    fi
+#    echo "Deleting volume $1 Attached to \"$attached_to\"..."
+#    openstack volume delete $1
+  openstack volume set --state error $1
+  openstack volume delete $1
+
 }
 
 clean_vms () {
@@ -66,7 +70,7 @@ clean_vms () {
 Delete all VMs?
         "
 
-        read -p "Press enter to continue"
+        read -p "Press enter to continue: "
         openstack server delete $VMs_ID
 #        for id in $VMs_ID; do
 #            delete_vms $id
@@ -100,12 +104,11 @@ clean_volumes () {
 Delete all volumes?
         "
 
-        read -p "Press enter to continue"
-        openstack volume set --state error $volumes_ID
+        read -p "Press enter to continue: "
         openstack volume delete $volumes_ID
-#        for id in $volumes_ID; do
-#            delete_volumes $id
-#        done
+        for id in $volumes_ID; do
+          delete_volume $id
+        done
         echo "Deletion command send..."
         openstack volume list
     else

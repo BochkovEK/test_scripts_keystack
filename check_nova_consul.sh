@@ -296,7 +296,6 @@ Check_members_list () {
 
 # Check consul logs
 Check_consul_logs () {
-    echo
     printf "%40s\n" "${violet}Check consul logs...${normal}"
     #ctrl_node=$(echo "$nova_state_list" | grep -E "(nova-compute.+disable)" | awk '{print $6}')
     leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no "${ctrl_node_array[0]}" "docker exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
