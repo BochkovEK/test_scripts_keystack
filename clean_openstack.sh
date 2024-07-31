@@ -40,6 +40,20 @@ delete_volumes () {
 
 clean_vms () {
     echo "Check VMs..."
+    #!!!!
+#    openstack volume set --state error ID
+#id_list=$(openstack volume list|grep fc_hdd-itkey|awk '{print $2}')
+#for id in $id_list; do openstack volume set --state error $id; done
+#for id in $id_list; do openstack volume delete $id; done
+#
+##shutoff
+#id_list=$(openstack server list|grep fc_hdd|awk '{print $2}')
+#for id in $id_list; do openstack server start $id; done
+##error
+#for id in $id_list; do openstack server set --state error $id; done
+    #!!!!
+
+#    openstack server list
     VMs_ID=$(openstack server list --project $PROJECT|grep -E 'ACTIVE|ERROR|SHUTOFF' |awk '{print $2}')
     VMs_names=$(openstack server list --project $PROJECT|grep -E 'ACTIVE|ERROR|SHUTOFF' |awk '{print $4}')
    # |grep ACTIVE |awk '{print $4}')
@@ -87,6 +101,7 @@ Delete all volumes?
         "
 
         read -p "Press enter to continue"
+        openstack volume set --state error $volumes_ID
         openstack volume delete $volumes_ID
 #        for id in $volumes_ID; do
 #            delete_volumes $id
