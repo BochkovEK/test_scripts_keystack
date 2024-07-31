@@ -98,7 +98,7 @@ Check_openstack_cli () {
     echo -e "\033[31mOpenstack cli not installed\033[0m"
     exit
   else
-    printf "%40s\n" "${green}openstack cli is already installed - success${normal}"
+    printf "%s\n" "${green}openstack cli is already installed - success${normal}"
   fi
 }
 
@@ -113,28 +113,28 @@ Check_host_command () {
       yum in -y bind-utils
     fi
   else
-    printf "%40s\n" "${green}'host' command is available - success${normal}"
+    printf "%s\n" "${green}'host' command is available - success${normal}"
   fi
 }
 
 # Check openrc file
 Check_openrc_file () {
-  printf "%40s\n" "${violet}Check openrc file here: $OPENRC_PATH${normal}"
+  printf "%s\n" "${violet}Check openrc file here: $OPENRC_PATH${normal}"
   check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
   #echo $OPENRC_PATH
   #echo $check_openrc_file
   if [ -z "$check_openrc_file" ]; then
-    printf "%40s\n" "${red}openrc file not found in $OPENRC_PATH${normal}"
+    printf "%s\n" "${red}openrc file not found in $OPENRC_PATH${normal}"
     exit 1
   else
-    printf "%40s\n" "${green}$OPENRC_PATH file exist - success${normal}"
+    printf "%s\n" "${green}$OPENRC_PATH file exist - success${normal}"
   fi
 }
 
 # Check nova srvice list
 Check_nova_srvice_list () {
-  printf "%40s\n" "${violet}Check nova srvice list...${normal}"
-  printf "%40s\n" "${yellow}openstack compute service list${normal}"
+  printf "%s\n" "${violet}Check nova srvice list...${normal}"
+  printf "%s\n" "${yellow}openstack compute service list${normal}"
   nova_state_list=$(openstack compute service list)
   echo "$nova_state_list" | \
     sed --unbuffered \
@@ -146,9 +146,9 @@ Check_nova_srvice_list () {
 # Check connection to node
 Check_connection_to_node () {
   if ping -c 2 $1 &> /dev/null; then
-    printf "%40s\n" "${green}There is a connection with $1 - success${normal}"
+    printf "%s\n" "${green}There is a connection with $1 - success${normal}"
   else
-    printf "%40s\n" "${red}No connection with $1 - error!${normal}"
+    printf "%s\n" "${red}No connection with $1 - error!${normal}"
     echo -e "${red}The node may be turned off.${normal}\n"
   fi
 }
@@ -176,7 +176,7 @@ Switch_case_nodes_type () {
 
 # Check connection to nova nodes
 Check_connection_to_nodes () {
-    printf "%40s\n" "${violet}Check connection to $1 nodes...${normal}"
+    printf "%s\n" "${violet}Check connection to $1 nodes...${normal}"
 
     Switch_case_nodes_type $1
 
@@ -189,7 +189,7 @@ Check_connection_to_nodes () {
 
 # Check connection to impi
 Check_connection_to_ipmi () {
-  printf "%40s\n" "${violet}Check connection from controls to compute impi${normal}"
+  printf "%s\n" "${violet}Check connection from controls to compute impi${normal}"
 #  check_openrc_file
 #  source $OPENRC_PATH
   [ -z "$nova_state_list" ] && nova_state_list=$(openstack compute service list)
@@ -205,9 +205,9 @@ Check_connection_to_ipmi () {
 #   host $host
       sleep 1
       if ssh $ctrl_host ping -c 2 $comp_host$suffix &> /dev/null; then
-        printf "%40s\n" "${green}There is a connection with $comp_host$suffix - success${normal}"
+        printf "%s\n" "${green}There is a connection with $comp_host$suffix - success${normal}"
       else
-        printf "%40s\n" "${red}No connection with $comp_host$suffix - error!${normal}"
+        printf "%s\n" "${red}No connection with $comp_host$suffix - error!${normal}"
 #        echo -e "${red}The node may be turned off or not resolved host name $comp_host$suffix.${normal}"
       fi
     done
@@ -216,7 +216,7 @@ Check_connection_to_ipmi () {
 
 # Check disabled computes in nova
 Check_disabled_computes_in_nova () {
-    printf "%40s\n" "${violet}Check disabled computes in nova...${normal}"
+    printf "%s\n" "${violet}Check disabled computes in nova...${normal}"
     cmpt_disabled_nova_list=$(echo "$nova_state_list" | grep -E "(nova-compute.+disable)|(nova-compute.+down)" | awk '{print $6}')
 
     # Trying to raise and enable nova service on cmpt
@@ -272,7 +272,7 @@ Check_disabled_computes_in_nova () {
 
 # Check docker container
 Check_docker_container () {
-    printf "%40s\n" "${violet}Check $2 docker on $1 nodes...${normal}"
+    printf "%s\n" "${violet}Check $2 docker on $1 nodes...${normal}"
 #    nodes=$(Switch_case_nodes_type $1)
     Switch_case_nodes_type $1
     [ "$DEBUG" = true ] && echo -e "
@@ -296,7 +296,7 @@ Check_docker_container () {
 # Check members list
 Check_members_list () {
     #ctrl_node=$(echo "$comp_and_ctrl_nodes" | grep -E "(nova-scheduler" | awk '{print $6}')
-    printf "%40s\n" "${violet}Check members list on ${ctrl_node_array[0]}...${normal}"
+    printf "%s\n" "${violet}Check members list on ${ctrl_node_array[0]}...${normal}"
     members_list=$(ssh -t -o StrictHostKeyChecking=no "${ctrl_node_array[0]}" "docker exec -it consul consul members list")
     echo "$members_list" | \
             sed --unbuffered \
@@ -308,7 +308,7 @@ Check_members_list () {
 
 # Check consul logs
 Check_consul_logs () {
-    printf "%40s\n" "${violet}Check consul logs...${normal}"
+    printf "%s\n" "${violet}Check consul logs...${normal}"
     #ctrl_node=$(echo "$nova_state_list" | grep -E "(nova-compute.+disable)" | awk '{print $6}')
     leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no "${ctrl_node_array[0]}" "docker exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
     echo "Leader consul node is $leader_ctrl_node"
@@ -329,7 +329,7 @@ Check_consul_logs () {
 # Check consul config
 Check_consul_config () {
   echo
-  printf "%40s\n" "${violet}Check consul config...${normal}"
+  printf "%s\n" "${violet}Check consul config...${normal}"
   [ -n "$OS_REGION_NAME" ] && REGION=$OS_REGION_NAME
   [ "$DEBUG" = true ] && echo -e "
   [DEBUG]: \"\$OS_REGION_NAME\": $OS_REGION_NAME\n
