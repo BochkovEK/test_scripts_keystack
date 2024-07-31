@@ -188,14 +188,15 @@ Check_connection_to_ipmi () {
   echo "BMC_SUFFIX: $suffix"
 
   for ctrl_host in $ctrl_nodes;do
+    echo "Check connection from $ctrl_host"
     for comp_host in $comp_nodes; do
 #   host $host
       sleep 1
       if ssh $ctrl_host ping -c 2 $comp_host$suffix &> /dev/null; then
-        printf "%40s\n" "${green}There is a connection with $comp_host$suffix from $ctrl_host - success${normal}"
+        printf "%40s\n" "${green}There is a connection with $comp_host$suffix - success${normal}"
       else
-        printf "%40s\n" "${red}No connection with $comp_host$suffix from $ctrl_host - error!${normal}"
-        echo -e "${red}The node may be turned off or not resolved host name $comp_host$suffix.${normal}"
+        printf "%40s\n" "${red}No connection with $comp_host$suffix - error!${normal}"
+#        echo -e "${red}The node may be turned off or not resolved host name $comp_host$suffix.${normal}"
       fi
     done
   done
@@ -295,6 +296,7 @@ Check_members_list () {
 
 # Check consul logs
 Check_consul_logs () {
+    echo
     printf "%40s\n" "${violet}Check consul logs...${normal}"
     #ctrl_node=$(echo "$nova_state_list" | grep -E "(nova-compute.+disable)" | awk '{print $6}')
     leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no "${ctrl_node_array[0]}" "docker exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
@@ -315,6 +317,7 @@ Check_consul_logs () {
 
 # Check consul config
 Check_consul_config () {
+  echo
   printf "%40s\n" "${violet}Check consul config...${normal}"
   [ -n "$OS_REGION_NAME" ] && REGION=$OS_REGION_NAME
   [ "$DEBUG" = true ] && echo -e "
