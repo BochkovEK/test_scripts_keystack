@@ -312,6 +312,7 @@ Check_consul_logs () {
     #ctrl_node=$(echo "$nova_state_list" | grep -E "(nova-compute.+disable)" | awk '{print $6}')
     leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no "${ctrl_node_array[0]}" "docker exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
     echo "Leader consul node is $leader_ctrl_node"
+    printf  "%s\n" "${yellow}ssh -o StrictHostKeyChecking=no $leader_ctrl_node less /var/log/kolla/autoevacuate.log${normal}"
     ssh -o StrictHostKeyChecking=no "$leader_ctrl_node" tail -15 /var/log/kolla/autoevacuate.log | \
         sed --unbuffered \
         -e 's/\(.*Force off.*\)/\o033[31m\1\o033[39m/' \
