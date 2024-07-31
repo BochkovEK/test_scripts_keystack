@@ -92,9 +92,14 @@ Check_command () {
 
 # Check_openstack_cli
 Check_openstack_cli () {
-  printf "%40s\n" "${violet}Check openstack cli...${normal}"
+#  printf "%40s\n" "${violet}Check openstack cli...${normal}"
   Check_command openstack
-  [ -z $command_exist ]  &&  { echo -e "\033[31mOpenstack cli not installed\033[0m"; exit 1; }
+  if [ -z $command_exist ]; then
+    echo -e "\033[31mOpenstack cli not installed\033[0m"
+    exit
+  else
+    printf "%40s\n" "${green}openstack cli is already installed - success${normal}"
+  fi
 }
 
 # Check_host_command
@@ -107,6 +112,8 @@ Check_host_command () {
     if [ -n "${is_sber_os}" ]; then
       yum in -y bind-utils
     fi
+  else
+    printf "%40s\n" "${green}'host' command is available - success${normal}"
   fi
 }
 
@@ -116,7 +123,12 @@ Check_openrc_file () {
   check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
   #echo $OPENRC_PATH
   #echo $check_openrc_file
-  [[ -z "$check_openrc_file" ]] && { echo "openrc file not found in $OPENRC_PATH"; exit 1; }
+  if [ -z "$check_openrc_file" ]; then
+    printf "%40s\n" "${red}openrc file not found in $OPENRC_PATH${normal}"
+    exit 1
+  else
+    printf "%40s\n" "${green}$OPENRC_PATH file exist - success${normal}"
+  fi
 }
 
 # Check nova srvice list
@@ -336,8 +348,8 @@ Check_consul_config () {
 }
 
 #clear
-Check_openrc_file
 Check_openstack_cli
+Check_openrc_file
 Check_host_command
 
 source $OPENRC_PATH
