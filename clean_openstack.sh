@@ -25,7 +25,7 @@ check_and_source_openrc_file () {
 }
 
 delete_vm () {
-    echo "Deleting $(openstack server list --project $PROJECT |grep $1 |awk '{print $4}')..."
+#    echo "Deleting $(openstack server list --project $PROJECT |grep $1 |awk '{print $4}')..."
     openstack server delete $1
 }
 
@@ -71,11 +71,11 @@ Delete all VMs?
         "
 
         read -p "Press enter to continue: "
-        openstack server delete $VMs_ID
-#        for id in $VMs_ID; do
-#            delete_vms $id
-#        done
-        echo "Remove all VMs completed"
+#        openstack server delete $VMs_ID
+        for id in $VMs_ID; do
+            delete_vms $id
+        done
+        echo "delete commands sent..."
         openstack server list --project $PROJECT
     else
         echo "VMs not found"
@@ -109,7 +109,7 @@ Delete all volumes?
         for id in $volumes_ID; do
           delete_volume $id
         done
-        echo "Deletion command send..."
+        echo "delete commands sent..."
         openstack volume list
     else
 	echo "Volumes not found"
