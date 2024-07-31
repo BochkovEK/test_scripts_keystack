@@ -105,7 +105,7 @@ Delete all volumes?
         "
 
         read -p "Press enter to continue: "
-        openstack volume delete $volumes_ID
+#        openstack volume delete $volumes_ID
         for id in $volumes_ID; do
           delete_volume $id
         done
