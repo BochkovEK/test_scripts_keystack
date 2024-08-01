@@ -1,7 +1,6 @@
 #The Script check openstack cli or install openstack cli
 
 #Colors:
-#Colors
 green=$(tput setaf 2)
 red=$(tput setaf 1)
 violet=$(tput setaf 5)
