@@ -25,21 +25,39 @@ check_and_source_openrc_file () {
 }
 
 delete_vm () {
-    echo "Deleting $(openstack server list --project $PROJECT |grep $1 |awk '{print $4}')..."
+#    echo "Deleting $(openstack server list --project $PROJECT |grep $1 |awk '{print $4}')..."
     openstack server delete $1
 }
 
-delete_volumes () {
-    attached_to=$(openstack volume list --project $PROJECT |grep $1 |awk '{print $11}')
-    if [ -z $attached_to ]; then
-        attached_to="None"
-    fi
-    echo "Deleting volume $1 Attached to \"$attached_to\"..."
-    openstack volume delete $1
+delete_volume () {
+
+#    attached_to=$(openstack volume list --project $PROJECT |grep $1 |awk '{print $11}')
+#    if [ -z $attached_to ]; then
+#        attached_to="None"
+#    fi
+#    echo "Deleting volume $1 Attached to \"$attached_to\"..."
+#    openstack volume delete $1
+  openstack volume set --state error $1
+  openstack volume delete $1
+
 }
 
 clean_vms () {
     echo "Check VMs..."
+    #!!!!
+#    openstack volume set --state error ID
+#id_list=$(openstack volume list|grep fc_hdd-itkey|awk '{print $2}')
+#for id in $id_list; do openstack volume set --state error $id; done
+#for id in $id_list; do openstack volume delete $id; done
+#
+##shutoff
+#id_list=$(openstack server list|grep fc_hdd|awk '{print $2}')
+#for id in $id_list; do openstack server start $id; done
+##error
+#for id in $id_list; do openstack server set --state error $id; done
+    #!!!!
+
+#    openstack server list
     VMs_ID=$(openstack server list --project $PROJECT|grep -E 'ACTIVE|ERROR|SHUTOFF' |awk '{print $2}')
     VMs_names=$(openstack server list --project $PROJECT|grep -E 'ACTIVE|ERROR|SHUTOFF' |awk '{print $4}')
    # |grep ACTIVE |awk '{print $4}')
@@ -52,12 +70,12 @@ clean_vms () {
 Delete all VMs?
         "
 
-        read -p "Press enter to continue"
-        openstack server delete $VMs_ID
-#        for id in $VMs_ID; do
-#            delete_vms $id
-#        done
-        echo "Remove all VMs completed"
+        read -p "Press enter to continue: "
+#        openstack server delete $VMs_ID
+        for id in $VMs_ID; do
+            delete_vm $id
+        done
+        echo "delete commands sent..."
         openstack server list --project $PROJECT
     else
         echo "VMs not found"
@@ -86,12 +104,12 @@ clean_volumes () {
 Delete all volumes?
         "
 
-        read -p "Press enter to continue"
-        openstack volume delete $volumes_ID
-#        for id in $volumes_ID; do
-#            delete_volumes $id
-#        done
-        echo "Deletion command send..."
+        read -p "Press enter to continue: "
+#        openstack volume delete $volumes_ID
+        for id in $volumes_ID; do
+          delete_volume $id
+        done
+        echo "delete commands sent..."
         openstack volume list
     else
 	echo "Volumes not found"
