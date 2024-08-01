@@ -59,3 +59,5 @@ check_openstack_cli () {
       exit 1
     fi
 }
+
+check_openstack_cli
