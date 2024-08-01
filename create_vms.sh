@@ -656,81 +656,13 @@ create_vms () {
   fi
 }
 
-# Batch VM create (deprecate)
-#create_vms_batch () {
-#
-##  echo "Create VM: \"$VM_BASE_NAME\" in project \"$PROJECT\"?"
-##  read -r -p "Press enter to continue"
-#
-#  echo "Creating VMs (batch)..."
-#
-#  FLAVOR=$(openstack flavor list| grep $FLAVOR| head -n 1| awk '{print $4}')
-#
-#  [ "$DEBUG" = true ] && echo -e "
-#  [DEBUG]
-#  VM_BASE_NAME: $VM_BASE_NAME
-#  IMAGE: $IMAGE
-#  FLAVOR: $FLAVOR
-#  SECURITY_GR_ID: $SECURITY_GR_ID
-#  KEY_NAME: $KEY_NAME
-#  host: $host
-#  API_VERSION: $API_VERSION
-#  NETWORK: $NETWORK
-#  VOLUME_SIZE: $VOLUME_SIZE
-#  VM_QTY: $VM_QTY
-#  ADD_KEY: $ADD_KEY
-#
-#  Openstack server create command:
-#  openstack server create \
-#    $VM_BASE_NAME \
-#    --image $IMAGE \
-#    --flavor $FLAVOR \
-#    --security-group $SECURITY_GR_ID \
-#    --key-name $KEY_NAME \
-#    $host \
-#    --os-compute-api-version $API_VERSION \
-#    --network $NETWORK \
-#    --boot-from-volume $VOLUME_SIZE \
-#    --max $VM_QTY \
-#    $ADD_KEY
-#"
-#
-#  openstack server create \
-#    $VM_BASE_NAME \
-#    --image $IMAGE \
-#    --flavor $FLAVOR \
-#    --security-group $SECURITY_GR_ID \
-#    --key-name $KEY_NAME \
-#    $host \
-#    --os-compute-api-version $API_VERSION \
-#    --network $NETWORK \
-#    --boot-from-volume $VOLUME_SIZE \
-#    --max $VM_QTY \
-#    $ADD_KEY
-#
-#  sleep $TIMEOUT_BEFORE_NEXT_CREATION
-#
-#  if [ "$WAIT_FOR_CREATED" = true ]; then
-#    wait_vms_created $VM_BASE_NAME
-#    check_vms_list
-#  else
-#    check_vms_list
-#  fi
-#}
-
-
-check_openstack_cli
-check_wget
+#check_openstack_cli
+if ! bash $script_dir/check_openstack_cli.sh; then
+    echo exit 1
+fi
 check_and_source_openrc_file
+check_wget
 output_of_initial_parameters
-
-#building_vms=$VM_QTY
-
-#while [ $building_vms -ne 0 ]; do
-#        echo $building_vms
-#        building_vms=$(( $building_vms - 1 ))
-#done
-#exit
 
 chech_hv
 check_project

@@ -349,7 +349,10 @@ Check_consul_config () {
 }
 
 #clear
-Check_openstack_cli
+#check_openstack_cli
+if ! bash $script_dir/check_openstack_cli.sh; then
+    echo exit 1
+fi
 Check_openrc_file
 Check_host_command
 
