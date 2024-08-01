@@ -61,7 +61,7 @@ while [ -n "$1" ]
 do
     case "$1" in
         --help) echo -E "
-        -or           -openrc_path  <openrc_path>
+        -orc           -openrc_path  <openrc_path>
         -q,           -qty          <number_of_VMs>
         -i,           -image        <image_name>
         -f,           -flavor       <flavor_name>
@@ -116,7 +116,7 @@ do
           echo "Found the -volume_size <volume_size_in_GB> option, with parameter value $volume_size"
           VOLUME_SIZE=$volume_size
           shift ;;
-        -or|-openrc_path) openrc_path="$2"
+        -orc|-openrc_path) openrc_path="$2"
           echo "Found the -openrc_path <openrc_path> option, with parameter value $openrc_path"
           OPENRC_PATH=$openrc_path
           shift ;;
