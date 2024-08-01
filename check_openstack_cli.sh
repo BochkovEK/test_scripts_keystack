@@ -18,7 +18,7 @@ check_command () {
 
 # check openstack cli
 check_openstack_cli () {
-  echo "Check openstack cli..."
+  printf "%s\n" "${violet}Check openstack cli...${normal}"
   check_command openstack
   if [ -z $command_exist ]; then
     echo -e "\033[31mOpenstack cli not installed\033[0m"
