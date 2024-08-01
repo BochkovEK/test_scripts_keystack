@@ -9,7 +9,7 @@ resource "openstack_compute_flavor_v2" "flavor" {
 
 resource "openstack_compute_instance_v2" "fc_hdd" {
   count = var.qty
-  name         = "fc_hdd-vm"
+  name         = "migration-test-vm"
   flavor_name  = openstack_compute_flavor_v2.flavor.name
   key_pair     = var.keypair
   availability_zone_hints     = "cpu:cdm-bl-pca11"
