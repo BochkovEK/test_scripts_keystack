@@ -10,7 +10,7 @@ variable "keypair" {
 variable "image_name" {
   description = "Please image name"
 #  default     = "ubuntu-20.04-server-cloudimg-amd64"
-  default     = "	ubuntu-22.04-x64"
+  default     = "ubuntu-22.04-x64"
 }
 
 variable "subnetpool" {
