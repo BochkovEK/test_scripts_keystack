@@ -658,7 +658,7 @@ create_vms () {
 
 #check_openstack_cli
 if ! bash $script_dir/check_openstack_cli.sh; then
-    echo exit 1
+    exit 1
 fi
 check_and_source_openrc_file
 check_wget

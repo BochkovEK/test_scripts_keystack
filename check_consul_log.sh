@@ -11,6 +11,8 @@ violet=$(tput setaf 5)
 normal=$(tput sgr0)
 yallow=$(tput setaf 3)
 
+script_dir=$(dirname $0)
+
 [[ -z $LOG_LAST_LINES_NUMBER ]] && LOG_LAST_LINES_NUMBER=25
 [[ -z $OUTPUT_PERIOD ]] && OUTPUT_PERIOD=10
 [[ -z $NODE_NAME ]] && NODE_NAME=""
@@ -22,6 +24,18 @@ define_parameters () {
   [ "$count" = 1 ] && [[ -n $1 ]] && { NODE_NAME=$1; echo "Node name parameter found with value $NODE_NAME"; }
   [ "$count" = 2 ] && [[ -n $1 ]] && { OUTPUT_PERIOD=$1; echo "Check period parameter found with value $OUTPUT_PERIOD"; }
   [ "$count" = 3 ] && [[ -n $1 ]] && { LOG_LAST_LINES_NUMBER=$1; echo "log last lines number parameter found with value $LOG_LAST_LINES_NUMBER"; }
+}
+
+# Check openrc file
+check_and_source_openrc_file () {
+    echo "Check openrc file and source it..."
+    check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
+    if [ -z "$check_openrc_file" ]; then
+        printf "%s\n" "${red}openrc file not found in $OPENRC_PATH - ERROR!${normal}"
+        exit 1
+    fi
+    source $OPENRC_PATH
+    #export OS_PROJECT_NAME=$PROJECT
 }
 
 count=1
@@ -55,25 +69,27 @@ while [ -n "$1" ]; do
     shift
 done
 
+#check_openstack_cli
+if ! bash $script_dir/check_openstack_cli.sh; then
+    exit 1
+fi
+# Check openrc file
+check_and_source_openrc_file
 
 if [ -z "${NODE_NAME}" ]; then
-    check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
-    [[ -z "$check_openrc_file" ]] && { echo "openrc file not found in $OPENRC_PATH"; exit 1; }
-
-    source $OPENRC_PATH
 
 # Check nova srvice list
-    nova_state_list=$(openstack compute service list)
-    #nova_nodes_list=$(echo "$nova_state_list" | grep -E "nova-compute|nova-scheduler" | awk '{print $6}')
-    ctrl_nodes_list=$(echo "$nova_state_list" | grep -E "nova-scheduler" | awk '{print $6}')
-    #nova_nodes_arr=("$nova_nodes_list")
-    for i in $ctrl_nodes_list; do nova_ctrl_arr+=("$i"); done;
+  nova_state_list=$(openstack compute service list)
+  #nova_nodes_list=$(echo "$nova_state_list" | grep -E "nova-compute|nova-scheduler" | awk '{print $6}')
+  ctrl_nodes_list=$(echo "$nova_state_list" | grep -E "nova-scheduler" | awk '{print $6}')
+  #nova_nodes_arr=("$nova_nodes_list")
+  for i in $ctrl_nodes_list; do nova_ctrl_arr+=("$i"); done;
     ctrl_node=${nova_ctrl_arr[0]}
     leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no "$ctrl_node" "docker exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
     NODE_NAME=$leader_ctrl_node
-    echo "Leader consul node is $NODE_NAME"
+  echo "Leader consul node is $NODE_NAME"
 else
-    NODE_NAME=$1
+  NODE_NAME=$1
 fi
 
 #clear
