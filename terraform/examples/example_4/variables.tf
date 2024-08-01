@@ -9,7 +9,8 @@ variable "keypair" {
 
 variable "image_name" {
   description = "Please image name"
-  default     = "ubuntu-20.04-server-cloudimg-amd64"
+#  default     = "ubuntu-20.04-server-cloudimg-amd64"
+  default     = "	ubuntu-22.04-x64"
 }
 
 variable "subnetpool" {
@@ -17,7 +18,7 @@ variable "subnetpool" {
 }
 
 variable "image_user" {
-  default = "cirros"
+  default = "ubuntu"
 }
 
 variable "pub_net" {
