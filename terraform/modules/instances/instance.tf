@@ -5,7 +5,7 @@ resource "openstack_compute_instance_v2" "vm" {
 #  for_each = var.VMs # == {} ? null : var.VMs
   name                        = each.value.name
   image_name                  = each.value.image_name
-#  flavor_name                 = "${each.value.base_name}-flavor"
+  flavor_name                 = "${each.value.base_name}-flavor"
 #  flavor_id                   = openstack_compute_flavor_v2.flavor[each.value].id
   key_pair                    = each.value.keypair_name
   security_groups             = each.value.security_groups
