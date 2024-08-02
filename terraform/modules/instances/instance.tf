@@ -45,7 +45,7 @@ resource "openstack_compute_flavor_v2" flavor_id {
 #  vcpus     = try(instance.flavor.vcpus, var.default_flavor.vcpus)
 #  ram       = try(instance.falvor.ram, var.default_flavor.ram)
   vcpus     = each.value.flavor.vcpus
-  ram       = each.value.falvor.ram
+  ram       = each.value.flavor.ram
   disk      = "0"
   is_public = "true"
 }
