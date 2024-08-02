@@ -12,14 +12,26 @@ resource "openstack_compute_instance_v2" "vm" {
   metadata = {
     test_meta = "Created by Terraform"
   }
-  block_device {
-    uuid                  = data.openstack_images_image_v2.image_id[each.key].id
-    source_type           = "image"
-    volume_size           = each.value.volume_size
-    boot_index            = 0
-    destination_type      = "volume"
-    delete_on_termination = true
+  dynamic "block_device" {
+    for_each = each.value.disk
+    content {
+      uuid                  = block_device.key == "sda" ? each.value.image_id : null
+      source_type           = block_device.key == "sda" ? "image" : "blank"
+      boot_index            = block_device.key == "sda" ? 0 : 1
+      volume_size           = block_device.value
+      destination_type      = "volume"
+      delete_on_termination = true
+    }
   }
+
+#  block_device {
+#    uuid                  = data.openstack_images_image_v2.image_id[each.key].id
+#    source_type           = "image"
+#    volume_size           = each.value.volume_size
+#    boot_index            = 0
+#    destination_type      = "volume"
+#    delete_on_termination = true
+#  }
   network {
     name = each.value.network_name
   }
