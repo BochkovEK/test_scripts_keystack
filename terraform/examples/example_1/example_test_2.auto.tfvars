@@ -7,6 +7,7 @@ VMs = {
     az_hint         = "az_2:ebochkov-ks-sber-comp-03"
     disk = {
       sda = 5
+      sdb = 10
     }
   }
   vm_2 = {
