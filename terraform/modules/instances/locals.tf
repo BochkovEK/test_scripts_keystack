@@ -7,7 +7,7 @@ locals {
         base_name         = "${instance_key}"
         name              = format("%s-%02d", instance_key, iter)
         image_name        = try(instance.image_name, var.default_image_name)
-        flavor            = try(instance.flavor, var.default_flavor)
+#        flavor            = try(instance.flavor, var.default_flavor)
 #        flavor_name       = try(instance.flavor_name, var.default_flavor_name)
         keypair_name      = try(instance.keypair_name, var.default_key_pair_name)
         security_groups   = try(instance.security_groups, var.default_security_groups)
