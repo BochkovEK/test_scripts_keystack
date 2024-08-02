@@ -10,8 +10,9 @@ locals {
         keypair_name      = try(instance.keypair_name, var.default_key_pair_name)
         security_groups   = try(instance.security_groups, var.default_security_groups)
         az_hint           = try(instance.az_hint, null)
-        volume_size       = try(instance.volume_size, var.default_volume_size)
+#        volume_size       = try(instance.volume_size, var.default_volume_size)
         network_name      = try(instance.network_name, var.default_network_name)
+        disk              = try(instance.disk, var.default_disk)
       }
     ]
   ])

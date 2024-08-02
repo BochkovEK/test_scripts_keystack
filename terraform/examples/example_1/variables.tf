@@ -1,7 +1,6 @@
 variable "VMs" {
   description = "VMs list source"
-  default = {
-  }
+  default = {}
 }
 
 variable "AZs" {

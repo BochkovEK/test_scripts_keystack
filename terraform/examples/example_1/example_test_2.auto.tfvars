@@ -2,23 +2,24 @@
 VMs = {
   vm_1 = {
     vm_qty          = 1
-    image_name      = "ubuntu-20.04-server-cloudimg-amd64"
+    image_name      = "cirros-0.6.2-x86_64-disk"
+#    image_name      = "ubuntu-20.04-server-cloudimg-amd64"
     az_hint         = "az_2:ebochkov-ks-sber-comp-03"
     disk = {
       sda = 5
     }
   }
-#  vm_2 = {
-#    image_name      = "ubuntu-20.04-server-cloudimg-amd64"
-#    flavor_name     = "4c-2r"
-##    network_name    = "pub_net"
-##    security_groups = ["test_security_group"]
-##    keypair_name    = "key_test"
-##    volume_size     = 7
-#    vm_qty          = 2
-#    az_hint         = "az_1:ebochkov-ks-sber-comp-01"
-#
-#  }
+  vm_2 = {
+    image_name      = "ubuntu-20.04-server-cloudimg-amd64"
+    flavor_name     = "4c-2r"
+    network_name    = "pub_net"
+    security_groups = ["test_security_group"]
+    keypair_name    = "key_test"
+#    volume_size     = 7
+    vm_qty          = 2
+    az_hint         = "az_1:ebochkov-ks-sber-comp-01"
+
+  }
 }
 
 # AZs
