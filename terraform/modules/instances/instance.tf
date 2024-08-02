@@ -39,7 +39,7 @@ resource "openstack_compute_instance_v2" "vm" {
 
 resource "openstack_compute_flavor_v2" flavor {
 #  for_each    = { for k, v in local.instances : v.name => v }
-  for_each = { for instance_key, instance in var.VMs : v.name => v }
+  for_each = { for instance_key, instance in var.VMs : instance_key.name => instance_key }
   name        = "${instance_key}-flavor"
 #  flavor_id = "2c-2r"
 #  name      = "2c-2r"
