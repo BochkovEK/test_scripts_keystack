@@ -5,7 +5,8 @@ resource "openstack_compute_instance_v2" "vm" {
 #  for_each = var.VMs # == {} ? null : var.VMs
   name                        = each.value.name
   image_name                  = each.value.image_name
-  flavor_name                 = each.value.flavor_name
+#  flavor_name                 = each.value.flavor_name
+  flavor_id                   = openstack_compute_flavor_v2.flavor_id[each.key].id
   key_pair                    = each.value.keypair_name
   security_groups             = each.value.security_groups
   availability_zone_hints     = each.value.az_hint
@@ -23,7 +24,6 @@ resource "openstack_compute_instance_v2" "vm" {
       delete_on_termination = true
     }
   }
-
 #  block_device {
 #    uuid                  = data.openstack_images_image_v2.image_id[each.key].id
 #    source_type           = "image"
@@ -35,6 +35,17 @@ resource "openstack_compute_instance_v2" "vm" {
   network {
     name = each.value.network_name
   }
+}
+
+resource "openstack_compute_flavor_v2" flavor_id {
+  for_each    = { for k, v in local.instances : v.name => v }
+  name        = "${each.value.name}-flavor"
+#  flavor_id = "2c-2r"
+#  name      = "2c-2r"
+  vcpus     = try(instance.flavor.vcpus, var.default_flavor.vcpus)
+  ram       = try(instance.falvor.ram, var.default_flavor.ram)
+  disk      = "0"
+  is_public = "true"
 }
 
 data "openstack_images_image_v2" "image_id" {
