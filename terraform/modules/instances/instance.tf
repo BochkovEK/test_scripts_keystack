@@ -51,10 +51,10 @@ resource "openstack_compute_flavor_v2" flavor {
   is_public = "true"
 }
 
-output "flavors" {
-  value = [openstack_compute_flavor_v2.flavor[each.key].id,
-  ]
-}
+#output "flavors" {
+#  value = [openstack_compute_flavor_v2.flavor[each.key].id,
+#  ]
+#}
 
 #data "openstack_compute_flavor_v2" "flavor_id" {
 #  for_each    = { for k, v in local.instances : v.name => v }
