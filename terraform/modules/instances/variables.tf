@@ -13,9 +13,10 @@ variable "default_image_name" {
 
 variable "default_flavor" {
 #  description = "Default flavor name"
-#  default = {
-  vcpus = 2
-  ram   = 2048
+  default = {
+    vcpus = 2
+    ram   = 2048
+  }
 }
 
 variable "default_disk" {
