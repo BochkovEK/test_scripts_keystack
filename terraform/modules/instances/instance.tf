@@ -6,7 +6,7 @@ resource "openstack_compute_instance_v2" "vm" {
   name                        = each.value.name
   image_name                  = each.value.image_name
 #  flavor_name                 = "${each.value.base_name}-flavor"
-  flavor_id                   = openstack_compute_flavor_v2.flavor[each.value].id
+#  flavor_id                   = openstack_compute_flavor_v2.flavor[each.value].id
   key_pair                    = each.value.keypair_name
   security_groups             = each.value.security_groups
   availability_zone_hints     = each.value.az_hint
@@ -38,9 +38,9 @@ resource "openstack_compute_instance_v2" "vm" {
 }
 
 resource "openstack_compute_flavor_v2" flavor {
-  for_each    = { for k, v in local.instances : v.name => v }
-#  for_each = var.VMs
-  name        = "${each.value.base_name}-flavor"
+#  for_each    = { for k, v in local.instances : v.name => v }
+  for_each = var.VMs
+  name        = "${each.value}-flavor"
 #  flavor_id = "2c-2r"
 #  name      = "2c-2r"
 #  vcpus     = try(instance.flavor.vcpus, var.default_flavor.vcpus)
