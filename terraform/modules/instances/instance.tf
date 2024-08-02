@@ -35,6 +35,9 @@ resource "openstack_compute_instance_v2" "vm" {
   network {
     name = each.value.network_name
   }
+  depends_on = [
+    openstack_compute_flavor_v2.flavor
+  ]
 }
 
 resource "openstack_compute_flavor_v2" flavor {
