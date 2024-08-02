@@ -15,7 +15,7 @@ resource "openstack_compute_instance_v2" "vm" {
   dynamic "block_device" {
     for_each = each.value.disk
     content {
-      uuid                  = block_device.key == "sda" ? each.value.image_id : null
+      uuid                  = block_device.key == "sda" ? data.openstack_images_image_v2.image_id[each.key].id : null
       source_type           = block_device.key == "sda" ? "image" : "blank"
       boot_index            = block_device.key == "sda" ? 0 : 1
       volume_size           = block_device.value
