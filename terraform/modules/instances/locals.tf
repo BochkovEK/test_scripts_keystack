@@ -4,7 +4,7 @@ locals {
   instances = flatten([
     for instance_key, instance in var.VMs : [
       for iter in range(1,instance.vm_qty+1) : {
-        base_name         = "${instance_key}"
+        base_name         = instance_key
         name              = format("%s-%02d", instance_key, iter)
         image_name        = try(instance.image_name, var.default_image_name)
 #        flavor            = try(instance.flavor, var.default_flavor)

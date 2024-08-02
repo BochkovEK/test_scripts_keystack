@@ -5,8 +5,8 @@ resource "openstack_compute_instance_v2" "vm" {
 #  for_each = var.VMs # == {} ? null : var.VMs
   name                        = each.value.name
   image_name                  = each.value.image_name
-#  flavor_name                 = each.value.flavor_name
-  flavor_id                   = data.openstack_compute_flavor_v2.flavor_id[each.key].id
+  flavor_name                 = "${each.value.base_name}-flavor"
+#  flavor_id                   = openstack_compute_flavor_v2.flavor[each.key].id
   key_pair                    = each.value.keypair_name
   security_groups             = each.value.security_groups
   availability_zone_hints     = each.value.az_hint
@@ -51,15 +51,20 @@ resource "openstack_compute_flavor_v2" flavor {
   is_public = "true"
 }
 
-data "openstack_compute_flavor_v2" "flavor_id" {
-  for_each    = { for k, v in local.instances : v.name => v }
-  name        = "${each.value.base_name}-flavor"
-#  most_recent = true
-#
-#  properties = {
-#    key = "value"
-#  }
+output "flavors" {
+  value = [openstack_compute_flavor_v2.flavor[each.key].id,
+  ]
 }
+
+#data "openstack_compute_flavor_v2" "flavor_id" {
+#  for_each    = { for k, v in local.instances : v.name => v }
+#  name        = "${each.value.base_name}-flavor"
+##  most_recent = true
+##
+##  properties = {
+##    key = "value"
+##  }
+#}
 
 data "openstack_images_image_v2" "image_id" {
   for_each    = { for k, v in local.instances : v.name => v }
