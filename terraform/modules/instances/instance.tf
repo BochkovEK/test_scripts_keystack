@@ -5,25 +5,69 @@ resource "openstack_compute_instance_v2" "vm" {
 #  for_each = var.VMs # == {} ? null : var.VMs
   name                        = each.value.name
   image_name                  = each.value.image_name
-  flavor_name                 = each.value.flavor_name
+  flavor_name                 = "${each.value.base_name}-flavor"
+#  flavor_id                   = openstack_compute_flavor_v2.flavor[each.value].id
   key_pair                    = each.value.keypair_name
   security_groups             = each.value.security_groups
   availability_zone_hints     = each.value.az_hint
   metadata = {
     test_meta = "Created by Terraform"
   }
-  block_device {
-    uuid                  = data.openstack_images_image_v2.image_id[each.key].id
-    source_type           = "image"
-    volume_size           = each.value.volume_size
-    boot_index            = 0
-    destination_type      = "volume"
-    delete_on_termination = true
+  dynamic "block_device" {
+    for_each = each.value.disk
+    content {
+      uuid                  = block_device.key == "sda" ? data.openstack_images_image_v2.image_id[each.key].id : null
+      source_type           = block_device.key == "sda" ? "image" : "blank"
+      boot_index            = block_device.key == "sda" ? 0 : 1
+      volume_size           = block_device.value
+      destination_type      = "volume"
+      delete_on_termination = true
+    }
   }
+#  block_device {
+#    uuid                  = data.openstack_images_image_v2.image_id[each.key].id
+#    source_type           = "image"
+#    volume_size           = each.value.volume_size
+#    boot_index            = 0
+#    destination_type      = "volume"
+#    delete_on_termination = true
+#  }
   network {
     name = each.value.network_name
   }
+  depends_on = [
+    openstack_compute_flavor_v2.flavor
+  ]
 }
+
+resource "openstack_compute_flavor_v2" flavor {
+#  for_each    = { for k, v in local.instances : v.name => v }
+  for_each = var.VMs
+  name        = "${each.key}-flavor"
+#  flavor_id = "2c-2r"
+#  name      = "2c-2r"
+#  vcpus     = try(instance.flavor.vcpus, var.default_flavor.vcpus)
+#  ram       = try(instance.falvor.ram, var.default_flavor.ram)
+  vcpus     = try(each.value.flavor.vcpus, var.default_flavor.vcpus) #each.value.flavor.vcpus
+  ram       = try(each.value.flavor.ram, var.default_flavor.ram)
+  disk      = "0"
+  is_public = "true"
+}
+
+#output "flavor_id" {
+#  value = [openstack_compute_flavor_v2.flavor.id,
+#  ]
+#}
+
+#data "openstack_compute_flavor_v2" "flavor_id" {
+#  for_each    = { for k, v in local.instances : v.name => v }
+#  name        = "${each.value.base_name}-flavor"
+##  most_recent = true
+##
+##  properties = {
+##    key = "value"
+##  }
+#}
 
 data "openstack_images_image_v2" "image_id" {
   for_each    = { for k, v in local.instances : v.name => v }
