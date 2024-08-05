@@ -122,7 +122,7 @@
 
       vi clouds.yml
   
-  Past into clouds.yml next template and define your parameters: VIP, project_id, password, region_name.
+  Past into clouds.yml next template and define your parameters: <b>VIP, project_id, password, region_name</b>.
       
       clouds:
           openstack:
