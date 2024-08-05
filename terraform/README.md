@@ -75,7 +75,7 @@
     
     To the key pair for the user, specified in the cloud.yml based on $HOME/test_scripts_keystack/key_test.pem:
     
-         openstack keypair create key_test --public-key $HOME/test_scripts_keystack/key_test.pub
+        openstack keypair create key_test --public-key $HOME/test_scripts_keystack/key_test.pub
     </details>
 - <details>
   <summary>Install <b>Terraform</b></summary>
