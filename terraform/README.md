@@ -201,7 +201,7 @@
         image_name        = The name of the image from the project specified in the cloud.yml (default: cirros-0.6.2-x86_64-disk)
         flavor            = {
             vcpus         = Number of vCPUs (flavor)
-            ram           = GB RAM (flavor)
+            ram           = RAM in !!!MB (1024, 2048, 4096, ...) (flavor)
         }                 if no define create flavor vcpus = 2, ram = 20248
         keypair_name      = The key pair name for the user specified in the cloud.yml (default: key_test)
         security_groups   = The name of the security group from the project specified in the cloud.yml (default: test_security_group)
@@ -256,7 +256,7 @@
                 vm_qty          = 3
                 image_name      = "cirros-0.6.2-x86_64-disk"
                 flavor          = {
-                    vcpu = 4
+                    vcpus = 4
                 }
                 disk            = {
                     sda         = 7
