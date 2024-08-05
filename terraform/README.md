@@ -248,12 +248,12 @@
         # VMs
         VMs = {
             TEST_VM_1 = {
-                vm_qty          = 2
+                vm_qty          = 1
                 image_name      = "ubuntu-20.04-server-cloudimg-amd64"
                 az_hint         = "az_1:ebochkov-ks-sber-comp-01"
             }
             TEST_VM_2 = {
-                vm_qty          = 3
+                vm_qty          = 2
                 image_name      = "cirros-0.6.2-x86_64-disk"
                 flavor          = {
                     vcpus = 4
@@ -261,6 +261,16 @@
                 disk            = {
                     sda         = 7
                     sdb         = 8
+                }
+            }
+            TEST_VM_3 = {
+                vm_qty          = 3
+                image_name      = "cirros-0.6.2-x86_64-disk"
+                flavor          = {
+                    ram         = 1024
+                }
+                disk            = {
+                    sda         = 3
                 }
             }
         }
