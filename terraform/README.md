@@ -2,7 +2,6 @@
 - Create AZs
 - Create VMs in AZ
 ### To start:
-- Install openstack cli
 - <details>
   <summary>Install <b>Terraform</b></summary>
 
@@ -40,6 +39,16 @@
       }
       EOF
   </details>
+- <details>
+  <summary>Install <b>openstack cli</b></summary>
+  
+  Sberlinux:
+         
+      yum install -y python3-pip
+      python3 -m pip install openstackclient
+      export PATH=\$PATH:/usr/local/bin
+  </details>
+
 - Create base openstack resources (required):
   - <details>
     <summary>Network (<b>pub_net</b>)</summary>
