@@ -40,7 +40,7 @@
       }
       EOF
   </details>
-- Create base openstack resources:
+- Create base openstack resources (required):
   - <details>
     <summary>Network (<b>pub_net</b>)</summary>
 
@@ -98,13 +98,6 @@
         wget https://repo.itkey.com/repository/images/ubuntu-20.04-server-cloudimg-amd64.img -O ubuntu-20.04-server-cloudimg-amd64.img
         openstack image create ubuntu-20.04-server-cloudimg-amd64 --disk-format qcow2 --min-disk 5 --container-format bare --public --file ./ubuntu-20.04-server-cloudimg-amd64.img
     </details>
-  - <details>
-    <summary>Flavor (<b>2c-2r</b>)</summary>
-    
-    To crete flavor 2c-2r:
-  
-         openstack flavor create --vcpus 2 --ram 2048 --disk 0 2c-2r
-    </details>
   - <details>  
     <summary>Key pair for access to VM (<b>key_test</b>)</summary>
     
@@ -113,7 +106,7 @@
          openstack keypair create key_test --public-key $HOME/test_scripts_keystack/key_test.pub
     </details>
 
-### To create:
+### To create VMs\AZ:
 - <details>
   <summary>Add <b>clouds.yml</b> to "main.tf" directory</summary>
   
@@ -145,7 +138,7 @@
 
       mv ./clouds.yml $HOME/test_scripts_keystack/terraform/examples/example_1/clouds.yml
   </details>
-  - <details>
+- <details>
     <summary>Define variables in <b>name.auto.tfvars</b></summary>
   
     Creating a VMs is based on the following dictionaries:
