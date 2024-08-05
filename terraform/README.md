@@ -5,6 +5,14 @@
 - Install openstack cli
 - <details>
   <summary>Install <b>Terraform</b></summary>
+
+  Install wget:
+      
+      #Sberlinux
+      yum in -y wget
+  
+      #Ubuntu
+      apt install wget
   
   Download Terraform binary from repo itkey:
 
@@ -254,7 +262,7 @@
                     sdb         = 8
                 }
             }
--       }
+        }
     
         # AZs
         AZs = {
