@@ -248,7 +248,7 @@
         # VMs
         VMs = {
             TEST_VM_1 = {
-                vm_qty          = 3
+                vm_qty          = 2
                 image_name      = "ubuntu-20.04-server-cloudimg-amd64"
                 az_hint         = "az_1:ebochkov-ks-sber-comp-01"
             }
