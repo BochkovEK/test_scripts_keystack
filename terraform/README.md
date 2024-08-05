@@ -3,43 +3,6 @@
 - Create VMs in AZ
 ### To start:
 - <details>
-  <summary>Install <b>Terraform</b></summary>
-
-  Install wget:
-      
-      #Sberlinux
-      yum in -y wget
-  
-      #Ubuntu
-      apt install wget
-  
-  Download Terraform binary from repo itkey:
-
-      wget https://repo.itkey.com/repository/images/terraform_1.8.5_linux_amd64
-  
-  Change the access permissions:
-
-      chmod 777 ./terraform_1.8.5_linux_amd64
-
-  Move binary to /usr/local/bin/:
-
-      mv terraform_1.8.5_linux_amd64 /usr/local/bin/terraform
-
-  Change terraform provider_installation:
-
-      cat <<-EOF > ~/.terraformrc
-      provider_installation {
-          network_mirror {
-              url = "https://terraform-mirror.yandexcloud.net/"
-              include = ["registry.terraform.io/*/*"]
-          }
-          direct {
-              exclude = ["registry.terraform.io/*/*"]
-          }
-      }
-      EOF
-  </details>
-- <details>
   <summary>Install <b>openstack cli</b></summary>
   
   Sberlinux:
@@ -114,7 +77,43 @@
     
          openstack keypair create key_test --public-key $HOME/test_scripts_keystack/key_test.pub
     </details>
+- <details>
+  <summary>Install <b>Terraform</b></summary>
 
+  Install wget:
+      
+      #Sberlinux
+      yum in -y wget
+  
+      #Ubuntu
+      apt install wget
+  
+  Download Terraform binary from repo itkey:
+
+      wget https://repo.itkey.com/repository/images/terraform_1.8.5_linux_amd64
+  
+  Change the access permissions:
+
+      chmod 777 ./terraform_1.8.5_linux_amd64
+
+  Move binary to /usr/local/bin/:
+
+      mv terraform_1.8.5_linux_amd64 /usr/local/bin/terraform
+
+  Change terraform provider_installation:
+
+      cat <<-EOF > ~/.terraformrc
+      provider_installation {
+          network_mirror {
+              url = "https://terraform-mirror.yandexcloud.net/"
+              include = ["registry.terraform.io/*/*"]
+          }
+          direct {
+              exclude = ["registry.terraform.io/*/*"]
+          }
+      }
+      EOF
+  </details>
 ### To create VMs\AZ:
 - <details>
   <summary>Add <b>clouds.yml</b> to "main.tf" directory</summary>
