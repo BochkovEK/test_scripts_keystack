@@ -7,7 +7,7 @@ VMs = {
   }
   vm_2 = {
     image_name      = "ubuntu-20.04-server-cloudimg-amd64"
-    flavor_name     = "4c-2r"
+#    flavor_name     = "4c-2r"
 #    network_name    = "pub_net"
 #    security_groups = ["test_security_group"]
 #    keypair_name    = "key_test"
