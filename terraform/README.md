@@ -244,7 +244,7 @@
 
     Example of creating an auto.vars file:
 
-        cat <<-EOF > ~/test_scripts_keystack/terraform/examples/example_1/foo.auto.tfvars
+      cat <<-EOF > ~/test_scripts_keystack/terraform/examples/example_1/foo.auto.tfvars
         # VMs
         VMs = {
             TEST_VM_1 = {
@@ -282,7 +282,7 @@
                 ]
             }
         }
-        EOF
+      EOF
     </details>
 - Run following commands in folders with <main.tf> ($HOME/test_scripts_keystack/terraform/examples/example_1):
   - terraform init
