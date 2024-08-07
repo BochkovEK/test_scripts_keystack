@@ -47,16 +47,15 @@ check_openstack_cli () {
           echo "There is no provision for openstack cli to be installed on the $os operating system."
           ;;
       esac
+      check_command openstack
+      if [ -z $command_exist ]; then
+        printf "%s\n" "${red}Openstack cli failed to install - error${normal}"
+        exit 1
+      fi
     fi
   else
     printf "%s\n" "${green}'host' command is available - success${normal}"
   fi
-
-  check_command openstack
-    if [ -z $command_exist ]; then
-      printf "%s\n" "${red}Openstack cli failed to install - error${normal}"
-      exit 1
-    fi
 }
 
 check_openstack_cli
