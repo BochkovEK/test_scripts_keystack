@@ -38,7 +38,10 @@ check_openstack_cli () {
         sberlinux)
           yum install -y python3-pip
           python3 -m pip install openstackclient
-          export PATH=\$PATH:/usr/local/bin
+          path_sting_in_bashrc=$(cat $HOME/.bashrc|grep 'export PATH=\$PATH:/usr/local/bin')
+          if [ -z $path_sting_in_bashrc ]; then
+            echo "export PATH=\$PATH:/usr/local/bin" >> cat $HOME/.bashrc
+          fi
           ;;
         ubuntu)
           echo "Coming soon..."
