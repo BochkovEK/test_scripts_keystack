@@ -78,7 +78,6 @@ do
     shift
 done
 
-
 # functions
 
 # Check_command

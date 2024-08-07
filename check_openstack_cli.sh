@@ -23,7 +23,7 @@ check_openstack_cli () {
   if [ -z $command_exist ]; then
     echo -e "\033[31mOpenstack cli not installed\033[0m"
     while true; do
-      read -p "Do you want to try to raise and enable nova service on $cmpt? [Yes]: " yn
+      read -p "Do you want to try to install openstack cli [Yes]: " yn
       yn=${yn:-"Yes"}
       echo $yn
       case $yn in
