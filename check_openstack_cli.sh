@@ -57,6 +57,8 @@ check_openstack_cli () {
           echo "There is no provision for openstack cli to be installed on the $os operating system."
           ;;
       esac
+    else
+      exit 1
     fi
   else
     printf "%s\n" "${green}'host' command is available - success${normal}"
