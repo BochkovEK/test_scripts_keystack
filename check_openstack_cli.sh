@@ -39,8 +39,15 @@ check_openstack_cli () {
           yum install -y python3-pip
           python3 -m pip install openstackclient
           path_sting_in_bashrc=$(cat $HOME/.bashrc|grep 'export PATH=\$PATH:/usr/local/bin')
-          if [ -z $path_sting_in_bashrc ]; then
-            echo "export PATH=\$PATH:/usr/local/bin" >> $HOME/.bashrc
+          if [ -f /usr/local/bin/openstack ]; then
+            if [ -z $path_sting_in_bashrc ]; then
+              echo "export PATH=\$PATH:/usr/local/bin" >> $HOME/.bashrc
+            fi
+            printf "%s\n" "${yellow}You will need to source your .bashrc or logout/login to openstack installation complete${normal}"
+            exit 1
+          else
+            printf "%s\n" "${red}Openstack cli failed to install - error${normal}"
+            exit 1
           fi
           ;;
         ubuntu)
@@ -50,12 +57,6 @@ check_openstack_cli () {
           echo "There is no provision for openstack cli to be installed on the $os operating system."
           ;;
       esac
-      check_command openstack
-      echo $command_exist
-      if [ -z $command_exist ]; then
-        printf "%s\n" "${red}Openstack cli failed to install - error${normal}"
-        exit 1
-      fi
     fi
   else
     printf "%s\n" "${green}'host' command is available - success${normal}"
