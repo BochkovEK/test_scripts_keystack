@@ -48,6 +48,7 @@ check_openstack_cli () {
           ;;
       esac
       check_command openstack
+      echo $command_exist
       if [ -z $command_exist ]; then
         printf "%s\n" "${red}Openstack cli failed to install - error${normal}"
         exit 1
