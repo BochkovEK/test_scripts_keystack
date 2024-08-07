@@ -40,7 +40,7 @@ check_openstack_cli () {
           python3 -m pip install openstackclient
           path_sting_in_bashrc=$(cat $HOME/.bashrc|grep 'export PATH=\$PATH:/usr/local/bin')
           if [ -z $path_sting_in_bashrc ]; then
-            echo "export PATH=\$PATH:/usr/local/bin" >> cat $HOME/.bashrc
+            echo "export PATH=\$PATH:/usr/local/bin" >> $HOME/.bashrc
           fi
           ;;
         ubuntu)
