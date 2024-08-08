@@ -14,7 +14,7 @@ locals {
     az_hint          = try(instance.az_hint, null)
     #        volume_size       = try(instance.volume_size, var.default_volume_size)
     network_name     = try(instance.network_name, var.default_network_name)
-    boot_volume_size = try(insatnce.boot_volume_size, var.default_boot_volume_size)
+    boot_volume_size = try(instance.boot_volume_size, var.default_boot_volume_size)
     disks             = try(instance.disks, null)
   }
   ]
