@@ -15,8 +15,7 @@ locals {
     #        volume_size       = try(instance.volume_size, var.default_volume_size)
     network_name     = try(instance.network_name, var.default_network_name)
     boot_volume_size = try(instance.boot_volume_size, var.default_boot_volume_size)
-#    disks            = try(instance.disks, null)
-    disks             = instance.foo
+    disks            = try(instance.disks, null)
   }
   ]
   ])
