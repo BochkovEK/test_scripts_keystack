@@ -34,13 +34,13 @@ resource "openstack_compute_instance_v2" "vm" {
     delete_on_termination = false
   }
 #  dynamic "block_device" {
-#    for_each = each.value.disks
 ##    for iter in range(1, instance.vm_qty+1) : {
-##    volume = flatten([
-##      for instance_key, instance in var.VMs : [
-##  for iter in range(1, instance.vm_qty+1) : {
-##      ]
-##    }
+  ##    volume = flatten([
+  ##      for instance_key, instance in var.VMs : [
+  ##  for iter in range(1, instance.vm_qty+1) : {
+  ##      ]
+  ##    }
+#    for_each = each.value.disks
 #      content {
 #      #      uuid                  = block_device.key == "sda" ? data.openstack_images_image_v2.image_id[each.key].id : null
 #      #      source_type           = block_device.key == "sda" ? "image" : "blank"
