@@ -5,7 +5,7 @@ VMs = {
     image_name      = "cirros-0.6.2-x86_64-disk"
 #    image_name      = "ubuntu-20.04-server-cloudimg-amd64"
     az_hint         = "az_2:ebochkov-ks-sber-comp-03"
-    disks           = [{ boot_index = 1 }, "bar"]
+    disks           = [{ boot_index = 1, size = 3 }, "bar"]
 #    [
 #      {
 #        boot_index = 1,
