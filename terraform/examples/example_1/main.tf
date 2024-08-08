@@ -8,3 +8,7 @@ module "AZs" {
     AZs    = var.AZs
 #  region = "RegionOne"
 }
+
+output "foo" {
+  value = local.instances
+}
