@@ -61,7 +61,7 @@ while [ -n "$1" ]
 do
     case "$1" in
         --help) echo -E "
-        -orc           -openrc_path  <openrc_path>
+        -orc          -openrc_path  <openrc_path>
         -q,           -qty          <number_of_VMs>
         -i,           -image        <image_name>
         -f,           -flavor       <flavor_name>
