@@ -93,21 +93,21 @@ data "openstack_images_image_v2" "image_id" {
   name        = each.value.image_name
 }
 
-resource "openstack_blockstorage_volume_v3" "volume" {
-#  for_each = { for volume_key, volume in local.instance.disks }
-  for_each    = { for k, v in local.instances.disks : v.name => v }
-#  for_each = local.instances
-#  for_each    = { for k, v in local.instances : v.name => v }
-  name         = each.value.disk"fc_hdd_sdd"
-  size                 = 1
-  enable_online_resize = true
-  lifecycle {
-    ignore_changes  = [image_id, volume_type]
-  }
-}
-
-resource "openstack_compute_volume_attach_v2" "volume_attach" {
-  count = var.qty
-  instance_id = openstack_compute_instance_v2.fc_hdd[count.index].id
-  volume_id   = openstack_blockstorage_volume_v3.fc_hdd_sda[count.index].id
-}
+#resource "openstack_blockstorage_volume_v3" "volume" {
+##  for_each = { for volume_key, volume in local.instance.disks }
+#  for_each    = { for k, v in local.instances.disks : v.name => v }
+##  for_each = local.instances
+##  for_each    = { for k, v in local.instances : v.name => v }
+#  name         = each.value.disk"fc_hdd_sdd"
+#  size                 = 1
+#  enable_online_resize = true
+#  lifecycle {
+#    ignore_changes  = [image_id, volume_type]
+#  }
+#}
+#
+#resource "openstack_compute_volume_attach_v2" "volume_attach" {
+#  count = var.qty
+#  instance_id = openstack_compute_instance_v2.fc_hdd[count.index].id
+#  volume_id   = openstack_blockstorage_volume_v3.fc_hdd_sda[count.index].id
+#}
