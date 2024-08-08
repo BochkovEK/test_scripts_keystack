@@ -29,3 +29,6 @@ variable "qty" {
   default     = 3
 }
 
+variable "flavor_name" {
+  default = "g1-cpu-1-1_HA_test"
+}
