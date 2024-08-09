@@ -58,8 +58,8 @@ clean_vms () {
     #!!!!
 
 #    openstack server list
-    VMs_ID=$(openstack server list --project $PROJECT|grep -E 'ACTIVE|ERROR|SHUTOFF' |awk '{print $2}')
-    VMs_names=$(openstack server list --project $PROJECT|grep -E 'ACTIVE|ERROR|SHUTOFF' |awk '{print $4}')
+    VMs_ID=$(openstack server list --project $PROJECT|grep -E 'ACTIVE|ERROR|SHUTOFF|BUILD' |awk '{print $2}')
+    VMs_names=$(openstack server list --project $PROJECT|grep -E 'ACTIVE|ERROR|SHUTOFF|BUILD' |awk '{print $4}')
    # |grep ACTIVE |awk '{print $4}')
     if [[ ! -z $VMs_ID ]]; then
         echo "VMs list:"
