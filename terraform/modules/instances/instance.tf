@@ -13,25 +13,60 @@ resource "openstack_compute_instance_v2" "vm" {
   metadata = {
     test_meta = "Created by Terraform"
   }
-  dynamic "block_device" {
-    for_each = each.value.disk
-    content {
-      uuid                  = block_device.key == "sda" ? data.openstack_images_image_v2.image_id[each.key].id : null
-      source_type           = block_device.key == "sda" ? "image" : "blank"
-      boot_index            = block_device.key == "sda" ? 0 : 1
-      volume_size           = block_device.value
-      destination_type      = "volume"
-      delete_on_termination = true
-    }
+#  dynamic "block_device" {
+#    for_each = each.value.disk
+#    content {
+#      uuid                  = block_device.key == "sda" ? data.openstack_images_image_v2.image_id[each.key].id : null
+#      source_type           = block_device.key == "sda" ? "image" : "blank"
+#      boot_index            = block_device.key == "sda" ? 0 : 1
+#      volume_size           = block_device.value
+#      destination_type      = "volume"
+#      delete_on_termination = true
+#    }
+ block_device {
+#    uuid                  = openstack_blockstorage_volume_v3.fc_hdd_sda[count.index].id
+#    name         = "fc_hdd_boot"
+    uuid                  = data.openstack_images_image_v2.image_id[each.key].id
+    volume_size           = each.value.boot_volume_size
+    source_type           = "image"
+    boot_index            = 0
+    destination_type      = "volume"
+    delete_on_termination = false
   }
-#  block_device {
-#    uuid                  = data.openstack_images_image_v2.image_id[each.key].id
-#    source_type           = "image"
-#    volume_size           = each.value.volume_size
-#    boot_index            = 0
-#    destination_type      = "volume"
-#    delete_on_termination = true
-#  }
+#  dynamic "block_device" {
+##    for iter in range(1, instance.vm_qty+1) : {
+  ##    volume = flatten([
+  ##      for instance_key, instance in var.VMs : [
+  ##  for iter in range(1, instance.vm_qty+1) : {
+  ##      ]
+  ##    }
+#    for_each = each.value.disks
+#      content {
+#      #      uuid                  = block_device.key == "sda" ? data.openstack_images_image_v2.image_id[each.key].id : null
+#      #      source_type           = block_device.key == "sda" ? "image" : "blank"
+#      #      boot_index            = block_device.key == "sda" ? 0 : 1
+#      boot_index            = volume_size = block_device.value
+#      destination_type      = "volume"
+#      delete_on_termination = true
+#    }
+#      }
+#      }
+dynamic block_device {
+    for_each = [for volume in each.value.disks: {
+            boot_index = volume.boot_index
+            size = volume.size
+    }]
+    content {
+#        uuid = "volume-${each.value.base_name}-${block_device.value.boot_index}"
+        source_type           = "blank"
+        volume_size           = block_device.value.size
+        boot_index            = block_device.value.boot_index
+        destination_type      = "volume"
+        delete_on_termination = false
+    }
+ }
+
+
   network {
     name = each.value.network_name
   }
@@ -54,57 +89,26 @@ resource "openstack_compute_flavor_v2" flavor {
   is_public = "true"
 }
 
-#output "flavor_id" {
-#  value = [openstack_compute_flavor_v2.flavor.id,
-#  ]
-#}
-
-#data "openstack_compute_flavor_v2" "flavor_id" {
-#  for_each    = { for k, v in local.instances : v.name => v }
-#  name        = "${each.value.base_name}-flavor"
-##  most_recent = true
-##
-##  properties = {
-##    key = "value"
-##  }
-#}
-
 data "openstack_images_image_v2" "image_id" {
   for_each    = { for k, v in local.instances : v.name => v }
   name        = each.value.image_name
-#  most_recent = true
-#
-#  properties = {
-#    key = "value"
-#  }
 }
 
-#resource "openstack_compute_instance_v2" "vm" {
-##  for_each = var.VMs # == {} ? null : var.VMs
-#  count = var.vm_qty
-#  name                        = format("%s-%02d", var.vm_name, count.index+1)
-#  image_name                  = var.image_name
-#  flavor_name                 = var.flavor_name
-#  key_pair                    = var.keypair_name
-#  security_groups             = var.security_groups
-#  availability_zone_hints     = var.az_hint
-#  metadata = {
-#    this = "that"
-#  }
-#  block_device {
-#    uuid                  = var.image_name
-#    source_type           = "image"
-#    volume_size           = var.volume_size
-#    boot_index            = 0
-##    destination_type      = "volume"
-#    delete_on_termination = true
-#  }
-#  network {
-#    name = var.network_name
+#resource "openstack_blockstorage_volume_v3" "volume" {
+##  for_each = { for volume_key, volume in local.instance.disks }
+#  for_each    = { for k, v in local.instances.disks : v.name => v }
+##  for_each = local.instances
+##  for_each    = { for k, v in local.instances : v.name => v }
+#  name         = each.value.disk"fc_hdd_sdd"
+#  size                 = 1
+#  enable_online_resize = true
+#  lifecycle {
+#    ignore_changes  = [image_id, volume_type]
 #  }
 #}
-
-#data "openstack_images_image_v2" "image" {
-#  name        = each.image_name
-#  most_recent = true
+#
+#resource "openstack_compute_volume_attach_v2" "volume_attach" {
+#  count = var.qty
+#  instance_id = openstack_compute_instance_v2.fc_hdd[count.index].id
+#  volume_id   = openstack_blockstorage_volume_v3.fc_hdd_sda[count.index].id
 #}

@@ -19,18 +19,16 @@ variable "default_flavor" {
   }
 }
 
-variable "default_disk" {
-  description = "Default disk"
-  default = {
-    sda = 5
-  }
+variable "default_disks" {
+  description = "Default disks"
+  default = []
 }
 
-#variable "default_volume_size" {
-#  description = "Default volume size"
-#  type        = number
-#  default = 5
-#}
+variable "default_boot_volume_size" {
+  description = "Default volume size"
+  type        = number
+  default = 5
+}
 
 variable "default_network_name" {
   description = "Default network name"

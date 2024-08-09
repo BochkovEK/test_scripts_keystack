@@ -1,6 +1,6 @@
-resource "openstack_compute_flavor_v2" "g1-cpu-1-1" {
-  flavor_id = "g1-cpu-1-1"
-  name      = "g1-cpu-1-1"
+resource "openstack_compute_flavor_v2" "flavor" {
+  flavor_id = var.flavor_name
+  name      = var.flavor_name
   vcpus     = "1"
   ram       = "1024"
   disk      = "0"
@@ -10,7 +10,7 @@ resource "openstack_compute_flavor_v2" "g1-cpu-1-1" {
 resource "openstack_compute_instance_v2" "fc_hdd" {
   count = var.qty
   name         = "fc_hdd-vm"
-  flavor_name  = "g1-cpu-1-1"
+  flavor_name  = var.flavor_name
   key_pair     = var.keypair
   availability_zone_hints     = "cpu:cdm-bl-pca11"
   network {

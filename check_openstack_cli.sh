@@ -23,7 +23,7 @@ check_openstack_cli () {
   if [ -z $command_exist ]; then
     echo -e "\033[31mOpenstack cli not installed\033[0m"
     while true; do
-      read -p "Do you want to try to raise and enable nova service on $cmpt? [Yes]: " yn
+      read -p "Do you want to try to install openstack cli [Yes]: " yn
       yn=${yn:-"Yes"}
       echo $yn
       case $yn in
@@ -38,7 +38,17 @@ check_openstack_cli () {
         sberlinux)
           yum install -y python3-pip
           python3 -m pip install openstackclient
-          export PATH=\$PATH:/usr/local/bin
+          path_sting_in_bashrc=$(cat $HOME/.bashrc|grep 'export PATH=\$PATH:/usr/local/bin')
+          if [ -f /usr/local/bin/openstack ]; then
+            if [ -z $path_sting_in_bashrc ]; then
+              echo "export PATH=\$PATH:/usr/local/bin" >> $HOME/.bashrc
+            fi
+            printf "%s\n" "${yellow}You will need to source your .bashrc or logout/login to openstack installation complete${normal}"
+            exit 1
+          else
+            printf "%s\n" "${red}Openstack cli failed to install - error${normal}"
+            exit 1
+          fi
           ;;
         ubuntu)
           echo "Coming soon..."
@@ -47,16 +57,12 @@ check_openstack_cli () {
           echo "There is no provision for openstack cli to be installed on the $os operating system."
           ;;
       esac
+    else
+      exit 1
     fi
   else
     printf "%s\n" "${green}'host' command is available - success${normal}"
   fi
-
-  check_command openstack
-    if [ -z $command_exist ]; then
-      printf "%s\n" "${red}Openstack cli failed to install - error${normal}"
-      exit 1
-    fi
 }
 
 check_openstack_cli
