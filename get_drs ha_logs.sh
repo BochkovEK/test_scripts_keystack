@@ -21,7 +21,7 @@ script_dir=$(dirname $0)
 [[ -z $DRS_LOGS_SRC ]] && DRS_LOGS_SRC=/var/log/kolla/drs/drs.log
 [[ -z $DRS_LOGS_DEST ]] && DRS_LOGS_DEST=$script_dir/drs_logs
 [[ -z $AUTOEVA_LOGS_SRC ]] && AUTOEVA_LOGS_SRC=/var/log/kolla/autoevacuate.log
-[[ -z $AUTOEVA_LOGS_DEST ]] && AUTOEVA_LOGS_DEST=$script_dir/autoeva_logs
+[[ -z $AUTOEVA_LOGS_DEST ]] && AUTOEVA_LOGS_DEST=$script_dir/consul_logs
 [[ -z $LOGS_TYPE ]] && LOGS_TYPE='drs'
 
 #======================
@@ -70,6 +70,14 @@ do
     shift
 done
 
+add_to_archive () {
+  echo "Add logs to archive... $1-logs-"`date +"%d-%m-%Y"`""
+  [ -e $script_dir/$archive_logs_name.tar.gz ] && rm $script_dir/$archive_logs_name.tar.gz
+  archive_logs_name=$(echo $1-logs-"`date +"%d-%m-%Y"`")
+  echo "tar -czvf $script_dir/$archive_logs_name.tar.gz $2"
+  tar -czvf $script_dir/$archive_logs_name.tar.gz $2
+}
+
 get_drs_logs () {
   mkdir -p $DRS_LOGS_DEST
   ABSOLUTE_DRS_LOGS_DEST=$(realpath $DRS_LOGS_DEST)
@@ -97,11 +105,12 @@ get_drs_logs () {
     echo "Save migration list from $host_name..."
     drs migration list > $script_dir/drs_logs/migration.list
   done
-  echo "Add logs to archive... drs-logs-"`date +"%d-%m-%Y"`""
-  [ -e $script_dir/$archive_logs_name.tar.gz ] && rm $script_dir/$archive_logs_name.tar.gz
-  archive_logs_name=$(echo drs-logs-"`date +"%d-%m-%Y"`")
-  echo "tar -czvf $script_dir/$archive_logs_name.tar.gz $DRS_LOGS_DEST"
-  tar -czvf $script_dir/$archive_logs_name.tar.gz $DRS_LOGS_DEST
+  add_to_archive $LOGS_TYPE $DRS_LOGS_DEST
+#  echo "Add logs to archive... $LOGS_TYPE-logs-"`date +"%d-%m-%Y"`""
+#  [ -e $script_dir/$archive_logs_name.tar.gz ] && rm $script_dir/$archive_logs_name.tar.gz
+#  archive_logs_name=$(echo $LOGS_TYPE-logs-"`date +"%d-%m-%Y"`")
+#  echo "tar -czvf $script_dir/$archive_logs_name.tar.gz $DRS_LOGS_DEST"
+#  tar -czvf $script_dir/$archive_logs_name.tar.gz $DRS_LOGS_DEST
 }
 
 get_ha_logs () {
@@ -115,6 +124,7 @@ get_ha_logs () {
 	  tail_strins=$(ssh  -o "StrictHostKeyChecking=no" $host tail -$TAIL_NUM $AUTOEVA_LOGS_SRC)
 	  echo $tail_strins > $AUTOEVA_LOGS_DEST/ha_log_from_${host_name}_tail_${TAIL_NUM}.txt
   done
+  add_to_archive $LOGS_TYPE $AUTOEVA_LOGS_DEST
 }
 
 case $LOGS_TYPE in
