@@ -57,6 +57,7 @@ dynamic block_device {
             size = volume.size
     }]
     content {
+        uuid = "volume-${each.value.base_name}-${block_device.value.boot_index}"
         source_type           = "blank"
         volume_size           = block_device.value.size
         boot_index            = block_device.value.boot_index
