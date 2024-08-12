@@ -9,6 +9,11 @@
 
 #cleanup on drs_logs folder: rm -f drs*.txt drs*.log migration.list optimization.list recommendation.list
 
+#Colors
+green=$(tput setaf 2)
+red=$(tput setaf 1)
+violet=$(tput setaf 5)
+normal=$(tput sgr0)
 
 comp_pattern="\-comp\-..$"
 ctrl_pattern="\-ctrl\-..$"
@@ -83,6 +88,11 @@ get_drs_logs () {
   ABSOLUTE_DRS_LOGS_DEST=$(realpath $DRS_LOGS_DEST)
   echo "distinction drs logs: $DRS_LOGS_DEST"
   srv=$(cat /etc/hosts | grep -E ${NODES_TO_FIND} | awk '{print $2}')
+  [[ -z "${srv}" ]] && {
+    printf "%s\n" "${red}It was not possible to separate the names and addresses of control nodes from the hosts file - error!${normal}";
+    #echo "It was not possible to separate the names and addresses of control nodes from the hosts file";
+    exit 1;
+    }
   for host in $srv; do
 	  host_name=$(cat /etc/hosts | grep -E ${host} | awk '{print $2}')
     echo "Copy drs logs from $host_name..."
