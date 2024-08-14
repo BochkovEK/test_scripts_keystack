@@ -27,6 +27,30 @@ script_dir=$(dirname "$script_file_path")
 parentdir=$(dirname "$script_dir")
 #parentdir=$(builtin cd $script_dir; pwd)
 
+while [ -n "$1" ]; do
+  case "$1" in
+    --help) echo -E "
+      Remote nexus deploy
+        1) Change certs_envs:
+          vi $HOME/test_scripts_keystack/self_signed_certs/certs_envs
+        2) Source envs:
+          source $HOME/test_scripts_keystack/self_signed_certs/certs_envs
+        3) Generate certs in $HOME/certs:
+          bash $HOME/test_scripts_keystack/self_signed_certs/generate_self_signed_certs.sh
+        4) Deploy nexus:
+          bash $HOME/test_scripts_keystack/deploy_remote_nexus.sh
+        5) For installer.sh use remote nexus copy $HOME/certs to $HOME/installer/ on lcm:
+          scp -r $HOME/certs $lcm:$HOME/installer/
+      "
+      exit 0
+      break ;;
+    --) shift
+      break ;;
+    *) echo "$1 is not an option";;
+  esac
+  shift
+done
+
 #Install docker if need
 if ! command -v docker &> /dev/null; then
   is_ubuntu=$(cat /etc/os-release|grep ubuntu)
