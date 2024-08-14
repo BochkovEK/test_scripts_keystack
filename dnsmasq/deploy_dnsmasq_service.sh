@@ -46,7 +46,6 @@ cat <<-EOF > ~/test_scripts_keystack/dnsmasq/dns_ip_mapping.txt
 10.224.130.27 ebochkov-keystack-add_vm-01 nexus.test.domain
 EOF
         2) bash $script_dir/deploy_dnsmasq_service.sh
-        2) bash $HOME/test_script_keystack/dnsmasq/deploy_dnsmasq_service.sh
         "
           exit 0
           break ;;
