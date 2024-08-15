@@ -35,7 +35,7 @@ export KS_LDAP_USER_SEARCH_BASEDN_NETBOX="DC=lab,DC=local"
 export KS_LDAP_GROUP_SEARCH_BASEDN_NETBOX="OU=netbox,OU=Applications,DC=lab,DC=local"
 
 #Enter the LDAP GROUP for Read for Netbox:
-export LDAP_REQUIRE_GROUP_DN_NETBOX="CN=grp.lcm.ro,OU=netbox,OU=Applications,DC=lab,DC=local"
+export KS_LDAP_REQUIRE_GROUP_DN_NETBOX="CN=grp.lcm.ro,OU=netbox,OU=Applications,DC=lab,DC=local"
 
 #Enter the LDAP GROUP for Read-Write for Netbox:
 export KS_LDAP_IS_ADMIN_DN_NETBOX="CN=grp.lcm.ro,OU=netbox,OU=Applications,DC=lab,DC=local"
