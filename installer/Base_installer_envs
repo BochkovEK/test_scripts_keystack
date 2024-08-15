@@ -1,11 +1,11 @@
 #Enter the home dir for the installation [/installer]:
-export KS_INSTALL_HOME="/installer"
+export KS_INSTALL_HOME=""
 
 #Enter the IP address of this machine [$ip]:
 export KS_INSTALL_LCM_IP=""
 
 #Use remote\existing Artifactory y/n [n]:
-export KS_CLIENT_NEXUS="n"
+export KS_CLIENT_NEXUS=""
 
 #Enter the remote\existing Artifactory FQDN for the KeyStack:
 export KS_CLIENT_NEXUS_NAME=""
@@ -17,7 +17,7 @@ export KS_CLIENT_NEXUS_ADMIN=""
 export KS_CLIENT_NEXUS_PASSWORD=""
 
 #Enable auth LDAP for Netbox y/n [n]:
-export KS_LDAP_NETBOX="n"
+export KS_LDAP_NETBOX=""
 
 #Enter the LDAP Server URI for Netbox:
 export KS_LDAP_SERVER_URI_NETBOX=""
@@ -44,7 +44,7 @@ export KS_LDAP_IS_ADMIN_DN_NETBOX=""
 export KS_LDAP_IS_SUPERUSER_DN_NETBOX=""
 
 #Enable auth LDAP for Gitlab y/n [n]:
-export KS_LDAP_GITLAB="n"
+export KS_LDAP_GITLAB=""
 
 #Enter the LDAP Server URI for Gitlab:
 export KS_LDAP_SERVER_URI_GITLAB=""
