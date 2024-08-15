@@ -7,6 +7,9 @@
 # 10.224.129.234 ebochkov-keystack-comp-01 comp-01 nexus.test.domain
 # startup example: bash start.sh custom - execute custom_installer.sh
 
+echo "This script is deprecated"
+exit 0
+
 CUSTOM_INSTALLER=custom_installer.sh
 INSTALL_DIR=$HOME/installer
 BACKUP_FOLDER=$INSTALL_DIR/backup

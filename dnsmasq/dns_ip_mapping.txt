@@ -1,6 +1,6 @@
 # ----- ADD from deploy_dnsmasq_service.sh -----
-10.224.129.227 int.ebochkov.test.domain
 10.224.129.228 ext.ebochkov.test.domain
+10.224.129.227 int.ebochkov.test.domain
 10.224.129.238 remote-nexus.test.domain
 
 10.224.129.231 ebochkov-keystack-comp-01 comp-01 c-lcm-nexus.test.domain c-netbox.test.domain c-gitlab.test.domain c-vault.test.domain
