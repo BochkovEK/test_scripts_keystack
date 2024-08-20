@@ -164,7 +164,7 @@ done
 yes_no_answer () {
   yes_no_input=""
   while true; do
-    read -p $1 yn
+    read -p "Do you want to try to install [Yes]: " yn
     yn=${yn:-"Yes"}
     echo $yn
     case $yn in
@@ -220,7 +220,7 @@ check_wget () {
   #mock test
   #command_exist=""
   if [ -z $command_exist ]; then
-    yes_no_answer "Do you want to try to install wget [Yes]: "
+    yes_no_answer
     if [ "$yes_no_input" = "true" ]; then
       [[ -f /etc/os-release ]] && os=$({ . /etc/os-release; echo ${ID,,}; })
       case $os in
