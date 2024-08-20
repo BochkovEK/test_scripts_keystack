@@ -232,7 +232,7 @@ check_wget () {
             echo "For sberlinux try these commands:"
             echo "yum install -y wget"
             printf "%s\n" "${red}wget not installed - error${normal}"
-            exist 1
+            exit 1
           else
             printf "%s\n" "${green}'wget' command is available - success${normal}"
           fi
