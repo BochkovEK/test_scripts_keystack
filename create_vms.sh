@@ -220,7 +220,7 @@ check_wget () {
   #mock test
   #command_exist=""
   if [ -z $command_exist ]; then
-    printf "%s\n" "${yellow}wget not installed!${normal}"
+    printf "%s\n" "${yellow}'wget' not installed!${normal}"
     yes_no_answer
     if [ "$yes_no_input" = "true" ]; then
       [[ -f /etc/os-release ]] && os=$({ . /etc/os-release; echo ${ID,,}; })
