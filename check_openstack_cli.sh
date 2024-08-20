@@ -39,7 +39,6 @@ check_openstack_cli () {
           yum install -y python3-pip
           python3 -m pip install -i https://pypi.org/simple/ python-openstackclient==6.2.0
 #          python3 -m pip install openstackclient
-          python3 -m pip install openstackclient
           path_sting_in_bashrc=$(cat $HOME/.bashrc|grep 'export PATH=\$PATH:/usr/local/bin')
           if [ -f /usr/local/bin/openstack ]; then
             if [ -z $path_sting_in_bashrc ]; then
@@ -64,7 +63,7 @@ check_openstack_cli () {
       exit 1
     fi
   else
-    printf "%s\n" "${green}'host' command is available - success${normal}"
+    printf "%s\n" "${green}'openstack' command is available - success${normal}"
   fi
 }
 

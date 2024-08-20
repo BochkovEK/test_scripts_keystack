@@ -26,6 +26,7 @@ red=$(tput setaf 1)
 orange=$(tput setaf 3)
 violet=$(tput setaf 5)
 normal=$(tput sgr0)
+yellow=$(tput setaf 3)
 
 #Script_dir, current folder
 script_dir=$(dirname $0)
@@ -160,6 +161,19 @@ do
         count=$(( $count + 1 ))
 done
 
+yes_no_answer () {
+  yes_no_input=""
+  while true; do
+    read -p $1 yn
+    yn=${yn:-"Yes"}
+    echo $yn
+    case $yn in
+        [Yy]* ) yes_no_input="true"; break;;
+        [Nn]* ) yes_no_input="false"; break ;;
+        * ) echo "Please answer yes or no.";;
+    esac
+  done
+}
 
 # Check openrc file
 check_and_source_openrc_file () {
@@ -206,11 +220,34 @@ check_wget () {
   #mock test
   #command_exist=""
   if [ -z $command_exist ]; then
-    echo -e "\033[31mwget not installed\033[0m
-For sberlinux 9.3.3 try these commands:
-  yum install -y wget
-"
-    exit 1
+    yes_no_answer "Do you want to try to install wget [Yes]: "
+    if [ "$yes_no_input" = "true" ]; then
+      [[ -f /etc/os-release ]] && os=$({ . /etc/os-release; echo ${ID,,}; })
+      case $os in
+        sberlinux)
+          yum install -y wget
+          check_command wget
+          if [ -z $command_exist ]; then
+            echo "For sberlinux try these commands:"
+            echo "yum install -y wget"
+            printf "%s\n" "${red}wget not installed - error${normal}"
+            exist 1
+          else
+            printf "%s\n" "${green}'wget' command is available - success${normal}"
+          fi
+          ;;
+          ubuntu)
+            echo "Coming soon..."
+            ;;
+          *)
+            echo "There is no provision for wget to be installed on the $os operating system."
+            ;;
+        esac
+    else
+      exit 1
+    fi
+  else
+    printf "%s\n" "${green}'wget' command is available - success${normal}"
   fi
 }
 
