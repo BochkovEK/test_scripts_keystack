@@ -37,12 +37,15 @@ check_openstack_cli () {
       case $os in
         sberlinux)
           yum install -y python3-pip
+          python3 -m pip install -i https://pypi.org/simple/ python-openstackclient==6.2.0
+#          python3 -m pip install openstackclient
           python3 -m pip install openstackclient
           path_sting_in_bashrc=$(cat $HOME/.bashrc|grep 'export PATH=\$PATH:/usr/local/bin')
           if [ -f /usr/local/bin/openstack ]; then
             if [ -z $path_sting_in_bashrc ]; then
               echo "export PATH=\$PATH:/usr/local/bin" >> $HOME/.bashrc
             fi
+            echo
             printf "%s\n" "${yellow}You will need to source your .bashrc or logout/login to openstack installation complete${normal}"
             exit 1
           else

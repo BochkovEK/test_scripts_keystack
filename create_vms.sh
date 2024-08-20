@@ -37,7 +37,7 @@ CIRROS_IMAGE_NAME="cirros-0.6.2-x86_64-disk"
 
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
 [[ -z $VM_QTY ]] && VM_QTY="1"
-[[ -z $IMAGE ]] && IMAGE="ubuntu-20.04-server-cloudimg-amd64"
+[[ -z $IMAGE ]] && IMAGE=$UBUNTU_IMAGE_NAME
 [[ -z $FLAVOR ]] && FLAVOR="4c-4r"
 [[ -z $KEY_NAME ]] && KEY_NAME="key_test"
 [[ -z $HYPERVISOR_HOSTNAME ]] && HYPERVISOR_HOSTNAME=""
@@ -241,7 +241,7 @@ VMs will be created with the following parameters:
 }
 
 #Check Hypervizor
-chech_hv () {
+check_hv () {
   echo "Check hypervisors..."
   if [ -z $HYPERVISOR_HOSTNAME ]; then
     echo "Hypervisor is not defined. VMs will be created on different hypervisors"
@@ -664,7 +664,7 @@ check_and_source_openrc_file
 check_wget
 output_of_initial_parameters
 
-chech_hv
+check_hv
 check_project
 check_and_add_secur_group
 [[ ! $DONT_CHECK = "true" ]] && \

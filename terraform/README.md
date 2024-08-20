@@ -16,7 +16,7 @@
   - <details>
     <summary>Network (<b>pub_net</b>)</summary>
 
-    1. Define <b>CIDR</b> and <b>GATEWAY</b> (for itkey stands):
+    1. Define <b>CIDR</b> and <b>GATEWAY</b> (for itkey stands on LCM or jump host):
 
            CIDR=$(ip r|grep "dev external proto kernel scope"| awk '{print $1}');
            last_digit=$(echo $CIDR | sed --regexp-extended 's/([0-9]+\.[0-9]+\.[0-9]+\.)|(\/[0-9]+)//g');
@@ -38,12 +38,12 @@
             Example:
 
             if CIDR 10.224.130.0/27
-            allocation_start = "10.224.130.10"
-            allocation_end   = "10.224.128.30"
+            allocation_start="10.224.130.10"
+            allocation_end="10.224.128.30"
     3. Create network and subnet:
      
            openstack network create --external --share --provider-network-type flat --provider-physical-network physnet1 pub_net;
-           openstack subnet create --subnet-range $CIDR --network pub_net --dhcp --gateway $GATEWAY --allocation-pool start=<start>,end=<end> pub_subnet
+           openstack subnet create --subnet-range $CIDR --network pub_net --dhcp --gateway $GATEWAY --allocation-pool start=$allocation_start,end=$allocation_end pub_subnet
 
     </details>
   - <details>
