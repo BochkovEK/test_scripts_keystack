@@ -1,8 +1,8 @@
 resource "openstack_compute_flavor_v2" "flavor" {
   flavor_id = var.flavor_name
   name      = var.flavor_name
-  vcpus     = "1"
-  ram       = "1024"
+  vcpus     = "2"
+  ram       = "2048"
   disk      = "0"
   is_public = "true"
 }

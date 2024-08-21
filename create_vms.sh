@@ -26,6 +26,7 @@ red=$(tput setaf 1)
 orange=$(tput setaf 3)
 violet=$(tput setaf 5)
 normal=$(tput sgr0)
+yellow=$(tput setaf 3)
 
 #Script_dir, current folder
 script_dir=$(dirname $0)
@@ -37,7 +38,7 @@ CIRROS_IMAGE_NAME="cirros-0.6.2-x86_64-disk"
 
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
 [[ -z $VM_QTY ]] && VM_QTY="1"
-[[ -z $IMAGE ]] && IMAGE="ubuntu-20.04-server-cloudimg-amd64"
+[[ -z $IMAGE ]] && IMAGE=$UBUNTU_IMAGE_NAME
 [[ -z $FLAVOR ]] && FLAVOR="4c-4r"
 [[ -z $KEY_NAME ]] && KEY_NAME="key_test"
 [[ -z $HYPERVISOR_HOSTNAME ]] && HYPERVISOR_HOSTNAME=""
@@ -57,109 +58,120 @@ CIRROS_IMAGE_NAME="cirros-0.6.2-x86_64-disk"
 [[ -z $WAIT_FOR_CREATED ]] && WAIT_FOR_CREATED="true"
 #======================
 
-while [ -n "$1" ]
-do
-    case "$1" in
-        --help) echo -E "
-        -orc          -openrc_path  <openrc_path>
-        -q,           -qty          <number_of_VMs>
-        -i,           -image        <image_name>
-        -f,           -flavor       <flavor_name>
-        -k,           -key          <key_name>
-        -hv,          -hypervisor   <hypervisor_name>
-        -net,         -network      <network_name>
-        -v,           -volume_size  <volume_size_in_GB>
-        -n,           -name         <vm_base_name>
-        -p,           -project      <project_id>
-        -t                          <time_out_between_VM_create>
-        -dont_check                 disable resource availability checks (without value)
-        -dont_ask                   all actions will be performed automatically (without value)
-        -add                        <add command key>
-        -b            -batch        creating VMs without a timeout (without value)
-        -debug                      enabled debug output (without parameter)
-        -wait                       wait for vms created <true\false>
-        "
-          exit 0
-          break ;;
-              -t|-timeout) TIMEOUT_BEFORE_NEXT_CREATION="$2"
-                echo "Found the -timeout <time_out_between_VM_create> option, with parameter value $TIMEOUT_BEFORE_NEXT_CREATION"
-          shift ;;
-        -q|-qty) qty="$2"
-          echo "Found the -qty <number_of_VMs> option, with parameter value $qty"
-          VM_QTY=$qty
-          shift ;;
-        -i|-image) image="$2"
-          echo "Found the -image <image_name> option, with parameter value $image"
-          IMAGE=$image
-          shift ;;
-        -f|-flavor) flavor="$2"
-          echo "Found the -flavor <falvor_name> option, with parameter value $flavor"
-          FLAVOR=$flavor
-          shift;;
-        -k|-key) key_name="$2"
-          echo "Found the -key_name <key_name> option, with parameter value $key_name"
-          KEY_NAME=$key_name
-          shift;;
-        -hv|-hypervisor) hyper_name="$2"
-          echo "Found the -hyper_name <hypervisor_name> option, with parameter value $hyper_name"
-          HYPERVISOR_HOSTNAME=$hyper_name
-          shift ;;
-        -p|-project) project="$2"
-          echo "Found the -project <project_id> option, with parameter value $project"
-          PROJECT=$project
-          shift ;;
-        -net|-network) network="$2"
-          echo "Found the -network <network_name> option, with parameter value $network"
-          NETWORK=$network
-          shift ;;
-        -v|volume_size) volume_size="$2"
-          echo "Found the -volume_size <volume_size_in_GB> option, with parameter value $volume_size"
-          VOLUME_SIZE=$volume_size
-          shift ;;
-        -orc|-openrc_path) openrc_path="$2"
-          echo "Found the -openrc_path <openrc_path> option, with parameter value $openrc_path"
-          OPENRC_PATH=$openrc_path
-          shift ;;
-        -n|-name) name="$2"
-          echo "Found the -name <vm_base_name> option, with parameter value $name"
-          VM_BASE_NAME=$name
-          shift ;;
-        -dont_check) DONT_CHECK=true
-          echo "Found the -dont_check. Resource availability checks are disabled"
-          ;;
-        -dont_ask) DONT_ASK=true
-          echo "Found the -dont_ask. All actions will be performed automatically"
-          ;;
-        -b|-batch) batch=true
-          echo "Found the -batch. VMs will be created without a timeout"
-          BATCH=$batch
-          ;;
-        -add) add_key="$2"
-          echo "Found the -add <add command key> option, with parameter value $add_key"
-          ADD_KEY=$add_key
-          shift ;;
-        -wait) wait_for_created="$2"
-          echo "Found the -wait <true/false> option, with parameter value $wait_for_created"
-          WAIT_FOR_CREATED=$wait_for_created
-          shift ;;
-        -debug) DEBUG="true"
-                echo "Found the -debug, with parameter value $DEBUG"
-          ;;
-        --) shift
-          break ;;
-        *) echo "$1 is not an option";;
-        esac
-        shift
+while [ -n "$1" ]; do
+  case "$1" in
+    --help) echo -E "
+    -orc          -openrc_path  <openrc_path>
+    -q,           -qty          <number_of_VMs>
+    -i,           -image        <image_name>
+    -f,           -flavor       <flavor_name>
+    -k,           -key          <key_name>
+    -hv,          -hypervisor   <hypervisor_name>
+    -net,         -network      <network_name>
+    -v,           -volume_size  <volume_size_in_GB>
+    -n,           -name         <vm_base_name>
+    -p,           -project      <project_id>
+    -t                          <time_out_between_VM_create>
+    -dont_check                 disable resource availability checks (without value)
+    -dont_ask                   all actions will be performed automatically (without value)
+    -add                        <add command key>
+    -b            -batch        creating VMs without a timeout (without value)
+    -debug                      enabled debug output (without parameter)
+    -wait                       wait for vms created <true\false>
+    "
+      exit 0
+      break ;;
+          -t|-timeout) TIMEOUT_BEFORE_NEXT_CREATION="$2"
+            echo "Found the -timeout <time_out_between_VM_create> option, with parameter value $TIMEOUT_BEFORE_NEXT_CREATION"
+      shift ;;
+    -q|-qty) qty="$2"
+      echo "Found the -qty <number_of_VMs> option, with parameter value $qty"
+      VM_QTY=$qty
+      shift ;;
+    -i|-image) image="$2"
+      echo "Found the -image <image_name> option, with parameter value $image"
+      IMAGE=$image
+      shift ;;
+    -f|-flavor) flavor="$2"
+      echo "Found the -flavor <falvor_name> option, with parameter value $flavor"
+      FLAVOR=$flavor
+      shift;;
+    -k|-key) key_name="$2"
+      echo "Found the -key_name <key_name> option, with parameter value $key_name"
+      KEY_NAME=$key_name
+      shift;;
+    -hv|-hypervisor) hyper_name="$2"
+      echo "Found the -hyper_name <hypervisor_name> option, with parameter value $hyper_name"
+      HYPERVISOR_HOSTNAME=$hyper_name
+      shift ;;
+    -p|-project) project="$2"
+      echo "Found the -project <project_id> option, with parameter value $project"
+      PROJECT=$project
+      shift ;;
+    -net|-network) network="$2"
+      echo "Found the -network <network_name> option, with parameter value $network"
+      NETWORK=$network
+      shift ;;
+    -v|volume_size) volume_size="$2"
+      echo "Found the -volume_size <volume_size_in_GB> option, with parameter value $volume_size"
+      VOLUME_SIZE=$volume_size
+      shift ;;
+    -orc|-openrc_path) openrc_path="$2"
+      echo "Found the -openrc_path <openrc_path> option, with parameter value $openrc_path"
+      OPENRC_PATH=$openrc_path
+      shift ;;
+    -n|-name) name="$2"
+      echo "Found the -name <vm_base_name> option, with parameter value $name"
+      VM_BASE_NAME=$name
+      shift ;;
+    -dont_check) DONT_CHECK=true
+      echo "Found the -dont_check. Resource availability checks are disabled"
+      ;;
+    -dont_ask) DONT_ASK=true
+      echo "Found the -dont_ask. All actions will be performed automatically"
+      ;;
+    -b|-batch) batch=true
+      echo "Found the -batch. VMs will be created without a timeout"
+      BATCH=$batch
+      ;;
+    -add) add_key="$2"
+      echo "Found the -add <add command key> option, with parameter value $add_key"
+      ADD_KEY=$add_key
+      shift ;;
+    -wait) wait_for_created="$2"
+      echo "Found the -wait <true/false> option, with parameter value $wait_for_created"
+      WAIT_FOR_CREATED=$wait_for_created
+      shift ;;
+    -debug) DEBUG="true"
+            echo "Found the -debug, with parameter value $DEBUG"
+      ;;
+    --) shift
+      break ;;
+    *) echo "$1 is not an option";;
+  esac
+  shift
 done
 
 # Define parameters
 count=1
-for param in "$@"
-do
-        echo "Parameter #$count: $param"
-        count=$(( $count + 1 ))
+for param in "$@"; do
+  echo "Parameter #$count: $param"
+  count=$(( $count + 1 ))
 done
 
+yes_no_answer () {
+  yes_no_input=""
+  while true; do
+    read -p "Do you want to try to install [Yes]: " yn
+    yn=${yn:-"Yes"}
+    echo $yn
+    case $yn in
+        [Yy]* ) yes_no_input="true"; break;;
+        [Nn]* ) yes_no_input="false"; break ;;
+        * ) echo "Please answer yes or no.";;
+    esac
+  done
+}
 
 # Check openrc file
 check_and_source_openrc_file () {
@@ -206,11 +218,35 @@ check_wget () {
   #mock test
   #command_exist=""
   if [ -z $command_exist ]; then
-    echo -e "\033[31mwget not installed\033[0m
-For sberlinux 9.3.3 try these commands:
-  yum install -y wget
-"
-    exit 1
+    printf "%s\n" "${yellow}'wget' not installed!${normal}"
+    yes_no_answer
+    if [ "$yes_no_input" = "true" ]; then
+      [[ -f /etc/os-release ]] && os=$({ . /etc/os-release; echo ${ID,,}; })
+      case $os in
+        sberlinux)
+          yum install -y wget
+          check_command wget
+          if [ -z $command_exist ]; then
+            echo "For sberlinux try these commands:"
+            echo "yum install -y wget"
+            printf "%s\n" "${red}wget not installed - error${normal}"
+            exit 1
+          else
+            printf "%s\n" "${green}'wget' command is available - success${normal}"
+          fi
+          ;;
+          ubuntu)
+            echo "Coming soon..."
+            ;;
+          *)
+            echo "There is no provision for wget to be installed on the $os operating system."
+            ;;
+        esac
+    else
+      exit 1
+    fi
+  else
+    printf "%s\n" "${green}'wget' command is available - success${normal}"
   fi
 }
 
@@ -241,7 +277,7 @@ VMs will be created with the following parameters:
 }
 
 #Check Hypervizor
-chech_hv () {
+check_hv () {
   echo "Check hypervisors..."
   if [ -z $HYPERVISOR_HOSTNAME ]; then
     echo "Hypervisor is not defined. VMs will be created on different hypervisors"
@@ -664,7 +700,7 @@ check_and_source_openrc_file
 check_wget
 output_of_initial_parameters
 
-chech_hv
+check_hv
 check_project
 check_and_add_secur_group
 [[ ! $DONT_CHECK = "true" ]] && \

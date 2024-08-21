@@ -32,7 +32,7 @@ do
         To deploy dnsmasq on DNS server:
         1) Edit $dns_ip_mapping file like /etc/hosts to mapping <ip> <nameserver>
 
-        cat <<-EOF > ~/test_scripts_keystack/dnsmasq/dns_ip_mapping.txt
+cat <<-EOF > ~/test_scripts_keystack/dnsmasq/dns_ip_mapping.txt
 # ----- ADD from deploy_dnsmasq_service.sh -----
 10.224.129.227 int.ebochkov.test.domain
 10.224.129.228 ext.ebochkov.test.domain
@@ -43,9 +43,14 @@ do
 
 10.224.129.235 ebochkov-keystack-lcm-01 lcm-01 lcm-nexus.test.domain netbox.test.domain gitlab.test.domain vault.test.domain
 10.224.129.246 ebochkov-keystack-net-01 net-01
+10.224.130.27 ebochkov-keystack-add_vm-01 nexus.test.domain
 EOF
 
-        2) bash $HOME/test_script_keystack/dnsmasq/deploy_dnsmasq_service.sh
+        2) permissionless access to all stand nodes is required
+          The script parses the $dns_ip_mapping file for the presence of the following pattern:
+           $nodes_to_find
+           and edits /etc/resolv.conf on all of them
+        3) bash $script_dir/deploy_dnsmasq_service.sh
         "
           exit 0
           break ;;

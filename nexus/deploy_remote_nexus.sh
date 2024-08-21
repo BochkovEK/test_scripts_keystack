@@ -27,6 +27,45 @@ script_dir=$(dirname "$script_file_path")
 parentdir=$(dirname "$script_dir")
 #parentdir=$(builtin cd $script_dir; pwd)
 
+while [ -n "$1" ]; do
+  case "$1" in
+    --help) echo -E "
+      Remote nexus deploy
+        1) Change certs_envs:
+          vi $HOME/test_scripts_keystack/self_signed_certs/certs_envs
+        2) Deploy nexus:
+          bash $HOME/test_scripts_keystack/nexus/deploy_remote_nexus.sh
+        3) For installer.sh use remote nexus copy $HOME/certs to $HOME/installer/ on lcm:
+          scp -r $HOME/certs $lcm:$HOME/installer/
+
+      Add keys:
+        --debug       - enable debug
+      "
+      exit 0
+      break ;;
+    --debug) DEBUG="true"
+      shift ;;
+    --) shift
+      break ;;
+    *) echo "$1 is not an option";;
+  esac
+  shift
+done
+
+#source $parentdir/self_signed_certs/certs_envs
+
+#Generating certs
+bash $parentdir/self_signed_certs/generate_self_signed_certs.sh
+
+[ "$DEBUG" = true ] && echo -e "
+  [DEBUG]
+  script_dir: $script_dir
+  parentdir: $parentdir
+  CERTS_DIR: $CERTS_DIR
+  DOMAIN: $DOMAIN
+  REMOTE_NEXUS_NAME: $REMOTE_NEXUS_NAME
+"
+
 #Install docker if need
 if ! command -v docker &> /dev/null; then
   is_ubuntu=$(cat /etc/os-release|grep ubuntu)
@@ -41,22 +80,6 @@ if ! command -v docker &> /dev/null; then
   fi
 fi
 
-source $parentdir/self_signed_certs/certs_envs
-
-  [ "$DEBUG" = true ] && echo -e "
-  [DEBUG]
-  script_dir: $script_dir
-  parentdir: $parentdir
-  CERTS_DIR: $CERTS_DIR
-  OUTPUT_CERTS_DIR: $OUTPUT_CERTS_DIR
-  DOMAIN: $DOMAIN
-  CA_IP: $CA_IP
-  LCM_NEXUS_NAME: $LCM_NEXUS_NAME
-  REMOTE_NEXUS_NAME: $REMOTE_NEXUS_NAME
-  LCM_GITLAB_NAME: $LCM_GITLAB_NAME
-  LCM_VAULT_NAME: $LCM_VAULT_NAME
-  LCM_NETBOX_NAME: $LCM_NETBOX_NAME
-  "
 
 #Change in envs LCM_NEXUS_NAME var
 #lcm_nexus_name_string=$(cat $parentdir/self_signed_certs/certs_envs|grep -m 1 "LCM_NEXUS_NAME")
@@ -77,8 +100,6 @@ if [ -z "$nexus_string_exists" ]; then
   sed -i "s/127.0.0.1 localhost/127.0.0.1 localhost $REMOTE_NEXUS_NAME.$DOMAIN/" /etc/hosts
 fi
 
-#Generating certs
-bash $parentdir/self_signed_certs/generate_self_signed_certs.sh
 
 #Change nginx conf
 echo "Changing nginx conf..."
@@ -86,8 +107,10 @@ sed -i "s/DOMAIN/$DOMAIN/g" $script_dir/nginx_https.conf
 sed -i "s/LCM_NEXUS_NAME/$REMOTE_NEXUS_NAME/g" $script_dir/nginx_https.conf
 #sed -i -e "s@OUTPUT_CERTS_DIR@$OUTPUT_CERTS_DIR@g" $script_dir/nginx_https.conf
 
+
 #Conatiners up
 docker compose -f $script_dir/docker-compose.yaml up -d
+
 
 echo "${yellow}To get initial nexus admin password:${reset}"
 echo "docker exec -it nexus cat /nexus-data/admin.password"

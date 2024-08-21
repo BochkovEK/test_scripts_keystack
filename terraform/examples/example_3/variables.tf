@@ -30,5 +30,5 @@ variable "qty" {
 }
 
 variable "flavor_name" {
-  default = "g1-cpu-1-1_HA_test"
+  default = "cpu-2-ram-2_HA_test"
 }
