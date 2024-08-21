@@ -45,6 +45,7 @@ cat <<-EOF > ~/test_scripts_keystack/dnsmasq/dns_ip_mapping.txt
 10.224.129.246 ebochkov-keystack-net-01 net-01
 10.224.130.27 ebochkov-keystack-add_vm-01 nexus.test.domain
 EOF
+
         2) permissionless access to all stand nodes is required
           The script parses the $dns_ip_mapping file for the presence of the following pattern:
            $nodes_to_find

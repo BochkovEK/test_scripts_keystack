@@ -2,6 +2,11 @@
 export CERTS_DIR=$HOME/central_auth_service
 export OUTPUT_CERTS_DIR=$HOME/certs
 export DOMAIN=test.domain
+export REGION_NAME=ebochkov
+export INTERNAL_FQDN=int.$REGION_NAME.$DOMAIN
+export INTERNAL_VIP=""
+export EXTERNAL_FQDN=ext.$REGION_NAME.$DOMAIN
+export EXTERNAL_VIP=""
 export CA_IP=10.224.129.234
 export LCM_GITLAB_NAME=gitlab
 export LCM_NEXUS_NAME=lcm-nexus
