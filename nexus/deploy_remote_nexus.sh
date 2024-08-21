@@ -52,7 +52,7 @@ while [ -n "$1" ]; do
   shift
 done
 
-source $parentdir/self_signed_certs/certs_envs
+#source $parentdir/self_signed_certs/certs_envs
 
 #Generating certs
 bash $parentdir/self_signed_certs/generate_self_signed_certs.sh

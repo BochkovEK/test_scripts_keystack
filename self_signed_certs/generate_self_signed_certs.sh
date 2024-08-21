@@ -30,23 +30,7 @@ script_dir=$(dirname $0)
 yellow=`tput setaf 3`
 reset=`tput sgr0`
 
-echo -E "
-  env list:
-  CERTS_DIR:        $CERTS_DIR
-  OUTPUT_CERTS_DIR: $OUTPUT_CERTS_DIR
-  DOMAIN:           $DOMAIN
-  REGION_NAME:      $REGION_NAME
-  INTERNAL_FQDN:    $INTERNAL_FQDN
-  INTERNAL_VIP:     $INTERNAL_VIP
-  EXTERNAL_FQDN:    $EXTERNAL_FQDN
-  EXTERNAL_VIP:     $EXTERNAL_VIP
-  CA_IP: $CA_IP
-  LCM_NEXUS_NAME: $LCM_NEXUS_NAME
-  REMOTE_NEXUS_NAME: $REMOTE_NEXUS_NAME
-  LCM_GITLAB_NAME: $LCM_GITLAB_NAME
-  LCM_VAULT_NAME: $LCM_VAULT_NAME
-  LCM_NETBOX_NAME: $LCM_NETBOX_NAME
-"
+
 
 generate_certs () {
 
@@ -77,25 +61,25 @@ export REGION_NAME=${REGION_NAME:-"ebochkov"}
 
 # get internal fqdn name
 if [[ -z "${INTERNAL_FQDN}" ]]; then
-  read -rp "Enter internal fqdn [int.$REGION_NAME.$DOMAIN]: " INTERNAL_FQDN
+  read -rp "Enter internal FQDN [int.$REGION_NAME.$DOMAIN]: " INTERNAL_FQDN
 fi
 export INTERNAL_FQDN=${INTERNAL_FQDN:-"int.$REGION_NAME.$DOMAIN"}
 
 # get internal VIP name
 if [[ -z "${INTERNAL_VIP}" ]]; then
-  read -rp "Enter internal vip: " INTERNAL_VIP
+  read -rp "Enter internal VIP: " INTERNAL_VIP
 fi
 export INTERNAL_VIP=${INTERNAL_VIP}
 
 # get external fqdn name
 if [[ -z "${EXTERNAL_FQDN}" ]]; then
-  read -rp "Enter external fqdn [ext.$REGION_NAME.$DOMAIN]: " EXTERNAL_FQDN
+  read -rp "Enter external FQDN [ext.$REGION_NAME.$DOMAIN]: " EXTERNAL_FQDN
 fi
 export EXTERNAL_FQDN=${EXTERNAL_FQDN:-"ext.$REGION_NAME.$DOMAIN"}
 
 # get external VIP name
 if [[ -z "${EXTERNAL_VIP}" ]]; then
-  read -rp "Enter external vip: " EXTERNAL_VIP
+  read -rp "Enter external VIP: " EXTERNAL_VIP
 fi
 export EXTERNAL_VIP=${EXTERNAL_VIP}
 
@@ -248,5 +232,25 @@ done
 
 if [ "$yes_no_input" = "true" ]; then
   source $script_dir/certs_envs
+  echo -E "
+  env list:
+  CERTS_DIR:        $CERTS_DIR
+  OUTPUT_CERTS_DIR: $OUTPUT_CERTS_DIR
+  DOMAIN:           $DOMAIN
+  REGION_NAME:      $REGION_NAME
+  INTERNAL_FQDN:    $INTERNAL_FQDN
+  INTERNAL_VIP:     $INTERNAL_VIP
+  EXTERNAL_FQDN:    $EXTERNAL_FQDN
+  EXTERNAL_VIP:     $EXTERNAL_VIP
+  CA_IP: $CA_IP
+  LCM_NEXUS_NAME: $LCM_NEXUS_NAME
+  REMOTE_NEXUS_NAME: $REMOTE_NEXUS_NAME
+  LCM_GITLAB_NAME: $LCM_GITLAB_NAME
+  LCM_VAULT_NAME: $LCM_VAULT_NAME
+  LCM_NETBOX_NAME: $LCM_NETBOX_NAME
+"
   generate_certs
+else
+  echo "Nexus cannot be deployed without certificates"
+  exit 1
 fi

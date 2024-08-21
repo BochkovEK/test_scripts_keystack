@@ -5,16 +5,16 @@ export KS_INSTALL_HOME=""
 export KS_INSTALL_LCM_IP=""
 
 #Use remote\existing Artifactory y/n [n]:
-export KS_CLIENT_NEXUS=""
+export KS_CLIENT_NEXUS="y"
 
 #Enter the remote\existing Artifactory FQDN for the KeyStack:
-export KS_CLIENT_NEXUS_NAME=""
+export KS_CLIENT_NEXUS_NAME="remote-nexus.test.domain"
 
 #Enter the remote\existing Artifactory user name:
-export KS_CLIENT_NEXUS_ADMIN=""
+export KS_CLIENT_NEXUS_ADMIN="admin"
 
 #Enter the remote\existing Artifactory password(at least 8 characters):
-export KS_CLIENT_NEXUS_PASSWORD=""
+export KS_CLIENT_NEXUS_PASSWORD="passwordd"
 
 #Enable auth LDAP for Netbox y/n [n]:
 export KS_LDAP_NETBOX=""
@@ -77,4 +77,4 @@ export KS_VAULT_NAME=""
 export KS_NETBOX_NAME=""
 
 #Generate Self-signed certificates for KeyStack LCM services y/n [y]:
-export KS_SELF_SIG=""
+export KS_SELF_SIG="n"
