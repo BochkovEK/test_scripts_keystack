@@ -195,7 +195,7 @@ export SAN=DNS:$INTERNAL_FQDN,IP:$INTERNAL_VIP
 openssl x509 -req -in $CERTS_DIR/certs/external_VIP.csr \
         -extfile $script_dir/cert.cnf -CA $CERTS_DIR/root/ca.crt \
         -CAkey $CERTS_DIR/root/ca.key -CAcreateserial \
-        -out $CERTS_DIR/certs/external_VIP.crt -days 728 -sha256
+        -out $CERTS_DIR/certs/internal_VIP.crt -days 728 -sha256
 #===========
 #external cert
 openssl req -new -subj "/C=RU/ST=Msk/L=Moscow/O=ITKey/OU=KeyStack/CN=$EXTERNAL_FQDN" \

@@ -20,11 +20,12 @@ yellow=`tput setaf 3`
 reset=`tput sgr0`
 
 [[ -z $DEBUG ]] && DEBUG="true"
+[[ -z $ENV_FILE ]] && ENV_FILE="self_signed_certs/certs_envs"
 
 #Script_dir, current folder
 script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
-parentdir=$(dirname "$script_dir")
+parent_dir=$(dirname "$script_dir")
 #parentdir=$(builtin cd $script_dir; pwd)
 
 while [ -n "$1" ]; do
@@ -36,7 +37,7 @@ while [ -n "$1" ]; do
         2) Deploy nexus:
           bash $HOME/test_scripts_keystack/nexus/deploy_remote_nexus.sh
         3) For installer.sh use remote nexus copy $HOME/certs to $HOME/installer/ on lcm:
-          scp -r $HOME/certs $lcm:$HOME/installer/
+          scp -r $HOME/certs \$lcm:$HOME/installer/
 
       Add keys:
         --debug       - enable debug
@@ -55,12 +56,35 @@ done
 #source $parentdir/self_signed_certs/certs_envs
 
 #Generating certs
-bash $parentdir/self_signed_certs/generate_self_signed_certs.sh
+bash $parent_dir/self_signed_certs/generate_self_signed_certs.sh
 
-[ "$DEBUG" = true ] && echo -e "
-  [DEBUG]
+if [ -f "$parent_dir/$ENV_FILE" ]; then
+    echo "$FILE file exists"
+    source $parent_dir/$ENV_FILE
+fi
+
+# get Central Authentication Service folder
+if [[ -z "${CERTS_DIR}" ]]; then
+  read -rp "Enter Central Authentication Service folder [$HOME/central_auth_service]: " CERTS_DIR
+fi
+export CERTS_DIR=${CERTS_DIR:-"$HOME/central_auth_service"}
+
+# get domain name
+if [[ -z "${DOMAIN}" ]]; then
+  read -rp "Enter certs output folder for installer [test.domain]: " DOMAIN
+fi
+export DOMAIN=${DOMAIN:-"test.domain"}
+
+# get Remote Nexus domain nama
+if [[ -z "${REMOTE_NEXUS_NAME}" ]]; then
+  read -rp "Enter the Remote Nexus domain name [remote-nexus]: " REMOTE_NEXUS_NAME
+fi
+export REMOTE_NEXUS_NAME=${REMOTE_NEXUS_NAME:-"remote-nexus"}
+
+echo -E "
+envs list:
   script_dir:         $script_dir
-  parent_dir:         $parentdir
+  parent_dir:         $parent_dir
   CERTS_DIR:          $CERTS_DIR
   DOMAIN:             $DOMAIN
   REMOTE_NEXUS_NAME:  $REMOTE_NEXUS_NAME
