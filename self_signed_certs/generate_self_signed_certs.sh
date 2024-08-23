@@ -31,7 +31,6 @@ yellow=`tput setaf 3`
 reset=`tput sgr0`
 
 
-
 generate_certs () {
 
 echo "Generating certification..."
@@ -124,6 +123,25 @@ if [[ -z "${INTERNAL_VIP}" ]] || [[ -z "${EXTERNAL_VIP}" ]]; then
   exit 1
 fi
 
+echo -e "
+  CERTS_DIR:          $CERTS_DIR
+  OUTPUT_CERTS_DIR:   $OUTPUT_CERTS_DIR
+  DOMAIN:             $DOMAIN
+  REGION_NAME:        $REGION_NAME
+  INTERNAL_FQDN:      $INTERNAL_FQDN
+  INTERNAL_VIP:       $INTERNAL_VIP
+  EXTERNAL_FQDN:      $EXTERNAL_FQDN
+  EXTERNAL_VIP:       $EXTERNAL_VIP
+  CA_IP:              $CA_IP
+  LCM_NEXUS_NAME:     $LCM_NEXUS_NAME
+  REMOTE_NEXUS_NAME:  $REMOTE_NEXUS_NAME
+  LCM_GITLAB_NAME:    $LCM_GITLAB_NAME
+  LCM_VAULT_NAME:     $LCM_VAULT_NAME
+  LCM_NETBOX_NAME:    $LCM_NETBOX_NAME
+"
+
+read -p "Press enter to continue: "
+
 #Export envs...
 cat > $script_dir/certs_envs <<-END
 export CERTS_DIR=$CERTS_DIR
@@ -141,7 +159,6 @@ export LCM_GITLAB_NAME=$LCM_GITLAB_NAME
 export LCM_VAULT_NAME=$LCM_VAULT_NAME
 export LCM_NETBOX_NAME=$LCM_NETBOX_NAME
 END
-
 
 
 # Create Wildcard

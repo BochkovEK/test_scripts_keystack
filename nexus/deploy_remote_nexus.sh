@@ -59,12 +59,14 @@ bash $parentdir/self_signed_certs/generate_self_signed_certs.sh
 
 [ "$DEBUG" = true ] && echo -e "
   [DEBUG]
-  script_dir: $script_dir
-  parentdir: $parentdir
-  CERTS_DIR: $CERTS_DIR
-  DOMAIN: $DOMAIN
-  REMOTE_NEXUS_NAME: $REMOTE_NEXUS_NAME
+  script_dir:         $script_dir
+  parent_dir:         $parentdir
+  CERTS_DIR:          $CERTS_DIR
+  DOMAIN:             $DOMAIN
+  REMOTE_NEXUS_NAME:  $REMOTE_NEXUS_NAME
 "
+
+read -p "Press enter to continue: "
 
 #Install docker if need
 if ! command -v docker &> /dev/null; then
