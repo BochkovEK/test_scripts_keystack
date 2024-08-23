@@ -230,10 +230,10 @@ cp $CERTS_DIR/certs/cert.crt $OUTPUT_CERTS_DIR/$LCM_NETBOX_NAME.crt;
 cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/$LCM_NETBOX_NAME.key
 
 #external internal pem
-cat $CERTS_DIR/certs/external_VIP.crt $CERTS_DIR/root/ca.crt > $CERTS_DIR/certs/haproxy_pem
-cat $CERTS_DIR/certs/internal_VIP.crt $CERTS_DIR/root/ca.crt > $CERTS_DIR/certs/internal_haproxy_pem
+cat $CERTS_DIR/certs/external_VIP.crt $CERTS_DIR/certs/cert.key $CERTS_DIR/root/ca.crt > $CERTS_DIR/certs/haproxy_pem
+cat $CERTS_DIR/certs/internal_VIP.crt $CERTS_DIR/certs/cert.key $CERTS_DIR/root/ca.crt > $CERTS_DIR/certs/haproxy_internal_pem
 cp $CERTS_DIR/certs/haproxy_pem $OUTPUT_CERTS_DIR/haproxy_pem
-cp $CERTS_DIR/certs/internal_haproxy_pem $OUTPUT_CERTS_DIR/internal_haproxy_pem
+cp $CERTS_DIR/certs/haproxy_internal_pem $OUTPUT_CERTS_DIR/haproxy_internal_pem
 }
 
 while true; do

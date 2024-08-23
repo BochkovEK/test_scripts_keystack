@@ -22,6 +22,7 @@ normal=$(tput sgr0)
 [[ -z $SENDENV ]] && SENDENV=""
 [[ -z $NODES ]] && NODES=()
 [[ -z $PING ]] && PING="false"
+[[ -z $DEBUG ]] && DEBUG="false"
 #======================
 
 note_type_func () {
@@ -51,6 +52,32 @@ define_parameters () {
   [ "$count" = 1 ] && [[ -n $1 ]] && { COMMAND=$1; echo "Command parameter found with value $COMMAND"; }
 }
 
+check_connection () {
+  for host in "${NODES[@]}"; do
+    echo "host: $host"
+    sleep 1
+    if ping -c 2 $host &> /dev/null; then
+        printf "%40s\n" "${green}There is a connection with $host - success${normal}"
+    else
+        printf "%40s\n" "${red}No connection with $IP - error!${normal}"
+    fi
+  done
+}
+
+start_commands_on_nodes () {
+  [ "$DEBUG" = true ] && echo -e "
+  [DEBUG]
+  NODES: $NODES
+  "
+  for host in "${NODES[@]}"; do
+    echo "Start command on ${host}"
+    ssh -o StrictHostKeyChecking=no -t $SENDENV "$host" ${COMMAND}
+#    ssh -o StrictHostKeyChecking=no -t $host << EOF
+#$COMMAND
+#EOF
+  done
+}
+
 count=1
 while [ -n "$1" ]; do
   case "$1" in
@@ -60,6 +87,7 @@ while [ -n "$1" ]; do
       -c,   -command        \"<command>\"
       -nt,  -type_of_nodes  <type_of_nodes> 'ctrl', 'comp', 'net'
       -p,   -ping           ping before execution command
+      --debug               debug mode
       Remove all containers on all nodes:
         bash command_on_nodes.sh -c 'docker stop $(docker ps -a -q)'
         bash command_on_nodes.sh -c 'docker system prune -af'
@@ -85,6 +113,10 @@ while [ -n "$1" ]; do
       PING="true"
       echo "Found the -ping option"
       ;;
+    --debug)
+      DEBUG="true"
+      echo "Found the --debug parameter"
+      shift ;;
     --) shift
       break ;;
     *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
@@ -95,27 +127,7 @@ done
 [[ -z ${NODES[0]} ]] && { srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}'); for i in $srv; do NODES+=("$i"); done; }
 echo "${NODES[*]}"
 
-check_connection () {
-  for host in "${NODES[@]}"; do
-    echo "host: $host"
-    sleep 1
-    if ping -c 2 $host &> /dev/null; then
-        printf "%40s\n" "${green}There is a connection with $host - success${normal}"
-    else
-        printf "%40s\n" "${red}No connection with $IP - error!${normal}"
-    fi
-  done
-}
 
-start_commands_on_nodes () {
-  for host in "${NODES[@]}"; do
-    echo "Start command on ${host}"
-    ssh -o StrictHostKeyChecking=no -t $SENDENV "$host" ${COMMAND}
-#    ssh -o StrictHostKeyChecking=no -t $host << EOF
-#$COMMAND
-#EOF
-  done
-}
 
 #[ "$PING" = true ] && { check_connection; }
 start_commands_on_nodes
