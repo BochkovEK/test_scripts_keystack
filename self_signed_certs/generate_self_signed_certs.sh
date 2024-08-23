@@ -208,6 +208,17 @@ openssl x509 -req -in $CERTS_DIR/certs/external_VIP.csr \
         -CAkey $CERTS_DIR/root/ca.key -CAcreateserial \
         -out $CERTS_DIR/certs/external_VIP.crt -days 728 -sha256
 #===========
+# backend cert
+openssl req -new -subj "/C=RU/ST=Msk/L=Moscow/O=ITKey/OU=KeyStack" \
+  -key $CERTS_DIR/certs/cert.key \
+  -out $CERTS_DIR/certs/backend.csr
+export SAN=IP:$EXTERNAL_VIP,IP:$INTERNAL_VIP
+openssl x509 -req -in ~/certs/backend.csr \
+  -extfile $script_dir/cert.cnf \
+  -CA $CERTS_DIR/root/ca.crt \
+  -CAkey $CERTS_DIR/root/ca.key \
+  -CAcreateserial -out $CERTS_DIR/certs/backend.crt -days 728 -sha256
+#============
 
 cat $CERTS_DIR/certs/cert.crt $CERTS_DIR/root/ca.crt > $CERTS_DIR/certs/chain-ca.pem
 
@@ -234,6 +245,11 @@ cat $CERTS_DIR/certs/external_VIP.crt $CERTS_DIR/certs/cert.key $CERTS_DIR/root/
 cat $CERTS_DIR/certs/internal_VIP.crt $CERTS_DIR/certs/cert.key $CERTS_DIR/root/ca.crt > $CERTS_DIR/certs/haproxy_internal_pem
 cp $CERTS_DIR/certs/haproxy_pem $OUTPUT_CERTS_DIR/haproxy_pem
 cp $CERTS_DIR/certs/haproxy_internal_pem $OUTPUT_CERTS_DIR/haproxy_internal_pem
+
+#backend_pem
+cp $CERTS_DIR/certs/backend.crt $OUTPUT_CERTS_DIR/backend_pem
+cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/backend_key_pem
+
 }
 
 while true; do
