@@ -68,10 +68,15 @@ check_connection () {
 }
 
 start_commands_on_nodes () {
-  [ "$DEBUG" = true ] && echo -e "
+  if [ "$DEBUG" = true ]; then
+    echo -e "
   [DEBUG]
-  NODES: $NODES
-  "
+  NODES:
+    "
+    for host in "${NODES[@]}"; do
+      echo $host
+    done
+  fi
   for host in "${NODES[@]}"; do
     echo "Start command on ${host}"
     ssh -o StrictHostKeyChecking=no -t $SENDENV "$host" ${COMMAND}
