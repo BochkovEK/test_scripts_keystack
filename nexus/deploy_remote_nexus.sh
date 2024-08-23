@@ -58,8 +58,10 @@ done
 #Generating certs
 bash $parent_dir/self_signed_certs/generate_self_signed_certs.sh
 
+echo "Deploy Nexus"
+
 if [ -f "$parent_dir/$ENV_FILE" ]; then
-    echo "$FILE file exists"
+    echo "$ENV_FILE file exists"
     source $parent_dir/$ENV_FILE
 fi
 
