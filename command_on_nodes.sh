@@ -6,9 +6,9 @@
 # example nodes list define
 # NODES=("<IP_1>" "<IP_2>" "<IP_3>" "...")
 
-comp_pattern="\-comp\-..$"
-ctrl_pattern="\-ctrl\-..$"
-net_pattern="\-net\-..$"
+comp_pattern="\-comp\-.."#$"
+ctrl_pattern="\-ctrl\-.."#$"
+net_pattern="\-net\-.."#$"
 nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
 
 
@@ -125,9 +125,7 @@ while [ -n "$1" ]; do
 done
 
 [[ -z ${NODES[0]} ]] && { srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}'); for i in $srv; do NODES+=("$i"); done; }
-echo "${NODES[*]}"
-
-
+#echo "${NODES[*]}"
 
 #[ "$PING" = true ] && { check_connection; }
 start_commands_on_nodes
