@@ -34,7 +34,7 @@ variable "flavor" {
 
 variable "az_hint" {
   description = "The AZ name if needed. Valid format: '<az_name>' or '<az_name>:<hypervisor_name>'"
-  az_hint     = ""
+  default     = ""
 }
 
 variable "network_name" {
