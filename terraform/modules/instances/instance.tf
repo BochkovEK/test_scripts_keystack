@@ -31,7 +31,7 @@ resource "openstack_compute_instance_v2" "vm" {
     source_type           = "image"
     boot_index            = 0
     destination_type      = "volume"
-    delete_on_termination = true
+    delete_on_termination = false
   }
 #  dynamic "block_device" {
 ##    for iter in range(1, instance.vm_qty+1) : {
