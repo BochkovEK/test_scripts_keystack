@@ -37,7 +37,10 @@ resource "openstack_networking_port_v2" "port" {
  count = var.qty
  name                   = "test-port-${count.index}"
  network_id             = data.openstack_networking_network_v2.network.id
- fixed_ip               = "${var.fixed_ip_pattren}${count.index}"
+ fixed_ip {
+  subnet_id = "${data.openstack_networking_subnet_v2.subnet.id}"
+  ip_address = "${var.fixed_ip_pattren}${count.index}"
+ }
  admin_state_up = true
  security_group_ids = [
  openstack_compute_secgroup_v2.secgroup.id
