@@ -60,7 +60,7 @@ resource "openstack_networking_port_v2" "port" {
 #}
 
 #Instance
-resource "openstack_compute_instance_v2" "instance_1" {
+resource "openstack_compute_instance_v2" "instance" {
  count                       = var.qty
  name                        = "${var.vm_name}-${count.index + 1}"
  key_pair                    = openstack_compute_keypair_v2.test-keypair.id
@@ -71,6 +71,14 @@ resource "openstack_compute_instance_v2" "instance_1" {
  availability_zone_hints     = var.az_hint
  metadata = {
   test_meta = "Created by Terraform"
+ }
+ block_device {
+ uuid = data.openstack_images_image_v2.image.id
+ source_type = "image"
+ volume_size = var.volume_size
+ boot_index = 0
+ destination_type = "volume"
+ delete_on_termination = true
  }
  network {
   port = openstack_networking_port_v2.port[count.index].id

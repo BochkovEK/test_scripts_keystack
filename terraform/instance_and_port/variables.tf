@@ -21,6 +21,11 @@ variable "image_name" {
   default     = "cirros-0.6.2-x86_64-disk"
 }
 
+variable "volume_size" {
+  description = "Volume size in GB"
+  default = 1
+}
+
 variable "flavor" {
   description = "Please flavor name"
   default     = {
