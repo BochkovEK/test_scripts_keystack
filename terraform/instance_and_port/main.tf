@@ -59,7 +59,7 @@ resource "openstack_networking_port_v2" "port" {
 #Instance
 resource "openstack_compute_instance_v2" "instance_1" {
  count                       = var.qty
- name                        = var.vm_name+"-"+count.index
+ name                        = "${var.vm_name}-${count.index}"
  key_pair                    = openstack_compute_keypair_v2.test-keypair.id
  flavor_name                 = openstack_compute_flavor_v2.flavor.name
  security_groups             = [
