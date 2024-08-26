@@ -44,5 +44,5 @@ variable "network_name" {
 
 variable "fixed_ip_pattren" {
   description = "Network name"
-  default     = "10.224.129.13"
+  default     = "10.224.129.14"
 }
