@@ -692,13 +692,13 @@ create_vms () {
   fi
 }
 
+output_of_initial_parameters
 #check_openstack_cli
 if ! bash $script_dir/check_openstack_cli.sh; then
     exit 1
 fi
 check_and_source_openrc_file
 check_wget
-output_of_initial_parameters
 
 check_hv
 check_project
