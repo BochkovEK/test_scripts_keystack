@@ -11,7 +11,7 @@ resource "openstack_compute_flavor_v2" "flavor" {
   vcpus     = var.flavor.vcpus
   ram       = var.flavor.ram
   disk      = var.flavor.disk
-  is_public = var.flavor.id_public
+  is_public = var.flavor.is_public
 }
 
 #security group
