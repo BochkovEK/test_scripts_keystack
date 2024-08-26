@@ -35,11 +35,11 @@ resource "openstack_compute_secgroup_v2" "secgroup" {
 # Create network port
 resource "openstack_networking_port_v2" "port" {
  count = var.qty
- name                   = "test-port-${count.index}"
+ name                   = "test-port-${count.index + 1}"
  network_id             = data.openstack_networking_network_v2.network.id
  fixed_ip {
   subnet_id = "${data.openstack_networking_subnet_v2.subnet.id}"
-  ip_address = "${var.fixed_ip_pattren}${count.index}"
+  ip_address = "${var.fixed_ip_pattren}${count.index + 1}"
  }
  admin_state_up = true
  security_group_ids = [
@@ -62,7 +62,7 @@ resource "openstack_networking_port_v2" "port" {
 #Instance
 resource "openstack_compute_instance_v2" "instance_1" {
  count                       = var.qty
- name                        = "${var.vm_name}-${count.index}"
+ name                        = "${var.vm_name}-${count.index + 1}"
  key_pair                    = openstack_compute_keypair_v2.test-keypair.id
  flavor_name                 = openstack_compute_flavor_v2.flavor.name
  security_groups             = [
