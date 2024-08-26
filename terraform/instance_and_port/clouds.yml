@@ -1,0 +1,12 @@
+clouds:
+  openstack:
+    auth:
+      auth_url:  https://int.ebochkov.test.domain:5000
+      username: "admin"
+      project_id: 40dd298697e64b4cb8a4bed86b8b198d
+      project_name: "admin"
+      user_domain_name: "Default"
+      password: d1D73NQjpO5GuKlFspR0BX3PAt8fF55BZThs3sYf
+    region_name: "ebochkov"
+    interface: "public"
+    identity_api_version: 3
