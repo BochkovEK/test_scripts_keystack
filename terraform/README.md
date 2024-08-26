@@ -127,12 +127,12 @@
       clouds:
           openstack:
               auth:
-              auth_url: https://<VIP>:5000
-              username: "admin"
-              project_id: <project_id>
-              project_name: "admin"
-              user_domain_name: "Default"
-              password: <password>
+                  auth_url: https://<VIP>:5000
+                  username: "admin"
+                  project_id: <project_id>
+                  project_name: "admin"
+                  user_domain_name: "Default"
+                  password: <password>
               region_name: "<region_name>"
               interface: "public"
               identity_api_version: 3

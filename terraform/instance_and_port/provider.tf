@@ -17,9 +17,3 @@ provider "openstack" {
   region      = "ebochkov"
   cacert_file = "/root/ca-bundle.crt"
 }
-#provider "openstack" {
-#     cloud = "openstack"
-##    endpoint_overrides = {
-##        "volumev3" = var.volumev3
-##    }
-#}
