@@ -15,7 +15,7 @@ provider "openstack" {
   password    = "d1D73NQjpO5GuKlFspR0BX3PAt8fF55BZThs3sYf"
   auth_url    = "https://int.ebochkov.test.domain:5000/v3"
   region      = "ebochkov"
-  cacert_file = "/root//root/ca-bundle.crt"
+  cacert_file = "/root/root/ca-bundle.crt"
 }
 #provider "openstack" {
 #     cloud = "openstack"
