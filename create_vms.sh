@@ -422,7 +422,7 @@ check_network () {
 create_image () {
   [[ ! $DONT_ASK = "true" ]] && { echo "Try to download image: \"$1\" and add to openstack?";
     read -p "Press enter to continue: "; }
-
+  check_wget
   echo "Creating image \"$1\" in project \"$PROJECT\"..."
   [ -f $script_dir/"$1".img ] && echo "File $script_dir/$1.img exist." \
   || { echo "File $script_dir/$1.img does not exist. Try to download it..."; \
@@ -698,7 +698,7 @@ if ! bash $script_dir/check_openstack_cli.sh; then
     exit 1
 fi
 check_and_source_openrc_file
-check_wget
+
 
 check_hv
 check_project
