@@ -120,8 +120,6 @@ check_openstack_cli () {
   if ! bash $script_dir/check_openstack_cli.sh; then
     printf "%s\n" "${red}Failed to check openstack cli - error${normal}"
     exit 1
-  else
-    bash $script_dir/check_openstack_cli.sh
   fi
 }
 
@@ -218,7 +216,6 @@ elif [[ -z ${NODES[0]} ]] && [ "$NODES_TYPE" = comp ]; then
     error_output
     exit 1
   fi
-
 else
   error_output
   exit 1
