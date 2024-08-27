@@ -169,7 +169,7 @@ done
 yes_no_answer () {
   yes_no_input=""
   while true; do
-    read -p "Do you want to try to install [Yes]: " yn
+    read -p "$yes_no_question" yn
     yn=${yn:-"Yes"}
     echo $yn
     case $yn in
@@ -178,6 +178,7 @@ yes_no_answer () {
         * ) echo "Please answer yes or no.";;
     esac
   done
+  yes_no_question="<Empty yes\no question>"
 }
 
 # Check openrc file
@@ -227,6 +228,7 @@ check_wget () {
   #command_exist=""
   if [ -z $command_exist ]; then
     printf "%s\n" "${yellow}'wget' not installed!${normal}"
+    yes_no_question="Do you want to try to install [Yes]: "
     yes_no_answer
     if [ "$yes_no_input" = "true" ]; then
       [[ -f /etc/os-release ]] && os=$({ . /etc/os-release; echo ${ID,,}; })
@@ -707,6 +709,8 @@ if [[ $CHECK_OPENSTACK = "true" ]]; then
   if ! bash $script_dir/check_openstack_cli.sh; then
     echo -e "\033[31mFailed to check openstack cli - error\033[0m"
     exit 1
+  else
+    bash $script_dir/check_openstack_cli.sh
   fi
 fi
 

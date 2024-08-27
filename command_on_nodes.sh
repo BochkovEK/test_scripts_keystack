@@ -6,13 +6,15 @@
 # example nodes list define
 # NODES=("<IP_1>" "<IP_2>" "<IP_3>" "...")
 
+script_dir=$(dirname $0)
+
 comp_pattern="\-comp\-.."
 #$"
 ctrl_pattern="\-ctrl\-.."
 #$"
 net_pattern="\-net\-.."
 #$"
-nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
+
 
 
 #Colors
@@ -20,10 +22,12 @@ green=$(tput setaf 2)
 red=$(tput setaf 1)
 violet=$(tput setaf 5)
 normal=$(tput sgr0)
+yellow=$(tput setaf 3)
 
 [[ -z $COMMAND ]] && COMMAND="ls -la"
 [[ -z $SENDENV ]] && SENDENV=""
 [[ -z $NODES ]] && NODES=()
+[[ -z $NODES_TYPE ]] && NODES_TYPE=""
 [[ -z $PING ]] && PING="false"
 [[ -z $DEBUG ]] && DEBUG="false"
 #======================
@@ -31,18 +35,23 @@ normal=$(tput sgr0)
 note_type_func () {
   case "$1" in
         ctrl)
+          NODES_TYPE=ctrl
           nodes_to_find=$ctrl_pattern
           echo "Execute Command on ctrl nodes"
           ;;
         comp)
+          NODES_TYPE=comp
           nodes_to_find=$comp_pattern
           echo "Execute Command on comp nodes"
           ;;
         net)
+          NODES_TYPE=net
           nodes_to_find=$net_pattern
           echo "Execute Command on net nodes"
           ;;
         *)
+          NODES_TYPE=all
+          nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
           echo "type is not specified correctly. Execute Command on ctr, comp, net nodes"
           ;;
         esac
@@ -84,6 +93,46 @@ start_commands_on_nodes () {
 #$COMMAND
 #EOF
   done
+}
+
+yes_no_answer () {
+  yes_no_input=""
+  while true; do
+    read -p "$yes_no_question" yn
+    yn=${yn:-"Yes"}
+    echo $yn
+    case $yn in
+        [Yy]* ) yes_no_input="true"; break;;
+        [Nn]* ) yes_no_input="false"; break ;;
+        * ) echo "Please answer yes or no.";;
+    esac
+  done
+  yes_no_question="<Empty yes\no question>"
+}
+
+error_output () {
+  printf "%s\n" "${yellow}command not executed on $NODES_TYPE nodes${normal}"
+  printf "%s\n" "${red}Pattern: $nodes_to_find could not be found - error${normal}"
+}
+
+#check_openstack_cli
+check_openstack_cli () {
+  if ! bash $script_dir/check_openstack_cli.sh; then
+    printf "%s\n" "${red}Failed to check openstack cli - error${normal}"
+    exit 1
+  else
+    bash $script_dir/check_openstack_cli.sh
+  fi
+}
+
+check_ping () {
+  if ping -c 2 $1 &> /dev/null; then
+      printf "%40s\n" "${green}There is a connection with $1 - success${normal}"
+  else
+    connection_problem="true"
+      printf "%40s\n" "${red}No connection with $1 - error!${normal}"
+  fi
+  sleep 1
 }
 
 count=1
@@ -132,8 +181,49 @@ while [ -n "$1" ]; do
     shift
 done
 
+echo "Parse /etc/hosts to find pattern: $nodes_to_find"
 [[ -z ${NODES[0]} ]] && { srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}'); for i in $srv; do NODES+=("$i"); done; }
-#echo "${NODES[*]}"
+if [[ -z ${NODES[0]} ]] && [ "$NODES_TYPE" = ctrl ]; then
+  printf "%s\n" "${yellow}Pattern: $nodes_to_find could not be found${normal}"
+  yes_no_question="Do you want to try to compute service list to define $NODES_TYPE list [Yes]: "
+  yes_no_question
+  if [ "$yes_no_input" = "true" ]; then
+    check_openstack_cli
+    nova_state_list=$(openstack compute service list)
+    ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
+    for node in $ctrl_nodes; do
+        check_ping $node
+    done
+    if [ "$connection_problem" = true ]; then
+      error_output
+    fi
+  else
+    error_output
+    exit 1
+  fi
+elif [[ -z ${NODES[0]} ]] && [ "$NODES_TYPE" = comp ]; then
+  yes_no_question="Do you want to try to compute service list to define $NODES_TYPE list [Yes]: "
+  yes_no_question
+  if [ "$yes_no_input" = "true" ]; then
+    check_openstack_cli
+    nova_state_list=$(openstack compute service list)
+    comp_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
+    for node in $comp_nodes; do
+        check_ping $node
+    done
+    if [ "$connection_problem" = true ]; then
+      error_output
+    fi
+  else
+    error_output
+    exit 1
+  fi
+
+else
+  error_output
+  exit 1
+fi
+
 
 #[ "$PING" = true ] && { check_connection; }
 start_commands_on_nodes
