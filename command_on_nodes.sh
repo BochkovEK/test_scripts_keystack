@@ -186,7 +186,7 @@ echo "Parse /etc/hosts to find pattern: $nodes_to_find"
 if [[ -z ${NODES[0]} ]] && [ "$NODES_TYPE" = ctrl ]; then
   printf "%s\n" "${yellow}Pattern: $nodes_to_find could not be found${normal}"
   yes_no_question="Do you want to try to compute service list to define $NODES_TYPE list [Yes]: "
-  yes_no_question
+  yes_no_answer
   if [ "$yes_no_input" = "true" ]; then
     check_openstack_cli
     nova_state_list=$(openstack compute service list)
@@ -203,7 +203,7 @@ if [[ -z ${NODES[0]} ]] && [ "$NODES_TYPE" = ctrl ]; then
   fi
 elif [[ -z ${NODES[0]} ]] && [ "$NODES_TYPE" = comp ]; then
   yes_no_question="Do you want to try to compute service list to define $NODES_TYPE list [Yes]: "
-  yes_no_question
+  yes_no_answer
   if [ "$yes_no_input" = "true" ]; then
     check_openstack_cli
     nova_state_list=$(openstack compute service list)
