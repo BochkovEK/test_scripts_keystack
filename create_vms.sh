@@ -36,6 +36,7 @@ TIMEOUT_BEFORE_NEXT_CREATION=10
 UBUNTU_IMAGE_NAME="ubuntu-20.04-server-cloudimg-amd64"
 CIRROS_IMAGE_NAME="cirros-0.6.2-x86_64-disk"
 
+[[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
 [[ -z $VM_QTY ]] && VM_QTY="1"
 [[ -z $IMAGE ]] && IMAGE=$UBUNTU_IMAGE_NAME
@@ -72,6 +73,7 @@ while [ -n "$1" ]; do
     -n,           -name         <vm_base_name>
     -p,           -project      <project_id>
     -t                          <time_out_between_VM_create>
+    -dont_check_osc             disable check openstack cli (without parameter)
     -dont_check                 disable resource availability checks (without value)
     -dont_ask                   all actions will be performed automatically (without value)
     -add                        <add command key>
@@ -124,7 +126,10 @@ while [ -n "$1" ]; do
       echo "Found the -name <vm_base_name> option, with parameter value $name"
       VM_BASE_NAME=$name
       shift ;;
-    -dont_check) DONT_CHECK=true
+    -dont_check_osc) CHECK_OPENSTACK="false"
+      echo "Found the -dont_check_osc. Openstack cli check disabled"
+      ;;
+    -dont_check) DONT_CHECK="true"
       echo "Found the -dont_check. Resource availability checks are disabled"
       ;;
     -dont_ask) DONT_ASK=true
@@ -194,24 +199,25 @@ check_command () {
   fi
 }
 
-# check openstack cli
-check_openstack_cli () {
-  echo "Check openstack cli..."
-  check_command openstack
-  #mock test
-  #command_exist=""
-  if [ -z $command_exist ]; then
-    echo -e "\033[31mOpenstack cli not installed\033[0m
-For sberlinux 9.3.3 try these commands:
-  yum install -y python3-pip
-  python3 -m pip install openstackclient
-  export PATH=\$PATH:/usr/local/bin
-"
-    exit 1
-  fi
-}
+## check openstack cli
+#check_openstack_cli () {
+#  echo "Check openstack cli..."
+#  check_command openstack
+#  #mock test
+#  #command_exist=""
+#  if [ -z $command_exist ]; then
+#    echo -e "\033[31mOpenstack cli not installed\033[0m
+#For sberlinux 9.3.3 try these commands:
+#  yum install -y python3-pip
+#  python3 -m pip install openstackclient
+#  export PATH=\$PATH:/usr/local/bin
+#"
+#    exit 1
+#  fi
+#}
 
 # check wget
+
 check_wget () {
   echo "Check wget..."
   check_command wget
@@ -693,12 +699,16 @@ create_vms () {
 }
 
 output_of_initial_parameters
-#check_openstack_cli
-if ! bash $script_dir/check_openstack_cli.sh; then
-    exit 1
-fi
-check_and_source_openrc_file
 
+#check_openstack_cli
+if [[ $CHECK_OPENSTACK = "true" ]]; then
+  if ! bash $script_dir/check_openstack_cli.sh; then
+    echo -e "\033[31mFailed to check openstack cli - error\033[0m
+    exit 1
+  fi
+fi
+
+check_and_source_openrc_file
 
 check_hv
 check_project

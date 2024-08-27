@@ -7,6 +7,10 @@ violet=$(tput setaf 5)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
 
+[[ -z $OSC_VERSION ]] && OSC_VERSION="6.2.0"
+
+osc_version_string="==$OSC_VERSION"
+
 # Check command
 check_command () {
   echo "Check $1 command..."
@@ -37,7 +41,7 @@ check_openstack_cli () {
       case $os in
         sberlinux)
           yum install -y python3-pip
-          python3 -m pip install -i https://pypi.org/simple/ python-openstackclient==6.2.0
+          python3 -m pip install -i https://pypi.org/simple/ python-openstackclient$osc_version_string
 #          python3 -m pip install openstackclient
           path_sting_in_bashrc=$(cat $HOME/.bashrc|grep 'export PATH=\$PATH:/usr/local/bin')
           if [ -f /usr/local/bin/openstack ]; then
