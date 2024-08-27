@@ -37,7 +37,7 @@ while [ -n "$1" ]; do
       -p, -project      <project_name>
       -u, -vm_user      <vm_user>
       -v, -debug        enabled debug output (without parameter)
-      -ip_list          path to file with VMs IP list
+      -ip_list          <path_to_file> with VMs IP list
                         Example: (cat ./ip_list_file)
                           10.224.132.179
                           10.224.132.175
@@ -151,7 +151,10 @@ Stress test: $MODE will be launched on the hypervisor ($HV_STRING) VMs
 
   read -p "Press enter to continue:"
   if [ -z $IP_LIST_FILE ]; then
+    [ "$DEBUG" = true ] && echo -e "
+    command to define vms ip list
     VMs_IPs=$(openstack server list $HV_STRING --project $PROJECT |grep ACTIVE |awk '{print $8}')
+    "
     [[ -z $VMs_IPs ]] && { echo "No instance found in the $PROJECT project"; exit 1; }
   else
     VMs_IPs=$(cat $IP_LIST_FILE)
