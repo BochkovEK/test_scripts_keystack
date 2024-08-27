@@ -65,6 +65,8 @@ while [ -n "$1" ]; do
     -orc          -openrc_path  <openrc_path>
     -q,           -qty          <number_of_VMs>
     -i,           -image        <image_name>
+                                The script can try to download and upload cirros and ubuntu images.
+                                For this you need to define -i cirros\ubuntu
     -f,           -flavor       <flavor_name>
     -k,           -key          <key_name>
     -hv,          -hypervisor   <hypervisor_name>
