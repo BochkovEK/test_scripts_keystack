@@ -59,6 +59,12 @@ note_type_func () {
 
 #======================
 
+error_output () {
+  printf "%s\n" "${yellow}command not executed on $NODES_TYPE nodes${normal}"
+  printf "%s\n" "${red}$error_message - error${normal}"
+  exit 1
+}
+
 # Define parameters
 define_parameters () {
   [ "$count" = 1 ] && [[ -n $1 ]] && { COMMAND=$1; echo "Command parameter found with value $COMMAND"; }
@@ -86,6 +92,11 @@ start_commands_on_nodes () {
       echo $host
     done
   fi
+  if [[ -z ${NODES[0]} ]]; then
+    error_message="Failed to access to $NODES_TYPE"
+    error_output
+    exit 1
+  fi
   for host in "${NODES[@]}"; do
     echo "Start command on ${host}"
     ssh -o StrictHostKeyChecking=no -t $SENDENV "$host" ${COMMAND}
@@ -110,16 +121,11 @@ yes_no_answer () {
   yes_no_question="<Empty yes\no question>"
 }
 
-error_output () {
-  printf "%s\n" "${yellow}command not executed on $NODES_TYPE nodes${normal}"
-  printf "%s\n" "${red}Pattern: $nodes_to_find could not be found - error${normal}"
-}
-
 #check_openstack_cli
 check_openstack_cli () {
   if ! bash $script_dir/check_openstack_cli.sh; then
-    printf "%s\n" "${red}Failed to check openstack cli - error${normal}"
-    exit 1
+    error_message="Failed to check openstack"
+    error_output
   fi
 }
 
@@ -128,8 +134,9 @@ check_ping () {
       printf "%40s\n" "${green}There is a connection with $1 - success${normal}"
   else
     connection_problem="true"
-      printf "%40s\n" "${red}No connection with $1 - error!${normal}"
+    printf "%40s\n" "${red}No connection with $1${normal}"
   fi
+  NODES+=("$1")
   sleep 1
 }
 
@@ -189,15 +196,17 @@ if [[ -z ${NODES[0]} ]] && [ "$NODES_TYPE" = ctrl ]; then
     check_openstack_cli
     nova_state_list=$(openstack compute service list)
     ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
+    echo "Check connection to $NODES_TYPE"
     for node in $ctrl_nodes; do
         check_ping $node
     done
     if [ "$connection_problem" = true ]; then
+      error_message="Could not connection to $node"
       error_output
     fi
   else
+    error_message="Pattern: $nodes_to_find could not be found in /etc/hosts"
     error_output
-    exit 1
   fi
 elif [[ -z ${NODES[0]} ]] && [ "$NODES_TYPE" = comp ]; then
   yes_no_question="Do you want to try to compute service list to define $NODES_TYPE list [Yes]: "
@@ -206,21 +215,22 @@ elif [[ -z ${NODES[0]} ]] && [ "$NODES_TYPE" = comp ]; then
     check_openstack_cli
     nova_state_list=$(openstack compute service list)
     comp_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
+    echo "Check connection to $NODES_TYPE"
     for node in $comp_nodes; do
         check_ping $node
     done
     if [ "$connection_problem" = true ]; then
+      error_message="Could not connection to $node"
       error_output
     fi
   else
+    error_message="Pattern: $nodes_to_find could not be found in /etc/hosts"
     error_output
-    exit 1
   fi
 else
+  error_message="Pattern: $nodes_to_find could not be found in /etc/hosts"
   error_output
-  exit 1
 fi
-
 
 #[ "$PING" = true ] && { check_connection; }
 start_commands_on_nodes
