@@ -28,7 +28,11 @@ script_dir=$(dirname $0)
 while [ -n "$1" ]; do
   case "$1" in
     --help) echo -E "
-      -hv               <hypervisor_name>
+    !!! WARNING: Before running the script, make sure the VM is available:
+       bash ~/test_scripts_keystack/check_vm.sh --help
+    !!! WARNING: Cirros OS doesn't work with binary ./stress
+
+      -hv               <hypervisor_name> (WARNING: doesn't work with version openstack cli 6.2.0)
       -cpu              <number_cpus_for_stress>
       -ram              <gb_ram_stress>
       -units            <units for RAM stress: B,K,M,G (size). \"G - default\">
