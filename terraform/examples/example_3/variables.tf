@@ -26,9 +26,9 @@ variable "pub_net" {
 }
 
 variable "qty" {
-  default     = 40
+  default     = 25
 }
 
 variable "flavor_name" {
-  default = "cpu-2-ram-2_HA_test"
+  default = "2-cpu-2-ram_HA_test"
 }

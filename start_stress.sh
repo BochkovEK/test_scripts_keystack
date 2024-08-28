@@ -28,7 +28,11 @@ script_dir=$(dirname $0)
 while [ -n "$1" ]; do
   case "$1" in
     --help) echo -E "
-      -hv               <hypervisor_name>
+    !!! WARNING: Before running the script, make sure the VM is available:
+       bash ~/test_scripts_keystack/check_vm.sh --help
+    !!! WARNING: Cirros OS doesn't work with binary ./stress
+
+      -hv               <hypervisor_name> (WARNING: doesn't work with version openstack cli 6.2.0)
       -cpu              <number_cpus_for_stress>
       -ram              <gb_ram_stress>
       -units            <units for RAM stress: B,K,M,G (size). \"G - default\">
@@ -37,7 +41,7 @@ while [ -n "$1" ]; do
       -p, -project      <project_name>
       -u, -vm_user      <vm_user>
       -v, -debug        enabled debug output (without parameter)
-      -ip_list          path to file with VMs IP list
+      -ip_list          <path_to_file> with VMs IP list
                         Example: (cat ./ip_list_file)
                           10.224.132.179
                           10.224.132.175
@@ -151,7 +155,10 @@ Stress test: $MODE will be launched on the hypervisor ($HV_STRING) VMs
 
   read -p "Press enter to continue:"
   if [ -z $IP_LIST_FILE ]; then
+    [ "$DEBUG" = true ] && echo -e "
+    command to define vms ip list
     VMs_IPs=$(openstack server list $HV_STRING --project $PROJECT |grep ACTIVE |awk '{print $8}')
+    "
     [[ -z $VMs_IPs ]] && { echo "No instance found in the $PROJECT project"; exit 1; }
   else
     VMs_IPs=$(cat $IP_LIST_FILE)

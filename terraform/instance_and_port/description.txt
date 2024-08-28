@@ -1,0 +1,12 @@
+This set of configs for terraform creates a sequence of VMs and ports.
+In the variables.tf file you must specify the 'qty' (VMs) and 'fixed_ip_pattren'.
+
+qty = 9
+fixed_ip_pattren = "10.224.129.23"
+
+Terraform will create a follow that looks like:
+
+TEST_VM-1	10.224.129.231
+TEST_VM-2	10.224.129.232
+...
+TEST_VM-9	10.224.129.239

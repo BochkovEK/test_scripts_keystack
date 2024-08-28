@@ -31,7 +31,6 @@ yellow=`tput setaf 3`
 reset=`tput sgr0`
 
 
-
 generate_certs () {
 
 echo "Generating certification..."
@@ -124,6 +123,25 @@ if [[ -z "${INTERNAL_VIP}" ]] || [[ -z "${EXTERNAL_VIP}" ]]; then
   exit 1
 fi
 
+echo -E "
+  CERTS_DIR:          $CERTS_DIR
+  OUTPUT_CERTS_DIR:   $OUTPUT_CERTS_DIR
+  DOMAIN:             $DOMAIN
+  REGION_NAME:        $REGION_NAME
+  INTERNAL_FQDN:      $INTERNAL_FQDN
+  INTERNAL_VIP:       $INTERNAL_VIP
+  EXTERNAL_FQDN:      $EXTERNAL_FQDN
+  EXTERNAL_VIP:       $EXTERNAL_VIP
+  CA_IP:              $CA_IP
+  LCM_NEXUS_NAME:     $LCM_NEXUS_NAME
+  REMOTE_NEXUS_NAME:  $REMOTE_NEXUS_NAME
+  LCM_GITLAB_NAME:    $LCM_GITLAB_NAME
+  LCM_VAULT_NAME:     $LCM_VAULT_NAME
+  LCM_NETBOX_NAME:    $LCM_NETBOX_NAME
+"
+
+read -p "Press enter to continue: "
+
 #Export envs...
 cat > $script_dir/certs_envs <<-END
 export CERTS_DIR=$CERTS_DIR
@@ -141,7 +159,6 @@ export LCM_GITLAB_NAME=$LCM_GITLAB_NAME
 export LCM_VAULT_NAME=$LCM_VAULT_NAME
 export LCM_NETBOX_NAME=$LCM_NETBOX_NAME
 END
-
 
 
 # Create Wildcard
@@ -178,7 +195,7 @@ export SAN=DNS:$INTERNAL_FQDN,IP:$INTERNAL_VIP
 openssl x509 -req -in $CERTS_DIR/certs/external_VIP.csr \
         -extfile $script_dir/cert.cnf -CA $CERTS_DIR/root/ca.crt \
         -CAkey $CERTS_DIR/root/ca.key -CAcreateserial \
-        -out $CERTS_DIR/certs/external_VIP.crt -days 728 -sha256
+        -out $CERTS_DIR/certs/internal_VIP.crt -days 728 -sha256
 #===========
 #external cert
 openssl req -new -subj "/C=RU/ST=Msk/L=Moscow/O=ITKey/OU=KeyStack/CN=$EXTERNAL_FQDN" \
@@ -191,6 +208,17 @@ openssl x509 -req -in $CERTS_DIR/certs/external_VIP.csr \
         -CAkey $CERTS_DIR/root/ca.key -CAcreateserial \
         -out $CERTS_DIR/certs/external_VIP.crt -days 728 -sha256
 #===========
+# backend cert
+openssl req -new -subj "/C=RU/ST=Msk/L=Moscow/O=ITKey/OU=KeyStack" \
+  -key $CERTS_DIR/certs/cert.key \
+  -out $CERTS_DIR/certs/backend.csr
+export SAN=IP:$EXTERNAL_VIP,IP:$INTERNAL_VIP
+openssl x509 -req -in ~/certs/backend.csr \
+  -extfile $script_dir/cert.cnf \
+  -CA $CERTS_DIR/root/ca.crt \
+  -CAkey $CERTS_DIR/root/ca.key \
+  -CAcreateserial -out $CERTS_DIR/certs/backend.crt -days 728 -sha256
+#============
 
 cat $CERTS_DIR/certs/cert.crt $CERTS_DIR/root/ca.crt > $CERTS_DIR/certs/chain-ca.pem
 
@@ -213,10 +241,15 @@ cp $CERTS_DIR/certs/cert.crt $OUTPUT_CERTS_DIR/$LCM_NETBOX_NAME.crt;
 cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/$LCM_NETBOX_NAME.key
 
 #external internal pem
-cat $CERTS_DIR/certs/external_VIP.crt $CERTS_DIR/root/ca.crt > $CERTS_DIR/certs/haproxy_pem
-cat $CERTS_DIR/certs/internal_VIP.crt $CERTS_DIR/root/ca.crt > $CERTS_DIR/certs/internal_haproxy_pem
+cat $CERTS_DIR/certs/external_VIP.crt $CERTS_DIR/certs/cert.key $CERTS_DIR/root/ca.crt > $CERTS_DIR/certs/haproxy_pem
+cat $CERTS_DIR/certs/internal_VIP.crt $CERTS_DIR/certs/cert.key $CERTS_DIR/root/ca.crt > $CERTS_DIR/certs/haproxy_internal_pem
 cp $CERTS_DIR/certs/haproxy_pem $OUTPUT_CERTS_DIR/haproxy_pem
-cp $CERTS_DIR/certs/internal_haproxy_pem $OUTPUT_CERTS_DIR/internal_haproxy_pem
+cp $CERTS_DIR/certs/haproxy_internal_pem $OUTPUT_CERTS_DIR/haproxy_internal_pem
+
+#backend_pem
+cp $CERTS_DIR/certs/backend.crt $OUTPUT_CERTS_DIR/backend_pem
+cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/backend_key_pem
+
 }
 
 while true; do
@@ -232,23 +265,23 @@ done
 
 if [ "$yes_no_input" = "true" ]; then
   source $script_dir/certs_envs
-  echo -E "
-  env list:
-  CERTS_DIR:        $CERTS_DIR
-  OUTPUT_CERTS_DIR: $OUTPUT_CERTS_DIR
-  DOMAIN:           $DOMAIN
-  REGION_NAME:      $REGION_NAME
-  INTERNAL_FQDN:    $INTERNAL_FQDN
-  INTERNAL_VIP:     $INTERNAL_VIP
-  EXTERNAL_FQDN:    $EXTERNAL_FQDN
-  EXTERNAL_VIP:     $EXTERNAL_VIP
-  CA_IP: $CA_IP
-  LCM_NEXUS_NAME: $LCM_NEXUS_NAME
-  REMOTE_NEXUS_NAME: $REMOTE_NEXUS_NAME
-  LCM_GITLAB_NAME: $LCM_GITLAB_NAME
-  LCM_VAULT_NAME: $LCM_VAULT_NAME
-  LCM_NETBOX_NAME: $LCM_NETBOX_NAME
-"
+#  echo -E "
+#  env list:
+#  CERTS_DIR:          $CERTS_DIR
+#  OUTPUT_CERTS_DIR:   $OUTPUT_CERTS_DIR
+#  DOMAIN:             $DOMAIN
+#  REGION_NAME:        $REGION_NAME
+#  INTERNAL_FQDN:      $INTERNAL_FQDN
+#  INTERNAL_VIP:       $INTERNAL_VIP
+#  EXTERNAL_FQDN:      $EXTERNAL_FQDN
+#  EXTERNAL_VIP:       $EXTERNAL_VIP
+#  CA_IP:              $CA_IP
+#  LCM_NEXUS_NAME:     $LCM_NEXUS_NAME
+#  REMOTE_NEXUS_NAME:  $REMOTE_NEXUS_NAME
+#  LCM_GITLAB_NAME:    $LCM_GITLAB_NAME
+#  LCM_VAULT_NAME:     $LCM_VAULT_NAME
+#  LCM_NETBOX_NAME:    $LCM_NETBOX_NAME
+#"
   generate_certs
 else
   echo "Nexus cannot be deployed without certificates"

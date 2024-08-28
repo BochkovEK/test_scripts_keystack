@@ -36,6 +36,7 @@ TIMEOUT_BEFORE_NEXT_CREATION=10
 UBUNTU_IMAGE_NAME="ubuntu-20.04-server-cloudimg-amd64"
 CIRROS_IMAGE_NAME="cirros-0.6.2-x86_64-disk"
 
+[[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
 [[ -z $VM_QTY ]] && VM_QTY="1"
 [[ -z $IMAGE ]] && IMAGE=$UBUNTU_IMAGE_NAME
@@ -64,6 +65,8 @@ while [ -n "$1" ]; do
     -orc          -openrc_path  <openrc_path>
     -q,           -qty          <number_of_VMs>
     -i,           -image        <image_name>
+                                The script can try to download and upload cirros and ubuntu images.
+                                For this you need to define -i cirros\ubuntu
     -f,           -flavor       <flavor_name>
     -k,           -key          <key_name>
     -hv,          -hypervisor   <hypervisor_name>
@@ -72,6 +75,7 @@ while [ -n "$1" ]; do
     -n,           -name         <vm_base_name>
     -p,           -project      <project_id>
     -t                          <time_out_between_VM_create>
+    -dont_check_osc             disable check openstack cli (without parameter)
     -dont_check                 disable resource availability checks (without value)
     -dont_ask                   all actions will be performed automatically (without value)
     -add                        <add command key>
@@ -124,7 +128,10 @@ while [ -n "$1" ]; do
       echo "Found the -name <vm_base_name> option, with parameter value $name"
       VM_BASE_NAME=$name
       shift ;;
-    -dont_check) DONT_CHECK=true
+    -dont_check_osc) CHECK_OPENSTACK="false"
+      echo "Found the -dont_check_osc. Openstack cli check disabled"
+      ;;
+    -dont_check) DONT_CHECK="true"
       echo "Found the -dont_check. Resource availability checks are disabled"
       ;;
     -dont_ask) DONT_ASK=true
@@ -162,7 +169,7 @@ done
 yes_no_answer () {
   yes_no_input=""
   while true; do
-    read -p "Do you want to try to install [Yes]: " yn
+    read -p "$yes_no_question" yn
     yn=${yn:-"Yes"}
     echo $yn
     case $yn in
@@ -171,6 +178,7 @@ yes_no_answer () {
         * ) echo "Please answer yes or no.";;
     esac
   done
+  yes_no_question="<Empty yes\no question>"
 }
 
 # Check openrc file
@@ -194,24 +202,25 @@ check_command () {
   fi
 }
 
-# check openstack cli
-check_openstack_cli () {
-  echo "Check openstack cli..."
-  check_command openstack
-  #mock test
-  #command_exist=""
-  if [ -z $command_exist ]; then
-    echo -e "\033[31mOpenstack cli not installed\033[0m
-For sberlinux 9.3.3 try these commands:
-  yum install -y python3-pip
-  python3 -m pip install openstackclient
-  export PATH=\$PATH:/usr/local/bin
-"
-    exit 1
-  fi
-}
+## check openstack cli
+#check_openstack_cli () {
+#  echo "Check openstack cli..."
+#  check_command openstack
+#  #mock test
+#  #command_exist=""
+#  if [ -z $command_exist ]; then
+#    echo -e "\033[31mOpenstack cli not installed\033[0m
+#For sberlinux 9.3.3 try these commands:
+#  yum install -y python3-pip
+#  python3 -m pip install openstackclient
+#  export PATH=\$PATH:/usr/local/bin
+#"
+#    exit 1
+#  fi
+#}
 
 # check wget
+
 check_wget () {
   echo "Check wget..."
   check_command wget
@@ -219,6 +228,7 @@ check_wget () {
   #command_exist=""
   if [ -z $command_exist ]; then
     printf "%s\n" "${yellow}'wget' not installed!${normal}"
+    yes_no_question="Do you want to try to install [Yes]: "
     yes_no_answer
     if [ "$yes_no_input" = "true" ]; then
       [[ -f /etc/os-release ]] && os=$({ . /etc/os-release; echo ${ID,,}; })
@@ -422,7 +432,7 @@ check_network () {
 create_image () {
   [[ ! $DONT_ASK = "true" ]] && { echo "Try to download image: \"$1\" and add to openstack?";
     read -p "Press enter to continue: "; }
-
+  check_wget
   echo "Creating image \"$1\" in project \"$PROJECT\"..."
   [ -f $script_dir/"$1".img ] && echo "File $script_dir/$1.img exist." \
   || { echo "File $script_dir/$1.img does not exist. Try to download it..."; \
@@ -692,13 +702,17 @@ create_vms () {
   fi
 }
 
-#check_openstack_cli
-if ! bash $script_dir/check_openstack_cli.sh; then
-    exit 1
-fi
-check_and_source_openrc_file
-check_wget
 output_of_initial_parameters
+
+#check_openstack_cli
+if [[ $CHECK_OPENSTACK = "true" ]]; then
+  if ! bash $script_dir/check_openstack_cli.sh; then
+    echo -e "\033[31mFailed to check openstack cli - error\033[0m"
+    exit 1
+  fi
+fi
+
+check_and_source_openrc_file
 
 check_hv
 check_project
