@@ -37,22 +37,22 @@ note_type_func () {
         ctrl)
           NODES_TYPE=ctrl
           nodes_to_find=$ctrl_pattern
-          echo "Execute Command on ctrl nodes"
+          printf "%s\n" "${yellow}Execute command \'$COMMAND\' on ctrl nodes${normal}"
           ;;
         comp)
           NODES_TYPE=comp
           nodes_to_find=$comp_pattern
-          echo "Execute Command on comp nodes"
+          printf "%s\n" "${yellow}Execute command \'$COMMAND\' on comp nodes${normal}"
           ;;
         net)
           NODES_TYPE=net
           nodes_to_find=$net_pattern
-          echo "Execute Command on net nodes"
+          printf "%s\n" "${yellow}Execute command \'$COMMAND\' on net nodes${normal}"
           ;;
         *)
           NODES_TYPE=all
           nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
-          echo "type is not specified correctly. Execute Command on ctr, comp, net nodes"
+          printf "%s\n" "${yellow}Nodes type is not specified correctly. Execute command \'$COMMAND\' on ctr, comp, net nodes${normal}"
           ;;
         esac
 }
