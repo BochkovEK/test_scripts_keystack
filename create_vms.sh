@@ -425,36 +425,36 @@ check_network () {
           if [ "$mask_pub_net" = "27" ]; then
             case "$last_digit" in
               0)
-                start_pub_net_ip="$left_side.10"
-                end_pub_net_ip="$left_side.30"
+                start_pub_net_ip="${left_side}10"
+                end_pub_net_ip="${left_side}30"
                 ;;
               32)
-                start_pub_net_ip="$left_side.40"
-                end_pub_net_ip="$left_side.62"
+                start_pub_net_ip="${left_side}40"
+                end_pub_net_ip="${left_side}62"
                 ;;
               64)
-                start_pub_net_ip="$left_side.70"
-                end_pub_net_ip="$left_side.94"
+                start_pub_net_ip="${left_side}70"
+                end_pub_net_ip="${left_side}94"
                 ;;
               96)
-                start_pub_net_ip="$left_side.100"
-                end_pub_net_ip="$left_side.126"
+                start_pub_net_ip="${left_side}100"
+                end_pub_net_ip="${left_side}126"
                 ;;
               128)
-                start_pub_net_ip="$left_side.140"
-                end_pub_net_ip="$left_side.158"
+                start_pub_net_ip="${left_side}140"
+                end_pub_net_ip="${left_side}158"
                 ;;
               160)
-                start_pub_net_ip="$left_side.170"
-                end_pub_net_ip="$left_side.190"
+                start_pub_net_ip="${left_side}170"
+                end_pub_net_ip="${left_side}190"
                 ;;
               192)
-                start_pub_net_ip="$left_side.200"
-                end_pub_net_ip="$left_side.222"
+                start_pub_net_ip="${left_side}200"
+                end_pub_net_ip="${left_side}222"
                 ;;
               224)
-                start_pub_net_ip="$left_side.130"
-                end_pub_net_ip="$left_side.254"
+                start_pub_net_ip="${left_side}130"
+                end_pub_net_ip="${left_side}254"
                 ;;
             esac
             openstack network create \
