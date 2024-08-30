@@ -453,7 +453,7 @@ check_network () {
                 end_pub_net_ip="${left_side}222"
                 ;;
               224)
-                start_pub_net_ip="${left_side}130"
+                start_pub_net_ip="${left_side}230"
                 end_pub_net_ip="${left_side}254"
                 ;;
             esac
