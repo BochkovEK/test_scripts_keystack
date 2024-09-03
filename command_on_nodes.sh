@@ -237,9 +237,9 @@ elif [[ -z ${NODES[0]} ]] && [ "$NODES_TYPE" = comp ]; then
     error_message="Pattern: $nodes_to_find could not be found in /etc/hosts"
     error_output
   fi
-else
-  error_message="Pattern: $nodes_to_find could not be found in /etc/hosts"
-  error_output
+#else
+#  error_message="Pattern: $nodes_to_find could not be found in /etc/hosts"
+#  error_output
 fi
 
 #[ "$PING" = true ] && { check_connection; }
