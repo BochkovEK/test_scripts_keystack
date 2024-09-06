@@ -780,15 +780,15 @@ fi
 
 check_and_source_openrc_file
 
-check_hv
-check_project
-check_and_add_secur_group
 [[ ! $DONT_CHECK = "true" ]] && \
   {
-  check_image;
-  check_and_add_flavor;
+  check_hv
+  check_project
   check_network
-  check_and_add_keypair;
+  check_and_add_secur_group
+  check_image
+  check_and_add_flavor
+  check_and_add_keypair
   }
 #if [ "$BATCH" = "true" ]; then
 #  create_vms_batch

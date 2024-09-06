@@ -51,6 +51,9 @@ EOF
            $nodes_to_find
            and edits /etc/resolv.conf on all of them
         3) bash $script_dir/deploy_dnsmasq_service.sh
+
+        Note:
+        Every time /etc/dnsmasq.conf and /etc/hosts are changed, restart the service 'systemctl restart dnsmasq'
         "
           exit 0
           break ;;
