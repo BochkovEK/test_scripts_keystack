@@ -33,6 +33,8 @@ yellow=`tput setaf 3`
 normal=`tput sgr0`
 
 
+echo "Starts $script_name"
+
 while [ -n "$1" ]; do
   case "$1" in
     --help) echo -E "

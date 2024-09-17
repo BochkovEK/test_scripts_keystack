@@ -24,10 +24,13 @@ normal=`tput sgr0`
 [[ -z $ENV_FILE ]] && ENV_FILE="self_signed_certs/certs_envs"
 
 #Script_dir, current folder
+script_name=$(basename "$0")
 script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
 #parentdir=$(builtin cd $script_dir; pwd)
+
+echo "Starts $script_name"
 
 while [ -n "$1" ]; do
   case "$1" in
@@ -103,11 +106,11 @@ check_certs_for_nexus () {
   echo "Checking if directory $CERTS_DIR and $OUTPUT_CERTS_DIR are empty..."
   if [ -f $OUTPUT_CERTS_DIR/$REMOTE_NEXUS_NAME.$DOMAIN.pem ]; then
      printf "%s\n" "${green}Certs for remote nexus: $REMOTE_NEXUS_NAME.$DOMAIN in folder OUTPUT_CERTS_DIR: \
-     $OUTPUT_CERTS_DIR! already exists - ok!${normal}"
+$OUTPUT_CERTS_DIR! already exists - ok!${normal}"
      certs_for_nexus_exists="true"
   else
      printf "%s\n" "${yellow}Certs for remote nexus: $REMOTE_NEXUS_NAME.$DOMAIN in folder OUTPUT_CERTS_DIR: \
-     $OUTPUT_CERTS_DIR! not exists!${normal}"
+$OUTPUT_CERTS_DIR! not exists!${normal}"
 
      bash $parent_dir/self_signed_certs/generate_self_signed_certs.sh
   fi
