@@ -136,8 +136,9 @@ copy_dnsmasq_conf () {
     echo "$add_string" >> $parses_file
     cat "$script_dir"/dns_ip_mapping.txt >> $parses_file
   fi
+  echo "Hosts file: "
   cat $parses_file
-  exit 0
+#  exit 0
   sed -i --regexp-extended "s/nameserver(\s+|)[0-9]+.[0-9]+.[0-9]+.[0-9]+/nameserver $DNS_SERVER_IP/" \
       /etc/resolv.conf
 #  echo "nameserver $DNS_SERVER_IP" >> /etc/resolv.conf
@@ -152,17 +153,17 @@ copy_dnsmasq_conf () {
 }
 
 
-#get_var
-#sed_var_in_conf
-#echo -e "\n${yellow}Cat conf...${reset}"
-#echo
-#cat $script_dir/$CONF_NAME
-#echo
-#echo -e "\n${yellow}Cat $dns_ip_mapping...${reset}"
-#echo
-#cat $script_dir/$dns_ip_mapping
-#echo
-#read -p "Press enter to continue: "
-#install_dnsmasq
+get_var
+sed_var_in_conf
+echo -e "\n${yellow}Cat conf...${reset}"
+echo
+cat $script_dir/$CONF_NAME
+echo
+echo -e "\n${yellow}Cat $dns_ip_mapping...${reset}"
+echo
+cat $script_dir/$dns_ip_mapping
+echo
+read -p "Press enter to continue: "
+install_dnsmasq
 copy_dnsmasq_conf
 
