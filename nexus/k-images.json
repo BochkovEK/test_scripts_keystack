@@ -1,7 +1,4 @@
 {
-  "action":"coreui_Repository",
-  "method":"create",
-  "data":[{
     "attributes":{
       "docker":{
         "httpPort":5000,
@@ -30,6 +27,4 @@
     "dockercheckboxhttp":true,
     "dockercheckboxhttps":false,
     "recipe":"docker-hosted"
-  }],
-  "type":"rpc","tid":25
 }
