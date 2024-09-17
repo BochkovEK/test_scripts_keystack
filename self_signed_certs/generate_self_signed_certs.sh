@@ -188,7 +188,7 @@ get_init_vars () {
     LCM_NETBOX_NAME:    $LCM_NETBOX_NAME
   "
 
-  read -p "Press enter to continue: "
+#  read -p "Press enter to continue: "
 
   #Export envs...
   cat > $script_dir/certs_envs <<-END
