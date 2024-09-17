@@ -1,10 +1,21 @@
+
 {
   "name":"images",
-  "storage": {
-    "dataStoreName": "nexus",
-    "blobStoreName": "default",
-    "strictContentTypeValidation": false,
-    "writePolicy": "ALLOW"
+  "replication":{
+    "enabled":false
   },
-  "online":true
+  "raw":{
+    "contentDisposition":"ATTACHMENT"
+  },
+  "storage":{
+    "dataStoreName":"nexus",
+    "blobStoreName":"default",
+    "strictContentTypeValidation":true,
+    "writePolicy":"ALLOW"
+  },
+  "component":{
+    "proprietaryComponents":false
+  },
+  "online":true,
+  "recipe":"raw-hosted"
 }
