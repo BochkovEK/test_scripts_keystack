@@ -19,4 +19,4 @@ curl -v -u $USER:$PASSWORD -H "Connection: close" -H "Content-Type: application/
 # k-backup raw(hosted)
 curl -v -u $USER:$PASSWORD -H "Connection: close" -H "Content-Type: application/json" -X POST "$DOCKER_HTTP/raw/hosted" -d @raw-hosted-k-backup.json
 # k-pip pypi(hosted)
-curl -v -u $USER:$PASSWORD-H "Connection: close" -H "Content-Type: application/json" -X POST "$DOCKER_HTTP/pypi/hosted" -d @pypi-hosted-k-pip.json
+curl -v -u $USER:$PASSWORD -H "Connection: close" -H "Content-Type: application/json" -X POST "$DOCKER_HTTP/pypi/hosted" -d @pypi-hosted-k-pip.json
