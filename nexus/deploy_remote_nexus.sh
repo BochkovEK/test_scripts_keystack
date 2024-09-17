@@ -16,8 +16,9 @@
 
 #!!! docker exec -it nexus cat /nexus-data/admin.password
 
+green=`tput setaf 2`
 yellow=`tput setaf 3`
-reset=`tput sgr0`
+normal=`tput sgr0`
 
 [[ -z $DEBUG ]] && DEBUG="true"
 [[ -z $ENV_FILE ]] && ENV_FILE="self_signed_certs/certs_envs"
@@ -53,23 +54,26 @@ while [ -n "$1" ]; do
   shift
 done
 
-#source $parentdir/self_signed_certs/certs_envs
 
-#Generating certs
-bash $parent_dir/self_signed_certs/generate_self_signed_certs.sh
+get_init_vars () {
 
-echo "Deploy Nexus"
 
 if [ -f "$parent_dir/$ENV_FILE" ]; then
-    echo "$ENV_FILE file exists"
-    source $parent_dir/$ENV_FILE
+  echo "$ENV_FILE file exists"
+  source $parent_dir/$ENV_FILE
 fi
 
 # get Central Authentication Service folder
-if [[ -z "${CERTS_DIR}" ]]; then
-  read -rp "Enter Central Authentication Service folder [$HOME/central_auth_service]: " CERTS_DIR
-fi
-export CERTS_DIR=${CERTS_DIR:-"$HOME/central_auth_service"}
+  if [[ -z "${CERTS_DIR}" ]]; then
+    read -rp "Enter Central Authentication Service folder [$HOME/central_auth_service]: " CERTS_DIR
+  fi
+  export CERTS_DIR=${CERTS_DIR:-"$HOME/central_auth_service"}
+
+  # get Output certs folder
+  if [[ -z "${OUTPUT_CERTS_DIR}" ]]; then
+    read -rp "Enter certs output folder for installer [$HOME/certs]: " OUTPUT_CERTS_DIR
+  fi
+  export OUTPUT_CERTS_DIR=${OUTPUT_CERTS_DIR:-"$HOME/certs"}
 
 # get domain name
 if [[ -z "${DOMAIN}" ]]; then
@@ -91,54 +95,89 @@ envs list:
   DOMAIN:             $DOMAIN
   REMOTE_NEXUS_NAME:  $REMOTE_NEXUS_NAME
 "
+}
 
-read -p "Press enter to continue: "
+#Checking if directory $CERTS_DIR and $OUTPUT_CERTS_DIR are empty
+check_certs_for_nexus () {
+  certs_for_nexus_exists="false"
+  echo "Checking if directory $CERTS_DIR and $OUTPUT_CERTS_DIR are empty..."
+  if [ -f $OUTPUT_CERTS_DIR/$REMOTE_NEXUS_NAME.$DOMAIN.pem ]; then
+     printf "%s\n" "${green}Certs for remote nexus: $REMOTE_NEXUS_NAME.$DOMAIN in folder OUTPUT_CERTS_DIR: \
+     $OUTPUT_CERTS_DIR! already exists - ok!${normal}"
+     certs_for_nexus_exists="true"
+  else
+     printf "%s\n" "${yellow}Certs for remote nexus: $REMOTE_NEXUS_NAME.$DOMAIN in folder OUTPUT_CERTS_DIR: \
+     $OUTPUT_CERTS_DIR! not exists!${normal}"
 
-#Install docker if need
-if ! command -v docker &> /dev/null; then
-  is_ubuntu=$(cat /etc/os-release|grep ubuntu)
-  if [ -n "$is_ubuntu" ]; then
-    echo "Installing docker on ubuntu"
-    bash $script_dir/docker_ubuntu_installation.sh
+     bash $parent_dir/self_signed_certs/generate_self_signed_certs.sh
   fi
-  is_sberlinux=$(cat /etc/os-release|grep sberlinux)
-  if [ -n "$is_sberlinux" ]; then
-    echo "Installing docker on sberlinux"
-    bash $script_dir/docker_sberlinux_installation.sh
+}
+
+deploy_remote_nexus () {
+  echo "Deploy Remote-Nexus..."
+
+  read -p "Press enter to continue: "
+  #Install docker if need
+  if ! command -v docker &> /dev/null; then
+    is_ubuntu=$(cat /etc/os-release|grep ubuntu)
+    if [ -n "$is_ubuntu" ]; then
+      echo "Installing docker on ubuntu"
+      bash $script_dir/docker_ubuntu_installation.sh
+    fi
+    is_sberlinux=$(cat /etc/os-release|grep sberlinux)
+    if [ -n "$is_sberlinux" ]; then
+      echo "Installing docker on sberlinux"
+      bash $script_dir/docker_sberlinux_installation.sh
+    fi
+  fi
+
+
+  #Change in envs LCM_NEXUS_NAME var
+  #lcm_nexus_name_string=$(cat $parentdir/self_signed_certs/certs_envs|grep -m 1 "LCM_NEXUS_NAME")
+
+  #  [ "$DEBUG" = true ] && echo -e "
+  #  [DEBUG]
+  #  lcm_nexus_name_string: $lcm_nexus_name_string
+  #  REMOTE_NEXUS: $REMOTE_NEXUS
+  #  "
+  #sed -i "s/$lcm_nexus_name_string/export LCM_NEXUS_NAME=$REMOTE_NEXUS/" $parentdir/self_signed_certs/certs_envs
+
+  #echo "Sourcing envs after sed"
+  #source $parentdir/self_signed_certs/certs_envs
+
+  #Add string to hosts
+  nexus_string_exists=$(cat /etc/hosts|grep $REMOTE_NEXUS_NAME)
+  if [ -z "$nexus_string_exists" ]; then
+    sed -i "s/127.0.0.1 localhost/127.0.0.1 localhost $REMOTE_NEXUS_NAME.$DOMAIN/" /etc/hosts
+  fi
+
+
+  #Change nginx conf
+  echo "Changing nginx conf..."
+  sed -i "s/DOMAIN/$DOMAIN/g" $script_dir/nginx_https.conf
+  sed -i "s/LCM_NEXUS_NAME/$REMOTE_NEXUS_NAME/g" $script_dir/nginx_https.conf
+  #sed -i -e "s@OUTPUT_CERTS_DIR@$OUTPUT_CERTS_DIR@g" $script_dir/nginx_https.conf
+
+
+  #Conatiners up
+  docker compose -f $script_dir/docker-compose.yaml up -d
+
+
+  echo "${yellow}To get initial nexus admin password:${reset}"
+  echo "docker exec -it nexus cat /nexus-data/admin.password"
+}
+
+
+get_init_vars
+check_certs_for_nexus
+
+if [ "$certs_for_nexus_exists" = false ]; then
+  check_certs_for_nexus
+  if [ "$certs_for_nexus_exists" = false ]; then
+    printf "%s\n" "${yellow}Nexus can not be deploy without certs${normal}"
+    exit 1
   fi
 fi
 
+deploy_remote_nexus
 
-#Change in envs LCM_NEXUS_NAME var
-#lcm_nexus_name_string=$(cat $parentdir/self_signed_certs/certs_envs|grep -m 1 "LCM_NEXUS_NAME")
-
-#  [ "$DEBUG" = true ] && echo -e "
-#  [DEBUG]
-#  lcm_nexus_name_string: $lcm_nexus_name_string
-#  REMOTE_NEXUS: $REMOTE_NEXUS
-#  "
-#sed -i "s/$lcm_nexus_name_string/export LCM_NEXUS_NAME=$REMOTE_NEXUS/" $parentdir/self_signed_certs/certs_envs
-
-#echo "Sourcing envs after sed"
-#source $parentdir/self_signed_certs/certs_envs
-
-#Add string to hosts
-nexus_string_exists=$(cat /etc/hosts|grep $REMOTE_NEXUS_NAME)
-if [ -z "$nexus_string_exists" ]; then
-  sed -i "s/127.0.0.1 localhost/127.0.0.1 localhost $REMOTE_NEXUS_NAME.$DOMAIN/" /etc/hosts
-fi
-
-
-#Change nginx conf
-echo "Changing nginx conf..."
-sed -i "s/DOMAIN/$DOMAIN/g" $script_dir/nginx_https.conf
-sed -i "s/LCM_NEXUS_NAME/$REMOTE_NEXUS_NAME/g" $script_dir/nginx_https.conf
-#sed -i -e "s@OUTPUT_CERTS_DIR@$OUTPUT_CERTS_DIR@g" $script_dir/nginx_https.conf
-
-
-#Conatiners up
-docker compose -f $script_dir/docker-compose.yaml up -d
-
-
-echo "${yellow}To get initial nexus admin password:${reset}"
-echo "docker exec -it nexus cat /nexus-data/admin.password"
