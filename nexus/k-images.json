@@ -11,6 +11,6 @@
     "writePolicy":"ALLOW",
     "latestPolicy":false
   },
-  "online":true,
+  "online":false,
   "name":"k-images"
 }
