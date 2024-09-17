@@ -1,5 +1,4 @@
 {
-    "attributes":{
       "docker":{
         "httpPort":5000,
         "forceBasicAuth":true,
@@ -17,8 +16,7 @@
       },
       "cleanup":{
         "policyName":[]
-      }
-    },
+      },
     "name":"k-images",
     "format":"",
     "type":"",
