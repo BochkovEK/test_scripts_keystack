@@ -7,3 +7,4 @@
 /.idea/test_scripts_keystack.iml
 /.idea/vcs.xml
 /venv/
+/.idea/deployment.xml

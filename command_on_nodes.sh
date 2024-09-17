@@ -188,6 +188,16 @@ done
 
 echo "Parse /etc/hosts to find pattern: $nodes_to_find"
 [[ -z ${NODES[0]} ]] && { srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}'); for i in $srv; do NODES+=("$i"); done; }
+if [ "$DEBUG" = true ]; then
+  echo -e "
+  [DEBUG]
+  NODES:
+  "
+  for host in "${NODES[@]}"; do
+    echo $host
+  done
+  echo "NODES_TYPE: $NODES_TYPE"
+fi
 if [[ -z ${NODES[0]} ]] && [ "$NODES_TYPE" = ctrl ]; then
   printf "%s\n" "${yellow}Pattern: $nodes_to_find could not be found${normal}"
   yes_no_question="Do you want to try to compute service list to define $NODES_TYPE list [Yes]: "
@@ -227,9 +237,9 @@ elif [[ -z ${NODES[0]} ]] && [ "$NODES_TYPE" = comp ]; then
     error_message="Pattern: $nodes_to_find could not be found in /etc/hosts"
     error_output
   fi
-else
-  error_message="Pattern: $nodes_to_find could not be found in /etc/hosts"
-  error_output
+#else
+#  error_message="Pattern: $nodes_to_find could not be found in /etc/hosts"
+#  error_output
 fi
 
 #[ "$PING" = true ] && { check_connection; }

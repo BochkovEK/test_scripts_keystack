@@ -98,10 +98,11 @@ copy_and_stress() {
     printf "%40s\n" "${green}There is a connection with $VM_IP - success${normal}"
     ssh -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$VM_IP "echo 2>&1"
     test $? -eq 0 && printf "%40s\n" "${green}There is a SSH connection with $VM_IP - success${normal}" || \
-    { printf "%40s\n" "${red}No SSH connection with $VM_IP - error!${normal}"; return; }
+    { printf "%40s\n" "${red}No SSH connection with $VM_IP - error!${normal}"; exit 1; }
   else
     printf "%40s\n" "${red}No connection with $VM_IP - error!${normal}"
-    return
+    exit 1
+#    return
   fi
 
   echo "Copy stress to $VM_IP..."
