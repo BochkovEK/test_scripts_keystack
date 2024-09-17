@@ -11,6 +11,7 @@
 
 script_dir=$(dirname $0)
 nodes_to_find='\-ctrl\-..( |$)|\-comp\-..( |$)|\-net\-..( |$)|\-lcm\-..( |$)'
+add_string="# ----- ADD from deploy_dnsmasq_service.sh -----"
 dns_ip_mapping=dns_ip_mapping.txt
 #parses_file=$script_dir/dns_ip_mapping.txt
 parses_file=/etc/hosts
@@ -33,7 +34,6 @@ do
         1) Edit $dns_ip_mapping file like /etc/hosts to mapping <ip> <nameserver>
 
 cat <<-EOF > ~/test_scripts_keystack/dnsmasq/dns_ip_mapping.txt
-# ----- ADD from deploy_dnsmasq_service.sh -----
 10.224.129.227 int.ebochkov.test.domain
 10.224.129.228 ext.ebochkov.test.domain
 
@@ -125,8 +125,19 @@ install_dnsmasq () {
 }
 
 copy_dnsmasq_conf () {
-  cp $script_dir/$CONF_NAME /etc/$CONF_NAME
-  cat $script_dir/dns_ip_mapping.txt >> /etc/hosts
+  cp "$script_dir"/$CONF_NAME /etc/$CONF_NAME
+  strings_from_dnsmasq_deployer=$(cmd $parses_file|grep "$add_string")
+  if [ -z "$strings_from_dnsmasq_deployer" ]; then
+    cp $parses_file "$script_dir"/hosts_backup
+    echo "$add_string" >> $parses_file
+    cat "$script_dir"/dns_ip_mapping.txt >> $parses_file
+  else
+    cat "$script_dir"/hosts_backup > $parses_file
+    echo "$add_string" >> $parses_file
+    cat "$script_dir"/dns_ip_mapping.txt >> $parses_file
+  fi
+  cat $parses_file
+  exit 0
   sed -i --regexp-extended "s/nameserver(\s+|)[0-9]+.[0-9]+.[0-9]+.[0-9]+/nameserver $DNS_SERVER_IP/" \
       /etc/resolv.conf
 #  echo "nameserver $DNS_SERVER_IP" >> /etc/resolv.conf
@@ -141,17 +152,17 @@ copy_dnsmasq_conf () {
 }
 
 
-get_var
-sed_var_in_conf
-echo -e "\n${yellow}Cat conf...${reset}"
-echo
-cat $script_dir/$CONF_NAME
-echo
-echo -e "\n${yellow}Cat $dns_ip_mapping...${reset}"
-echo
-cat $script_dir/$dns_ip_mapping
-echo
-read -p "Press enter to continue: "
-install_dnsmasq
+#get_var
+#sed_var_in_conf
+#echo -e "\n${yellow}Cat conf...${reset}"
+#echo
+#cat $script_dir/$CONF_NAME
+#echo
+#echo -e "\n${yellow}Cat $dns_ip_mapping...${reset}"
+#echo
+#cat $script_dir/$dns_ip_mapping
+#echo
+#read -p "Press enter to continue: "
+#install_dnsmasq
 copy_dnsmasq_conf
 
