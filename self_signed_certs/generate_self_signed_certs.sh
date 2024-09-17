@@ -132,9 +132,9 @@ get_init_vars () {
 
   # get CA_IP name
   if [[ -z "${CA_IP}" ]]; then
-    read -rp "Enter IP Central Authentication Service [10.224.129.234]: " CA_IP
+    read -rp "Enter IP Central Authentication Service [192.168.0.55]: " CA_IP
   fi
-  export CA_IP=${CA_IP:-"10.224.129.234"}
+  export CA_IP=${CA_IP:-"192.168.0.55"}
 
   # get Nexus domain name
   if [[ -z "${LCM_NEXUS_NAME}" ]]; then
