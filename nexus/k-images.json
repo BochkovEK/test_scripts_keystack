@@ -3,23 +3,6 @@
     "httpPort":5000,
     "forceBasicAuth":true,
     "v1Enabled":true
-  },
-  "storage":{
-    "dataStoreName":"nexus",
-    "blobStoreName":"default",
-    "strictContentTypeValidation":true,
-    "writePolicy":"ALLOW",
-    "latestPolicy":false
-  },
-  "component":{
-    "proprietaryComponents":false
-  },
-  "cleanup":{
-    "policyName":[]
-  },
-  "name":"k-images",
-  "online":true,
-  "dockercheckboxhttp":true,
-  "dockercheckboxhttps":false,
-  "recipe":"docker-hosted"
+  }
+
 }
