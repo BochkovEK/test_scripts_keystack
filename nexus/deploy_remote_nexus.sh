@@ -21,7 +21,7 @@ yellow=`tput setaf 3`
 normal=`tput sgr0`
 
 self_signed_certs_folder="self_signed_certs"
-generate_self_signed_script="generate_self_signed_certs.sh"
+generate_self_signed_certs_script="generate_self_signed_certs.sh"
 
 [[ -z $DEBUG ]] && DEBUG="true"
 [[ -z $ENV_FILE ]] && ENV_FILE="$self_signed_certs_folder/certs_envs"
