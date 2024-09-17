@@ -1,1 +1,35 @@
-{"action":"coreui_Repository","method":"create","data":[{"attributes":{"docker":{"httpPort":5000,"forceBasicAuth":true,"v1Enabled":true},"storage":{"dataStoreName":"nexus","blobStoreName":"default","strictContentTypeValidation":true,"writePolicy":"ALLOW","latestPolicy":false},"component":{"proprietaryComponents":false},"cleanup":{"policyName":[]}},"name":"k-images","format":"","type":"","url":"","online":true,"dockercheckboxhttp":true,"dockercheckboxhttps":false,"recipe":"docker-hosted"}],"type":"rpc","tid":25}
+{
+  "action":"coreui_Repository",
+  "method":"create",
+  "data":[{
+    "attributes":{
+      "docker":{
+        "httpPort":5000,
+        "forceBasicAuth":true,
+        "v1Enabled":true
+      },
+      "storage":{
+        "dataStoreName":"nexus",
+        "blobStoreName":"default",
+        "strictContentTypeValidation":true,
+        "writePolicy":"ALLOW",
+        "latestPolicy":false
+      },
+      "component":{
+        "proprietaryComponents":false
+      },
+      "cleanup":{
+        "policyName":[]
+      }
+    },
+    "name":"k-images",
+    "format":"",
+    "type":"",
+    "url":"",
+    "online":true,
+    "dockercheckboxhttp":true,
+    "dockercheckboxhttps":false,
+    "recipe":"docker-hosted"
+  }],
+  "type":"rpc","tid":25
+}
