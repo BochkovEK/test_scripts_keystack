@@ -113,7 +113,7 @@ $OUTPUT_CERTS_DIR! already exists - ok!${normal}"
   else
     printf "%s\n" "${yellow}Certs for remote nexus: $REMOTE_NEXUS_NAME.$DOMAIN in folder OUTPUT_CERTS_DIR: \
 $OUTPUT_CERTS_DIR! not exists!${normal}"
-    printf "%s\n" "${yellow}Start script $generate_self_signed_certs_script${normal}..."
+    printf "%s\n" "${yellow}Start script $generate_self_signed_certs_script...${normal}"
     bash $parent_dir/$self_signed_certs_folder/$generate_self_signed_certs_script
   fi
 }
