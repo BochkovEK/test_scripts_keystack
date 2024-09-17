@@ -180,7 +180,7 @@ check_certs_for_nexus
 if [ "$certs_for_nexus_exists" = false ]; then
   check_certs_for_nexus
   if [ "$certs_for_nexus_exists" = false ]; then
-    printf "%s\n" "${red}Nexus can not be deploy without certs${normal}"
+    printf "%s\n" "${red}Nexus can not be deploy without certs - error${normal}"
     exit 1
   fi
 fi
