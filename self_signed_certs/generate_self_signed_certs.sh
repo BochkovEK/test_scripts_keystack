@@ -29,6 +29,7 @@
 script_dir=$(dirname $0)
 script_name=$(basename "$0")
 env_file="certs_envs"
+green=`tput setaf 2`
 yellow=`tput setaf 3`
 normal=`tput sgr0`
 
@@ -212,7 +213,7 @@ END
 check_certs_folder_empty () {
   echo "Checking if directory $CERTS_DIR and $OUTPUT_CERTS_DIR are empty..."
   if [ -z "$( ls -A "$CERTS_DIR" )" ] && [ -z "$( ls -A "$OUTPUT_CERTS_DIR" )" ]; then
-     echo "Directory $CERTS_DIR and $OUTPUT_CERTS_DIR are empty - ok"
+     printf "%s\n" "${green}Directory $CERTS_DIR and $OUTPUT_CERTS_DIR are empty - ok${normal}"
   else
      printf "%s\n" "${yellow}Directory $CERTS_DIR and $OUTPUT_CERTS_DIR are not empty!${normal}"
   fi
@@ -220,17 +221,16 @@ check_certs_folder_empty () {
 
 generate_certs () {
 
+  mkdir -p $CERTS_DIR/{root,certs}
+  mkdir -p $OUTPUT_CERTS_DIR
+
+  check_certs_folder_empty
+
+  yes_no_question="Do you want to Generating certs? [Yes]: "
+  yes_no_answer
+
   if [ "$yes_no_input" = "true" ]; then
     echo "Generating certificates..."
-
-    # Create Wildcard
-    mkdir -p $CERTS_DIR/{root,certs}
-    mkdir -p $OUTPUT_CERTS_DIR
-
-    check_certs_folder_empty
-
-    yes_no_question="Do you want to Generating certs? [Yes]: "
-    yes_no_answer
 
     openssl genrsa -out $CERTS_DIR/root/ca.key 2048
     chmod 400 $CERTS_DIR/root/ca.key
