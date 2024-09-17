@@ -281,7 +281,7 @@ generate_certs () {
       -key $CERTS_DIR/certs/cert.key \
       -out $CERTS_DIR/certs/backend.csr
     export SAN=IP:$EXTERNAL_VIP,IP:$INTERNAL_VIP
-    openssl x509 -req -in ~/certs/backend.csr \
+    openssl x509 -req -in $CERTS_DIR/certs/backend.csr \
       -extfile $script_dir/cert.cnf \
       -CA $CERTS_DIR/root/ca.crt \
       -CAkey $CERTS_DIR/root/ca.key \
