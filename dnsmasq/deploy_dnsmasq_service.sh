@@ -126,7 +126,7 @@ install_dnsmasq () {
 
 copy_dnsmasq_conf () {
   cp "$script_dir"/$CONF_NAME /etc/$CONF_NAME
-  strings_from_dnsmasq_deployer=$(cmd $parses_file|grep "$add_string")
+  strings_from_dnsmasq_deployer=$(cat < $parses_file|grep "$add_string")
   if [ -z "$strings_from_dnsmasq_deployer" ]; then
     cp $parses_file "$script_dir"/hosts_backup
     echo "$add_string" >> $parses_file
