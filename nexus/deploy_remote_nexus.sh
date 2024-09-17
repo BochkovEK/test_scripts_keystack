@@ -169,7 +169,7 @@ deploy_remote_nexus () {
   docker compose -f $script_dir/docker-compose.yaml up -d
 
 
-  echo "${yellow}To get initial nexus admin password:${reset}"
+  echo -e "${yellow}\nTo get initial nexus admin password:${normal}"
   echo "docker exec -it nexus cat /nexus-data/admin.password"
 }
 
