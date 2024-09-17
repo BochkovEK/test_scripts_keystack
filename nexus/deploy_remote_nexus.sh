@@ -18,6 +18,7 @@
 
 green=`tput setaf 2`
 yellow=`tput setaf 3`
+red=`tput setaf 1`
 normal=`tput sgr0`
 
 self_signed_certs_folder="self_signed_certs"
@@ -179,7 +180,7 @@ check_certs_for_nexus
 if [ "$certs_for_nexus_exists" = false ]; then
   check_certs_for_nexus
   if [ "$certs_for_nexus_exists" = false ]; then
-    printf "%s\n" "${yellow}Nexus can not be deploy without certs${normal}"
+    printf "%s\n" "${red}Nexus can not be deploy without certs${normal}"
     exit 1
   fi
 fi
