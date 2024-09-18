@@ -61,7 +61,7 @@ export KS_LDAP_SERVER_URI_GITLAB="ldaps-lab.slavchenkov-keystack.vm.lab.itkey.co
 export KS_LDAP_BIND_DN_GITLAB="CN=ldap-ro,CN=Users,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
 
 #Enter the LDAP BIND Password for Gitlab:
-export KS_LDAP_BIND_PASSWORD_GITLAB="111111As"
+export KS_LDAP_BIND_PASSWORD_GITLAB="222222Zx"
 
 #Enter the LDAP USER SEARCH BASEDN for Gitlab:
 export KS_LDAP_USER_SEARCH_BASEDN_GITLAB="DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
