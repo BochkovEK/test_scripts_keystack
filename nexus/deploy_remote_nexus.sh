@@ -112,6 +112,18 @@ fi
   read -p "Press enter to continue: "
 }
 
+waiting_for_nexus_readiness () {
+  echo -n Waiting for Nexus readiness...
+  while [ "$(curl -isf https://$REMOTE_NEXUS_NAME.$DOMAIN/service/rest/v1/status | awk 'NR==1 {print $2}')"  != "200" ]; do
+    echo -n .; sleep 5
+  done
+  echo .
+  echo -e "${green}Nexus is Ready!${normal}"
+
+  echo -e "${yellow}\nTo get initial nexus admin password:${normal}"
+  echo "docker exec -it nexus cat /nexus-data/admin.password"
+}
+
 #Checking if directory $CERTS_DIR and $OUTPUT_CERTS_DIR are empty
 check_certs_for_nexus () {
   certs_for_nexus_exists="false"
@@ -146,6 +158,7 @@ check_running_containers () {
     fi
   done
   echo -e "${green}Nexus already deployed${normal}"
+  waiting_for_nexus_readiness
   exit 0
 }
 
@@ -177,16 +190,6 @@ check_started_containers () {
 nexus_docker_up () {
    #Conatiners up
   docker compose -f $script_dir/docker-compose.yaml up -d
-
-  echo -n Waiting for Nexus readiness...
-  while [ "$(curl -isf https://$REMOTE_NEXUS_NAME.$DOMAIN/service/rest/v1/status | awk 'NR==1 {print $2}')"  != "200" ]; do
-    echo -n .; sleep 5
-  done
-  echo .
-  echo -e "${green}Nexus is Ready!${normal}"
-
-  echo -e "${yellow}\nTo get initial nexus admin password:${normal}"
-  echo "docker exec -it nexus cat /nexus-data/admin.password"
 }
 
 nexus_bootstarp () {
@@ -233,4 +236,4 @@ fi
 nexus_bootstarp
 check_started_containers
 nexus_docker_up
-
+waiting_for_nexus_readiness
