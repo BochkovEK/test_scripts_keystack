@@ -10,7 +10,7 @@ parent_dir=$(dirname "$script_dir")
 
 [[ -z $DEBUG ]] && DEBUG="true"
 [[ -z $ENV_FILE ]] && ENV_FILE="$self_signed_certs_folder/certs_envs"
-[[ -z $USER ]] && USER="admin"
+[[ -z $NEXUS_USER ]] && NEXUS_USER="admin"
 [[ -z $REMOTE_NEXUS_NAME ]] && REMOTE_NEXUS_NAME=""
 [[ -z $DOMAIN ]] && DOMAIN=""
 
@@ -27,7 +27,7 @@ echo -e "
   REMOTE_NEXUS_NAME:  $REMOTE_NEXUS_NAME
   DOMAIN:             $DOMAIN
   DOCKER_HTTP:        $DOCKER_HTTP
-  USER:               $USER
+  NEXUS_USER:         $NEXUS_USER
   password:           $password
 "
 
