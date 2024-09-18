@@ -137,26 +137,11 @@ deploy_remote_nexus () {
     fi
   fi
 
-
-  #Change in envs LCM_NEXUS_NAME var
-  #lcm_nexus_name_string=$(cat $parentdir/self_signed_certs/certs_envs|grep -m 1 "LCM_NEXUS_NAME")
-
-  #  [ "$DEBUG" = true ] && echo -e "
-  #  [DEBUG]
-  #  lcm_nexus_name_string: $lcm_nexus_name_string
-  #  REMOTE_NEXUS: $REMOTE_NEXUS
-  #  "
-  #sed -i "s/$lcm_nexus_name_string/export LCM_NEXUS_NAME=$REMOTE_NEXUS/" $parentdir/self_signed_certs/certs_envs
-
-  #echo "Sourcing envs after sed"
-  #source $parentdir/self_signed_certs/certs_envs
-
   #Add string to hosts
   nexus_string_exists=$(cat /etc/hosts|grep $REMOTE_NEXUS_NAME)
   if [ -z "$nexus_string_exists" ]; then
     sed -i "s/127.0.0.1 localhost/127.0.0.1 localhost $REMOTE_NEXUS_NAME.$DOMAIN/" /etc/hosts
   fi
-
 
   #Change nginx conf
   echo "Changing nginx conf..."
@@ -164,10 +149,15 @@ deploy_remote_nexus () {
   sed -i "s/LCM_NEXUS_NAME/$REMOTE_NEXUS_NAME/g" $script_dir/nginx_https.conf
   #sed -i -e "s@OUTPUT_CERTS_DIR@$OUTPUT_CERTS_DIR@g" $script_dir/nginx_https.conf
 
-
   #Conatiners up
   docker compose -f $script_dir/docker-compose.yaml up -d
 
+  echo -n Waiting for Nexus readiness...
+  while [ "$(curl -isf https://$REMOTE_NEXUS_NAME.$DOMAIN/service/rest/v1/status | awk 'NR==1 {print $2}')"  != "200" ]; do
+    echo -n .; sleep 5
+  done
+  echo .
+  echo -e "${green}Nexus is Ready!${normal}"
 
   echo -e "${yellow}\nTo get initial nexus admin password:${normal}"
   echo "docker exec -it nexus cat /nexus-data/admin.password"
