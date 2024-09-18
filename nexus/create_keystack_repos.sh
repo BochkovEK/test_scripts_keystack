@@ -29,6 +29,7 @@ echo -e "
   DOMAIN:             $DOMAIN
   DOCKER_HTTP:        $DOCKER_HTTP
   NEXUS_USER:         $NEXUS_USER
+  NEXUS_PORT:         $NEXUS_PORT
   password:           $password
 "
 
