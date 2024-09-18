@@ -13,6 +13,7 @@ parent_dir=$(dirname "$script_dir")
 [[ -z $NEXUS_USER ]] && NEXUS_USER="admin"
 [[ -z $REMOTE_NEXUS_NAME ]] && REMOTE_NEXUS_NAME=""
 [[ -z $DOMAIN ]] && DOMAIN=""
+[[ -z $NEXUS_PORT ]] && NEXUS_PORT="8081"
 
 
 if [ -f "$parent_dir/$ENV_FILE" ]; then
@@ -20,7 +21,7 @@ if [ -f "$parent_dir/$ENV_FILE" ]; then
   source $parent_dir/$ENV_FILE
 fi
 
-DOCKER_HTTP="http://$REMOTE_NEXUS_NAME.$DOMAIN/service/rest/v1/repositories"
+DOCKER_HTTP="http://$REMOTE_NEXUS_NAME.$DOMAIN:$NEXUS_PORT/service/rest/v1/repositories"
 password=$(docker exec -it nexus cat /nexus-data/admin.password)
 
 echo -e "
