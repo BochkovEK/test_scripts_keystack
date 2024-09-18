@@ -114,7 +114,7 @@ fi
 
 waiting_for_nexus_readiness () {
   echo -n Waiting for Nexus readiness...
-  while [ "$(curl -isf https://$REMOTE_NEXUS_NAME.$DOMAIN/service/rest/v1/status | awk 'NR==1 {print $2}')"  != "200" ]; do
+  while [ "$(curl -isf --cacert "$CERTS_DIR"/ca.crt https://"$REMOTE_NEXUS_NAME"."$DOMAIN"/service/rest/v1/status | awk 'NR==1 {print $2}')"  != "200" ]; do
     echo -n .; sleep 5
   done
   echo .
