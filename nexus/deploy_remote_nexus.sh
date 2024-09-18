@@ -27,10 +27,6 @@ required_containers_list=(
 "nginx"
 "nexus"
 )
-
-[[ -z $DEBUG ]] && DEBUG="true"
-[[ -z $ENV_FILE ]] && ENV_FILE="$self_signed_certs_folder/certs_envs"
-
 #Script_dir, current folder
 script_name=$(basename "$0")
 script_file_path=$(realpath $0)
@@ -38,6 +34,8 @@ script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
 #parentdir=$(builtin cd $script_dir; pwd)
 
+[[ -z $DEBUG ]] && DEBUG="true"
+[[ -z $ENV_FILE ]] && ENV_FILE="$self_signed_certs_folder/certs_envs"
 
 while [ -n "$1" ]; do
   case "$1" in

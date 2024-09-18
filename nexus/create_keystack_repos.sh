@@ -2,21 +2,48 @@
 
 #The script created keystack repos by json files
 
-DOCKER_HTTP="http://localhost:8081/service/rest/v1/repositories"
-USER="admin"
-PASSWORD="password"
+self_signed_certs_folder="self_signed_certs"
+#generate_self_signed_certs_script="generate_self_signed_certs.sh"
+script_file_path=$(realpath $0)
+script_dir=$(dirname "$script_file_path")
+parent_dir=$(dirname "$script_dir")
+
+[[ -z $DEBUG ]] && DEBUG="true"
+[[ -z $ENV_FILE ]] && ENV_FILE="$self_signed_certs_folder/certs_envs"
+[[ -z $USER ]] && USER="admin"
+[[ -z $REMOTE_NEXUS_NAME ]] && REMOTE_NEXUS_NAME=""
+[[ -z $DOMAIN ]] && DOMAIN=""
+
+
+if [ -f "$parent_dir/$ENV_FILE" ]; then
+  echo "$ENV_FILE file exists"
+  source $parent_dir/$ENV_FILE
+fi
+
+DOCKER_HTTP="http://$REMOTE_NEXUS_NAME.$DOMAIN/service/rest/v1/repositories"
+password=$(docker exec -it nexus cat /nexus-data/admin.password)
+
+echo -e "
+  REMOTE_NEXUS_NAME:  $REMOTE_NEXUS_NAME
+  DOMAIN:             $DOMAIN
+  DOCKER_HTTP:        $DOCKER_HTTP
+  USER:               $USER
+  password:           $password
+"
+
+read -p "Press enter to continue..."
 
 # k-images docker(hosted)
-curl -v -u $USER:$PASSWORD -H "Connection: close" -H "Content-Type: application/json" -X POST "$DOCKER_HTTP/docker/hosted" -d @docker-hosted-k-images.json
+curl -v -u $USER:$password -H "Connection: close" -H "Content-Type: application/json" -X POST "$DOCKER_HTTP/docker/hosted" -d @docker-hosted-k-images.json
 # docker-sber yum(hosted)
-curl -v -u $USER:$PASSWORD -H "Connection: close" -H "Content-Type: application/json" -X POST "$DOCKER_HTTP/yum/hosted" -d @yum-hosted-docker-sber.json
+curl -v -u $USER:$password -H "Connection: close" -H "Content-Type: application/json" -X POST "$DOCKER_HTTP/yum/hosted" -d @yum-hosted-docker-sber.json
 # sberlinux yum(hosted)
-curl -v -u $USER:$PASSWORD -H "Connection: close" -H "Content-Type: application/json" -X POST "$DOCKER_HTTP/yum/hosted" -d @yum-hosted-sberlinux.json
+curl -v -u $USER:$password -H "Connection: close" -H "Content-Type: application/json" -X POST "$DOCKER_HTTP/yum/hosted" -d @yum-hosted-sberlinux.json
 # images raw(hosted)
-curl -v -u $USER:$PASSWORD -H "Connection: close" -H "Content-Type: application/json" -X POST "$DOCKER_HTTP/raw/hosted" -d @raw-hosted-images.json
+curl -v -u $USER:$password -H "Connection: close" -H "Content-Type: application/json" -X POST "$DOCKER_HTTP/raw/hosted" -d @raw-hosted-images.json
 # k-add raw(hosted)
-curl -v -u $USER:$PASSWORD -H "Connection: close" -H "Content-Type: application/json" -X POST "$DOCKER_HTTP/raw/hosted" -d @raw-hosted-k-add.json
+curl -v -u $USER:$password -H "Connection: close" -H "Content-Type: application/json" -X POST "$DOCKER_HTTP/raw/hosted" -d @raw-hosted-k-add.json
 # k-backup raw(hosted)
-curl -v -u $USER:$PASSWORD -H "Connection: close" -H "Content-Type: application/json" -X POST "$DOCKER_HTTP/raw/hosted" -d @raw-hosted-k-backup.json
+curl -v -u $USER:$password -H "Connection: close" -H "Content-Type: application/json" -X POST "$DOCKER_HTTP/raw/hosted" -d @raw-hosted-k-backup.json
 # k-pip pypi(hosted)
-curl -v -u $USER:$PASSWORD -H "Connection: close" -H "Content-Type: application/json" -X POST "$DOCKER_HTTP/pypi/hosted" -d @pypi-hosted-k-pip.json
+curl -v -u $USER:$password -H "Connection: close" -H "Content-Type: application/json" -X POST "$DOCKER_HTTP/pypi/hosted" -d @pypi-hosted-k-pip.json
