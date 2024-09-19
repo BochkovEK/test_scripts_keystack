@@ -38,7 +38,7 @@ read -p "Press enter to continue..."
 # k-images docker(hosted)
 curl -v -u $NEXUS_USER:$password -H "Connection: close" -H "Content-Type: application/json" -X POST "$DOCKER_HTTP/docker/hosted" -d @$script_dir/docker-hosted-k-images.json
 # docker-sber yum(hosted)
-curl -v -u $NEXUS_USER:$password -H "Connection: close" -H "Content-Type: application/json" -X POST "$DOCKER_HTTP/yum/hosted" -d @$script_dir/yum-hosted-docker-sber.json
+curl -v -u $NEXUS_USER:$password -H "Connection: close" -H "Content-Type: application/json" -X POST "$DOCKER_HTTP/yum/hosted" -d @$script_dir/yum-hosted-docker-sberlinux.json
 # sberlinux yum(hosted)
 curl -v -u $NEXUS_USER:$password -H "Connection: close" -H "Content-Type: application/json" -X POST "$DOCKER_HTTP/yum/hosted" -d @$script_dir/yum-hosted-sberlinux.json
 # images raw(hosted)
