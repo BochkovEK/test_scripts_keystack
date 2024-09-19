@@ -13,17 +13,34 @@ parent_dir=$(dirname "$script_dir")
 
 
 bash $parent_dir/utils/install_wget.sh
-wget $RELEASE_URL -P $HOME/
-tar -xf $HOME/*.tgz -C $HOME/
-cp -r ~/installer ~/installer_backup
+release_tar=$(echo "${RELEASE_URL##*/}")
+if [ ! -f "~/$release_tar" ]; then
+  wget $RELEASE_URL -P $HOME/
+fi
+if [ ! -d "$HOME/installer" ]; then
+  echo "Untar installer archive..."
+  tar -xf $HOME/*.tgz -C $HOME/
+fi
+if [ ! -d "$HOME/installer_backup" ]; then
+  cp -r ~/installer ~/installer_backup
+fi
+
 source $script_dir/$INSTALLER_CONF
-cp $HOME/.ssh/id_rsa $HOME/.ssh/id_rsa_backup
+
+if [ ! -f "$HOME/.ssh/id_rsa_backup" ]; then
+  cp $HOME/.ssh/id_rsa $HOME/.ssh/id_rsa_backup
+fi
+
 lcm_mgmt_ip=$(ip a|grep mgmt|grep inet|grep -E '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/[0-9]{1,3}' \
   |awk '{p=index($1,"/");print substr($1,0,p-1)}')
+
 export KS_INSTALL_LCM_IP=$lcm_mgmt_ip
+echo $KS_INSTALL_LCM_IP
 
 if [ -d "$HOME/installer" ]; then
-  scp -r $CENTRAL_AUTH_SERVICE_IP:$CERTS_FOLDER $HOME/installer/
+  if [ -z "$( ls -A "~/installer/certs" )" ]; then
+    scp -r $CENTRAL_AUTH_SERVICE_IP:$CERTS_FOLDER $HOME/installer/
+  fi
   cd $HOME/installer/
   ls -la ./certs
   ./installer.sh| tee $HOME/installer-$(date '+%Y-%m-%d'-%H-%M).log
