@@ -5,13 +5,18 @@
 script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
+start_installer_envs="start_installer_envs"
 
-[[ -z $CENTRAL_AUTH_SERVICE_IP ]] && CENTRAL_AUTH_SERVICE_IP="ebochkov-keystack-add_vm-01"
+[[ -z $CENTRAL_AUTH_SERVICE_IP ]] && CENTRAL_AUTH_SERVICE_IP=""
 [[ -z $CERTS_FOLDER ]] && CERTS_FOLDER="$HOME/certs"
-[[ -z $RELEASE_URL ]] && RELEASE_URL="https://repo.itkey.com/repository/k-install/installer-ks2024.3-rc1-sberlinux-offline.tgz"
-[[ -z $INSTALLER_CONF ]] && INSTALLER_CONF="Client_certs_Nexus_LDAP_Gitlab_Netbox_installer_envs"
+[[ -z $RELEASE_URL ]] && RELEASE_URL=""
+[[ -z $INSTALLER_CONF ]] && INSTALLER_CONF=""
 [[ -z $INIT_INSTALLER_FOLDER ]] && INIT_INSTALLER_FOLDER="$HOME/installer"
 [[ -z $INIT_INSTALLER_BACKUP_FOLDER ]] && INIT_INSTALLER_BACKUP_FOLDER="$HOME/installer_backup"
+
+if [ -f $script_dir/$start_installer_envs ]; then
+  source $script_dir/$start_installer_envs
+fi
 
 bash $parent_dir/utils/install_wget.sh
 release_tar=$(echo "${RELEASE_URL##*/}")
@@ -43,13 +48,15 @@ lcm_mgmt_ip=$(ip a|grep mgmt|grep inet|grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1
   |awk '{p=index($1,"/");print substr($1,0,p-1)}')
 
 export KS_INSTALL_LCM_IP=$lcm_mgmt_ip
-echo $KS_INSTALL_LCM_IP
+echo "KS_INSTALL_LCM_IP: $KS_INSTALL_LCM_IP"
 
 if [ -d "$HOME/installer" ]; then
   if [ -z "$( ls -A ~/installer/certs )" ]; then
     scp -r $CENTRAL_AUTH_SERVICE_IP:$CERTS_FOLDER $HOME/installer/
   fi
   cd $HOME/installer/
+  echo "list of certs in $HOME/installer/certs folder"
   ls -la ./certs
+  echo "Start installer.sh script"
   ./installer.sh| tee $HOME/installer-$(date '+%Y-%m-%d'-%H-%M).log
 fi
