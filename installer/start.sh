@@ -32,7 +32,7 @@ if [ ! -f "$HOME/.ssh/id_rsa_backup" ]; then
   cp $HOME/.ssh/id_rsa $HOME/.ssh/id_rsa_backup
 fi
 
-lcm_mgmt_ip=$(ip a|grep mgmt|grep inet|grep -E '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/[0-9]{1,3}' \
+lcm_mgmt_ip=$(ip a|grep mgmt|grep inet|grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/[0-9]{1,3}' \
   |awk '{p=index($1,"/");print substr($1,0,p-1)}')
 
 export KS_INSTALL_LCM_IP=$lcm_mgmt_ip
