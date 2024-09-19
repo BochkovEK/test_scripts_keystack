@@ -26,6 +26,7 @@ if [ ! -d $INIT_INSTALLER_FOLDER ]; then
   else
     echo "Copy init installer folder from backup folder"
     cp -r $INIT_INSTALLER_BACKUP_FOLDER $INIT_INSTALLER_FOLDER
+  fi
 fi
 if [ ! -d "$HOME/installer_backup" ]; then
   echo "Create backup folder"
