@@ -39,7 +39,7 @@ export KS_INSTALL_LCM_IP=$lcm_mgmt_ip
 echo $KS_INSTALL_LCM_IP
 
 if [ -d "$HOME/installer" ]; then
-  if [ -z "$( ls -A "~/installer/certs" )" ]; then
+  if [ -z "$( ls -A ~/installer/certs )" ]; then
     scp -r $CENTRAL_AUTH_SERVICE_IP:$CERTS_FOLDER $HOME/installer/
   fi
   cd $HOME/installer/

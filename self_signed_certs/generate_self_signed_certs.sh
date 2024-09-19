@@ -212,7 +212,7 @@ END
 #Checking if directory $CERTS_DIR and $OUTPUT_CERTS_DIR are empty
 check_certs_folder_empty () {
   echo "Checking if directory $CERTS_DIR and $OUTPUT_CERTS_DIR are empty..."
-  if [ -z "$( ls -A "$CERTS_DIR/certs" )" ] && [ -z "$( ls -A "$CERTS_DIR/root" )" ] && \
+  if [ -z "$( ls -A $CERTS_DIR/certs )" ] && [ -z "$( ls -A $CERTS_DIR/root )" ] && \
    [ -z "$( ls -A "$OUTPUT_CERTS_DIR" )" ]; then
      printf "%s\n" "${green}Directory $CERTS_DIR and $OUTPUT_CERTS_DIR are empty - ok${normal}"
   else
