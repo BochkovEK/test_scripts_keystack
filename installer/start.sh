@@ -14,6 +14,7 @@ parent_dir=$(dirname "$script_dir")
 
 bash $parent_dir/utils/install_wget.sh
 release_tar=$(echo "${RELEASE_URL##*/}")
+echo "release_tar: $release_tar"
 if [ ! -f "~/$release_tar" ]; then
   wget $RELEASE_URL -P $HOME/
 fi
