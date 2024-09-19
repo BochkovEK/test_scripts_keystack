@@ -23,10 +23,10 @@ normal=`tput sgr0`
 
 self_signed_certs_folder="self_signed_certs"
 generate_self_signed_certs_script="generate_self_signed_certs.sh"
-
-[[ -z $DEBUG ]] && DEBUG="true"
-[[ -z $ENV_FILE ]] && ENV_FILE="$self_signed_certs_folder/certs_envs"
-
+required_containers_list=(
+"nginx"
+"nexus"
+)
 #Script_dir, current folder
 script_name=$(basename "$0")
 script_file_path=$(realpath $0)
@@ -34,6 +34,8 @@ script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
 #parentdir=$(builtin cd $script_dir; pwd)
 
+[[ -z $DEBUG ]] && DEBUG="true"
+[[ -z $ENV_FILE ]] && ENV_FILE="$self_signed_certs_folder/certs_envs"
 
 while [ -n "$1" ]; do
   case "$1" in
@@ -60,6 +62,10 @@ while [ -n "$1" ]; do
   shift
 done
 
+deploy_error () {
+  echo -e "${red}Nexus deploy - error!${normal}"
+  exit 1
+}
 
 get_init_vars () {
 
@@ -81,26 +87,39 @@ fi
   fi
   export OUTPUT_CERTS_DIR=${OUTPUT_CERTS_DIR:-"$HOME/certs"}
 
-# get domain name
-if [[ -z "${DOMAIN}" ]]; then
-  read -rp "Enter certs output folder for installer [test.domain]: " DOMAIN
-fi
-export DOMAIN=${DOMAIN:-"test.domain"}
+  # get domain name
+  if [[ -z "${DOMAIN}" ]]; then
+    read -rp "Enter certs output folder for installer [test.domain]: " DOMAIN
+  fi
+  export DOMAIN=${DOMAIN:-"test.domain"}
 
-# get Remote Nexus domain nama
-if [[ -z "${REMOTE_NEXUS_NAME}" ]]; then
-  read -rp "Enter the Remote Nexus domain name [remote-nexus]: " REMOTE_NEXUS_NAME
-fi
-export REMOTE_NEXUS_NAME=${REMOTE_NEXUS_NAME:-"remote-nexus"}
+  # get Remote Nexus domain nama
+  if [[ -z "${REMOTE_NEXUS_NAME}" ]]; then
+    read -rp "Enter the Remote Nexus domain name [remote-nexus]: " REMOTE_NEXUS_NAME
+  fi
+  export REMOTE_NEXUS_NAME=${REMOTE_NEXUS_NAME:-"remote-nexus"}
 
-echo -E "
-envs list:
-  script_dir:         $script_dir
-  parent_dir:         $parent_dir
-  CERTS_DIR:          $CERTS_DIR
-  DOMAIN:             $DOMAIN
-  REMOTE_NEXUS_NAME:  $REMOTE_NEXUS_NAME
-"
+  echo -E "
+  envs list:
+    script_dir:         $script_dir
+    parent_dir:         $parent_dir
+    CERTS_DIR:          $CERTS_DIR
+    DOMAIN:             $DOMAIN
+    REMOTE_NEXUS_NAME:  $REMOTE_NEXUS_NAME
+  "
+  read -p "Press enter to continue: "
+}
+
+waiting_for_nexus_readiness () {
+  echo -n Waiting for Nexus readiness...
+  while [ "$(curl -isf --cacert "$CERTS_DIR"/root/ca.crt https://"$REMOTE_NEXUS_NAME"."$DOMAIN"/service/rest/v1/status | awk 'NR==1 {print $2}')"  != "200" ]; do
+    echo -n .; sleep 5
+  done
+  echo .
+  echo -e "${green}Nexus is Ready!${normal}"
+
+  echo -e "${yellow}\nTo get initial nexus admin password:${normal}"
+  echo "docker exec -it nexus cat /nexus-data/admin.password"
 }
 
 #Checking if directory $CERTS_DIR and $OUTPUT_CERTS_DIR are empty
@@ -119,10 +138,60 @@ $OUTPUT_CERTS_DIR! not exists!${normal}"
   fi
 }
 
-deploy_remote_nexus () {
-  echo "Deploy Remote-Nexus..."
+check_running_containers () {
+    running_container_list=$(docker ps --format "{{.Names}}" --filter status=running)
+  for container_required in "${required_containers_list[@]}"; do
+    container_running="false"
+    for container in $running_container_list; do
+#      echo "$container" - "$container_required"
+      if [ "$container" = "$container_required" ]; then
+        container_running="true"
+      fi
+    done
+    if [ "$container_running" = "true" ]; then
+      echo -e "${green}$container_required - ok${normal}"
+    else
+      echo -e "${red}$container_required - error${normal}"
+      deploy_error
+    fi
+  done
+  echo -e "${green}Nexus already deployed${normal}"
+  waiting_for_nexus_readiness
+  exit 0
+}
 
-  read -p "Press enter to continue: "
+check_started_containers () {
+  started_container_list=$(docker ps --format "{{.Names}}")
+  started_containers_count=0
+  for container_required in "${required_containers_list[@]}"; do
+#    containers_for_nexus_not_running="true"
+    for container in $started_container_list; do
+#      echo "$container" - "$container_required"
+      if [ "$container" = "$container_required" ]; then
+        container_exist="true"
+      fi
+    done
+    if [ "$container_exist" = "true" ]; then
+      started_containers_count=$((started_containers_count + 1))
+    fi
+  done
+  if ((started_containers_count == 2)); then
+    check_running_containers
+  elif ((started_containers_count == 0)); then
+    return
+  else
+    echo -e "${yellow}There may have already been a failed Nexus deployment${normal}"
+    deploy_error
+  fi
+}
+
+nexus_docker_up () {
+   #Conatiners up
+  docker compose -f $script_dir/docker-compose.yaml up -d
+}
+
+nexus_bootstarp () {
+
   #Install docker if need
   if ! command -v docker &> /dev/null; then
     is_ubuntu=$(cat /etc/os-release|grep ubuntu)
@@ -137,40 +206,17 @@ deploy_remote_nexus () {
     fi
   fi
 
-
-  #Change in envs LCM_NEXUS_NAME var
-  #lcm_nexus_name_string=$(cat $parentdir/self_signed_certs/certs_envs|grep -m 1 "LCM_NEXUS_NAME")
-
-  #  [ "$DEBUG" = true ] && echo -e "
-  #  [DEBUG]
-  #  lcm_nexus_name_string: $lcm_nexus_name_string
-  #  REMOTE_NEXUS: $REMOTE_NEXUS
-  #  "
-  #sed -i "s/$lcm_nexus_name_string/export LCM_NEXUS_NAME=$REMOTE_NEXUS/" $parentdir/self_signed_certs/certs_envs
-
-  #echo "Sourcing envs after sed"
-  #source $parentdir/self_signed_certs/certs_envs
-
   #Add string to hosts
   nexus_string_exists=$(cat /etc/hosts|grep $REMOTE_NEXUS_NAME)
   if [ -z "$nexus_string_exists" ]; then
     sed -i "s/127.0.0.1 localhost/127.0.0.1 localhost $REMOTE_NEXUS_NAME.$DOMAIN/" /etc/hosts
   fi
 
-
   #Change nginx conf
   echo "Changing nginx conf..."
   sed -i "s/DOMAIN/$DOMAIN/g" $script_dir/nginx_https.conf
   sed -i "s/LCM_NEXUS_NAME/$REMOTE_NEXUS_NAME/g" $script_dir/nginx_https.conf
   #sed -i -e "s@OUTPUT_CERTS_DIR@$OUTPUT_CERTS_DIR@g" $script_dir/nginx_https.conf
-
-
-  #Conatiners up
-  docker compose -f $script_dir/docker-compose.yaml up -d
-
-
-  echo -e "${yellow}\nTo get initial nexus admin password:${normal}"
-  echo "docker exec -it nexus cat /nexus-data/admin.password"
 }
 
 
@@ -185,5 +231,7 @@ if [ "$certs_for_nexus_exists" = false ]; then
   fi
 fi
 
-deploy_remote_nexus
-
+nexus_bootstarp
+check_started_containers
+nexus_docker_up
+waiting_for_nexus_readiness

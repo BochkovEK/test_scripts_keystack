@@ -1,0 +1,18 @@
+{
+  "name":"docker-sber",
+  "yum":{
+    "repodataDepth":0,
+    "deployPolicy":"STRICT"
+  },
+  "storage":{
+    "dataStoreName":"nexus",
+    "blobStoreName":"default",
+    "strictContentTypeValidation":true,
+    "writePolicy":"ALLOW_ONCE"
+  },
+  "component":{
+    "proprietaryComponents":false
+  },
+  "online":true,
+  "recipe":"yum-hosted"
+}
