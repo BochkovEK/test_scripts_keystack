@@ -67,8 +67,7 @@ export KS_LDAP_BIND_PASSWORD_GITLAB="222222Zx"
 export KS_LDAP_USER_SEARCH_BASEDN_GITLAB="DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
 
 #Enter the LDAP REQUIRE GROUP DN for Gitlab:
-export KS_LDAP_REQUIRE_GROUP_DN_GITLAB="CN=grp.ro,OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com
-"
+export KS_LDAP_REQUIRE_GROUP_DN_GITLAB="CN=grp.ro,OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
 
 # =============== DOMAIN AND SERVICE NAME ==================
 #Enter the LCM root domain for the KeyStack [demo.local]:
