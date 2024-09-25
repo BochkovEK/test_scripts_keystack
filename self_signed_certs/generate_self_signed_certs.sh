@@ -220,6 +220,110 @@ check_certs_folder_empty () {
   fi
 }
 
+generate_ca_certs () {
+  echo "generate ca certs..."
+  if [ ! -f $CERTS_DIR/root/ca.key ] && [ ! -f $CERTS_DIR/root/ca.crt ] && [ ! -f $CERTS_DIR/certs/cert.csr ] \
+    && [ ! -f $CERTS_DIR/certs/cert.crt ];then
+
+    openssl genrsa -out $CERTS_DIR/root/ca.key 2048
+    chmod 400 $CERTS_DIR/root/ca.key
+
+    openssl req -new -x509 -nodes -subj "/C=RU/ST=Msk/L=Moscow/O=ITKey/OU=KeyStack/CN=KeyStack Root CA" \
+      -key $CERTS_DIR/root/ca.key -sha256 \
+      -days 3650 -out $CERTS_DIR/root/ca.crt
+    chmod 444 $CERTS_DIR/root/ca.crt
+
+    openssl genrsa -out $CERTS_DIR/certs/cert.key 2048
+    chmod 400 $CERTS_DIR/certs/cert.key
+
+    openssl req -new -subj "/C=RU/ST=Msk/L=Moscow/O=ITKey/OU=KeyStack/CN=*.$DOMAIN" \
+      -key $CERTS_DIR/certs/cert.key -out $CERTS_DIR/certs/cert.csr
+
+    export SAN=DNS:$DOMAIN,DNS:*.$DOMAIN,IP:$CA_IP
+
+    openssl x509 -req -in $CERTS_DIR/certs/cert.csr \
+      -extfile $script_dir/cert.cnf -CA $CERTS_DIR/root/ca.crt \
+      -CAkey $CERTS_DIR/root/ca.key -CAcreateserial \
+      -out $CERTS_DIR/certs/cert.crt -days 728 -sha256
+
+    #external internal pem
+    cat $CERTS_DIR/certs/external_VIP.crt $CERTS_DIR/certs/cert.key > $CERTS_DIR/certs/haproxy_pem
+    cat $CERTS_DIR/certs/internal_VIP.crt $CERTS_DIR/certs/cert.key > $CERTS_DIR/certs/haproxy_internal_pem
+    cp $CERTS_DIR/certs/haproxy_pem $OUTPUT_CERTS_DIR/haproxy_pem
+    cp $CERTS_DIR/certs/haproxy_internal_pem $OUTPUT_CERTS_DIR/haproxy_internal_pem
+
+    #backend_pem
+    cp $CERTS_DIR/certs/backend.crt $OUTPUT_CERTS_DIR/backend_pem
+    cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/backend_key_pem
+  else
+    printf "%s\n" "${yellow}$CERTS_DIR/root/ca.key, $CERTS_DIR/root/ca.crt, $CERTS_DIR/certs/cert.csr, $CERTS_DIR/certs/cert.crt \
+already exists${normal}"
+  fi
+}
+
+generate_internal_cert () {
+  echo "generate internal cert..."
+  if [ ! -f $CERTS_DIR/certs/external_VIP.csr ] && [ ! -f $CERTS_DIR/certs/internal_VIP.crt ]; then
+
+    openssl req -new -subj "/C=RU/ST=Msk/L=Moscow/O=ITKey/OU=KeyStack/CN=$INTERNAL_FQDN" \
+      -key $CERTS_DIR/certs/cert.key \
+      -out $CERTS_DIR/certs/external_VIP.csr
+    export SAN=DNS:$INTERNAL_FQDN,IP:$INTERNAL_VIP
+    openssl x509 -req -in $CERTS_DIR/certs/external_VIP.csr \
+      -extfile $script_dir/cert.cnf -CA $CERTS_DIR/root/ca.crt \
+      -CAkey $CERTS_DIR/root/ca.key -CAcreateserial \
+      -out $CERTS_DIR/certs/internal_VIP.crt -days 728 -sha256
+
+    cat $CERTS_DIR/certs/internal_VIP.crt $CERTS_DIR/certs/cert.key > $CERTS_DIR/certs/haproxy_internal_pem
+    cp $CERTS_DIR/certs/haproxy_internal_pem $OUTPUT_CERTS_DIR/haproxy_internal_pem
+  else
+    printf "%s\n" "${yellow}$CERTS_DIR/certs/external_VIP.csr, $CERTS_DIR/certs/internal_VIP.crt already exists${normal}"
+  fi
+}
+
+generate_external_cert () {
+  echo "generate external cert..."
+  if [ ! -f $CERTS_DIR/certs/external_VIP.csr ] && [ ! -f $CERTS_DIR/certs/external_VIP.crt ]; then
+
+    openssl req -new -subj "/C=RU/ST=Msk/L=Moscow/O=ITKey/OU=KeyStack/CN=$EXTERNAL_FQDN" \
+      -key $CERTS_DIR/certs/cert.key \
+      -out $CERTS_DIR/certs/external_VIP.csr
+    export SAN=DNS:$EXTERNAL_FQDN,IP:$EXTERNAL_VIP
+    openssl x509 -req -in $CERTS_DIR/certs/external_VIP.csr \
+      -extfile $script_dir/cert.cnf -CA $CERTS_DIR/root/ca.crt \
+      -CAkey $CERTS_DIR/root/ca.key -CAcreateserial \
+      -out $CERTS_DIR/certs/external_VIP.crt -days 728 -sha256
+    #external internal pem
+
+    cat $CERTS_DIR/certs/external_VIP.crt $CERTS_DIR/certs/cert.key > $CERTS_DIR/certs/haproxy_pem
+    cp $CERTS_DIR/certs/haproxy_pem $OUTPUT_CERTS_DIR/haproxy_pem
+  else
+    printf "%s\n" "${yellow}$CERTS_DIR/certs/external_VIP.csr, $CERTS_DIR/certs/external_VIP.crt already exists${normal}"
+  fi
+}
+
+generate_backend_cert () {
+  echo "generate backend cert..."
+  if [ ! -f $CERTS_DIR/certs/backend.csr ] && [ ! -f $CERTS_DIR/certs/backend.crt ]; then
+
+    openssl req -new -subj "/C=RU/ST=Msk/L=Moscow/O=ITKey/OU=KeyStack/CN=backend.$EXTERNAL_FQDN" \
+      -key $CERTS_DIR/certs/cert.key \
+      -out $CERTS_DIR/certs/backend.csr
+    # required controls IPs
+    export SAN=IP:$EXTERNAL_VIP,IP:$INTERNAL_VIP
+    openssl x509 -req -in $CERTS_DIR/certs/backend.csr \
+      -extfile $script_dir/cert.cnf \
+      -CA $CERTS_DIR/root/ca.crt \
+      -CAkey $CERTS_DIR/root/ca.key \
+      -CAcreateserial -out $CERTS_DIR/certs/backend.crt -days 728 -sha256
+
+    cp $CERTS_DIR/certs/backend.crt $OUTPUT_CERTS_DIR/backend_pem
+    cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/backend_key_pem
+  else
+    printf "%s\n" "${yellow}$CERTS_DIR/certs/backend.csr, $CERTS_DIR/certs/backend.crt already exists${normal}"
+  fi
+}
+
 generate_certs () {
 
   mkdir -p $CERTS_DIR/{root,certs}
@@ -233,60 +337,10 @@ generate_certs () {
   if [ "$yes_no_input" = "true" ]; then
     echo "Generating certificates..."
 
-    openssl genrsa -out $CERTS_DIR/root/ca.key 2048
-    chmod 400 $CERTS_DIR/root/ca.key
-
-    openssl req -new -x509 -nodes -subj "/C=RU/ST=Msk/L=Moscow/O=ITKey/OU=KeyStack/CN=KeyStack Root CA" \
-            -key $CERTS_DIR/root/ca.key -sha256 \
-            -days 3650 -out $CERTS_DIR/root/ca.crt
-    chmod 444 $CERTS_DIR/root/ca.crt
-
-    openssl genrsa -out $CERTS_DIR/certs/cert.key 2048
-    chmod 400 $CERTS_DIR/certs/cert.key
-
-    openssl req -new -subj "/C=RU/ST=Msk/L=Moscow/O=ITKey/OU=KeyStack/CN=*.$DOMAIN" \
-            -key $CERTS_DIR/certs/cert.key -out $CERTS_DIR/certs/cert.csr
-
-    export SAN=DNS:$DOMAIN,DNS:*.$DOMAIN,IP:$CA_IP
-
-    openssl x509 -req -in $CERTS_DIR/certs/cert.csr \
-            -extfile $script_dir/cert.cnf -CA $CERTS_DIR/root/ca.crt \
-            -CAkey $CERTS_DIR/root/ca.key -CAcreateserial \
-            -out $CERTS_DIR/certs/cert.crt -days 728 -sha256
-
-    #===========
-    #internal cert
-    openssl req -new -subj "/C=RU/ST=Msk/L=Moscow/O=ITKey/OU=KeyStack/CN=$INTERNAL_FQDN" \
-      -key $CERTS_DIR/certs/cert.key \
-      -out $CERTS_DIR/certs/external_VIP.csr
-    export SAN=DNS:$INTERNAL_FQDN,IP:$INTERNAL_VIP
-    openssl x509 -req -in $CERTS_DIR/certs/external_VIP.csr \
-            -extfile $script_dir/cert.cnf -CA $CERTS_DIR/root/ca.crt \
-            -CAkey $CERTS_DIR/root/ca.key -CAcreateserial \
-            -out $CERTS_DIR/certs/internal_VIP.crt -days 728 -sha256
-    #===========
-    #external cert
-    openssl req -new -subj "/C=RU/ST=Msk/L=Moscow/O=ITKey/OU=KeyStack/CN=$EXTERNAL_FQDN" \
-      -key $CERTS_DIR/certs/cert.key \
-      -out $CERTS_DIR/certs/external_VIP.csr
-    export SAN=DNS:$EXTERNAL_FQDN,IP:$EXTERNAL_VIP
-    #openssl x509 -req -in $CERTS_DIR/certs/external_VIP.csr -extfile $HOME/test_scripts_keystack/self_signed_certs/cert.cnf -CA $HOME/central_auth_service/root/ca.crt -CAkey $HOME/central_auth_service/root/ca.key -CAcreateserial -out $HOME/certs/external_VIP.crt -days 728 -sha256
-    openssl x509 -req -in $CERTS_DIR/certs/external_VIP.csr \
-            -extfile $script_dir/cert.cnf -CA $CERTS_DIR/root/ca.crt \
-            -CAkey $CERTS_DIR/root/ca.key -CAcreateserial \
-            -out $CERTS_DIR/certs/external_VIP.crt -days 728 -sha256
-    #===========
-    # backend cert
-    openssl req -new -subj "/C=RU/ST=Msk/L=Moscow/O=ITKey/OU=KeyStack" \
-      -key $CERTS_DIR/certs/cert.key \
-      -out $CERTS_DIR/certs/backend.csr
-    export SAN=IP:$EXTERNAL_VIP,IP:$INTERNAL_VIP
-    openssl x509 -req -in $CERTS_DIR/certs/backend.csr \
-      -extfile $script_dir/cert.cnf \
-      -CA $CERTS_DIR/root/ca.crt \
-      -CAkey $CERTS_DIR/root/ca.key \
-      -CAcreateserial -out $CERTS_DIR/certs/backend.crt -days 728 -sha256
-    #============
+    generate_ca_certs
+    generate_internal_cert
+    generate_external_cert
+    generate_backend_cert
 
     cat $CERTS_DIR/certs/cert.crt $CERTS_DIR/root/ca.crt > $CERTS_DIR/certs/chain-ca.pem
 
@@ -307,16 +361,6 @@ generate_certs () {
     cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/$LCM_VAULT_NAME.key;
     cp $CERTS_DIR/certs/cert.crt $OUTPUT_CERTS_DIR/$LCM_NETBOX_NAME.crt;
     cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/$LCM_NETBOX_NAME.key
-
-    #external internal pem
-    cat $CERTS_DIR/certs/external_VIP.crt $CERTS_DIR/certs/cert.key $CERTS_DIR/root/ca.crt > $CERTS_DIR/certs/haproxy_pem
-    cat $CERTS_DIR/certs/internal_VIP.crt $CERTS_DIR/certs/cert.key $CERTS_DIR/root/ca.crt > $CERTS_DIR/certs/haproxy_internal_pem
-    cp $CERTS_DIR/certs/haproxy_pem $OUTPUT_CERTS_DIR/haproxy_pem
-    cp $CERTS_DIR/certs/haproxy_internal_pem $OUTPUT_CERTS_DIR/haproxy_internal_pem
-
-    #backend_pem
-    cp $CERTS_DIR/certs/backend.crt $OUTPUT_CERTS_DIR/backend_pem
-    cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/backend_key_pem
   else
     printf "%s\n" "${yellow}No self-signed certificates were created!${normal}"
     exit 0
