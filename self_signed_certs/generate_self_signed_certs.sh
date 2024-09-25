@@ -276,7 +276,7 @@ generate_internal_cert () {
 
     cat $CERTS_DIR/certs/internal_VIP.crt $CERTS_DIR/certs/cert.key > $CERTS_DIR/certs/haproxy_internal_pem
     cp $CERTS_DIR/certs/haproxy_internal_pem $OUTPUT_CERTS_DIR/haproxy_internal_pem
-    echo "internal cert was created"
+    echo "Internal cert was created"
   else
     printf "%s\n" "${yellow}$CERTS_DIR/certs/external_VIP.csr, $CERTS_DIR/certs/internal_VIP.crt already exists${normal}"
   fi
@@ -298,7 +298,7 @@ generate_external_cert () {
 
     cat $CERTS_DIR/certs/external_VIP.crt $CERTS_DIR/certs/cert.key > $CERTS_DIR/certs/haproxy_pem
     cp $CERTS_DIR/certs/haproxy_pem $OUTPUT_CERTS_DIR/haproxy_pem
-    echo "external cert was created"
+    echo "External cert was created"
   else
     printf "%s\n" "${yellow}$CERTS_DIR/certs/external_VIP.csr, $CERTS_DIR/certs/external_VIP.crt already exists${normal}"
   fi
@@ -321,7 +321,7 @@ generate_backend_cert () {
 
     cp $CERTS_DIR/certs/backend.crt $OUTPUT_CERTS_DIR/backend_pem
     cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/backend_key_pem
-    echo "backend cert was created"
+    echo "Backend cert was created"
   else
     printf "%s\n" "${yellow}$CERTS_DIR/certs/backend.csr, $CERTS_DIR/certs/backend.crt already exists${normal}"
   fi
