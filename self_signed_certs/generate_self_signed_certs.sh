@@ -262,7 +262,7 @@ already exists${normal}"
 }
 
 generate_internal_cert () {
-  echo "generate internal cert..."
+  echo "Generate internal cert..."
   if [ ! -f $CERTS_DIR/certs/external_VIP.csr ] && [ ! -f $CERTS_DIR/certs/internal_VIP.crt ]; then
 
     openssl req -new -subj "/C=RU/ST=Msk/L=Moscow/O=ITKey/OU=KeyStack/CN=$INTERNAL_FQDN" \
@@ -276,13 +276,14 @@ generate_internal_cert () {
 
     cat $CERTS_DIR/certs/internal_VIP.crt $CERTS_DIR/certs/cert.key > $CERTS_DIR/certs/haproxy_internal_pem
     cp $CERTS_DIR/certs/haproxy_internal_pem $OUTPUT_CERTS_DIR/haproxy_internal_pem
+    echo "internal cert was created"
   else
     printf "%s\n" "${yellow}$CERTS_DIR/certs/external_VIP.csr, $CERTS_DIR/certs/internal_VIP.crt already exists${normal}"
   fi
 }
 
 generate_external_cert () {
-  echo "generate external cert..."
+  echo "Generate external cert..."
   if [ ! -f $CERTS_DIR/certs/external_VIP.csr ] && [ ! -f $CERTS_DIR/certs/external_VIP.crt ]; then
 
     openssl req -new -subj "/C=RU/ST=Msk/L=Moscow/O=ITKey/OU=KeyStack/CN=$EXTERNAL_FQDN" \
@@ -297,13 +298,14 @@ generate_external_cert () {
 
     cat $CERTS_DIR/certs/external_VIP.crt $CERTS_DIR/certs/cert.key > $CERTS_DIR/certs/haproxy_pem
     cp $CERTS_DIR/certs/haproxy_pem $OUTPUT_CERTS_DIR/haproxy_pem
+    echo "external cert was created"
   else
     printf "%s\n" "${yellow}$CERTS_DIR/certs/external_VIP.csr, $CERTS_DIR/certs/external_VIP.crt already exists${normal}"
   fi
 }
 
 generate_backend_cert () {
-  echo "generate backend cert..."
+  echo "Generate backend cert..."
   if [ ! -f $CERTS_DIR/certs/backend.csr ] && [ ! -f $CERTS_DIR/certs/backend.crt ]; then
 
     openssl req -new -subj "/C=RU/ST=Msk/L=Moscow/O=ITKey/OU=KeyStack/CN=backend.$EXTERNAL_FQDN" \
@@ -319,6 +321,7 @@ generate_backend_cert () {
 
     cp $CERTS_DIR/certs/backend.crt $OUTPUT_CERTS_DIR/backend_pem
     cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/backend_key_pem
+    echo "backend cert was created"
   else
     printf "%s\n" "${yellow}$CERTS_DIR/certs/backend.csr, $CERTS_DIR/certs/backend.crt already exists${normal}"
   fi
