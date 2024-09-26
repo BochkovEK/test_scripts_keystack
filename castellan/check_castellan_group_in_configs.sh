@@ -82,6 +82,6 @@ Check_config_with_hashed_password () {
   done
 }
 
-#Check_configs_on_controls
-#Check_configs_on_computes
+Check_configs_on_controls
+Check_configs_on_computes
 Check_config_with_hashed_password
