@@ -41,24 +41,47 @@ compute_config_list=(
   "/etc/kolla/nova-compute/nova.conf"
 )
 
+hashed_password_config_list=(
+  "/etc/kolla/haproxy/services.d/opensearch-dashboards.cfg"
+  "/etc/kolla/rabbitmq/definitions.json"
+  "/etc/kolla/proxysql/users/*"
+  "/etc/kolla/haproxy/services.d/prometheus-alertmanager.cfg"
+)
+
 # Check script exists
 if [ ! -f $parent_dir/$command_on_nodes_script_name ]; then
   printf "%s\n" "${red}Script: $parent_dir/$command_on_nodes_script_name does not exists - error${normal}"
   exit 0
 fi
 
-echo -E "${yellow}Check '[castellan_configsource]' in configs on control${normal}"
-for config in "${control_config_list[@]}"; do
-  echo -E "${violet}Check control config: $config${normal}"
-  bash $parent_dir/$command_on_nodes_script_name -nt ctrl -c "cat $config | grep '\[castellan_configsource\]'| \
-        sed --unbuffered \
-          -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - ok\o033[39m/'"
-done
+Check_configs_on_controls () {
+  echo -E "${yellow}Check '[castellan_configsource]' in configs on control${normal}"
+  for config in "${control_config_list[@]}"; do
+    echo -E "${violet}Check control config: $config${normal}"
+    bash $parent_dir/$command_on_nodes_script_name -nt ctrl -c "cat $config | grep '\[castellan_configsource\]'| \
+          sed --unbuffered \
+            -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - ok\o033[39m/'"
+  done
+}
 
-echo -E "${yellow}Check '[castellan_configsource]' in configs on computes${normal}"
-for config in "${compute_config_list[@]}"; do
-  echo -E "${violet}Check computes config: $config${normal}"
-  bash $parent_dir/$command_on_nodes_script_name -nt comp -c "cat $config | grep '\[castellan_configsource\]'| \
-        sed --unbuffered \
-          -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - ok\o033[39m/'"
-done
+Check_configs_on_computes () {
+  echo -E "${yellow}Check '[castellan_configsource]' in configs on computes${normal}"
+  for config in "${compute_config_list[@]}"; do
+    echo -E "${violet}Check computes config: $config${normal}"
+    bash $parent_dir/$command_on_nodes_script_name -nt comp -c "cat $config | grep '\[castellan_configsource\]'| \
+          sed --unbuffered \
+            -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - ok\o033[39m/'"
+  done
+}
+
+Check_config_with_hashed_password () {
+  echo -E "${yellow}Check config with hashed password${normal}"
+  for config in "${hashed_password_config_list[@]}"; do
+    echo -E "${violet}Check control config: $config${normal}"
+    bash $parent_dir/$command_on_nodes_script_name -nt comp -c "cat $config | grep 'password'"
+  done
+}
+
+#Check_configs_on_controls
+#Check_configs_on_computes
+Check_config_with_hashed_password
