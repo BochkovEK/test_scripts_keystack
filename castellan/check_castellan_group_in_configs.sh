@@ -31,5 +31,6 @@ if [ ! -f $parent_dir/$command_on_nodes_script_name ]; then
 fi
 
 for config in "${config_list[@]}"; do
+  echo -E "${yellow}Check $config${normal}"
   bash $parent_dir/$command_on_nodes_script_name -nt ctrl -c "cat $config"
 done
