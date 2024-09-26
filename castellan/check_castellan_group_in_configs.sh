@@ -9,6 +9,16 @@ violet=$(tput setaf 5)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
 
+# Regular Colors
+Black='\033[0;30m'        # Black
+Red='\033[0;31m'          # Red
+Green='\033[0;32m'        # Green
+Yellow='\033[0;33m'       # Yellow
+Blue='\033[0;34m'         # Blue
+Purple='\033[0;35m'       # Purple
+Cyan='\033[0;36m'         # Cyan
+White='\033[0;37m'        # White
+
 script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
@@ -32,5 +42,7 @@ fi
 
 for config in "${config_list[@]}"; do
   echo -E "${yellow}Check $config${normal}"
-  bash $parent_dir/$command_on_nodes_script_name -nt ctrl -c "cat $config"
+  bash $parent_dir/$command_on_nodes_script_name -nt ctrl -c "cat $config"| \
+        sed --unbuffered \
+          -e 's/\(.*[castellan_configsource].*\)/\o033[32m\1\o033[39m/'
 done
