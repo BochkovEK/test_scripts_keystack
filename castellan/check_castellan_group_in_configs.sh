@@ -78,7 +78,7 @@ Check_config_with_hashed_password () {
   echo -E "${yellow}Check config with hashed password${normal}"
   for config in "${hashed_password_config_list[@]}"; do
     echo -E "${violet}Check control config: $config${normal}"
-    bash $parent_dir/$command_on_nodes_script_name -nt comp -c "cat $config | grep 'password'"
+    bash $parent_dir/$command_on_nodes_script_name -nt ctrl -c "cat $config | grep 'password'"
   done
 }
 
