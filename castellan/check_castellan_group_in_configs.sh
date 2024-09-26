@@ -25,7 +25,7 @@ parent_dir=$(dirname "$script_dir")
 
 command_on_nodes_script_name="command_on_nodes.sh"
 
-config_list=(
+control_config_list=(
   "/etc/kolla/keystone/keystone.conf"
   "/etc/kolla/glance-api/glance-api.conf"
   "/etc/kolla/cinder-volume/cinder.conf"
@@ -34,15 +34,26 @@ config_list=(
   "/etc/kolla/drs/drs.ini"
 )
 
+compute_config_list=(
+  "/etc/kolla/nova-compute/nova.conf"
+)
+
 # Check script exists
 if [ ! -f $parent_dir/$command_on_nodes_script_name ]; then
   printf "%s\n" "${red}Script: $parent_dir/$command_on_nodes_script_name does not exists - error${normal}"
   exit 0
 fi
 
-for config in "${config_list[@]}"; do
-  echo -E "${yellow}Check $config${normal}"
+for config in "${control_config_list[@]}"; do
+  echo -E "${yellow}Check control config: $config${normal}"
   bash $parent_dir/$command_on_nodes_script_name -nt ctrl -c "cat $config"| \
         sed --unbuffered \
+          -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1\o033[39m/'
+done
+for config in "${compute_config_list[@]}"; do
+  echo -E "${yellow}Check compute config: $config${normal}"
+    bash $parent_dir/$command_on_nodes_script_name -nt compute -c "cat $config"| \
+        sed --unbuffered \
+          -e 's/\(.*\.*.*\)/\o033[30m\1\o033[39m/' \
           -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1\o033[39m/'
 done
