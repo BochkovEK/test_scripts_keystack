@@ -5,7 +5,7 @@
 #Colors
 green=$(tput setaf 2)
 red=$(tput setaf 1)
-violet=$(tput setaf 5)
+violet=$(tput setaf 200)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
 #magenta=$(tput setaf 5)
