@@ -51,7 +51,7 @@ for config in "${control_config_list[@]}"; do
 done
 for config in "${compute_config_list[@]}"; do
   echo -E "${yellow}Check compute config: $config${normal}"
-    bash $parent_dir/$command_on_nodes_script_name -nt compute -c "cat $config"| \
+    bash $parent_dir/$command_on_nodes_script_name -nt cmpt -c "cat $config"| \
         sed --unbuffered \
           -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1\o033[39m/'
 done
