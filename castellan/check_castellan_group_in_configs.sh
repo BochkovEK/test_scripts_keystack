@@ -31,6 +31,8 @@ control_config_list=(
   "/etc/kolla/cinder-volume/cinder.conf"
   "/etc/kolla/neutron-server/neutron.conf"
   "/etc/kolla/drs/drs.ini"
+  "/etc/kolla/placement-api/placement.conf"
+  "/etc/kolla/adminui-backend/adminui-backend-osloconf.conf"
 )
 
 compute_config_list=(
@@ -45,9 +47,9 @@ fi
 
 for config in "${control_config_list[@]}"; do
   echo -E "${yellow}Check control config: $config${normal}"
-  bash $parent_dir/$command_on_nodes_script_name -nt ctrl -c "cat $config"| \
+  bash $parent_dir/$command_on_nodes_script_name -nt ctrl -c "cat $config"| grep "[castellan_configsource]"| \
         sed --unbuffered \
-          -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1\o033[39m/'
+          -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - ok\o033[39m/'
 done
 for config in "${compute_config_list[@]}"; do
   echo -E "${yellow}Check compute config: $config${normal}"
