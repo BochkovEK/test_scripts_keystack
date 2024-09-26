@@ -44,5 +44,5 @@ for config in "${config_list[@]}"; do
   echo -E "${yellow}Check $config${normal}"
   bash $parent_dir/$command_on_nodes_script_name -nt ctrl -c "cat $config"| \
         sed --unbuffered \
-          -e 's/\(.*[castellan_configsource].*\)/\o033[32m\1\o033[39m/'
+          -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1\o033[39m/'
 done
