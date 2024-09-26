@@ -5,7 +5,7 @@
 #Colors
 green=$(tput setaf 2)
 red=$(tput setaf 1)
-violet=$(tput setaf 200)
+violet=$(tput setaf 13)
 cyan=$(tput setaf 14)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
@@ -49,7 +49,7 @@ fi
 
 echo -E "${yellow}Check '[castellan_configsource]' in configs on control${normal}"
 for config in "${control_config_list[@]}"; do
-  echo -E "${cyan}Check control config: $config${normal}"
+  echo -E "${magenta}Check control config: $config${normal}"
   bash $parent_dir/$command_on_nodes_script_name -nt ctrl -c "cat $config | grep '\[castellan_configsource\]'| \
         sed --unbuffered \
           -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - ok\o033[39m/'"
@@ -57,7 +57,7 @@ done
 
 echo -E "${yellow}Check '[castellan_configsource]' in configs on computes${normal}"
 for config in "${compute_config_list[@]}"; do
-  echo -E "${cyan}Check computes config: $config${normal}"
+  echo -E "${magenta}Check computes config: $config${normal}"
   bash $parent_dir/$command_on_nodes_script_name -nt comp -c "cat $config | grep '\[castellan_configsource\]'| \
         sed --unbuffered \
           -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - ok\o033[39m/'"
