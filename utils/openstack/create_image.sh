@@ -109,7 +109,7 @@ if [[ $CHECK_OPENSTACK = "true" ]]; then
   fi
 fi
 
-if ! bash $utils_dir/check_openrc; then
+if ! bash $utils_dir/check_openrc.sh; then
   exit 1
 fi
 
