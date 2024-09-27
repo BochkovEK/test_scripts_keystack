@@ -36,16 +36,16 @@ install_terraform () {
     echo -E "${yellow}Terraform does not exists${normal}"
     if [ ! $DONT_ASK = "true" ]; then
       export TS_YES_NO_QUESTION="Do you want to try install Terraform [Yes]:"
-      bash $utils_dir/yes_no_answer.sh
+      yes_no_input=$(bash $utils_dir/yes_no_answer.sh)
     else
-      TS_YES_NO_INPUT="true"
+      yes_no_input="true"
     fi
   fi
   [ "$DEBUG" = true ] && echo -e "
   [DEBUG]
-  TS_YES_NO_INPUT:   $TS_YES_NO_INPUT
+  yes_no_input:   $yes_no_input
 "
-  if [ "$TS_YES_NO_INPUT" = "true" ]; then
+  if [ "$yes_no_input" = "true" ]; then
     wget https://repo.itkey.com/repository/Terraform/$terraform_binary_name
     chmod 777 ./$terraform_binary_name
     mv $terraform_binary_name /usr/local/bin/terraform

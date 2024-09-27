@@ -31,7 +31,7 @@ utils_dir=$parent_dir/utils
 [[ -z $MIN_DISK ]] && MIN_DISK=""
 [[ -z $PROJECT ]] && PROJECT="admin"
 [[ -z $API_VERSION ]] && API_VERSION="2.74"
-[[ -z $TS_YES_NO_INPUT ]] && TS_YES_NO_INPUT=""
+#[[ -z $TS_YES_NO_INPUT ]] && TS_YES_NO_INPUT=""
 [[ -z $DEBUG ]] && DEBUG="true"
 
 
@@ -66,12 +66,12 @@ create_image () {
   if [ -n "${image_exists_in_openstack}" ]; then
     if [ ! $DONT_ASK = "true" ]; then
       export TS_YES_NO_QUESTION="Do you want to try to create $IMAGE [Yes]:"
-      bash $utils_dir/yes_no_answer.sh
+      yes_no_input=$(bash $utils_dir/yes_no_answer.sh)
     else
-      TS_YES_NO_INPUT="true"
+      yes_no_input="true"
     fi
   fi
-  if [ "$TS_YES_NO_INPUT" = "true" ]; then
+  if [ "$yes_no_input" = "true" ]; then
     bash $utils_dir/install_wget.sh
     echo "Creating image \"$IMAGE\" in project \"$PROJECT\"..."
     [ -f $script_dir/"$IMAGE" ] && echo "File $IMAGE_DIR/$IMAGE exist." \

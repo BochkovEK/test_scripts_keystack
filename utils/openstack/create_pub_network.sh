@@ -23,7 +23,7 @@ utils_dir=$parent_dir/utils
 [[ -z $API_VERSION ]] && API_VERSION="2.74"
 [[ -z $NETWORK ]] && NETWORK="pub_net"
 #[[ -z $TS_YES_NO_QUESTION ]] && TS_YES_NO_QUESTION=""
-[[ -z $TS_YES_NO_INPUT ]] && TS_YES_NO_INPUT=""
+#[[ -z $TS_YES_NO_INPUT ]] && TS_YES_NO_INPUT=""
 [[ -z $DEBUG ]] && DEBUG="true"
 
 
@@ -61,11 +61,11 @@ create_pub_network () {
     if [ "$NETWORK" = "pub_net" ]; then
       if [ ! $DONT_ASK = "true" ]; then
         export TS_YES_NO_QUESTION="Do you want to try to create $NETWORK [Yes]:"
-        bash $utils_dir/yes_no_answer.sh
+        yes_no_input=$(bash $utils_dir/yes_no_answer.sh)
       else
-        TS_YES_NO_INPUT="true"
+        yes_no_input="true"
       fi
-      if [ "$TS_YES_NO_INPUT" = "true" ]; then
+      if [ "$yes_no_input" = "true" ]; then
         CIDR=$(ip r|grep "dev external proto kernel scope"| awk '{print $1}');
         last_digit=$(echo $CIDR | sed --regexp-extended 's/([0-9]+\.[0-9]+\.[0-9]+\.)|(\/[0-9]+)//g');
         left_side=$(echo $CIDR | sed --regexp-extended 's/([0-9]+\/[0-9]+)//g');
