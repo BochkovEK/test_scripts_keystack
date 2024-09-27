@@ -156,4 +156,19 @@ if ! bash $utils_dir/openstack/create_pub_network.sh; then
   exit 1
 fi
 
+echo -E "${green}
+  Terraform installed - ok!
+  cloud.yml config in $create_vms_with_module_dir - ok!
+  Image $image_name created - ok!
+  Network $pub_net_name created - ok!
+${normal}"
+echo "
+You can create resources using terraform. Create name.auto.tfvars in $create_vms_with_module_dir and run following commands:
+terraform init
+terraform plan -var-file \"<name>.auto.tfvars\"
+terraform apply
+type \"yes\"
+Read more: https://github.com/BochkovEK/test_scripts_keystack/tree/master/terraform
+"
+
 
