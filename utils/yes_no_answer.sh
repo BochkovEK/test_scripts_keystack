@@ -19,6 +19,7 @@ yes_no_answer () {
   export TS_YES_NO_QUESTION='<Empty yes/no question>'
 }
 
+echo $DEBUG
 yes_no_answer
 [ "$DEBUG" = true ] && echo -e "
   [DEBUG]
