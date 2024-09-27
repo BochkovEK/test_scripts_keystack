@@ -9,7 +9,7 @@ yes_no_answer () {
   while true; do
     read -p "$TS_YES_NO_QUESTION" yn
     yn=${yn:-"Yes"}
-    echo $yn
+#    echo $yn
     case $yn in
         [Yy]* ) echo "true"; break;;
         [Nn]* ) echo "false"; break ;;
