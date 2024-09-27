@@ -21,9 +21,9 @@ yes_no_answer () {
 #  export TS_YES_NO_QUESTION='<Empty yes/no question>'
 }
 
-echo $DEBUG
+echo $TS_DEBUG
 yes_no_answer
-[ "$DEBUG" = true ] && echo -e "
-  [DEBUG]
+[ "$TS_DEBUG" = true ] && echo -e "
+  [TS_DEBUG]
   TS_YES_NO_QUESTION:   $TS_YES_NO_QUESTION
 "
