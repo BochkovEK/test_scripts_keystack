@@ -66,9 +66,8 @@ create_image () {
   [ "$TS_DEBUG" = true ] && echo -e "image_exists_in_openstack: $image_exists_in_openstack"
   if [ -n "${image_exists_in_openstack}" ]; then
     if [ ! $DONT_ASK = "true" ]; then
-      echo -E "${yellow}$IMAGE already exists in $PROJECT${normal}"
-      export TS_YES_NO_QUESTION="Do you want to try to create $IMAGE [Yes]:"
-      yes_no_input=$(bash $utils_dir/yes_no_answer.sh)
+      echo -E "${green}$IMAGE already exists in $PROJECT - ok${normal}"
+      exit 0
     else
       yes_no_input="true"
     fi
