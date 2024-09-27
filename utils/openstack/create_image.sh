@@ -63,9 +63,10 @@ yes_no_answer () {
 # Create image
 create_image () {
   image_exists_in_openstack=$(openstack image list| grep -m 1 "$IMAGE"| awk '{print $2}')
-  echo "image_exists_in_openstack: $image_exists_in_openstack"
+  [ "$TS_DEBUG" = true ] && echo -e "image_exists_in_openstack: $image_exists_in_openstack"
   if [ -n "${image_exists_in_openstack}" ]; then
     if [ ! $DONT_ASK = "true" ]; then
+      echo -E "${yellow}$IMAGE already exists in $PROJECT${normal}"
       export TS_YES_NO_QUESTION="Do you want to try to create $IMAGE [Yes]:"
       yes_no_input=$(bash $utils_dir/yes_no_answer.sh)
     else
