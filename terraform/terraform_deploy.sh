@@ -96,9 +96,9 @@ check_cloud_config () {
   else
 
     export TS_YES_NO_QUESTION="Do you want to overwrite $create_vms_with_module_dir/clouds.yml [Yes]:"
-    bash $utils_dir/yes_no_answer.sh
+    yes_no_input=$(bash $utils_dir/yes_no_answer.sh)
   fi
-  if [ "$TS_YES_NO_INPUT" = "true" ]; then
+  if [ "$yes_no_input" = "true" ]; then
     create_cloud_config
   else
     echo -E "${yellow}$create_vms_with_module_dir/clouds.yml config not changed${normal}"
