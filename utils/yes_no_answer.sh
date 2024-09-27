@@ -16,7 +16,7 @@ yes_no_answer () {
         * ) echo "Please answer yes or no.";;
     esac
   done
-  export TS_YES_NO_QUESTION="<Empty yes/\no question>"
+  export TS_YES_NO_QUESTION='<Empty yes\no question>'
 }
 
 yes_no_answer
