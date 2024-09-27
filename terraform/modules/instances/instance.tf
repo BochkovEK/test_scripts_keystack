@@ -5,10 +5,10 @@ resource "openstack_compute_instance_v2" "vm" {
 #  for_each = var.VMs # == {} ? null : var.VMs
   name                        = each.value.name
   image_name                  = each.value.image_name
-  flavor_name                 = each.value.flavor_name == "" ? "${each.value.base_name}-flavor" : null
+  flavor_name                 = each.value.flavor_name == "" ? "${each.value.base_name}-flavor" : each.value.flavor_name
 #  flavor_id                   = openstack_compute_flavor_v2.flavor[each.value].id
-  key_pair                    = each.value.keypair_name == "" ? openstack_compute_keypair_v2.keypair.name : null
-  security_groups             = each.value.security_groups == [] ? [openstack_compute_secgroup_v2.secgroup.name] : null
+  key_pair                    = each.value.keypair_name == null ? openstack_compute_keypair_v2.keypair.name : each.value.keypair_name
+  security_groups             = each.value.security_groups == null ? [openstack_compute_secgroup_v2.secgroup.name] : each.value.security_groups
   availability_zone_hints     = each.value.az_hint
   metadata = {
     test_meta = "Created by Terraform"

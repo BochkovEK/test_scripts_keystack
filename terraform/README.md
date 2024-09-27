@@ -204,114 +204,116 @@
             ram           = RAM in !!!MB (1024, 2048, 4096, ...) (flavor)
         }                 if not define create flavor vcpus = 2, ram = 2048
         keypair_name      = The key pair name for the user specified in the cloud.yml (default: key_test)
-        security_groups   = The name of the security group from the project specified in the cloud.yml (default: test_security_group)
-        az_hint           = The AZ name if neded. Valid format: "<az_name>" or "<az_name>:<hypervisor_name>" 
-        disks             = [
-           {
-             boot_index = 1
-             size       = Size in GB
-           },
+        security_groups   = [
+                              The !!! LIST of names of the security group from the project specified in the cloud.yml (default: test_security_group)
+                            ]
+          az_hint           = The AZ name if neded. Valid format: "<az_name>" or "<az_name>:<hypervisor_name>" 
+          disks             = [
+             {
+               boot_index = 1
+               size       = Size in GB
+             },
+               ...
+             }
+               boot_index = 2
+               size       = Size in GB
+             },
              ...
-           }
-             boot_index = 2
-             size       = Size in GB
-           },
-           ...
-           {
-             boot_index = n
-             size       = Size in GB
-           },
-        ]                   List of dictionaries
-        network_name      = The name of network (default: pub_net)
+             {
+               boot_index = n
+               size       = Size in GB
+             },
+          ]                   List of dictionaries
+          network_name      = The name of network (default: pub_net)
 
-    The first <b>minimal</b> auto.vars file looks like (create one VM):
+      The first <b>minimal</b> auto.vars file looks like (create one VM):
 
-        # VMs
-        VMs = {
-            TEST_VM = {
-                vm_qty = 1
-            }
-        }
-
-        # AZs
-        AZs = {}
-
-    The second <b>minimal</b> auto.vars file looks like (create just AZ):
-
-        # VMs
-        VMs = {
-        }
-
-        # AZs
-        AZs = {
-           <aggr_name> = {
-               az_name = "<az_name>"
-               hosts_list = [
-                   "<comp_node_name>",
-               ]
-           }
-        }
-
-    Example of creating an auto.vars file:
-
-      cat <<-EOF > ~/test_scripts_keystack/terraform/examples/example_1/foo.auto.tfvars
-        # VMs
-        VMs = {
-          TEST_VM_1 = {
-            vm_qty          = 1
-            image_name      = "ubuntu-20.04-server-cloudimg-amd64"
-            az_hint         = "az_1:ebochkov-ks-sber-comp-01"
-            }
-          TEST_VM_2 = {
-            vm_qty          = 2
-            image_name      = "cirros-0.6.2-x86_64-disk"
-            flavor          = {
-              vcpus = 4
-            }
-            disks           = [
-              {
-                boot_index = 1
-                size       = 7
-              },
-              {
-                boot_index = 2
-                size       = 8
+          # VMs
+          VMs = {
+              TEST_VM = {
+                  vm_qty = 1
               }
-            ]
           }
-          TEST_VM_3 = {
-            vm_qty          = 3
-            image_name      = "cirros-0.6.2-x86_64-disk"
-            flavor          = {
-              ram         = 1024
-            }
-            disks           = [
-              {
-                boot_index = 1
-                size       = 3
+
+          # AZs
+          AZs = {}
+
+      The second <b>minimal</b> auto.vars file looks like (create just AZ):
+
+          # VMs
+          VMs = {
+          }
+
+          # AZs
+          AZs = {
+             <aggr_name> = {
+                 az_name = "<az_name>"
+                 hosts_list = [
+                     "<comp_node_name>",
+                 ]
+             }
+          }
+
+      Example of creating an auto.vars file:
+
+        cat <<-EOF > ~/test_scripts_keystack/terraform/examples/example_1/foo.auto.tfvars
+          # VMs
+          VMs = {
+            TEST_VM_1 = {
+              vm_qty          = 1
+              image_name      = "ubuntu-20.04-server-cloudimg-amd64"
+              az_hint         = "az_1:ebochkov-ks-sber-comp-01"
               }
-            ]
-        }
+            TEST_VM_2 = {
+              vm_qty          = 2
+              image_name      = "cirros-0.6.2-x86_64-disk"
+              flavor          = {
+                vcpus = 4
+              }
+              disks           = [
+                {
+                  boot_index = 1
+                  size       = 7
+                },
+                {
+                  boot_index = 2
+                  size       = 8
+                }
+              ]
+            }
+            TEST_VM_3 = {
+              vm_qty          = 3
+              image_name      = "cirros-0.6.2-x86_64-disk"
+              flavor          = {
+                ram         = 1024
+              }
+              disks           = [
+                {
+                  boot_index = 1
+                  size       = 3
+                }
+              ]
+          }
     
-        # AZs
-        AZs = {
-            aggr_1 = {
-                az_name = "az_1"
-                hosts_list = [
-                    "ebochkov-ks-sber-comp-01",
-                    "ebochkov-ks-sber-comp-02",
-                ]
-            }
-            aggr_2 = {
-                az_name    = "az_2"
-                hosts_list = [
-                    "ebochkov-ks-sber-comp-03",
-                    "ebochkov-ks-sber-comp-04",
-                ]
-            }
-        }
-      EOF
-    </details>
+          # AZs
+          AZs = {
+              aggr_1 = {
+                  az_name = "az_1"
+                  hosts_list = [
+                      "ebochkov-ks-sber-comp-01",
+                      "ebochkov-ks-sber-comp-02",
+                  ]
+              }
+              aggr_2 = {
+                  az_name    = "az_2"
+                  hosts_list = [
+                      "ebochkov-ks-sber-comp-03",
+                      "ebochkov-ks-sber-comp-04",
+                  ]
+              }
+          }
+        EOF
+      </details>
 - Run following commands in folders with <main.tf> ($HOME/test_scripts_keystack/terraform/examples/example_1):
   - terraform init
   - terraform plan -var-file "\<name>.auto.tfvars"
