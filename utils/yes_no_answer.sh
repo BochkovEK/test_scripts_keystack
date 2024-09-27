@@ -3,6 +3,7 @@
 # The script provide yes\no answer
 
 [[ -z $DEBUG ]] && DEBUG="false"
+[[ -z $TS_YES_NO_QUESTION ]] && $TS_YES_NO_QUESTION="foo"
 
 
 yes_no_answer () {
@@ -16,7 +17,7 @@ yes_no_answer () {
         * ) echo "Please answer yes or no.";;
     esac
   done
-  export TS_YES_NO_QUESTION='<Empty yes/no question>'
+#  export TS_YES_NO_QUESTION='<Empty yes/no question>'
 }
 
 echo $DEBUG
