@@ -1,7 +1,7 @@
 # VMs
 VMs = {
   DRS_TEST_1 = {
-    image_name      = "ubuntu-20.04-server-cloudimg-amd64"
+    image_name      = "ubuntu-20.04-server-cloudimg-amd64.img"
     flavor          = {
         vcpus = 2
         ram   = 2048
@@ -10,14 +10,12 @@ VMs = {
     az_hint         = "az_1:ebochkov-ks-sber-comp-01"
   }
   DRS_TEST_3 = {
-    image_name      = "ubuntu-20.04-server-cloudimg-amd64"
-    flavor_name     = "2c-2r"
+    image_name      = "ubuntu-20.04-server-cloudimg-amd64.img"
     vm_qty          = 3
     az_hint         = "az_2:ebochkov-ks-sber-comp-03"
   }
   DRS_TEST_4 = {
-    image_name      = "ubuntu-20.04-server-cloudimg-amd64"
-    flavor_name     = "2c-2r"
+    image_name      = "ubuntu-20.04-server-cloudimg-amd64.img"
     vm_qty          = 3
     az_hint         = "az_2:ebochkov-ks-sber-comp-04"
   }
