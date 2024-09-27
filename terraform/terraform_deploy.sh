@@ -26,7 +26,7 @@ create_vms_with_module_dir=$script_dir/examples/create_vms_with_module
 
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
 [[ -z $NETWORK ]] && NETWORK=$pub_net_name
-[[ -z $DEBUG ]] && DEBUG="true"
+[[ -z $DEBUG ]] && DEBUG="false"
 
 
 install_terraform () {
@@ -36,7 +36,7 @@ install_terraform () {
     echo -E "${yellow}Terraform does not exists${normal}"
     if [ ! $DONT_ASK = "true" ]; then
       export TS_YES_NO_QUESTION="Do you want to try install Terraform [Yes]:"
-#      yes_no_input=$(bash $utils_dir/yes_no_answer.sh)
+      yes_no_input=$(bash $utils_dir/yes_no_answer.sh)
     else
       yes_no_input="true"
     fi
