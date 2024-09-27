@@ -16,6 +16,7 @@ normal=$(tput sgr0)
 yellow=$(tput setaf 3)
 
 #Script_dir, current folder
+script_name=$(basename "$0")
 script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
@@ -31,6 +32,7 @@ utils_dir=$parent_dir/utils
 [[ -z $PROJECT ]] && PROJECT="admin"
 [[ -z $API_VERSION ]] && API_VERSION="2.74"
 [[ -z $TS_YES_NO_INPUT ]] && TS_YES_NO_INPUT=""
+[[ -z $DEBUG ]] && DEBUG="true"
 
 
 error_output () {
@@ -88,6 +90,8 @@ create_image () {
 }
 
 
+echo "$script_name script started..."
+
 if [ -z $IMAGE ]; then
   echo "Try to get images list from repo.itkey.com..."
   echo "Execute curl command:"
@@ -108,6 +112,28 @@ fi
 if ! bash $utils_dir/check_openrc; then
   exit 1
 fi
+
+[ "$DEBUG" = true ] && echo -e "
+  [DEBUG]
+  OS_PROJECT_DOMAIN_NAME:   $OS_PROJECT_DOMAIN_NAME
+  OS_USER_DOMAIN_NAME:      $OS_USER_DOMAIN_NAME
+  OS_PROJECT_NAME:          $OS_PROJECT_NAME
+  OS_TENANT_NAME:           $OS_TENANT_NAME
+  OS_USERNAME:              $OS_USERNAME
+  OS_PASSWORD:              $OS_PASSWORD
+  OS_AUTH_URL:              $OS_AUTH_URL
+  OS_INTERFACE:             $OS_INTERFACE
+  OS_ENDPOINT_TYPE:         $OS_ENDPOINT_TYPE
+  OS_IDENTITY_API_VERSION:  $OS_IDENTITY_API_VERSION
+  OS_REGION_NAME:           $OS_REGION_NAME
+  OS_AUTH_PLUGIN:           $OS_AUTH_PLUGIN
+  OS_DRS_ENDPOINT_OVERRIDE: $OS_DRS_ENDPOINT_OVERRIDE
+  ---
+  PROJECT:                  $PROJECT
+  IMAGE:                    $IMAGE
+  IMAGE_SOURCE:             $IMAGE_SOURCE
+  IMAGE_DIR:                $IMAGE_DIR
+"
 
 create_image
 

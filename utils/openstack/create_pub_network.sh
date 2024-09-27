@@ -11,6 +11,7 @@ normal=$(tput sgr0)
 yellow=$(tput setaf 3)
 
 #Script_dir, current folder
+script_name=$(basename "$0")
 script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
@@ -23,6 +24,7 @@ utils_dir=$parent_dir/utils
 [[ -z $NETWORK ]] && NETWORK="pub_net"
 #[[ -z $TS_YES_NO_QUESTION ]] && TS_YES_NO_QUESTION=""
 [[ -z $TS_YES_NO_INPUT ]] && TS_YES_NO_INPUT=""
+[[ -z $DEBUG ]] && DEBUG="true"
 
 
 error_output () {
@@ -143,6 +145,8 @@ create_pub_network () {
   fi
 }
 
+
+echo "$script_name script started..."
 #check_openstack_cli
 if [[ $CHECK_OPENSTACK = "true" ]]; then
   if ! bash $utils_dir/check_openstack_cli.sh; then
@@ -154,5 +158,25 @@ fi
 if ! bash $utils_dir/check_openrc.sh; then
   exit 1
 fi
+
+[ "$DEBUG" = true ] && echo -e "
+  [DEBUG]
+  OS_PROJECT_DOMAIN_NAME:   $OS_PROJECT_DOMAIN_NAME
+  OS_USER_DOMAIN_NAME:      $OS_USER_DOMAIN_NAME
+  OS_PROJECT_NAME:          $OS_PROJECT_NAME
+  OS_TENANT_NAME:           $OS_TENANT_NAME
+  OS_USERNAME:              $OS_USERNAME
+  OS_PASSWORD:              $OS_PASSWORD
+  OS_AUTH_URL:              $OS_AUTH_URL
+  OS_INTERFACE:             $OS_INTERFACE
+  OS_ENDPOINT_TYPE:         $OS_ENDPOINT_TYPE
+  OS_IDENTITY_API_VERSION:  $OS_IDENTITY_API_VERSION
+  OS_REGION_NAME:           $OS_REGION_NAME
+  OS_AUTH_PLUGIN:           $OS_AUTH_PLUGIN
+  OS_DRS_ENDPOINT_OVERRIDE: $OS_DRS_ENDPOINT_OVERRIDE
+  ---
+  PROJECT:                  $PROJECT
+  NETWORK:                  $NETWORK
+"
 
 create_pub_network

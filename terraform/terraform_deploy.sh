@@ -7,6 +7,7 @@
 
 terraform_binary_name="terraform_1.8.5_linux_amd64"
 image_name="ubuntu-20.04-server-cloudimg-amd64.img"
+pub_net_name="pub_net"
 
 #Colors
 green=$(tput setaf 2)
@@ -24,6 +25,8 @@ utils_dir=$parent_dir/utils
 create_vms_with_module_dir=$script_dir/examples/create_vms_with_module
 
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
+[[ -z $NETWORK ]] && NETWORK=$pub_net_name
+[[ -z $DEBUG ]] && DEBUG="true"
 
 
 install_terraform () {
@@ -94,10 +97,29 @@ check_cloud_config () {
   fi
 }
 
+
 install_terraform
-bash $utils_dir/openstack/check_openrs
+bash $utils_dir/openstack/check_openrc.sh
+[ "$DEBUG" = true ] && echo -e "
+  [DEBUG]
+  OS_PROJECT_DOMAIN_NAME:   $OS_PROJECT_DOMAIN_NAME
+  OS_USER_DOMAIN_NAME:      $OS_USER_DOMAIN_NAME
+  OS_PROJECT_NAME:          $OS_PROJECT_NAME
+  OS_TENANT_NAME:           $OS_TENANT_NAME
+  OS_USERNAME:              $OS_USERNAME
+  OS_PASSWORD:              $OS_PASSWORD
+  OS_AUTH_URL:              $OS_AUTH_URL
+  OS_INTERFACE:             $OS_INTERFACE
+  OS_ENDPOINT_TYPE:         $OS_ENDPOINT_TYPE
+  OS_IDENTITY_API_VERSION:  $OS_IDENTITY_API_VERSION
+  OS_REGION_NAME:           $OS_REGION_NAME
+  OS_AUTH_PLUGIN:           $OS_AUTH_PLUGIN
+  OS_DRS_ENDPOINT_OVERRIDE: $OS_DRS_ENDPOINT_OVERRIDE
+"
 check_cloud_config
 # Create image
 bash $utils_dir/openstack/create_image.sh $image_name
+# Create network
+export NETWORK=$NETWORK
 bash $utils_dir/openstack/create_pub_network.sh
 
