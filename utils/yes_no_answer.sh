@@ -2,7 +2,7 @@
 
 # The script provide yes\no answer
 
-[[ -z $DEBUG ]] && DEBUG="true"
+[[ -z $DEBUG ]] && DEBUG="false"
 
 
 yes_no_answer () {
