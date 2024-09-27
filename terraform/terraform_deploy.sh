@@ -86,6 +86,7 @@ EOF
 create_cloud_config () {
   echo -E "Creating cloud.yml config in $create_vms_with_module_dir folder"
 #  bash $utils_dir/check_openrc.sh
+  project_id=$(openstack project list|grep $OS_PROJECT_NAME|awk '{print $2}')
   cat <<-EOF > $create_vms_with_module_dir/clouds.yml
 clouds:
   openstack:
@@ -95,6 +96,7 @@ clouds:
       tenant_name: "$OS_TENANT_NAME"
       user_domain_name: "Default"
       password: $OS_PASSWORD
+      project_id: $project_id
     region_name: "$OS_REGION_NAME"
     interface: "public"
     identity_api_version: 3
