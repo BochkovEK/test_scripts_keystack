@@ -31,10 +31,20 @@ create_vms_with_module_dir=$script_dir/examples/create_vms_with_module
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
 
 
+# Check command
+check_command () {
+  echo "Check $1 command..."
+  command_exist="foo"
+  if ! command -v $1 &> /dev/null; then
+    command_exist=""
+  fi
+}
+
 install_terraform () {
   echo -E "Terraform installing..."
   echo -E "Check terraform exists..."
-  if [ ! -f /usr/local/bin/terraform ]; then
+  check_command terraform
+  if [ -z $command_exist ]; then
     echo -E "${yellow}Terraform does not exists${normal}"
     if [ ! $DONT_ASK = "true" ]; then
       export TS_YES_NO_QUESTION="Do you want to try install Terraform [Yes]:"
@@ -43,6 +53,9 @@ install_terraform () {
     else
       yes_no_input="true"
     fi
+  else
+    echo -E "${green}Terraform already exists - ok!${normal}"
+    return
   fi
   [ "$TS_DEBUG" = true ] && echo -e "
   [TS_DEBUG]
