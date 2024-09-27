@@ -157,10 +157,10 @@ if ! bash $utils_dir/openstack/create_pub_network.sh; then
 fi
 
 echo -E "${green}
-  Terraform installed - ok!
-  cloud.yml config in $create_vms_with_module_dir - ok!
-  Image $image_name created - ok!
-  Network $pub_net_name created - ok!
+Terraform installed - ok!
+cloud.yml config in $create_vms_with_module_dir - ok!
+Image $image_name created - ok!
+Network $pub_net_name created - ok!
 ${normal}"
 echo "
 You can create resources using terraform. Create name.auto.tfvars in $create_vms_with_module_dir and run following commands:
