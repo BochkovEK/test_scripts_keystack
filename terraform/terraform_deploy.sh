@@ -35,7 +35,7 @@ install_terraform () {
   if [ ! -f /usr/local/bin/terraform ]; then
     echo -E "${yellow}Terraform does not exists${normal}"
     if [ ! $DONT_ASK = "true" ]; then
-      TS_YES_NO_QUESTION="Do you want to try install Terraform [Yes]:"
+      export TS_YES_NO_QUESTION="Do you want to try install Terraform [Yes]:"
       yes_no_input=$(bash $utils_dir/yes_no_answer.sh)
       echo $yes_no_input
     else
