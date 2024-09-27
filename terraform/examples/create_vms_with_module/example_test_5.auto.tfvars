@@ -14,7 +14,7 @@ VMs = {
     vm_qty          = 3
     az_hint         = "az_1:ebochkov-keystack-comp-02"
     flavor_name     = "2-2"
-    keypair_name    = "key_test"
+#    keypair_name    = "key_test"
     security_groups = "test_security_group"
   }
 #  DRS_TEST_4 = {
