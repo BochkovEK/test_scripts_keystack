@@ -24,7 +24,7 @@ utils_dir=$parent_dir/utils
 [[ -z $NETWORK ]] && NETWORK="pub_net"
 #[[ -z $TS_YES_NO_QUESTION ]] && TS_YES_NO_QUESTION=""
 #[[ -z $TS_YES_NO_INPUT ]] && TS_YES_NO_INPUT=""
-[[ -z $DEBUG ]] && DEBUG="true"
+[[ -z $TS_DEBUG ]] && TS_DEBUG="true"
 
 
 error_output () {
@@ -159,8 +159,8 @@ if ! bash $utils_dir/check_openrc.sh; then
   exit 1
 fi
 
-[ "$DEBUG" = true ] && echo -e "
-  [DEBUG]
+[ "$TS_DEBUG" = true ] && echo -e "
+  [TS_DEBUG]
   OS_PROJECT_DOMAIN_NAME:   $OS_PROJECT_DOMAIN_NAME
   OS_USER_DOMAIN_NAME:      $OS_USER_DOMAIN_NAME
   OS_PROJECT_NAME:          $OS_PROJECT_NAME

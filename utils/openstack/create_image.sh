@@ -32,7 +32,7 @@ utils_dir=$parent_dir/utils
 [[ -z $PROJECT ]] && PROJECT="admin"
 [[ -z $API_VERSION ]] && API_VERSION="2.74"
 #[[ -z $TS_YES_NO_INPUT ]] && TS_YES_NO_INPUT=""
-[[ -z $DEBUG ]] && DEBUG="true"
+[[ -z $TS_DEBUG ]] && TS_DEBUG="true"
 
 
 error_output () {
@@ -113,8 +113,8 @@ if ! bash $utils_dir/check_openrc; then
   exit 1
 fi
 
-[ "$DEBUG" = true ] && echo -e "
-  [DEBUG]
+[ "$TS_DEBUG" = true ] && echo -e "
+  [TS_DEBUG]
   OS_PROJECT_DOMAIN_NAME:   $OS_PROJECT_DOMAIN_NAME
   OS_USER_DOMAIN_NAME:      $OS_USER_DOMAIN_NAME
   OS_PROJECT_NAME:          $OS_PROJECT_NAME
