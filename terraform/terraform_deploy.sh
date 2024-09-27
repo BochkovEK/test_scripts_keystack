@@ -133,8 +133,13 @@ fi
 "
 check_cloud_config
 # Create image
-bash $utils_dir/openstack/create_image.sh $image_name
+if ! bash $utils_dir/openstack/create_image.sh $image_name; then
+  exit 1
+fi
 # Create network
 export NETWORK=$NETWORK
-bash $utils_dir/openstack/create_pub_network.sh
+if ! bash $utils_dir/openstack/create_pub_network.sh; then
+  exit 1
+fi
+
 

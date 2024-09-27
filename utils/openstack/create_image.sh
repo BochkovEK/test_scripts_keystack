@@ -90,6 +90,14 @@ create_image () {
     echo -E "${yellow}$IMAGE not created${normal}"
     exit 0
   fi
+  image_exists_in_openstack=$(openstack image list| grep -m 1 "$IMAGE"| awk '{print $2}')
+  echo "image_exists_in_openstack: $image_exists_in_openstack"
+  if [ -n "${image_exists_in_openstack}" ]; then
+    echo -E "${green}$IMAGE created in $PROJECT - ok!${normal}"
+  else
+    echo -E "${red}$IMAGE not created - error${normal}"
+    exit 1
+  fi
 }
 
 
