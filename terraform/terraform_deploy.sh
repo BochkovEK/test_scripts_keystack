@@ -27,6 +27,7 @@ create_vms_with_module_dir=$script_dir/examples/create_vms_with_module
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
 [[ -z $NETWORK ]] && NETWORK=$pub_net_name
 [[ -z $TS_DEBUG ]] && TS_DEBUG="true"
+[[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
 
 
 install_terraform () {
@@ -106,14 +107,12 @@ check_cloud_config () {
 
 
 install_terraform
-openrc_file=$(bash $utils_dir/check_openrc.sh)
-echo $openrc_file
-exit 0
-#if [ -n "$openrc_file" ]; then
-#  source $openrc_file
-#else
-#  exit 1
-#fi
+export OPENRC_PATH=$OPENRC_PATH
+if ! bash $utils_dir/check_openrc.sh; then
+  exit 1
+else
+  source $OPENRC_PATH
+fi
 
 [ "$TS_DEBUG" = true ] && echo -e "
   [TS_DEBUG]

@@ -26,7 +26,7 @@ check_and_source_openrc_file () {
     printf "%s\n" "${red}openrc file not found in $OPENRC_PATH - ERROR!${normal}"
     exit 1
   fi
-  echo $OS_PROJECT_NAME
+#  echo $OS_PROJECT_NAME
 }
 
 check_and_source_openrc_file
