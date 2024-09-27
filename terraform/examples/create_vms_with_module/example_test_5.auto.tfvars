@@ -14,6 +14,7 @@ VMs = {
     vm_qty          = 3
     az_hint         = "az_1:ebochkov-keystack-comp-02"
     flavor_name     = "2-2"
+    keypair_name    = "key_test"
   }
 #  DRS_TEST_4 = {
 #    image_name      = "ubuntu-20.04-server-cloudimg-amd64.img"
