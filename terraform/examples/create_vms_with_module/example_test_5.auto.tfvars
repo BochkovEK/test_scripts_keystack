@@ -1,3 +1,9 @@
+# hypervisors
+comp_1 = "ebochkov-keystack-comp-01"
+comp_2 = "ebochkov-keystack-comp-02"
+comp_3 = "ebochkov-keystack-comp-03"
+comp_4 = "ebochkov-keystack-comp-04"
+
 # VMs
 VMs = {
   DRS_TEST_1 = {
@@ -7,17 +13,17 @@ VMs = {
         ram   = 2048
       }
     vm_qty          = 3
-    az_hint         = "az_1:ebochkov-ks-sber-comp-01"
+    az_hint         = "az_1:${comp_1}"
   }
   DRS_TEST_3 = {
     image_name      = "ubuntu-20.04-server-cloudimg-amd64.img"
     vm_qty          = 3
-    az_hint         = "az_2:ebochkov-ks-sber-comp-03"
+    az_hint         = "az_2:${comp_3}"
   }
   DRS_TEST_4 = {
     image_name      = "ubuntu-20.04-server-cloudimg-amd64.img"
     vm_qty          = 3
-    az_hint         = "az_2:ebochkov-ks-sber-comp-04"
+    az_hint         = "az_2:${comp_4}"
   }
 }
 
