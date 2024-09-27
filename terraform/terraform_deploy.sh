@@ -106,7 +106,8 @@ check_cloud_config () {
 
 
 install_terraform
-bash $utils_dir/check_openrc.sh
+openrc_file=$(bash $utils_dir/check_openrc.sh)
+[[ -z $openrc_file ]] && { source $openrc_file; }
 [ "$TS_DEBUG" = true ] && echo -e "
   [TS_DEBUG]
   OS_PROJECT_DOMAIN_NAME:   $OS_PROJECT_DOMAIN_NAME
