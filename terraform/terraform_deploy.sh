@@ -86,6 +86,7 @@ clouds:
     identity_api_version: 3
     cacert: "$OS_CACERT"
 EOF
+  cat $create_vms_with_module_dir/clouds.yml
 }
 
 check_cloud_config () {
