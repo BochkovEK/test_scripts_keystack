@@ -20,7 +20,7 @@ script_name=$(basename "$0")
 script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
-utils_dir=$parent_dir/utils
+utils_dir=$parent_dir
 
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
@@ -104,7 +104,7 @@ fi
 #check_openstack_cli
 if [[ $CHECK_OPENSTACK = "true" ]]; then
   if ! bash $utils_dir/check_openstack_cli.sh; then
-    echo -e "\033[31mFailed to check openstack cli - error\033[0m"
+#    echo -e "\033[31mFailed to check openstack cli - error\033[0m"
     exit 1
   fi
 fi

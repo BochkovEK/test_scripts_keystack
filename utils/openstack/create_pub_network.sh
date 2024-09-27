@@ -15,7 +15,7 @@ script_name=$(basename "$0")
 script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
-utils_dir=$parent_dir/utils
+utils_dir=$parent_dir
 
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
