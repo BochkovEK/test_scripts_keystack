@@ -109,7 +109,7 @@ check_cloud_config () {
   if [ ! -f $create_vms_with_module_dir/clouds.yml ]; then
     create_cloud_config
   else
-
+    echo -E "${yellow}cloud.yml already exists in $create_vms_with_module_dir${normal}"
     export TS_YES_NO_QUESTION="Do you want to overwrite $create_vms_with_module_dir/clouds.yml [Yes]:"
     yes_no_input=$(bash $utils_dir/yes_no_answer.sh)
   fi
