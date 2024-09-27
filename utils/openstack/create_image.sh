@@ -83,6 +83,7 @@ create_image () {
       $MIN_DISK --file $IMAGE_DIR/$IMAGE
   else
     echo -E "${yellow}$IMAGE not created${normal}"
+    exit 0
   fi
 }
 
