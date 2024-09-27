@@ -79,7 +79,7 @@ create_image () {
     echo "Creating image \"$IMAGE\" in project \"$PROJECT\"..."
     [ -f $script_dir/"$IMAGE" ] && echo "File $IMAGE_DIR/$IMAGE exist." \
     || { echo "File $IMAGE_DIR/$IMAGE does not exist. Try to download it..."; \
-    wget $IMAGE_SOURCE/$IMAGE -O $IMAGE_DIR/; }
+    wget $IMAGE_SOURCE/$IMAGE -P $IMAGE_DIR/; }
 
     openstack image create "$IMAGE" \
       --disk-format qcow2 \
