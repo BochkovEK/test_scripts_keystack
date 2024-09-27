@@ -10,7 +10,7 @@ locals {
     #        flavor            = try(instance.flavor, var.default_flavor)
     flavor_name       = try(instance.flavor_name, var.default_flavor_name)
     keypair_name     = try(instance.keypair_name, null) #var.default_key_pair_name)
-    security_groups  = try(instance.security_groups, toset([])) #var.default_security_groups)
+    security_groups  = try(instance.security_groups, null) #var.default_security_groups)
     az_hint          = try(instance.az_hint, null)
     #        volume_size       = try(instance.volume_size, var.default_volume_size)
     network_name     = try(instance.network_name, var.default_network_name)
