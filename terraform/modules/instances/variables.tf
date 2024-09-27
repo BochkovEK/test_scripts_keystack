@@ -46,7 +46,7 @@ variable "default_security_groups" {
 variable "default_key_pair_name" {
   description = "Default key pair"
   type        = string
-  default     = "key_test"
+  default     = ""
 }
 
 variable "default_puplic_key" {
