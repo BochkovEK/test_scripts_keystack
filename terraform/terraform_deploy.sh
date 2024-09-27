@@ -26,7 +26,7 @@ create_vms_with_module_dir=$script_dir/examples/create_vms_with_module
 
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
 [[ -z $NETWORK ]] && NETWORK=$pub_net_name
-[[ -z $DEBUG ]] && DEBUG="true"
+[[ -z $TS_DEBUG ]] && TS_DEBUG="true"
 
 
 install_terraform () {
@@ -42,8 +42,8 @@ install_terraform () {
       yes_no_input="true"
     fi
   fi
-  [ "$DEBUG" = true ] && echo -e "
-  [DEBUG]
+  [ "$TS_DEBUG" = true ] && echo -e "
+  [TS_DEBUG]
   yes_no_input:   $yes_no_input
 "
   if [ "$yes_no_input" = "true" ]; then
@@ -105,8 +105,8 @@ check_cloud_config () {
 
 install_terraform
 bash $utils_dir/openstack/check_openrc.sh
-[ "$DEBUG" = true ] && echo -e "
-  [DEBUG]
+[ "$TS_DEBUG" = true ] && echo -e "
+  [TS_DEBUG]
   OS_PROJECT_DOMAIN_NAME:   $OS_PROJECT_DOMAIN_NAME
   OS_USER_DOMAIN_NAME:      $OS_USER_DOMAIN_NAME
   OS_PROJECT_NAME:          $OS_PROJECT_NAME

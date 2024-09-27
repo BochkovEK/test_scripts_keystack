@@ -2,10 +2,10 @@
 
 # The script provide yes\no answer
 
-[[ -z $DEBUG ]] && DEBUG="sosa"
+[[ -z $TS_DEBUG ]] && TS_DEBUG="sosa"
 [[ -z $TS_YES_NO_QUESTION ]] && TS_YES_NO_QUESTION="foo"
 
-echo $DEBUG
+echo $TS_DEBUG
 echo $TS_YES_NO_QUESTION
 #yes_no_answer () {
 #  while true; do
