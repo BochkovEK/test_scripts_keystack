@@ -6,7 +6,7 @@
 [[ -z $TS_YES_NO_QUESTION ]] && TS_YES_NO_QUESTION="foo"
 
 echo $DEBUG
-
+echo $TS_YES_NO_QUESTION
 #yes_no_answer () {
 #  while true; do
 #    read -p "$TS_YES_NO_QUESTION" yn
