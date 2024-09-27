@@ -41,6 +41,10 @@ install_terraform () {
       TS_YES_NO_INPUT="true"
     fi
   fi
+  [ "$DEBUG" = true ] && echo -e "
+  [DEBUG]
+  TS_YES_NO_INPUT:   $TS_YES_NO_INPUT
+"
   if [ "$TS_YES_NO_INPUT" = "true" ]; then
     wget https://repo.itkey.com/repository/Terraform/$terraform_binary_name
     chmod 777 ./$terraform_binary_name

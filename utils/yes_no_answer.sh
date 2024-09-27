@@ -2,6 +2,9 @@
 
 # The script provide yes\no answer
 
+[[ -z $DEBUG ]] && DEBUG="true"
+
+
 yes_no_answer () {
   TS_YES_NO_INPUT=""
   while true; do
@@ -18,3 +21,7 @@ yes_no_answer () {
 }
 
 yes_no_answer
+[ "$DEBUG" = true ] && echo -e "
+  [DEBUG]
+  TS_YES_NO_INPUT:   $TS_YES_NO_INPUT
+"
