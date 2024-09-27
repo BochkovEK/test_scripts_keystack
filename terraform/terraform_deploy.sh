@@ -70,6 +70,7 @@ EOF
 
 create_cloud_config () {
   echo -E "Creating cloud.yml config in $create_vms_with_module_dir folder"
+#  bash $utils_dir/check_openrc.sh
   cat <<-EOF > $create_vms_with_module_dir/clouds.yml
 clouds:
   openstack:
@@ -88,10 +89,11 @@ EOF
 
 check_cloud_config () {
   echo -E "Check cloud.yml config in $create_vms_with_module_dir folder"
-  bash $utils_dir/check_openrc.sh
+#  bash $utils_dir/check_openrc.sh
   if [ ! -f $create_vms_with_module_dir/clouds.yml ]; then
     create_cloud_config
   else
+
     export TS_YES_NO_QUESTION="Do you want to overwrite $create_vms_with_module_dir/clouds.yml [Yes]:"
     bash $utils_dir/yes_no_answer.sh
   fi
