@@ -7,8 +7,8 @@ resource "openstack_compute_instance_v2" "vm" {
   image_name                  = each.value.image_name
   flavor_name                 = "${each.value.base_name}-flavor"
 #  flavor_id                   = openstack_compute_flavor_v2.flavor[each.value].id
-  key_pair                    = each.value.keypair_name
-  security_groups             = each.value.security_groups
+  key_pair                    = each.value.keypair_name == "" ? openstack_compute_keypair_v2.keypair : null
+  security_groups             = each.value.security_groups == [] ? [openstack_compute_secgroup_v2.secgroup.name] : null
   availability_zone_hints     = each.value.az_hint
   metadata = {
     test_meta = "Created by Terraform"
@@ -66,7 +66,6 @@ dynamic block_device {
     }
  }
 
-
   network {
     name = each.value.network_name
   }
@@ -112,3 +111,27 @@ data "openstack_images_image_v2" "image_id" {
 #  instance_id = openstack_compute_instance_v2.fc_hdd[count.index].id
 #  volume_id   = openstack_blockstorage_volume_v3.fc_hdd_sda[count.index].id
 #}
+
+#security group
+resource "openstack_compute_secgroup_v2" "secgroup" {
+ name = "terraform_security_group"
+ description = "Created by test terraform security group"
+ rule {
+  from_port = 22
+  to_port = 22
+  ip_protocol = "tcp"
+  cidr = "0.0.0.0/0"
+ }
+ rule {
+  from_port = -1
+  to_port = -1
+  ip_protocol = "icmp"
+  cidr = "0.0.0.0/0"
+ }
+}
+
+#key_pair
+resource "openstack_compute_keypair_v2" "keypair" {
+  name        = "terraform_keypair"
+  public_key  = var.default_puplic_key
+}

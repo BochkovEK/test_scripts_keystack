@@ -1,0 +1,15 @@
+clouds:
+  openstack:
+    auth:
+      auth_url: OS_AUTH_URL
+      username: "OS_USERNAME"
+#      project_id: 8cdbb6b9a0e945b8a9844f43f04159a9
+#      project_name: "admin"
+      tenant_name: "OS_TENANT_NAME"
+      user_domain_name: "Default"
+      password: OS_PASSWORD
+    region_name: "OS_REGION_NAME"
+    interface: "public"
+    identity_api_version: 3
+    cacert: "OS_CACERT"
+
