@@ -316,7 +316,9 @@
   - terraform init
   - terraform plan -var-file "\<name>.auto.tfvars"
   - terraform apply
-    - type "yes"
+  - type "yes"
+  - or 
+  - terraform apply -auto-approve
 
 ### To destroy terraform creation:
 - Run following command in folders with <main.tf>:
