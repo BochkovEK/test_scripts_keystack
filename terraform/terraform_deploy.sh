@@ -104,7 +104,7 @@ EOF
 }
 
 check_cloud_config () {
-  echo -E "Check cloud.yml config in $create_vms_with_module_dir folder"
+  echo -E "Check cloud.yml config in $create_vms_with_module_dir"
 #  bash $utils_dir/check_openrc.sh
   if [ ! -f $create_vms_with_module_dir/clouds.yml ]; then
     create_cloud_config
