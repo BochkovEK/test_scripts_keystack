@@ -90,7 +90,7 @@
   
   Download Terraform binary from repo itkey:
 
-      wget https://repo.itkey.com/repository/Terraform/terraform_1.8.5_linux_amd64
+      wget https://repo.itkey.com/repository/bootstrap/terraform/terraform_1.8.5_linux_amd64
   
   Change the access permissions:
 

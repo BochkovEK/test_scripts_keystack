@@ -5,6 +5,7 @@
 # Deploy steps:
 # 1) install terraform from repo.itkey.com
 
+repo="https://repo.itkey.com/repository/bootstrap/terraform"
 terraform_binary_name="terraform_1.8.5_linux_amd64"
 image_name="ubuntu-20.04-server-cloudimg-amd64.img"
 pub_net_name="pub_net"
@@ -48,7 +49,7 @@ install_terraform () {
   yes_no_input:   $yes_no_input
 "
   if [ "$yes_no_input" = "true" ]; then
-    wget https://repo.itkey.com/repository/Terraform/$terraform_binary_name
+    wget $repo/$terraform_binary_name
     chmod 777 ./$terraform_binary_name
     mv $terraform_binary_name /usr/local/bin/terraform
 
