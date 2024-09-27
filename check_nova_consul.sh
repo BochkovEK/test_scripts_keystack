@@ -20,7 +20,9 @@ ORANGE='\033[0;33m'
 NC='\033[0m' # No Color
 
 script_dir=$(dirname $0)
+utils_dir=$script_dir/utils
 
+[[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
 [[ -z $TRY_TO_RISE ]] && TRY_TO_RISE="true"
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $REGION ]] && REGION="region-ps"
@@ -349,8 +351,11 @@ Check_consul_config () {
 
 #clear
 #check_openstack_cli
-if ! bash $script_dir/check_openstack_cli.sh; then
+if [[ $CHECK_OPENSTACK = "true" ]]; then
+  if ! bash $utils_dir/check_openstack_cli.sh; then
+    echo -e "\033[31mFailed to check openstack cli - error\033[0m"
     exit 1
+  fi
 fi
 Check_openrc_file
 Check_host_command

@@ -1,5 +1,5 @@
 {
-  "name":"docker-sber",
+  "name":"docker-sberlinux",
   "yum":{
     "repodataDepth":0,
     "deployPolicy":"STRICT"

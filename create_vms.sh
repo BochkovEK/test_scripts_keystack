@@ -30,6 +30,7 @@ yellow=$(tput setaf 3)
 
 #Script_dir, current folder
 script_dir=$(dirname $0)
+utils_dir=$script_dir/utils
 
 # Constants
 TIMEOUT_BEFORE_NEXT_CREATION=10
@@ -183,7 +184,10 @@ yes_no_answer () {
 
 error_output () {
 #  printf "%s\n" "${yellow}command not executed on $NODES_TYPE nodes${normal}"
-  printf "%s\n" "${yellow}$warning_message${normal}"
+  if [ -n "${warning_message}" ]; then
+    printf "%s\n" "${yellow}$warning_message${normal}"
+    warning_message=""
+  fi
   printf "%s\n" "${red}$error_message - error${normal}"
   exit 1
 }
@@ -193,6 +197,8 @@ check_and_source_openrc_file () {
     echo "Check openrc file and source it..."
     check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
     if [ -z "$check_openrc_file" ]; then
+        echo -E "${yellow}openrc file not found in $OPENRC_PATH${normal}"
+        echo "Try to get 'openrc' from Vault"
         printf "%s\n" "${red}openrc file not found in $OPENRC_PATH - ERROR!${normal}"
         exit 1
     fi
@@ -772,7 +778,7 @@ output_of_initial_parameters
 
 #check_openstack_cli
 if [[ $CHECK_OPENSTACK = "true" ]]; then
-  if ! bash $script_dir/check_openstack_cli.sh; then
+  if ! bash $utils_dir/check_openstack_cli.sh; then
     echo -e "\033[31mFailed to check openstack cli - error\033[0m"
     exit 1
   fi

@@ -90,7 +90,7 @@
   
   Download Terraform binary from repo itkey:
 
-      wget https://repo.itkey.com/repository/images/terraform_1.8.5_linux_amd64
+      wget https://repo.itkey.com/repository/bootstrap/terraform/terraform_1.8.5_linux_amd64
   
   Change the access permissions:
 
@@ -202,7 +202,7 @@
         flavor            = {
             vcpus         = Number of vCPUs (flavor)
             ram           = RAM in !!!MB (1024, 2048, 4096, ...) (flavor)
-        }                 if no define create flavor vcpus = 2, ram = 20248
+        }                 if not define create flavor vcpus = 2, ram = 2048
         keypair_name      = The key pair name for the user specified in the cloud.yml (default: key_test)
         security_groups   = The name of the security group from the project specified in the cloud.yml (default: test_security_group)
         az_hint           = The AZ name if neded. Valid format: "<az_name>" or "<az_name>:<hypervisor_name>" 
@@ -316,7 +316,9 @@
   - terraform init
   - terraform plan -var-file "\<name>.auto.tfvars"
   - terraform apply
-    - type "yes"
+  - type "yes"
+  - or 
+  - terraform apply -auto-approve
 
 ### To destroy terraform creation:
 - Run following command in folders with <main.tf>:
