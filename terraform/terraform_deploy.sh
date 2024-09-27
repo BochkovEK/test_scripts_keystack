@@ -26,7 +26,7 @@ create_vms_with_module_dir=$script_dir/examples/create_vms_with_module
 
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
 [[ -z $NETWORK ]] && NETWORK=$pub_net_name
-[[ -z $DEBUG ]] && DEBUG="false"
+[[ -z $DEBUG ]] && DEBUG="true"
 
 
 install_terraform () {
