@@ -5,11 +5,11 @@ variable "default_image_name" {
   default = "cirros-0.6.2-x86_64-disk"
 }
 
-#variable "default_flavor_name" {
-#  description = "Default flavor name"
-#  type        = string
-#  default = "2c-2r"
-#}
+variable "default_flavor_name" {
+  description = "Default flavor name"
+  type        = string
+  default = ""
+}
 
 variable "default_flavor" {
 #  description = "Default flavor name"
