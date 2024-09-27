@@ -2,7 +2,7 @@
 
 # The script provide yes\no answer
 
-[[ -z $DEBUG ]] && DEBUG="false"
+[[ -z $DEBUG ]] && DEBUG="sosa"
 [[ -z $TS_YES_NO_QUESTION ]] && TS_YES_NO_QUESTION="foo"
 
 #echo $DEBUG
