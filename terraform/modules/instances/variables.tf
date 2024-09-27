@@ -36,18 +36,18 @@ variable "default_network_name" {
   default     = "pub_net"
 }
 
-variable "default_security_groups" {
-  description = "Default security_groups"
-  type        = list(string)
-#  default = ["test_security_group"]
-  default     = []
-}
+#variable "default_security_groups" {
+#  description = "Default security_groups"
+#  type        = list(string)
+##  default = ["test_security_group"]
+#  default     = []
+#}
 
-variable "default_key_pair_name" {
-  description = "Default key pair"
-  type        = string
-  default     = ""
-}
+#variable "default_key_pair_name" {
+#  description = "Default key pair"
+#  type        = string
+#  default     = ""
+#}
 
 variable "default_puplic_key" {
   description = "Default puplic key"
