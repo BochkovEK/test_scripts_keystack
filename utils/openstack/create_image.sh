@@ -71,6 +71,8 @@ create_image () {
     else
       yes_no_input="true"
     fi
+  else
+    yes_no_input="true"
   fi
   if [ "$yes_no_input" = "true" ]; then
     bash $utils_dir/install_wget.sh
