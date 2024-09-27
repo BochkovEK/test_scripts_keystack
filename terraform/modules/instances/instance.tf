@@ -7,7 +7,7 @@ resource "openstack_compute_instance_v2" "vm" {
   image_name                  = each.value.image_name
   flavor_name                 = "${each.value.base_name}-flavor"
 #  flavor_id                   = openstack_compute_flavor_v2.flavor[each.value].id
-  key_pair                    = each.value.keypair_name == "" ? openstack_compute_keypair_v2.keypair : null
+  key_pair                    = each.value.keypair_name == "" ? openstack_compute_keypair_v2.keypair.name : null
   security_groups             = each.value.security_groups == [] ? [openstack_compute_secgroup_v2.secgroup.name] : null
   availability_zone_hints     = each.value.az_hint
   metadata = {
