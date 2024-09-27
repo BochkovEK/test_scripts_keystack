@@ -3,7 +3,7 @@
 # The script provide yes\no answer
 
 [[ -z $DEBUG ]] && DEBUG="false"
-[[ -z $TS_YES_NO_QUESTION ]] && $TS_YES_NO_QUESTION="foo"
+[[ -z $TS_YES_NO_QUESTION ]] && TS_YES_NO_QUESTION="foo"
 
 
 yes_no_answer () {
