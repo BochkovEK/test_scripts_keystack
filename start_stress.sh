@@ -10,6 +10,7 @@ violet=$(tput setaf 5)
 normal=$(tput sgr0)
 
 script_dir=$(dirname $0)
+check_vm_script="check_vm.sh"
 
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $KEY_NAME ]] && KEY_NAME="key_test.pem"
@@ -193,4 +194,13 @@ check_openrc_file () {
 
 rm -rf /root/.ssh/known_hosts
 check_openrc_file
-batch_run_stress $HYPERVISOR_NAME $TYPE_TEST
+if [ -f $script_dir/$check_vm_script ]; then
+  if bash $script_dir/$check_vm_script; then
+    batch_run_stress $HYPERVISOR_NAME $TYPE_TEST
+  else
+    echo -E "${red}VMs are not ready to start stress - error${normal}"
+    exit 1
+  fi
+else
+  echo -E "${red}Script $script_dir/$check_vm_script not found - error${normal}"
+fi

@@ -41,6 +41,7 @@ batch_run_command() {
     echo "Start checking..."
     VMs_IPs=$(openstack server list --project $PROJECT $host_string |grep ACTIVE |awk '{print $8}')
     [[ -z $VMs_IPs ]] && { echo -e "No instance found in the $PROJECT project\nProject list:"; openstack project list; exit 1; }
+    at_least_one_vm_is_not_avail="false"
     for raw_string_ip in $VMs_IPs; do
         FIRST_IP=$(echo "${raw_string_ip%%,*}")
 #        FIRST_IP=$(echo $raw_string_ip|awk '{print $1}')
@@ -51,6 +52,7 @@ batch_run_command() {
             [ "$ONLY_PING" == "false" ] && { ssh -t -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$IP "$COMMAND_STR"; }
         else
             printf "%40s\n" "${red}No connection with $IP - error!${normal}"
+            at_least_one_vm_is_not_avail="true"
         fi
     done
 }
@@ -106,3 +108,6 @@ done
 #rm -rf /root/.ssh/known_hosts
 check_openrc_file
 batch_run_command
+if [ "$at_least_one_vm_is_not_avail" = true ]; then
+  exit 1
+fi
