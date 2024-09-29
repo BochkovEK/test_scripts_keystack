@@ -161,7 +161,6 @@ Stress test: $MODE will be launched on the hypervisor ($HV_STRING) VMs
     [ "$DEBUG" = true ] && echo -e "
     command to define vms ip list
     VMs_IPs=\$(openstack server list $HV_STRING --project $PROJECT |grep ACTIVE |awk '{print $8}')
-    VMs_IPs: $VMs_IPs
     "
     [[ -z $VMs_IPs ]] && { echo "No instance found in the $PROJECT project"; exit 1; }
   else
