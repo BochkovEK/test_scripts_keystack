@@ -5,13 +5,16 @@
 # Deploy steps:
 # 1) install terraform from repo.itkey.com
 # 2) Create cloud config in test_scripts_keystack/terraform folder
-# 3) Create image from repo.itkey.com/images
+# 3) Create image from repo.itkey.com/images by images_list
 # 4) Create pub_net
 
 
 repo="https://repo.itkey.com/repository/bootstrap/terraform"
 terraform_binary_name="terraform_1.8.5_linux_amd64"
-image_name="ubuntu-20.04-server-cloudimg-amd64.img"
+images_list=(
+  "ubuntu-20.04-server-cloudimg-amd64.img"
+  "cirros-0.6.2-x86_64-disk.img"
+  )
 pub_net_name="pub_net"
 
 #Colors
@@ -153,10 +156,12 @@ fi
   OS_DRS_ENDPOINT_OVERRIDE: $OS_DRS_ENDPOINT_OVERRIDE
 "
 check_cloud_config
-# Create image
-if ! bash $utils_dir/openstack/create_image.sh $image_name; then
-  exit 1
-fi
+# Create images
+for image_name in "${images_list[@]}"; do
+  if ! bash $utils_dir/openstack/create_image.sh $image_name; then
+    exit 1
+  fi
+done
 # Create network
 export NETWORK=$NETWORK
 if ! bash $utils_dir/openstack/create_pub_network.sh; then
@@ -166,7 +171,11 @@ fi
 echo -E "${green}
 Terraform installed - ok!
 cloud.yml config in $script_dir - ok!
-Image $image_name created - ok!
+${normal}"
+for image_name in "${images_list[@]}"; do
+  echo -E "${green}Image $image_name created - ok!${normal}"
+done
+echo -E "${green}
 Network $pub_net_name created - ok!
 ${normal}"
 echo "
