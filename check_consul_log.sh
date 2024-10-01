@@ -12,6 +12,7 @@ normal=$(tput sgr0)
 yallow=$(tput setaf 3)
 
 script_dir=$(dirname $0)
+utils_dir=$script_dir/utils
 
 [[ -z $LOG_LAST_LINES_NUMBER ]] && LOG_LAST_LINES_NUMBER=25
 [[ -z $OUTPUT_PERIOD ]] && OUTPUT_PERIOD=10
@@ -70,7 +71,7 @@ while [ -n "$1" ]; do
 done
 
 #check_openstack_cli
-if ! bash $script_dir/check_openstack_cli.sh; then
+if ! bash $utils_dir/check_openstack_cli.sh; then
     exit 1
 fi
 # Check openrc file
