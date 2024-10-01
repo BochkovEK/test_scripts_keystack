@@ -4,6 +4,10 @@
 
 # Deploy steps:
 # 1) install terraform from repo.itkey.com
+# 2) Create cloud config in test_scripts_keystack/terraform folder
+# 3) Create image from repo.itkey.com/images
+# 4) Create pub_net
+
 
 repo="https://repo.itkey.com/repository/bootstrap/terraform"
 terraform_binary_name="terraform_1.8.5_linux_amd64"
@@ -23,7 +27,8 @@ script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
 utils_dir=$parent_dir/utils
-create_vms_with_module_dir=$script_dir/examples/create_vms_with_module
+examples_dir=$script_dir/exapmles
+#create_vms_with_module_dir=$script_dir/examples/create_vms_with_module
 
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
 [[ -z $NETWORK ]] && NETWORK=$pub_net_name
@@ -84,10 +89,10 @@ EOF
 }
 
 create_cloud_config () {
-  echo -E "Creating cloud.yml config in $create_vms_with_module_dir folder"
+  echo -E "Creating cloud.yml config in $script_dir folder"
 #  bash $utils_dir/check_openrc.sh
   project_id=$(openstack project list|grep $OS_PROJECT_NAME|awk '{print $2}')
-  cat <<-EOF > $create_vms_with_module_dir/clouds.yml
+  cat <<-EOF > $script_dir/clouds.yml
 clouds:
   openstack:
     auth:
@@ -102,23 +107,23 @@ clouds:
     identity_api_version: 3
     cacert: "$OS_CACERT"
 EOF
-  cat $create_vms_with_module_dir/clouds.yml
+  cat $script_dir/clouds.yml
 }
 
 check_cloud_config () {
-  echo -E "Check cloud.yml config in $create_vms_with_module_dir"
+  echo -E "Check cloud.yml config in $script_dir"
 #  bash $utils_dir/check_openrc.sh
-  if [ ! -f $create_vms_with_module_dir/clouds.yml ]; then
+  if [ ! -f $script_dir/clouds.yml ]; then
     create_cloud_config
   else
-    echo -E "${yellow}cloud.yml already exists in $create_vms_with_module_dir${normal}"
-    export TS_YES_NO_QUESTION="Do you want to overwrite $create_vms_with_module_dir/clouds.yml [Yes]:"
+    echo -E "${yellow}cloud.yml already exists in $script_dir${normal}"
+    export TS_YES_NO_QUESTION="Do you want to overwrite $script_dir/clouds.yml [Yes]:"
     yes_no_input=$(bash $utils_dir/yes_no_answer.sh)
   fi
   if [ "$yes_no_input" = "true" ]; then
     create_cloud_config
   else
-    echo -E "${yellow}$create_vms_with_module_dir/clouds.yml config not changed${normal}"
+    echo -E "${yellow}$script_dir/clouds.yml config not changed${normal}"
   fi
 }
 
@@ -160,16 +165,22 @@ fi
 
 echo -E "${green}
 Terraform installed - ok!
-cloud.yml config in $create_vms_with_module_dir - ok!
+cloud.yml config in $script_dir - ok!
 Image $image_name created - ok!
 Network $pub_net_name created - ok!
 ${normal}"
 echo "
-You can create resources using terraform. Create name.auto.tfvars in $create_vms_with_module_dir and run following commands:
-terraform init
-terraform plan -var-file \"<name>.auto.tfvars\"
-terraform apply
-type \"yes\"
+You can create resources using terraform.
+  1) Create <name>.auto.tfvars configs and copy clouds.yml from $script_dir to the following 'examples' dir:"
+dirs=$(ls -d $examples_dir/*/)
+for dir in $dirs; do echo $dir; done
+echo "
+  2) Run following commands from 'examples' dir to create resources:
+    terraform init
+    terraform plan -var-file \"<name>.auto.tfvars\"
+    terraform apply
+    type \"yes\"
+
 Read more: https://github.com/BochkovEK/test_scripts_keystack/tree/master/terraform
 "
 

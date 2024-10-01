@@ -1,0 +1,11 @@
+[VMs with volumes by index]
+May by exist in create_vms_with_module
+
+??? Create volume by cycle in volume count?
+
+This set of configs for terraform creates:
+    - VM
+        - count
+        - volume by image
+        - port by network
+        - volumes by index

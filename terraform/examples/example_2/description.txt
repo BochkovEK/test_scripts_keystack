@@ -1,0 +1,10 @@
+[VMs with 4 volume]
+May by exist in create_vms_with_module
+
+This set of configs for terraform creates:
+    - flavor
+    - VM
+        - count
+        - volume by image
+    - ports for VM
+    - 4 volume and attach them to VM
