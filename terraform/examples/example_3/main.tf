@@ -1,12 +1,14 @@
 resource "openstack_compute_instance_v2" "vm" {
-  name                        = var.vm_name
+
+  count                       = var.qty
+
+  name                        = format("%s-%02d", var.vm_name, [count.index])
   flavor_name                 = openstack_compute_flavor_v2.flavor.name
   key_pair                    = openstack_compute_keypair_v2.keypair.name
   security_groups             = [
     openstack_compute_secgroup_v2.secgroup.name
   ]
   availability_zone_hints     = var.az_hint
-  count                       = var.qty
   metadata                    = {
     test_meta             = "Created by Terraform"
   }
