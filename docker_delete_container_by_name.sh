@@ -34,7 +34,7 @@ note_type_func () {
 }
 
 docker_command () {
-  id_docker=$(ssh -o StrictHostKeyChecking=no $1 docker container ls -a | grep $CONTAINER_NAME | awk '{print $1}')
+  id_docker=$(ssh -o StrictHostKeyChecking=no $1 docker container ls -a | grep -E "\s$CONTAINER_NAME$" | awk '{print $1}')
   echo "id_docker $CONTAINER_NAME on $1: $id_docker"
   id_image=$(ssh -o StrictHostKeyChecking=no $1 docker images | grep $CONTAINER_NAME | awk '{print $3}')
   echo "id_image $CONTAINER_NAME on $host: $id_docker"
