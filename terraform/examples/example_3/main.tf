@@ -2,7 +2,7 @@ resource "openstack_compute_instance_v2" "vm" {
 
   count                       = var.qty
 
-  name                        = format("%s-%02d", var.vm_name, [count.index])
+  name                        = format("%s-%02d", var.vm_name, (count.index))
   flavor_name                 = openstack_compute_flavor_v2.flavor.name
   key_pair                    = openstack_compute_keypair_v2.keypair.name
   security_groups             = [
