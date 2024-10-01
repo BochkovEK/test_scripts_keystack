@@ -11,7 +11,7 @@ resource "openstack_compute_instance_v2" "vm" {
     test_meta             = "Created by Terraform"
   }
   scheduler_hints {
-    group                  = openstack_compute_servergroup_v2.servergroup.name
+    group                  = openstack_compute_servergroup_v2.servergroup.id
   }
   network {
     name = 	var.network_name
