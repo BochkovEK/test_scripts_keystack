@@ -10,25 +10,26 @@ nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
 
 [[ -z $CONTAINER_NAME ]] && CONTAINER_NAME=""
 [[ -z $NODE_NAME ]] && NODE_NAME=""
+[[ -z $DEBUG ]] && DEBUG="true"
 
 note_type_func () {
   case "$1" in
-        ctrl)
-          nodes_to_find=$ctrl_pattern
-          echo "Container will be checked on ctrl nodes"
-          ;;
-        comp)
-          nodes_to_find=$comp_pattern
-          echo "Container will be checked on comp nodes"
-          ;;
-        net)
-          nodes_to_find=$net_pattern
-          echo "Container will be checked on net nodes"
-          ;;
-        *)
-          echo "type is not specified correctly. Containers will be checked on ctr, comp, net nodes"
-          ;;
-        esac
+    ctrl)
+      nodes_to_find=$ctrl_pattern
+      echo "Container will be checked on ctrl nodes"
+      ;;
+    comp)
+      nodes_to_find=$comp_pattern
+      echo "Container will be checked on comp nodes"
+      ;;
+    net)
+      nodes_to_find=$net_pattern
+      echo "Container will be checked on net nodes"
+      ;;
+    *)
+      echo "type is not specified correctly. Containers will be checked on ctr, comp, net nodes"
+      ;;
+  esac
 }
 
 docker_command () {
@@ -50,24 +51,28 @@ define_parameters () {
 count=1
 while [ -n "$1" ]
 do
-    case "$1" in
-        --help) echo -E "
-        -c,   -container_name   <container_name>
-        -nt,  -type_of_nodes    <type_of_nodes> 'ctrl', 'comp', 'net'
-        -nn,  -node_name        <node_name>     <stand_name>-keystack-<type>-<number>
+  case "$1" in
+    --help) echo -E "
+      -c,   -container_name   <container_name>
+      -nt,  -type_of_nodes    <type_of_nodes> 'ctrl', 'comp', 'net'
+      -nn,  -node_name        <node_name>     <stand_name>-keystack-<type>-<number>
+      -debug                  enabled debug output (without parameter)
 "
       exit 0
       break ;;
 	-c|-container_name) CONTAINER_NAME="$2"
-	    echo "Found the -command <command> option, with parameter value $CONTAINER_NAME"
-      shift ;;
+	  echo "Found the -container_name option, with parameter value $CONTAINER_NAME"
+    shift ;;
   -nn|-node_name) NODE_NAME="$2"
-	    echo "Found the -node_name option, with parameter value $NODE_NAME"
-      shift ;;
+    echo "Found the -node_name option, with parameter value $NODE_NAME"
+    shift ;;
   -nt|-type_of_nodes)
-      echo "Found the -type_of_nodes option, with parameter value $2"
-      note_type_func "$2"
-      shift ;;
+    echo "Found the -type_of_nodes option, with parameter value $2"
+    note_type_func "$2"
+    shift ;;
+  -debug) DEBUG="true"
+    echo "Found the -debug, with parameter value $DEBUG"
+    ;;
   --) shift
     break ;;
   *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
@@ -75,10 +80,22 @@ do
     shift
 done
 
+
 [[ -z "${CONTAINER_NAME}" ]] && echo "Container name required as parameter script" && exit 1
+
+[ "$DEBUG" = true ] && echo -e "
+  [DEBUG]
+  CONTAINER_NAME: $CONTAINER_NAME
+  NODE_NAME:      $NODE_NAME
+  nodes_to_find:  $nodes_to_find
+"
 
 if [ -z "$NODE_NAME" ]; then
   srv=$(cat /etc/hosts | grep -E "$nodes_to_find" | awk '{print $1}')
+  [ "$DEBUG" = true ] && echo -e "
+  [DEBUG]
+  srv: $srv
+"
   for host in $srv;do
     docker_command $host
   done
