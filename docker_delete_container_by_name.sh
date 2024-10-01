@@ -3,9 +3,10 @@
 # Сделать ключи и параметры для удаления с одной ноды (тестить)
 #The scrip stop and delete volume, image container by name
 
-comp_pattern="\-comp\-..$"
-ctrl_pattern="\-ctrl\-..$"
-net_pattern="\-net\-..$"
+#"\-comp\-..$"
+comp_pattern="\-comp\-.."
+ctrl_pattern="\-ctrl\-.."
+net_pattern="\-net\-.."
 nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
 
 [[ -z $CONTAINER_NAME ]] && CONTAINER_NAME=""
@@ -96,6 +97,7 @@ if [ -z "$NODE_NAME" ]; then
   [DEBUG]
   srv: $srv
 "
+  read -p "Press enter to continue"
   for host in $srv;do
     docker_command $host
   done
