@@ -30,7 +30,7 @@ script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
 utils_dir=$parent_dir/utils
-examples_dir=$script_dir/exapmles
+examples_dir=$script_dir/examples
 #create_vms_with_module_dir=$script_dir/examples/create_vms_with_module
 
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
@@ -170,13 +170,11 @@ fi
 
 echo -E "${green}
 Terraform installed - ok!
-cloud.yml config in $script_dir - ok!
-${normal}"
+cloud.yml config in $script_dir - ok!${normal}"
 for image_name in "${images_list[@]}"; do
   echo -E "${green}Image $image_name created - ok!${normal}"
 done
-echo -E "${green}
-Network $pub_net_name created - ok!
+echo -E "${green}Network $pub_net_name created - ok!
 ${normal}"
 echo "
 You can create resources using terraform.
@@ -184,7 +182,7 @@ You can create resources using terraform.
 dirs=$(ls -d $examples_dir/*/)
 for dir in $dirs; do echo $dir; done
 echo "
-  2) Run following commands from 'examples' dir to create resources:
+  2) Run following commands from 'examples/<examples_name>' dir to create resources:
     terraform init
     terraform plan -var-file \"<name>.auto.tfvars\"
     terraform apply

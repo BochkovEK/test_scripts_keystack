@@ -7,11 +7,11 @@ resource "openstack_compute_instance_v2" "vm" {
   ]
   availability_zone_hints     = var.az_hint
   count                       = var.qty
-  scheduler_hints             = {
-   group                  = openstack_compute_servergroup_v2.servergroup.name
-  }
   metadata                    = {
     test_meta             = "Created by Terraform"
+  }
+  scheduler_hints {
+    group                  = openstack_compute_servergroup_v2.servergroup.name
   }
   network {
     name = 	var.network_name
@@ -69,8 +69,8 @@ resource "openstack_compute_secgroup_v2" "secgroup" {
 }
 
 resource "openstack_compute_servergroup_v2" "servergroup" {
-name     = var.server_group.name
-policies = var.server_group.policies
+  name     = var.server_group.name
+  policies = var.server_group.policies
 }
 
 
