@@ -183,6 +183,7 @@ check_and_source_openrc_file () {
   if [[ -z $openrc_file ]]; then
     exit 1
   else
+    echo $openrc_file
     source $openrc_file
   fi
 }
