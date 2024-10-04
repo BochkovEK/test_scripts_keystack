@@ -14,6 +14,7 @@ yellow=$(tput setaf 3)
 script_dir=$(dirname $0)
 
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
+[[ -z $CHECK_OPENRC ]] && CHECK_OPENRC="true"
 
 export OPENRC_PATH=$OPENRC_PATH
 

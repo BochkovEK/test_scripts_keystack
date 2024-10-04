@@ -122,11 +122,21 @@ yes_no_answer () {
   yes_no_question="<Empty yes\no question>"
 }
 
+
 #check_openstack_cli
 check_openstack_cli () {
   if ! bash $utils/check_openstack_cli.sh; then
-    error_message="Failed to check openstack"
-    error_output
+#    error_message="Failed to check openstack"
+#    error_output
+    exit 1
+  fi
+}
+
+check_and_source_openrc_file () {
+  if ! bash $utils/openrc.sh; then
+    exit 1
+  else
+    echo $OPENRC_PATH
   fi
 }
 
@@ -205,6 +215,7 @@ if [[ -z ${NODES[0]} ]] && [ "$NODES_TYPE" = ctrl ]; then
   yes_no_answer
   if [ "$yes_no_input" = "true" ]; then
     check_openstack_cli
+    check_and_source_openrc_file
     nova_state_list=$(openstack compute service list)
     ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
     echo "Check connection to $NODES_TYPE"
