@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# Сделать ключи и параметры для удаления с одной ноды (тестить)
 #The scrip stop and delete volume, image container by name
 
 #"\-comp\-..$"
@@ -11,7 +10,7 @@ nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
 
 [[ -z $CONTAINER_NAME ]] && CONTAINER_NAME=""
 [[ -z $NODE_NAME ]] && NODE_NAME=""
-[[ -z $DEBUG ]] && DEBUG="true"
+[[ -z $DEBUG ]] && DEBUG="false"
 
 note_type_func () {
   case "$1" in

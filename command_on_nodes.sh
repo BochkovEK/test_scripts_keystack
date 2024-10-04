@@ -7,6 +7,7 @@
 # NODES=("<IP_1>" "<IP_2>" "<IP_3>" "...")
 
 script_dir=$(dirname $0)
+utils=$script_dir/utils
 
 comp_pattern="\-comp\-.."
 #$"
@@ -123,7 +124,7 @@ yes_no_answer () {
 
 #check_openstack_cli
 check_openstack_cli () {
-  if ! bash $script_dir/check_openstack_cli.sh; then
+  if ! bash $utils/check_openstack_cli.sh; then
     error_message="Failed to check openstack"
     error_output
   fi
@@ -200,7 +201,7 @@ if [ "$DEBUG" = true ]; then
 fi
 if [[ -z ${NODES[0]} ]] && [ "$NODES_TYPE" = ctrl ]; then
   printf "%s\n" "${yellow}Pattern: $nodes_to_find could not be found${normal}"
-  yes_no_question="Do you want to try to compute service list to define $NODES_TYPE list [Yes]: "
+  yes_no_question="Do you want to try to 'compute service' list to define $NODES_TYPE list [Yes]: "
   yes_no_answer
   if [ "$yes_no_input" = "true" ]; then
     check_openstack_cli
