@@ -133,6 +133,7 @@ check_openstack_cli () {
 }
 
 check_and_source_openrc_file () {
+  echo "check openrc"
   if ! bash $utils/openrc.sh; then
     exit 1
   else
