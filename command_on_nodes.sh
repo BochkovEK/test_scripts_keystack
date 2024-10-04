@@ -194,6 +194,7 @@ check_ping () {
   else
     connection_problem="true"
     printf "%40s\n" "${red}No connection with $1${normal}"
+#    problems_nodes+=("$1")
   fi
   NODES+=("$1")
   sleep 1
@@ -226,10 +227,7 @@ get_list_from_compute_service () {
   for node in $nodes; do
     check_ping $node
   done
-  if [ "$connection_problem" = true ]; then
-    error_message="Could not connection to $node"
-    error_output
-  fi
+
 }
 
 
@@ -245,6 +243,7 @@ if [ "$DEBUG" = true ]; then
   done
   echo "NODES_TYPE: $NODES_TYPE"
 fi
+
 if [ -z ${NODES[0]} ]; then
   if [ "$NODES_TYPE" = comp ] || [ "$NODES_TYPE" = ctrl ]; then
     yes_no_question="Do you want to try to compute service list to define $NODES_TYPE list [Yes]: "
@@ -261,4 +260,17 @@ if [ -z ${NODES[0]} ]; then
   fi
 fi
 
-start_commands_on_nodes
+if [ "$connection_problem" = true ]; then
+  yes_no_question="Do you want to run a command on nodes without connection problems? [Yes]: "
+  yes_no_answer
+  if [ "$yes_no_input" = "true" ]; then
+    start_commands_on_nodes
+  else
+    error_message="Command failed. Some nodes have connection problems"
+    error_output
+  fi
+else
+  start_commands_on_nodes
+fi
+
+
