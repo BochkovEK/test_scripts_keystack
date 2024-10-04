@@ -180,7 +180,7 @@ check_openstack_cli () {
 check_and_source_openrc_file () {
   echo "check openrc"
   openrc_file=$(bash $utils/check_openrc.sh)
-  if [ -z $openrc_file ]; then
+  if [[ -z $openrc_file ]]; then
     exit 1
   else
     source $openrc_file
