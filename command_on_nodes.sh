@@ -16,8 +16,6 @@ ctrl_pattern="\-ctrl\-.."
 net_pattern="\-net\-.."
 #$"
 
-
-
 #Colors
 green=$(tput setaf 2)
 red=$(tput setaf 1)
