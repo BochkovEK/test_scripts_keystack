@@ -107,7 +107,7 @@ done
 
 
 error_output () {
-  printf "%s\n" "${yellow}command not executed on $NODES_TYPE nodes${normal}"
+  printf "%s\n" "${yellow}Command not executed on $NODES_TYPE nodes${normal}"
   printf "%s\n" "${red}$error_message - error${normal}"
   exit 1
 }
