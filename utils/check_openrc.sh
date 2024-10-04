@@ -19,15 +19,16 @@ script_dir=$(dirname $0)
 export OPENRC_PATH=$OPENRC_PATH
 
 check_and_source_openrc_file () {
-  echo "Check openrc file..."
+  [[ $CHECK_OPENRC = true ]] && { echo "Check openrc file..."; }
   check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
   if [ -z "$check_openrc_file" ]; then
-    echo -E "${yellow}openrc file not found in $OPENRC_PATH${normal}"
-    echo "Try to get 'openrc' from Vault"
-    printf "%s\n" "${red}openrc file not found in $OPENRC_PATH - ERROR!${normal}"
-    exit 1
+    [[ $CHECK_OPENRC = true ]] && { echo -E "${yellow}openrc file not found in $OPENRC_PATH${normal}"; \
+      echo "Try to get 'openrc' from Vault"; \
+      printf "%s\n" "${red}openrc file not found in $OPENRC_PATH - ERROR!${normal}"; }
+      exit 1
+  else
+    echo $OPENRC_PATH
   fi
-#  echo $OS_PROJECT_NAME
 }
 
 check_and_source_openrc_file
