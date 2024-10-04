@@ -33,6 +33,32 @@ yellow=$(tput setaf 3)
 [[ -z $DEBUG ]] && DEBUG="false"
 #======================
 
+
+note_type_func () {
+  case "$1" in
+        ctrl)
+          NODES_TYPE=ctrl
+          nodes_to_find=$ctrl_pattern
+          printf "%s\n" "${yellow}Execute command \'$COMMAND\' on ctrl nodes${normal}"
+          ;;
+        comp)
+          NODES_TYPE=comp
+          nodes_to_find=$comp_pattern
+          printf "%s\n" "${yellow}Execute command \'$COMMAND\' on comp nodes${normal}"
+          ;;
+        net)
+          NODES_TYPE=net
+          nodes_to_find=$net_pattern
+          printf "%s\n" "${yellow}Execute command \'$COMMAND\' on net nodes${normal}"
+          ;;
+        *)
+          NODES_TYPE=all
+          nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
+          printf "%s\n" "${yellow}Nodes type is not specified correctly. Execute command \'$COMMAND\' on ctr, comp, net nodes${normal}"
+          ;;
+        esac
+}
+
 count=1
 while [ -n "$1" ]; do
   case "$1" in
@@ -79,30 +105,6 @@ while [ -n "$1" ]; do
     shift
 done
 
-note_type_func () {
-  case "$1" in
-        ctrl)
-          NODES_TYPE=ctrl
-          nodes_to_find=$ctrl_pattern
-          printf "%s\n" "${yellow}Execute command \'$COMMAND\' on ctrl nodes${normal}"
-          ;;
-        comp)
-          NODES_TYPE=comp
-          nodes_to_find=$comp_pattern
-          printf "%s\n" "${yellow}Execute command \'$COMMAND\' on comp nodes${normal}"
-          ;;
-        net)
-          NODES_TYPE=net
-          nodes_to_find=$net_pattern
-          printf "%s\n" "${yellow}Execute command \'$COMMAND\' on net nodes${normal}"
-          ;;
-        *)
-          NODES_TYPE=all
-          nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
-          printf "%s\n" "${yellow}Nodes type is not specified correctly. Execute command \'$COMMAND\' on ctr, comp, net nodes${normal}"
-          ;;
-        esac
-}
 
 error_output () {
   printf "%s\n" "${yellow}command not executed on $NODES_TYPE nodes${normal}"
