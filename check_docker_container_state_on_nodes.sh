@@ -86,7 +86,7 @@ echo "Nodes for container checking:"
 echo "${NODES[*]}"
 
 if [ ${#NODES[@]} -eq 0 ]; then
-  error_message="Node list type of $NODES_TYPE is empty"
+  error_message="Node list type of $nodes_to_find is empty"
   error_output
 fi
 
