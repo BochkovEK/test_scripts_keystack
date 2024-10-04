@@ -217,14 +217,20 @@ if [[ -z ${NODES[0]} ]] && [ "$NODES_TYPE" = ctrl ]; then
     check_openstack_cli
     check_and_source_openrc_file
     nova_state_list=$(openstack compute service list)
-    ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
-    echo "Check connection to $NODES_TYPE"
-    for node in $ctrl_nodes; do
-        check_ping $node
-    done
-    if [ "$connection_problem" = true ]; then
-      error_message="Could not connection to $node"
+    if [ -z $nova_state_list ];then
+      error_message="Failed to determine node $NODES_TYPE list"
       error_output
+      exit 1
+    else
+      ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
+      echo "Check connection to $NODES_TYPE"
+      for node in $ctrl_nodes; do
+          check_ping $node
+      done
+      if [ "$connection_problem" = true ]; then
+        error_message="Could not connection to $node"
+        error_output
+      fi
     fi
   else
     error_message="Pattern: $nodes_to_find could not be found in /etc/hosts"
