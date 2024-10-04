@@ -203,7 +203,7 @@ get_list_from_compute_service () {
   check_openstack_cli
   check_and_source_openrc_file
   nova_state_list=$(openstack compute service list)
-  if [ -z $nova_state_list ];then
+  if [[ -z $nova_state_list ]];then
     error_message="Failed to determine node $NODES_TYPE list"
     error_output
     exit 1
@@ -215,7 +215,8 @@ get_list_from_compute_service () {
       #control
       nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
     fi
-    if [ -z $nodes ];then
+    echo "nodes: $nodes"
+    if [[ -z $nodes ]];then
       error_message="Failed to determine node $NODES_TYPE list"
       error_output
       exit 1
