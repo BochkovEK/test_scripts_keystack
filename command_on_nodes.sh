@@ -188,14 +188,15 @@ check_and_source_openrc_file () {
 
 check_ping () {
   if ping -c 2 $1 &> /dev/null; then
-      printf "%40s\n" "${green}There is a connection with $1 - success${normal}"
+    printf "%40s\n" "${green}There is a connection with $1 - success${normal}"
+    NODES+=("$1")
+    sleep 1
   else
     connection_problem="true"
     printf "%40s\n" "${red}No connection with $1${normal}"
 #    problems_nodes+=("$1")
   fi
-  NODES+=("$1")
-  sleep 1
+
 }
 
 get_list_from_compute_service () {
