@@ -33,6 +33,52 @@ yellow=$(tput setaf 3)
 [[ -z $DEBUG ]] && DEBUG="false"
 #======================
 
+count=1
+while [ -n "$1" ]; do
+  case "$1" in
+    --help) echo -E "
+      ip and name nodes list needed in /etc/hosts
+
+      -c,   -command        \"<command>\"
+      -nt,  -type_of_nodes  <type_of_nodes> 'ctrl', 'comp', 'net'
+      -p,   -ping           ping before execution command
+      --debug               debug mode
+      Remove all containers on all nodes:
+        bash command_on_nodes.sh -c 'docker stop $(docker ps -a -q)'
+        bash command_on_nodes.sh -c 'docker system prune -af'
+        bash command_on_nodes.sh -c 'docker volume prune -af'
+"
+#      -e,   -send_env       \"<ENV_NAME=env_value>\"
+        exit 0
+        break ;;
+    -c|-command) COMMAND="$2"
+      echo "Found the -command \"<command>\" option, with parameter value $COMMAND"
+      shift ;;
+#    -e|-send_env)
+#      SENDENV_NAME=${2%=*}
+#      $2
+#      SENDENV=$SENDENV"-o \"SendEnv $SENDENV_NAME\""
+#      echo "Found the -send_env \"<ENV_NAME=env_value>\" option, with parameter value $2"
+#      echo "SENDENV: $SENDENV"
+#      shift ;;
+    -nt|-type_of_nodes)
+      note_type_func "$2"
+      shift ;;
+    -p|-ping)
+      PING="true"
+      echo "Found the -ping option"
+      ;;
+    --debug)
+      DEBUG="true"
+      echo "Found the --debug parameter"
+      shift ;;
+    --) shift
+      break ;;
+    *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
+    esac
+    shift
+done
+
 note_type_func () {
   case "$1" in
         ctrl)
@@ -57,8 +103,6 @@ note_type_func () {
           ;;
         esac
 }
-
-#======================
 
 error_output () {
   printf "%s\n" "${yellow}command not executed on $NODES_TYPE nodes${normal}"
@@ -122,7 +166,6 @@ yes_no_answer () {
   yes_no_question="<Empty yes\no question>"
 }
 
-
 #check_openstack_cli
 check_openstack_cli () {
   if ! bash $utils/check_openstack_cli.sh; then
@@ -152,51 +195,38 @@ check_ping () {
   sleep 1
 }
 
-count=1
-while [ -n "$1" ]; do
-  case "$1" in
-    --help) echo -E "
-      ip and name nodes list needed in /etc/hosts
+get_list_from_compute_service () {
+  check_openstack_cli
+  check_and_source_openrc_file
+  nova_state_list=$(openstack compute service list)
+  if [ -z $nova_state_list ];then
+    error_message="Failed to determine node $NODES_TYPE list"
+    error_output
+    exit 1
+  else
+    if  [ "$NODES_TYPE" = comp ]; then
+      #compute
+      nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
+    else
+      #control
+      nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
+    fi
+    if [ -z $nodes ];then
+      error_message="Failed to determine node $NODES_TYPE list"
+      error_output
+      exit 1
+    fi
+  fi
+  echo "Check connection to $NODES_TYPE"
+  for node in $nodes; do
+    check_ping $node
+  done
+  if [ "$connection_problem" = true ]; then
+    error_message="Could not connection to $node"
+    error_output
+  fi
+}
 
-      -c,   -command        \"<command>\"
-      -nt,  -type_of_nodes  <type_of_nodes> 'ctrl', 'comp', 'net'
-      -p,   -ping           ping before execution command
-      --debug               debug mode
-      Remove all containers on all nodes:
-        bash command_on_nodes.sh -c 'docker stop $(docker ps -a -q)'
-        bash command_on_nodes.sh -c 'docker system prune -af'
-        bash command_on_nodes.sh -c 'docker volume prune -af'
-"
-#      -e,   -send_env       \"<ENV_NAME=env_value>\"
-        exit 0
-        break ;;
-    -c|-command) COMMAND="$2"
-      echo "Found the -command \"<command>\" option, with parameter value $COMMAND"
-      shift ;;
-#    -e|-send_env)
-#      SENDENV_NAME=${2%=*}
-#      $2
-#      SENDENV=$SENDENV"-o \"SendEnv $SENDENV_NAME\""
-#      echo "Found the -send_env \"<ENV_NAME=env_value>\" option, with parameter value $2"
-#      echo "SENDENV: $SENDENV"
-#      shift ;;
-    -nt|-type_of_nodes)
-      note_type_func "$2"
-      shift ;;
-    -p|-ping)
-      PING="true"
-      echo "Found the -ping option"
-      ;;
-    --debug)
-      DEBUG="true"
-      echo "Found the --debug parameter"
-      shift ;;
-    --) shift
-      break ;;
-    *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
-    esac
-    shift
-done
 
 echo "Parse /etc/hosts to find pattern: $nodes_to_find"
 [[ -z ${NODES[0]} ]] && { srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}'); for i in $srv; do NODES+=("$i"); done; }
@@ -210,56 +240,20 @@ if [ "$DEBUG" = true ]; then
   done
   echo "NODES_TYPE: $NODES_TYPE"
 fi
-if [[ -z ${NODES[0]} ]] && [ "$NODES_TYPE" = ctrl ]; then
-  printf "%s\n" "${yellow}Pattern: $nodes_to_find could not be found${normal}"
-  yes_no_question="Do you want to try to 'compute service' list to define $NODES_TYPE list [Yes]: "
-  yes_no_answer
-  if [ "$yes_no_input" = "true" ]; then
-    check_openstack_cli
-    check_and_source_openrc_file
-    nova_state_list=$(openstack compute service list)
-    if [ -z $nova_state_list ];then
-      error_message="Failed to determine node $NODES_TYPE list"
-      error_output
-      exit 1
+if [ -z ${NODES[0]} ]; then
+  if [ "$NODES_TYPE" = comp ] || [ "$NODES_TYPE" = ctrl ]; then
+    yes_no_question="Do you want to try to compute service list to define $NODES_TYPE list [Yes]: "
+    yes_no_answer
+    if [ "$yes_no_input" = "true" ]; then
+      get_list_from_compute_service
     else
-      ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
-      echo "Check connection to $NODES_TYPE"
-      for node in $ctrl_nodes; do
-          check_ping $node
-      done
-      if [ "$connection_problem" = true ]; then
-        error_message="Could not connection to $node"
-        error_output
-      fi
-    fi
-  else
-    error_message="Pattern: $nodes_to_find could not be found in /etc/hosts"
-    error_output
-  fi
-elif [[ -z ${NODES[0]} ]] && [ "$NODES_TYPE" = comp ]; then
-  yes_no_question="Do you want to try to compute service list to define $NODES_TYPE list [Yes]: "
-  yes_no_answer
-  if [ "$yes_no_input" = "true" ]; then
-    check_openstack_cli
-    nova_state_list=$(openstack compute service list)
-    comp_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
-    echo "Check connection to $NODES_TYPE"
-    for node in $comp_nodes; do
-        check_ping $node
-    done
-    if [ "$connection_problem" = true ]; then
-      error_message="Could not connection to $node"
+      error_message="Pattern: $nodes_to_find could not be found in /etc/hosts"
       error_output
     fi
   else
     error_message="Pattern: $nodes_to_find could not be found in /etc/hosts"
     error_output
   fi
-#else
-#  error_message="Pattern: $nodes_to_find could not be found in /etc/hosts"
-#  error_output
 fi
 
-#[ "$PING" = true ] && { check_connection; }
 start_commands_on_nodes
