@@ -14,7 +14,7 @@ check_openrc_script="check_openrc.sh"
 
 check_and_source_openrc_file () {
 #  echo "check openrc"
-  if ! bash $utils_dir/$check_openrc_script; then
+  if bash $utils_dir/$check_openrc_script; then
     openrc_file=$(bash $utils_dir/$check_openrc_script)
     source $openrc_file
   else
