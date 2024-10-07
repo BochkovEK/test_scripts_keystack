@@ -21,7 +21,7 @@ check_vm_script="check_vm.sh"
 [[ -z $TYPE_TEST ]] && TYPE_TEST="cpu"
 [[ -z $PROJECT ]] && PROJECT="admin"
 [[ -z $VM_USER ]] && VM_USER="ubuntu"
-[[ -z $DEBUG ]] && DEBUG="false"
+[[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $UNITS ]] && UNITS="G"
 [[ -z $IP_LIST_FILE ]] && IP_LIST_FILE=""
 #======================
@@ -74,8 +74,8 @@ while [ -n "$1" ]; do
     -t|-time_out) TIME_OUT="$2"
       echo "Found the -time_out option, with parameter value $TIME_OUT"
       shift;;
-    -v|-debug) DEBUG="true"
-	    echo "Found the -debug, with parameter value $DEBUG"
+    -v|-debug) TS_DEBUG="true"
+	    echo "Found the -debug, with parameter value $TS_DEBUG"
       ;;
     -ip_list) IP_LIST_FILE="$2"
       echo "Found the -ip_list option, with parameter value $IP_LIST_FILE"
@@ -150,7 +150,7 @@ Stress test: $MODE will be launched on the hypervisor ($HV_STRING) VMs
         User on VM (SSH):         $VM_USER
         Stress test type:         $MODE
         VMs IPs list file:        $IP_LIST_FILE
-        Debug:                    $DEBUG
+        Debug:                    $TS_DEBUG
         $load_string
         $time_out_help_string
   "
@@ -159,7 +159,7 @@ Stress test: $MODE will be launched on the hypervisor ($HV_STRING) VMs
   if [ -z $IP_LIST_FILE ]; then
 
     VMs_IPs=$(openstack server list $HV_STRING --project $PROJECT |grep ACTIVE |awk '{print $8}')
-    [ "$DEBUG" = true ] && echo -e "
+    [ "$TS_DEBUG" = true ] && echo -e "
     command to define vms ip list
     VMs_IPs=\$(openstack server list $HV_STRING --project $PROJECT |grep ACTIVE |awk '{print $8}')
     "
@@ -168,7 +168,7 @@ Stress test: $MODE will be launched on the hypervisor ($HV_STRING) VMs
     VMs_IPs=$(cat $IP_LIST_FILE)
   fi
 
-  [ "$DEBUG" = true ] && echo -e "
+  [ "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]: VMs_IPs: $VMs_IPs
   [DEBUG]: MODE: $MODE
   [DEBUG]: CPUS: $CPUS
@@ -196,6 +196,7 @@ rm -rf /root/.ssh/known_hosts
 check_openrc_file
 if [ -f $script_dir/$check_vm_script ]; then
   export HYPERVISOR_NAME=$HYPERVISOR_NAME
+  export TS_DEBUG=$TS_DEBUG
   if bash $script_dir/$check_vm_script; then
     batch_run_stress $HYPERVISOR_NAME $TYPE_TEST
   else

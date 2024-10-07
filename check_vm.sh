@@ -19,7 +19,7 @@ script_dir=$(dirname $0)
 [[ -z $COMMAND_STR ]] && COMMAND_STR="ls -la"
 [[ -z $PROJECT ]] && PROJECT="admin"
 [[ -z $DONT_ASK ]] && DONT_ASK="true"
-[[ -z $TS_DEBUG ]] && TS_DEBUG="true"
+[[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 
 # Functions
 
@@ -41,8 +41,13 @@ batch_run_command() {
 
     echo "Start checking..."
     VMs_IPs=$(openstack server list --project $PROJECT $host_string |grep ACTIVE |awk '{print $8}')
+    [[ -z $VMs_IPs ]] && { $VMs_IPs=$(openstack server list --project $PROJECT --long | \
+      grep -E "ACTIVE.*$HYPERVISOR_NAME" |awk '{print $12}'; }
     [[ -z $VMs_IPs ]] && { echo -e "No instance found in the $PROJECT project\nProject list:"; openstack project list; exit 1; }
     at_least_one_vm_is_not_avail="false"
+     "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG]: VMs_IPs: $VMs_IPs
+    "
     for raw_string_ip in $VMs_IPs; do
         FIRST_IP=$(echo "${raw_string_ip%%,*}")
 #        FIRST_IP=$(echo $raw_string_ip|awk '{print $1}')
