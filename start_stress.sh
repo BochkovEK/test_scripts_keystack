@@ -153,10 +153,16 @@ get_VMs_IPs () {
       VMs_IPs=\$(openstack server list $host_string --project $PROJECT |grep ACTIVE |awk '{print \$8}')
       VMs_IPs: $VMs_IPs
       "
+      # in openstack cli version 6.2 the --host key gives an empty output
       if [ -z $VMs_IPs ]; then
         VMs_IPs=$(openstack server list --project $PROJECT --long |
           grep -E "ACTIVE.*$HYPERVISOR_NAME" |awk '{print $12}')
-        # in openstack cli version 6.2 the --host key gives an empty output
+        [ "$TS_DEBUG" = true ] && echo -e "
+      command to define vms ip list
+      VMs_IPs=\$(openstack server list --project $PROJECT --long |
+          grep -E "ACTIVE.*$HYPERVISOR_NAME" |awk '{print \$12}')
+      VMs_IPs: $VMs_IPs
+      "
         if [ -z $VMs_IPs ]; then
           echo -e "No instance found in the $PROJECT project\nProject list:"
           openstack project list
