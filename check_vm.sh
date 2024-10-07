@@ -39,6 +39,7 @@ while [ -n "$1" ]; do
       -p, project   <project_name>
       -dont_ask     all actions will be performed automatically (without value)
       -ips          <ips list> (example: -ips \"<ip_vm_1> <ip_vm_2> ... \")
+      -v, -debug        enabled debug output (without parameter)
       "
       exit 0
       break ;;
@@ -63,6 +64,9 @@ while [ -n "$1" ]; do
       break ;;
     -dont_ask) DONT_ASK=true
       echo "Found the -dont_ask. All actions will be performed automatically"
+      ;;
+    -v|-debug) TS_DEBUG="true"
+	    echo "Found the -debug, with parameter value $TS_DEBUG"
       ;;
     -ips) VMs_IPs="$2"
       echo "Found the -ips option, with parameter value $VMs_IPs"
