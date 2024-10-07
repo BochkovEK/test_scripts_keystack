@@ -24,6 +24,7 @@ check_vm_script="check_vm.sh"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $UNITS ]] && UNITS="G"
 [[ -z $IP_LIST_FILE ]] && IP_LIST_FILE=""
+[[ -z $VMs_IPs ]] && VMs_IPs=""
 #======================
 
 while [ -n "$1" ]; do
@@ -91,7 +92,7 @@ done
 
 copy_and_stress() {
   local VM_IP=$1
-  local MODE=$2
+#  local MODE=$2
 
   echo -e "\nStart checking $VM_IP..."
   sleep 1
@@ -110,7 +111,7 @@ copy_and_stress() {
   scp -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $script_dir/stress $VM_USER@$VM_IP:~
   ssh -t -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$VM_IP "chmod +x ~/stress"
 
-  case $MODE in
+  case $TYPE_TEST in
     cpu)
       echo "Starting cpu stress on $VM_IP..."
       ssh -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$VM_IP "nohup ./stress -c $CPUS $time_out_string > /dev/null 2>&1 &"
@@ -122,26 +123,75 @@ copy_and_stress() {
   esac
 }
 
-batch_run_stress() {
-  if [ "${1}" = false ]; then
+check_vm () {
+  if [ -f $script_dir/$check_vm_script ]; then
+  export HYPERVISOR_NAME=$HYPERVISOR_NAME
+  export TS_DEBUG=$TS_DEBUG
+  if ! bash $script_dir/$check_vm_script; then
+    echo -E "${red}VMs are not ready to start stress - error${normal}"
+    exit 1
+  fi
+else
+  echo -E "${red}Script $script_dir/$check_vm_script not found - error${normal}"
+fi
+}
+
+get_VMs_IPs () {
+  if [ -z $HYPERVISOR_NAME ]; then
     HV="start stress test on all VMs on project: $PROJECT"
     HV_STRING=""
   else
-    HV=${1}
+    HV=$HYPERVISOR_NAME
     HV_STRING="--host $HV"
   fi
-  local MODE=$2
+
+  if [ -z $VMs_IPs ]; then
+    if [ -z $IP_LIST_FILE ]; then
+      VMs_IPs=$(openstack server list $HV_STRING --project $PROJECT |grep ACTIVE |awk '{print $8}')
+      [ "$TS_DEBUG" = true ] && echo -e "
+      command to define vms ip list
+      VMs_IPs=\$(openstack server list $HV_STRING --project $PROJECT |grep ACTIVE |awk '{print \$8}')
+      VMs_IPs: $VMs_IPs
+      "
+
+    else
+      VMs_IPs=$(cat $IP_LIST_FILE)
+    fi
+  fi
+
+  [ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]: VMs_IPs: $VMs_IPs
+  "
+
+  [[ -z $VMs_IPs ]] && { echo "No instance found in the $PROJECT project"; exit 1; }
+}
+
+get_mode_string () {
+#  local MODE=$1
   # load_string
-  if [ "$MODE" = cpu ]; then
+  if [ "$TYPE_TEST" = cpu ]; then
     load_string="CPU:                      $CPUS"
-  else
+  elif [ "$TYPE_TEST" = ram ]; then
     load_string="RAM:                      $RAM; $UNITS"
+  else
+    echo -e "${red}Test type $TYPE_TEST not supported${normal}"
+    exit 1
   fi
   # time_out_help_string, time_out_string
   if [ -n "$TIME_OUT" ]; then
     time_out_help_string="time out stress loading:  $TIME_OUT"
     time_out_string="-t $TIME_OUT"
   fi
+
+  [ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]: TYPE_TEST: $TYPE_TEST
+  [DEBUG]: CPUS: $CPUS
+  [DEBUG]: RAM: $RAM
+  [DEBUG]: time_out_string: $time_out_string
+  "
+}
+
+batch_run_stress () {
   echo -E "
 Stress test: $MODE will be launched on the hypervisor ($HV_STRING) VMs
     Stress test parameters:
@@ -156,27 +206,6 @@ Stress test: $MODE will be launched on the hypervisor ($HV_STRING) VMs
   "
 
   read -p "Press enter to continue:"
-  if [ -z $IP_LIST_FILE ]; then
-
-    VMs_IPs=$(openstack server list $HV_STRING --project $PROJECT |grep ACTIVE |awk '{print $8}')
-    [ "$TS_DEBUG" = true ] && echo -e "
-    command to define vms ip list
-    VMs_IPs=\$(openstack server list $HV_STRING --project $PROJECT |grep ACTIVE |awk '{print $8}')
-    "
-    [[ -z $VMs_IPs ]] && { echo "No instance found in the $PROJECT project"; exit 1; }
-  else
-    VMs_IPs=$(cat $IP_LIST_FILE)
-  fi
-
-  [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]: VMs_IPs: $VMs_IPs
-  [DEBUG]: MODE: $MODE
-  [DEBUG]: CPUS: $CPUS
-  [DEBUG]: RAM: $RAM
-  [DEBUG]: time_out_string: $time_out_string
-  [DEBUG]: key path: $script_dir/$KEY_NAME
-  [DEBUG]: VM_USER: $VM_USER
-  "
 
   for raw_string_ip in $VMs_IPs; do
     IP="${raw_string_ip##*=}"
@@ -194,15 +223,8 @@ check_openrc_file () {
 
 rm -rf /root/.ssh/known_hosts
 check_openrc_file
-if [ -f $script_dir/$check_vm_script ]; then
-  export HYPERVISOR_NAME=$HYPERVISOR_NAME
-  export TS_DEBUG=$TS_DEBUG
-  if bash $script_dir/$check_vm_script; then
-    batch_run_stress $HYPERVISOR_NAME $TYPE_TEST
-  else
-    echo -E "${red}VMs are not ready to start stress - error${normal}"
-    exit 1
-  fi
-else
-  echo -E "${red}Script $script_dir/$check_vm_script not found - error${normal}"
-fi
+get_VMs_IPs
+get_mode_string
+check_vm
+batch_run_stress
+
