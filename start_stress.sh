@@ -174,7 +174,7 @@ get_VMs_IPs () {
 #          exit 1
 #        fi
 #      fi
-      VMs_IPs=$(bash $utils_dir/$get_active_vms_ips_list_script)
+      VMs_IPs=$(bash $openstack_utils/$get_active_vms_ips_list_script)
     else
       VMs_IPs=$(cat $IP_LIST_FILE)
     fi
@@ -238,7 +238,7 @@ Stress test: $MODE will be launched on the hypervisor ($HV_STRING) VMs
 
 check_and_source_openrc_file () {
   echo "check openrc"
-  openrc_file=$(bash $openstack_utils/check_openrc.sh)
+  openrc_file=$(bash $utils/check_openrc.sh)
   if [[ -z $openrc_file ]]; then
     exit 1
   else
