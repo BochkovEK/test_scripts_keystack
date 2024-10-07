@@ -194,7 +194,7 @@ get_VMs_IPs () {
   [DEBUG]: VMs_IPs: $VMs_IPs
   "
 
-  [[ -z $VMs_IPs ]] && { echo "No instance found in the $PROJECT project"; exit 1; }
+  [[ -z $VMs_IPs ]] && { echo -e "${red}No instance found in the $PROJECT project - ERROR${normal}"; exit 1; }
 }
 
 get_mode_string () {
