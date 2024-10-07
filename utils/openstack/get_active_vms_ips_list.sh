@@ -14,12 +14,11 @@ check_openrc_script="check_openrc.sh"
 
 check_and_source_openrc_file () {
 #  echo "check openrc"
-  openrc_file=$(bash $utils_dir/$check_openrc_script)
-  if [[ -z $openrc_file ]]; then
-    exit 1
-  else
-#    echo $openrc_file
+  if ! bash $utils_dir/$check_openrc_script; then
+    openrc_file=$(bash $utils_dir/$check_openrc_script)
     source $openrc_file
+  else
+    exit 1
   fi
 }
 
