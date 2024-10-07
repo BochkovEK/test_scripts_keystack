@@ -8,6 +8,7 @@ red=$(tput setaf 1)
 violet=$(tput setaf 5)
 normal=$(tput sgr0)
 
+script_name=$(basename "$0")
 script_dir=$(dirname $0)
 utils_dir=$script_dir/utils
 openstack_utils=$utils_dir/openstack
@@ -83,7 +84,7 @@ batch_run_command() {
 
   [[ ! $DONT_ASK = "true" ]] && { read -p "Press enter to continue"; }
 
-  echo "Start checking..."
+  echo "Start $script_name script..."
   if [ -z $VMs_IPs ]; then
 #      VMs_IPs=$(openstack server list --project $PROJECT $host_string |grep ACTIVE |awk '{print $8}')
 #      [ "$TS_DEBUG" = true ] && echo -e "
