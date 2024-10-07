@@ -238,7 +238,7 @@ Stress test: $MODE will be launched on the hypervisor ($HV_STRING) VMs
 
 check_and_source_openrc_file () {
   echo "check openrc"
-  openrc_file=$(bash $utils/check_openrc.sh)
+  openrc_file=$(bash $utils_dir/check_openrc.sh)
   if [[ -z $openrc_file ]]; then
     exit 1
   else
