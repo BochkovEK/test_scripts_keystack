@@ -18,7 +18,7 @@ check_openrc_script="check_openrc.sh"
 
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $KEY_NAME ]] && KEY_NAME="key_test.pem"
-[[ -z $HYPERVISOR_NAME ]] && HYPERVISOR_NAME="false"
+[[ -z $HYPERVISOR_NAME ]] && HYPERVISOR_NAME=""
 [[ -z $CPUS ]] && CPUS="2"
 [[ -z $RAM ]] && RAM="4"
 [[ -z $TIME_OUT ]] && TIME_OUT=""
@@ -179,6 +179,8 @@ get_VMs_IPs () {
 #          exit 1
 #        fi
 #      fi
+      export HYPERVISOR_NAME=$HYPERVISOR_NAME
+      export PROJECT=$PROJECT
       VMs_IPs=$(bash $openstack_utils/$get_active_vms_ips_list_script)
     else
       VMs_IPs=$(cat $IP_LIST_FILE)
