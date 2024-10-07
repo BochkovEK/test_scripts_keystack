@@ -195,7 +195,7 @@ check_openrc_file () {
 rm -rf /root/.ssh/known_hosts
 check_openrc_file
 if [ -f $script_dir/$check_vm_script ]; then
-  export HYPERVISOR_NAME=$HV
+  export HYPERVISOR_NAME=$HYPERVISOR_NAME
   if bash $script_dir/$check_vm_script; then
     batch_run_stress $HYPERVISOR_NAME $TYPE_TEST
   else

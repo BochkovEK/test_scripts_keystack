@@ -19,6 +19,7 @@ script_dir=$(dirname $0)
 [[ -z $COMMAND_STR ]] && COMMAND_STR="ls -la"
 [[ -z $PROJECT ]] && PROJECT="admin"
 [[ -z $DONT_ASK ]] && DONT_ASK="true"
+[[ -z $TS_DEBUG ]] && TS_DEBUG="true"
 
 # Functions
 
