@@ -14,7 +14,7 @@ check_openrc_script="check_openrc.sh"
 
 check_and_source_openrc_file () {
 #  echo "check openrc"
-  if bash $utils_dir/$check_openrc_script; then
+  if bash $utils_dir/$check_openrc_script 2>&1; then
     openrc_file=$(bash $utils_dir/$check_openrc_script)
     source $openrc_file
   else
@@ -56,5 +56,4 @@ get_VMs_IPs () {
 }
 
 check_and_source_openrc_file
-echo foo
 get_VMs_IPs
