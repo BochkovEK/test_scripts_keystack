@@ -119,16 +119,19 @@ Start check VMs with parameters:
 }
 
 # Check openrc file
-check_openrc_file () {
-    check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
-    [[ -z "$check_openrc_file" ]] && (echo "openrc file not found in $OPENRC_PATH"; exit 1)
-
-    source $OPENRC_PATH
+check_and_source_openrc_file () {
+  echo "check openrc"
+  openrc_file=$(bash $utils_dir/check_openrc.sh)
+  if [[ -z $openrc_file ]]; then
+    exit 1
+  else
+    echo $openrc_file
+    source $openrc_file
+  fi
 }
 
-
 #rm -rf /root/.ssh/known_hosts
-check_openrc_file
+check_and_source_openrc_file
 batch_run_command
 if [ "$at_least_one_vm_is_not_avail" = true ]; then
   exit 1

@@ -7,7 +7,7 @@
 # NODES=("<IP_1>" "<IP_2>" "<IP_3>" "...")
 
 script_dir=$(dirname $0)
-utils=$script_dir/utils
+utils_dir=$script_dir/utils
 
 comp_pattern="\-comp\-.."
 #$"
@@ -168,7 +168,7 @@ yes_no_answer () {
 
 #check_openstack_cli
 check_openstack_cli () {
-  if ! bash $utils/check_openstack_cli.sh; then
+  if ! bash $utils_dir/check_openstack_cli.sh; then
 #    error_message="Failed to check openstack"
 #    error_output
     exit 1
@@ -177,7 +177,7 @@ check_openstack_cli () {
 
 check_and_source_openrc_file () {
   echo "check openrc"
-  openrc_file=$(bash $utils/check_openrc.sh)
+  openrc_file=$(bash $utils_dir/check_openrc.sh)
   if [[ -z $openrc_file ]]; then
     exit 1
   else

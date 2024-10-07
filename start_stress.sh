@@ -10,7 +10,9 @@ violet=$(tput setaf 5)
 normal=$(tput sgr0)
 
 script_dir=$(dirname $0)
+utils_dir=$script_dir/utils
 check_vm_script="check_vm.sh"
+get_active_vms_ips_list_script="get_active_vms_ips_list.sh"
 
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $KEY_NAME ]] && KEY_NAME="key_test.pem"
@@ -127,6 +129,7 @@ check_vm () {
   if [ -f $script_dir/$check_vm_script ]; then
   export HYPERVISOR_NAME=$HYPERVISOR_NAME
   export TS_DEBUG=$TS_DEBUG
+#  export VMs_IPs=$VMs_IPs
   if ! bash $script_dir/$check_vm_script; then
     echo -E "${red}VMs are not ready to start stress - error${normal}"
     exit 1
@@ -147,30 +150,30 @@ get_VMs_IPs () {
 
   if [ -z $VMs_IPs ]; then
     if [ -z $IP_LIST_FILE ]; then
-      VMs_IPs=$(openstack server list --project $PROJECT $host_string |grep ACTIVE |awk '{print $8}')
-      [ "$TS_DEBUG" = true ] && echo -e "
-
-  [DEBUG]: command to define vms ip list
-    VMs_IPs=\$(openstack server list $host_string --project $PROJECT |grep ACTIVE |awk '{print \$8}')
-  [DEBUG]: VMs_IPs: $VMs_IPs
-      "
-      # in openstack cli version 6.2 the --host key gives an empty output
-      if [ -z $VMs_IPs ]; then
-        VMs_IPs=$(openstack server list --project $PROJECT --long | \
-          grep -E "ACTIVE.*$HYPERVISOR_NAME" |awk '{print $12}')
-        [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]: command to define vms ip list
-      VMs_IPs=\$(openstack server list --project $PROJECT --long |
-          grep -E "ACTIVE.*$HYPERVISOR_NAME" |awk '{print \$12}')
-  [DEBUG]: VMs_IPs: $VMs_IPs
-      "
-        if [ -z $VMs_IPs ]; then
-          echo -e "No instance found in the $PROJECT project\nProject list:"
-          openstack project list
-          exit 1
-        fi
-      fi
-
+#      VMs_IPs=$(openstack server list --project $PROJECT $host_string |grep ACTIVE |awk '{print $8}')
+#      [ "$TS_DEBUG" = true ] && echo -e "
+#
+#  [DEBUG]: command to define vms ip list
+#    VMs_IPs=\$(openstack server list $host_string --project $PROJECT |grep ACTIVE |awk '{print \$8}')
+#  [DEBUG]: VMs_IPs: $VMs_IPs
+#      "
+#      # in openstack cli version 6.2 the --host key gives an empty output
+#      if [ -z $VMs_IPs ]; then
+#        VMs_IPs=$(openstack server list --project $PROJECT --long | \
+#          grep -E "ACTIVE.*$HYPERVISOR_NAME" |awk '{print $12}')
+#        [ "$TS_DEBUG" = true ] && echo -e "
+#  [DEBUG]: command to define vms ip list
+#      VMs_IPs=\$(openstack server list --project $PROJECT --long |
+#          grep -E "ACTIVE.*$HYPERVISOR_NAME" |awk '{print \$12}')
+#  [DEBUG]: VMs_IPs: $VMs_IPs
+#      "
+#        if [ -z $VMs_IPs ]; then
+#          echo -e "No instance found in the $PROJECT project\nProject list:"
+#          openstack project list
+#          exit 1
+#        fi
+#      fi
+      VMs_IPs=$(bash utils_dir/$get_active_vms_ips_list_script)
     else
       VMs_IPs=$(cat $IP_LIST_FILE)
     fi
@@ -232,16 +235,19 @@ Stress test: $MODE will be launched on the hypervisor ($HV_STRING) VMs
   done
 }
 
-# Check openrc file
-check_openrc_file () {
-    check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
-    [[ -z "$check_openrc_file" ]] && (echo "openrc file not found in $OPENRC_PATH"; exit 1)
-
-    source $OPENRC_PATH
+check_and_source_openrc_file () {
+  echo "check openrc"
+  openrc_file=$(bash $utils_dir/check_openrc.sh)
+  if [[ -z $openrc_file ]]; then
+    exit 1
+  else
+    echo $openrc_file
+    source $openrc_file
+  fi
 }
 
 rm -rf /root/.ssh/known_hosts
-check_openrc_file
+check_and_source_openrc_file
 get_VMs_IPs
 get_mode_string
 check_vm
