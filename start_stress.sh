@@ -142,7 +142,7 @@ get_VMs_IPs () {
     host_string=""
   else
     hv=$HYPERVISOR_NAME
-    host_string="--host $HV"
+    host_string="--host $hv"
   fi
 
   if [ -z $VMs_IPs ]; then
@@ -213,7 +213,7 @@ batch_run_stress () {
   echo -E "
 Stress test: $MODE will be launched on the hypervisor ($HV_STRING) VMs
     Stress test parameters:
-        Hypervisor:               $HV
+        Hypervisor:               $hv
         Key:                      $KEY_NAME
         User on VM (SSH):         $VM_USER
         Stress test type:         $MODE
