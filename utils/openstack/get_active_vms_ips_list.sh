@@ -53,8 +53,8 @@ get_VMs_IPs () {
     IP="${raw_string_ip##*=}"
     echo $IP
   done
-
 }
 
 check_and_source_openrc_file
+echo foo
 get_VMs_IPs
