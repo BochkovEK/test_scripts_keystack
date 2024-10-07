@@ -27,6 +27,7 @@ get_active_vms_ips_list_script="get_active_vms_ips_list.sh"
 [[ -z $VMs_IPs ]] && VMs_IPs=""
 #[[ -z $MODULE_MODE ]] && MODULE_MODE="false"
 
+echo "Start $script_name script..."
 
 while [ -n "$1" ]; do
   case "$1" in
@@ -92,7 +93,6 @@ batch_run_command() {
 
   [[ ! $DONT_ASK = "true" ]] && { read -p "Press enter to continue"; }
 
-  echo "Start $script_name script..."
   if [ -z $VMs_IPs ]; then
 #      VMs_IPs=$(openstack server list --project $PROJECT $host_string |grep ACTIVE |awk '{print $8}')
 #      [ "$TS_DEBUG" = true ] && echo -e "
