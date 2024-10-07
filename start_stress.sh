@@ -173,7 +173,7 @@ get_VMs_IPs () {
 #          exit 1
 #        fi
 #      fi
-      VMs_IPs=$(bash utils_dir/$get_active_vms_ips_list_script)
+      VMs_IPs=$(bash $utils_dir/$get_active_vms_ips_list_script)
     else
       VMs_IPs=$(cat $IP_LIST_FILE)
     fi
