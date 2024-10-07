@@ -10,6 +10,7 @@ violet=$(tput setaf 5)
 normal=$(tput sgr0)
 
 script_dir=$(dirname $0)
+utils_dir=$script/utils
 
 [[ -z $KEY_NAME ]] && KEY_NAME="key_test.pem"
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
