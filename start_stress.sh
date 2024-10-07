@@ -137,7 +137,8 @@ check_vm () {
   export PROJECT=$PROJECT
 #  export TS_DEBUG=$TS_DEBUG
 #  export VMs_IPs=$VMs_IPs
-  if ! bash $script_dir/$check_vm_script; then
+  [ "$TS_DEBUG" = true ] && { debug_string="-v"; }
+  if ! bash $script_dir/$check_vm_script $debug_string; then
     echo -E "${red}VMs are not ready to start stress - error${normal}"
     exit 1
   fi
