@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # The script return active VMs IPs list from host
+# WARNING: only one designated port is supported (example: pub_net)
 
 #script_name=$(basename "$0")
 script_file_path=$(realpath $0)
@@ -48,7 +49,11 @@ get_VMs_IPs () {
       exit 1
     fi
   fi
-  echo $VMs_IPs
+  for raw_string_ip in $VMs_IPs; do
+    IP="${raw_string_ip##*=}"
+    echo $IP
+  done
+
 }
 
 check_and_source_openrc_file

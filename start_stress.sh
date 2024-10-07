@@ -217,12 +217,12 @@ get_mode_string () {
 
 batch_run_stress () {
   echo -E "
-Stress test: $MODE will be launched on the hypervisor ($HV_STRING) VMs
+Stress test: $TYPE_TEST will be launched on the hypervisor ($HV_STRING) VMs
     Stress test parameters:
         Hypervisor:               $hv
         Key:                      $KEY_NAME
         User on VM (SSH):         $VM_USER
-        Stress test type:         $MODE
+        Stress test type:         $TYPE_TEST
         VMs IPs list file:        $IP_LIST_FILE
         Debug:                    $TS_DEBUG
         $load_string
@@ -231,8 +231,7 @@ Stress test: $MODE will be launched on the hypervisor ($HV_STRING) VMs
 
   read -p "Press enter to continue:"
 
-  for raw_string_ip in $VMs_IPs; do
-    IP="${raw_string_ip##*=}"
+  for IP in $VMs_IPs; do
     copy_and_stress $IP $MODE
   done
 }
