@@ -19,6 +19,7 @@ check_and_source_openrc_file () {
     openrc_file=$(bash $utils_dir/$check_openrc_script)
     source $openrc_file
   else
+    bash $utils_dir/$check_openrc_script
     exit 1
   fi
 }
