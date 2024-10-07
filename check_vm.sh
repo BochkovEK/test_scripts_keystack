@@ -1,6 +1,5 @@
 #!/bin/bashq!
 
-# !!! Сделать претест по пингу (тестить)
 # The script checks access to the VM on HV
 
 #Colors
@@ -11,7 +10,9 @@ normal=$(tput sgr0)
 
 script_dir=$(dirname $0)
 utils_dir=$script_dir/utils
+openstack_utils=$utils_dir/openstack
 check_openrc_script="check_openrc.sh"
+get_active_vms_ips_list_script="get_active_vms_ips_list.sh"
 
 [[ -z $KEY_NAME ]] && KEY_NAME="key_test.pem"
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
@@ -67,57 +68,58 @@ while [ -n "$1" ]; do
 done
 
 batch_run_command() {
-    [[ -f "$HOME/.ssh/known_hosts" ]] && { rm ~/.ssh/known_hosts; }
-    host_string=""
-    [[ -n ${HYPERVISOR_NAME} ]] && { host_string="--host $HYPERVISOR_NAME"; }
-    echo -E "
-Start check VMs with parameters:
-  Hypervisor:   $HYPERVISOR_NAME
-  Key:          $KEY_NAME
-  User name:    $VM_USER
-  Command:      $COMMAND_STR
-  Only ping:    $ONLY_PING
-  Project:      $PROJECT
-"
+  [[ -f "$HOME/.ssh/known_hosts" ]] && { rm ~/.ssh/known_hosts; }
+#    host_string=""
+#    [[ -n ${HYPERVISOR_NAME} ]] && { host_string="--host $HYPERVISOR_NAME"; }
+#    echo -E "
+#Start check VMs with parameters:
+#  Hypervisor:   $HYPERVISOR_NAME
+#  Key:          $KEY_NAME
+#  User name:    $VM_USER
+#  Command:      $COMMAND_STR
+#  Only ping:    $ONLY_PING
+#  Project:      $PROJECT
+#"
 
-    [[ ! $DONT_ASK = "true" ]] && { read -p "Press enter to continue"; }
+  [[ ! $DONT_ASK = "true" ]] && { read -p "Press enter to continue"; }
 
-    echo "Start checking..."
-    if [ -z $VMs_IPs ]; then
-      VMs_IPs=$(openstack server list --project $PROJECT $host_string |grep ACTIVE |awk '{print $8}')
-      [ "$TS_DEBUG" = true ] && echo -e "
-      command to define vms ip list
-      VMs_IPs=\$(openstack server list $HV_STRING --project $PROJECT |grep ACTIVE |awk '{print \$8}')
-      VMs_IPs: $VMs_IPs
-      "
-      if [ -z $VMs_IPs ]; then
-        VMs_IPs=$(openstack server list --project $PROJECT --long |
-          grep -E "ACTIVE.*$HYPERVISOR_NAME" |awk '{print $12}')
-        # in openstack cli version 6.2 the --host key gives an empty output
-        if [ -z $VMs_IPs ]; then
-          echo -e "No instance found in the $PROJECT project\nProject list:"
-          openstack project list
-          exit 1
-        fi
-      fi
-    fi
-    at_least_one_vm_is_not_avail="false"
-     "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG]: VMs_IPs: $VMs_IPs
-    "
-    for raw_string_ip in $VMs_IPs; do
-        FIRST_IP=$(echo "${raw_string_ip%%,*}")
+  echo "Start checking..."
+  if [ -z $VMs_IPs ]; then
+#      VMs_IPs=$(openstack server list --project $PROJECT $host_string |grep ACTIVE |awk '{print $8}')
+#      [ "$TS_DEBUG" = true ] && echo -e "
+#      command to define vms ip list
+#      VMs_IPs=\$(openstack server list $HV_STRING --project $PROJECT |grep ACTIVE |awk '{print \$8}')
+#      VMs_IPs: $VMs_IPs
+#      "
+#      if [ -z $VMs_IPs ]; then
+#        VMs_IPs=$(openstack server list --project $PROJECT --long |
+#          grep -E "ACTIVE.*$HYPERVISOR_NAME" |awk '{print $12}')
+#        # in openstack cli version 6.2 the --host key gives an empty output
+#        if [ -z $VMs_IPs ]; then
+#          echo -e "No instance found in the $PROJECT project\nProject list:"
+#          openstack project list
+#          exit 1
+#        fi
+#      fi
+    VMs_IPs=$(bash $openstack_utils/$get_active_vms_ips_list_script)
+  fi
+  at_least_one_vm_is_not_avail="false"
+   "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]: VMs_IPs: $VMs_IPs
+  "
+  for IP in $VMs_IPs; do
+#    FIRST_IP=$(echo "${raw_string_ip%%,*}")
 #        FIRST_IP=$(echo $raw_string_ip|awk '{print $1}')
-        IP="${FIRST_IP##*=}"
-        sleep 1
-        if ping -c 2 $IP &> /dev/null; then
-            printf "%40s\n" "${green}There is a connection with $IP - success${normal}"
-            [ "$ONLY_PING" == "false" ] && { ssh -t -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$IP "$COMMAND_STR"; }
-        else
-            printf "%40s\n" "${red}No connection with $IP - error!${normal}"
-            at_least_one_vm_is_not_avail="true"
-        fi
-    done
+#    IP="${FIRST_IP##*=}"
+    if ping -c 2 $IP &> /dev/null; then
+        printf "%40s\n" "${green}There is a connection with $IP - success${normal}"
+        [ "$ONLY_PING" == "false" ] && { ssh -t -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$IP "$COMMAND_STR"; }
+    else
+        printf "%40s\n" "${red}No connection with $IP - error!${normal}"
+        at_least_one_vm_is_not_avail="true"
+    fi
+    sleep 1
+  done
 }
 
 # Check openrc file
