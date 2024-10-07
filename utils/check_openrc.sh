@@ -25,7 +25,7 @@ check_and_source_openrc_file () {
     echo -e "${yellow}openrc file not found in $OPENRC_PATH${normal}"
     echo "Try to get 'openrc' from Vault"
     echo -e "${red}openrc file not found in $OPENRC_PATH - ERROR!${normal}"
-#      exit 1
+    exit 1
   else
     echo $OPENRC_PATH
   fi
