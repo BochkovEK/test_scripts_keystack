@@ -243,19 +243,19 @@ Stress test: $TYPE_TEST will be launched on the hypervisor ($HV_STRING) VMs
   done
 }
 
-check_and_source_openrc_file () {
-  echo "check openrc"
-  openrc_file=$(bash $utils_dir/$check_openrc_script)
-  if [[ -z $openrc_file ]]; then
-    exit 1
-  else
-    echo "openrc_file: $openrc_file"
-    source $openrc_file
-  fi
-}
+#check_and_source_openrc_file () {
+#  echo "check openrc"
+#  openrc_file=$(bash $utils_dir/$check_openrc_script)
+#  if [[ -z $openrc_file ]]; then
+#    exit 1
+#  else
+#    echo "openrc_file: $openrc_file"
+#    source $openrc_file
+#  fi
+#}
 
 rm -rf /root/.ssh/known_hosts
-check_and_source_openrc_file
+#check_and_source_openrc_file
 get_VMs_IPs
 get_mode_string
 check_vm

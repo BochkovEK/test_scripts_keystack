@@ -138,6 +138,9 @@ check_and_source_openrc_file () {
   echo "check openrc"
   openrc_file=$(bash $utils_dir/$check_openrc_script)
   if [[ -z $openrc_file ]]; then
+#    echo -E "${yellow}openrc file not found in $OPENRC_PATH${normal}"
+#    echo "Try to get 'openrc' from Vault"
+#      printf "%s\n" "${red}openrc file not found in $OPENRC_PATH - ERROR!${normal}"; }
     exit 1
   else
     echo $openrc_file

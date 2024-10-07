@@ -25,7 +25,7 @@ check_and_source_openrc_file () {
     [[ ! $CHECK_OPENRC = true ]] && { echo -E "${yellow}openrc file not found in $OPENRC_PATH${normal}"; \
       echo "Try to get 'openrc' from Vault"; \
       printf "%s\n" "${red}openrc file not found in $OPENRC_PATH - ERROR!${normal}"; }
-      exit 1
+#      exit 1
   else
     echo $OPENRC_PATH
   fi
