@@ -2,8 +2,11 @@
 
 # The script return active VMs IPs list from host
 
-script_dir=$(dirname $0)
-utils_dir=$script_dir/utils
+#script_name=$(basename "$0")
+script_file_path=$(realpath $0)
+script_dir=$(dirname "$script_file_path")
+parent_dir=$(dirname "$script_dir")
+utils_dir=$parent_dir
 check_openrc_script="check_openrc.sh"
 
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
