@@ -93,7 +93,7 @@ batch_run_command() {
 
   [[ ! $DONT_ASK = "true" ]] && { read -p "Press enter to continue"; }
 
-  if [ -z $VMs_IPs ]; then
+  if [ -z "$VMs_IPs" ]; then
 #      VMs_IPs=$(openstack server list --project $PROJECT $host_string |grep ACTIVE |awk '{print $8}')
 #      [ "$TS_DEBUG" = true ] && echo -e "
 #      command to define vms ip list
