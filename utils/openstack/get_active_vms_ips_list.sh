@@ -4,16 +4,17 @@
 
 script_dir=$(dirname $0)
 utils_dir=$script_dir/utils
+check_openrc_script="check_openrc.sh"
 
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 
 check_and_source_openrc_file () {
-  echo "check openrc"
-  openrc_file=$(bash $utils_dir/check_openrc.sh)
+#  echo "check openrc"
+  openrc_file=$(bash $utils_dir/$check_openrc_script)
   if [[ -z $openrc_file ]]; then
     exit 1
   else
-    echo $openrc_file
+#    echo $openrc_file
     source $openrc_file
   fi
 }

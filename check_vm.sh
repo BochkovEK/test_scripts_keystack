@@ -11,6 +11,7 @@ normal=$(tput sgr0)
 
 script_dir=$(dirname $0)
 utils_dir=$script/utils
+check_openrc_script="check_openrc.sh"
 
 [[ -z $KEY_NAME ]] && KEY_NAME="key_test.pem"
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
@@ -122,7 +123,7 @@ Start check VMs with parameters:
 # Check openrc file
 check_and_source_openrc_file () {
   echo "check openrc"
-  openrc_file=$(bash $utils_dir/check_openrc.sh)
+  openrc_file=$(bash $utils_dir/$check_openrc_script)
   if [[ -z $openrc_file ]]; then
     exit 1
   else

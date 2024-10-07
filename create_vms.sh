@@ -31,6 +31,7 @@ yellow=$(tput setaf 3)
 #Script_dir, current folder
 script_dir=$(dirname $0)
 utils_dir=$script_dir/utils
+check_openrc_script="check_openrc.sh"
 
 # Constants
 TIMEOUT_BEFORE_NEXT_CREATION=10
@@ -192,18 +193,29 @@ error_output () {
   exit 1
 }
 
-# Check openrc file
+## Check openrc file
+#check_and_source_openrc_file () {
+#    echo "Check openrc file and source it..."
+#    check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
+#    if [ -z "$check_openrc_file" ]; then
+#        echo -E "${yellow}openrc file not found in $OPENRC_PATH${normal}"
+#        echo "Try to get 'openrc' from Vault"
+#        printf "%s\n" "${red}openrc file not found in $OPENRC_PATH - ERROR!${normal}"
+#        exit 1
+#    fi
+#    source $OPENRC_PATH
+#    #export OS_PROJECT_NAME=$PROJECT
+#}
+
 check_and_source_openrc_file () {
-    echo "Check openrc file and source it..."
-    check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
-    if [ -z "$check_openrc_file" ]; then
-        echo -E "${yellow}openrc file not found in $OPENRC_PATH${normal}"
-        echo "Try to get 'openrc' from Vault"
-        printf "%s\n" "${red}openrc file not found in $OPENRC_PATH - ERROR!${normal}"
-        exit 1
-    fi
-    source $OPENRC_PATH
-    #export OS_PROJECT_NAME=$PROJECT
+  echo "check openrc"
+  openrc_file=$(bash $utils_dir/$check_openrc_script)
+  if [[ -z $openrc_file ]]; then
+    exit 1
+  else
+    echo "openrc_file: $openrc_file"
+    source $openrc_file
+  fi
 }
 
 # Check command
