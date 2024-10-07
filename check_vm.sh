@@ -69,14 +69,14 @@ batch_run_command() {
     host_string=""
     [[ -n ${HYPERVISOR_NAME} ]] && { host_string="--host $HYPERVISOR_NAME"; }
     echo -E "
-    Start check VMs with parameters:
-        Hypervisor:   $HYPERVISOR_NAME
-        Key:          $KEY_NAME
-        User name:    $VM_USER
-        Command:      $COMMAND_STR
-        Only ping:    $ONLY_PING
-        Project:      $PROJECT
-        "
+Start check VMs with parameters:
+  Hypervisor:   $HYPERVISOR_NAME
+  Key:          $KEY_NAME
+  User name:    $VM_USER
+  Command:      $COMMAND_STR
+  Only ping:    $ONLY_PING
+  Project:      $PROJECT
+"
 
     [[ ! $DONT_ASK = "true" ]] && { read -p "Press enter to continue"; }
 
