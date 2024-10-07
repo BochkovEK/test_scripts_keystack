@@ -113,6 +113,9 @@ batch_run_command() {
     export HYPERVISOR_NAME=$HYPERVISOR_NAME
     export PROJECT=$PROJECT
     VMs_IPs=$(bash $openstack_utils/$get_active_vms_ips_list_script)
+    if echo $VMs_IPs| grep "ERROR!"; then
+      exit 1
+    fi
   fi
   at_least_one_vm_is_not_avail="false"
    "$TS_DEBUG" = true ] && echo -e "
