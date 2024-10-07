@@ -155,7 +155,7 @@ get_VMs_IPs () {
       "
       # in openstack cli version 6.2 the --host key gives an empty output
       if [ -z $VMs_IPs ]; then
-        VMs_IPs=$(openstack server list --project $PROJECT --long |
+        VMs_IPs=$(openstack server list --project $PROJECT --long | \
           grep -E "ACTIVE.*$HYPERVISOR_NAME" |awk '{print $12}')
         [ "$TS_DEBUG" = true ] && echo -e "
       command to define vms ip list
