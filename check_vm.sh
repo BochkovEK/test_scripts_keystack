@@ -133,23 +133,23 @@ batch_run_command() {
   done
 }
 
-# Check openrc file
-check_and_source_openrc_file () {
-  echo "check openrc"
-  openrc_file=$(bash $utils_dir/$check_openrc_script)
-  if [[ -z $openrc_file ]]; then
-#    echo -E "${yellow}openrc file not found in $OPENRC_PATH${normal}"
-#    echo "Try to get 'openrc' from Vault"
-#      printf "%s\n" "${red}openrc file not found in $OPENRC_PATH - ERROR!${normal}"; }
-    exit 1
-  else
-    echo $openrc_file
-    source $openrc_file
-  fi
-}
+## Check openrc file
+#check_and_source_openrc_file () {
+#  echo "check openrc"
+#  openrc_file=$(bash $utils_dir/$check_openrc_script)
+#  if [[ -z $openrc_file ]]; then
+##    echo -E "${yellow}openrc file not found in $OPENRC_PATH${normal}"
+##    echo "Try to get 'openrc' from Vault"
+##      printf "%s\n" "${red}openrc file not found in $OPENRC_PATH - ERROR!${normal}"; }
+#    exit 1
+#  else
+#    echo $openrc_file
+#    source $openrc_file
+#  fi
+#}
 
 #rm -rf /root/.ssh/known_hosts
-check_and_source_openrc_file
+#check_and_source_openrc_file
 batch_run_command
 if [ "$at_least_one_vm_is_not_avail" = true ]; then
   exit 1
