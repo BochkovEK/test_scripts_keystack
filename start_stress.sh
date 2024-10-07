@@ -47,11 +47,12 @@ while [ -n "$1" ]; do
       -p, -project      <project_name>
       -u, -vm_user      <vm_user>
       -v, -debug        enabled debug output (without parameter)
-      -ip_list          <path_to_file> with VMs IP list
+      -ip_list_file          <path_to_file> with VMs IP list
                         Example: (cat ./ip_list_file)
                           10.224.132.179
                           10.224.132.175
                           10.224.132.188
+      -ips              <ips list> (example: -ips \"<ip_vm_1> <ip_vm_2> ... \")
       "
       exit 0
       break ;;
@@ -82,9 +83,12 @@ while [ -n "$1" ]; do
     -v|-debug) TS_DEBUG="true"
 	    echo "Found the -debug, with parameter value $TS_DEBUG"
       ;;
-    -ip_list) IP_LIST_FILE="$2"
+    -ip_list_file) IP_LIST_FILE="$2"
       echo "Found the -ip_list option, with parameter value $IP_LIST_FILE"
       shift;;
+    -ips) VMs_IPs="$2"
+      echo "Found the -ips option, with parameter value $VMs_IPs"
+      shift ;;
     --) shift
       break ;;
     *) echo "$1 is not an option";;

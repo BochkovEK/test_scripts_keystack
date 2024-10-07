@@ -38,6 +38,7 @@ while [ -n "$1" ]; do
       -ping         only ping check
       -p, project   <project_name>
       -dont_ask     all actions will be performed automatically (without value)
+      -ips          <ips list> (example: -ips \"<ip_vm_1> <ip_vm_2> ... \")
       "
       exit 0
       break ;;
@@ -63,6 +64,9 @@ while [ -n "$1" ]; do
     -dont_ask) DONT_ASK=true
       echo "Found the -dont_ask. All actions will be performed automatically"
       ;;
+    -ips) VMs_IPs="$2"
+      echo "Found the -ips option, with parameter value $VMs_IPs"
+      shift ;;
     *) echo "$1 is not an option";;
   esac
   shift
