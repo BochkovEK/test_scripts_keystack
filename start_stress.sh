@@ -138,21 +138,31 @@ fi
 
 get_VMs_IPs () {
   if [ -z $HYPERVISOR_NAME ]; then
-    HV="start stress test on all VMs on project: $PROJECT"
-    HV_STRING=""
+    hv="start stress test on all VMs on project: $PROJECT"
+    host_string=""
   else
-    HV=$HYPERVISOR_NAME
-    HV_STRING="--host $HV"
+    hv=$HYPERVISOR_NAME
+    host_string="--host $HV"
   fi
 
   if [ -z $VMs_IPs ]; then
     if [ -z $IP_LIST_FILE ]; then
-      VMs_IPs=$(openstack server list $HV_STRING --project $PROJECT |grep ACTIVE |awk '{print $8}')
+      VMs_IPs=$(openstack server list --project $PROJECT $host_string |grep ACTIVE |awk '{print $8}')
       [ "$TS_DEBUG" = true ] && echo -e "
       command to define vms ip list
-      VMs_IPs=\$(openstack server list $HV_STRING --project $PROJECT |grep ACTIVE |awk '{print \$8}')
+      VMs_IPs=\$(openstack server list $host_string --project $PROJECT |grep ACTIVE |awk '{print \$8}')
       VMs_IPs: $VMs_IPs
       "
+      if [ -z $VMs_IPs ]; then
+        VMs_IPs=$(openstack server list --project $PROJECT --long |
+          grep -E "ACTIVE.*$HYPERVISOR_NAME" |awk '{print $12}')
+        # in openstack cli version 6.2 the --host key gives an empty output
+        if [ -z $VMs_IPs ]; then
+          echo -e "No instance found in the $PROJECT project\nProject list:"
+          openstack project list
+          exit 1
+        fi
+      fi
 
     else
       VMs_IPs=$(cat $IP_LIST_FILE)
@@ -160,6 +170,8 @@ get_VMs_IPs () {
   fi
 
   [ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]: hv: $hv
+  [DEBUG]: host_string: $host_string
   [DEBUG]: VMs_IPs: $VMs_IPs
   "
 
