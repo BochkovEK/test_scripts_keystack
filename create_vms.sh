@@ -208,11 +208,13 @@ error_output () {
 #}
 
 check_and_source_openrc_file () {
-  echo "check openrc"
-  if ! bash $utils_dir/$check_openrc_script; then
+#  echo "check openrc"
+  if bash $utils_dir/$check_openrc_script &> /dev/null; then
+#  if bash $utils_dir/$check_openrc_script 2>&1; then
     openrc_file=$(bash $utils_dir/$check_openrc_script)
     source $openrc_file
   else
+    bash $utils_dir/$check_openrc_script
     exit 1
   fi
 }
