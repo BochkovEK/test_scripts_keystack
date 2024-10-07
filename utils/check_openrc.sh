@@ -14,7 +14,7 @@ yellow=$(tput setaf 3)
 script_dir=$(dirname $0)
 
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
-[[ -z $CHECK_OPENRC ]] && CHECK_OPENRC="false"
+[[ -z $CHECK_OPENRC ]] && CHECK_OPENRC="true"
 
 export OPENRC_PATH=$OPENRC_PATH
 
@@ -22,9 +22,9 @@ check_and_source_openrc_file () {
   [[ ! $CHECK_OPENRC = true ]] && { echo "Check openrc file..."; }
   check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
   if [ -z "$check_openrc_file" ]; then
-    [[ ! $CHECK_OPENRC = true ]] && { echo -E "${yellow}openrc file not found in $OPENRC_PATH${normal}"; \
-      echo "Try to get 'openrc' from Vault"; \
-      printf "%s\n" "${red}openrc file not found in $OPENRC_PATH - ERROR!${normal}"; }
+    echo -e "${yellow}openrc file not found in $OPENRC_PATH${normal}"
+    echo "Try to get 'openrc' from Vault"
+    echo -e "${red}openrc file not found in $OPENRC_PATH - ERROR!${normal}"
 #      exit 1
   else
     echo $OPENRC_PATH
