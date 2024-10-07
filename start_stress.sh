@@ -135,7 +135,7 @@ check_vm () {
   if [ -f $script_dir/$check_vm_script ]; then
   export HYPERVISOR_NAME=$HYPERVISOR_NAME
   export PROJECT=$PROJECT
-#  export VMs_IPs=$VMs_IPs
+  export VMs_IPs=$VMs_IPs
   [ "$TS_DEBUG" = true ] && { debug_string="-v"; }
   if ! bash $script_dir/$check_vm_script $debug_string; then
     echo -E "${red}VMs are not ready to start stress - error${normal}"
