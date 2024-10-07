@@ -134,6 +134,7 @@ copy_and_stress() {
 check_vm () {
   if [ -f $script_dir/$check_vm_script ]; then
   export HYPERVISOR_NAME=$HYPERVISOR_NAME
+  export PROJECT=$PROJECT
   export TS_DEBUG=$TS_DEBUG
 #  export VMs_IPs=$VMs_IPs
   if ! bash $script_dir/$check_vm_script; then
