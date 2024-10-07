@@ -14,6 +14,7 @@ utils_dir=$script_dir/utils
 openstack_utils=$utils_dir/openstack
 check_vm_script="check_vm.sh"
 get_active_vms_ips_list_script="get_active_vms_ips_list.sh"
+check_openrc_script="check_openrc.sh"
 
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $KEY_NAME ]] && KEY_NAME="key_test.pem"
@@ -238,7 +239,7 @@ Stress test: $MODE will be launched on the hypervisor ($HV_STRING) VMs
 
 check_and_source_openrc_file () {
   echo "check openrc"
-  openrc_file=$(bash $utils_dir/check_openrc.sh)
+  openrc_file=$(bash $utils_dir/$check_openrc_script)
   if [[ -z $openrc_file ]]; then
     exit 1
   else
