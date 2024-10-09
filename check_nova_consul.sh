@@ -5,8 +5,6 @@
 
 #OPENRC_PATH=$HOME/openrc
 
-edit_ha_region_config="edit_ha_region_config.sh"
-
 #Colors
 green=$(tput setaf 2)
 red=$(tput setaf 1)
@@ -21,6 +19,11 @@ NC='\033[0m' # No Color
 
 script_dir=$(dirname $0)
 utils_dir=$script_dir/utils
+openstack_utils=$utils_dir/openstack
+check_openrc_script="check_openrc.sh"
+check_openstack_cli_script="check_openstack_cli.sh"
+
+edit_ha_region_config_script="edit_ha_region_config.sh"
 
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
 [[ -z $TRY_TO_RISE ]] && TRY_TO_RISE="true"
@@ -91,17 +94,17 @@ Check_command () {
   fi
 }
 
-# Check_openstack_cli
-Check_openstack_cli () {
-#  printf "%40s\n" "${violet}Check openstack cli...${normal}"
-  Check_command openstack
-  if [ -z $command_exist ]; then
-    echo -e "\033[31mOpenstack cli not installed\033[0m"
-    exit
-  else
-    printf "%s\n" "${green}openstack cli is already installed - success${normal}"
-  fi
-}
+## Check_openstack_cli
+#Check_openstack_cli () {
+##  printf "%40s\n" "${violet}Check openstack cli...${normal}"
+#  Check_command openstack
+#  if [ -z $command_exist ]; then
+#    echo -e "\033[31mOpenstack cli not installed\033[0m"
+#    exit
+#  else
+#    printf "%s\n" "${green}openstack cli is already installed - success${normal}"
+#  fi
+#}
 
 # Check_host_command
 Check_host_command () {
@@ -118,17 +121,52 @@ Check_host_command () {
   fi
 }
 
+## Check openrc file
+#Check_openrc_file () {
+#  printf "%s\n" "${violet}Check openrc file here: $OPENRC_PATH${normal}"
+#  check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
+#  #echo $OPENRC_PATH
+#  #echo $check_openrc_file
+#  if [ -z "$check_openrc_file" ]; then
+#    printf "%s\n" "${red}openrc file not found in $OPENRC_PATH${normal}"
+#    exit 1
+#  else
+#    printf "%s\n" "${green}$OPENRC_PATH file exist - success${normal}"
+#  fi
+#}
+
 # Check openrc file
-Check_openrc_file () {
-  printf "%s\n" "${violet}Check openrc file here: $OPENRC_PATH${normal}"
-  check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
-  #echo $OPENRC_PATH
-  #echo $check_openrc_file
-  if [ -z "$check_openrc_file" ]; then
-    printf "%s\n" "${red}openrc file not found in $OPENRC_PATH${normal}"
-    exit 1
+Check_and_source_openrc_file () {
+  echo -e "${violet}Check openrc file...${normal}"
+  if bash $utils_dir/$check_openrc_script &> /dev/null; then
+    openrc_file=$(bash $utils_dir/$check_openrc_script)
+    echo -e "${green}$openrc_file file exist - success${normal}"
+    source $openrc_file
   else
-    printf "%s\n" "${green}$OPENRC_PATH file exist - success${normal}"
+    bash $utils_dir/$check_openrc_script
+    echo -e "${red}openrc file not found in $openrc_file${normal} - ERROR"
+    exit 1
+  fi
+}
+
+# Сheck openstack cli
+Check_openstack_cli () {
+
+#  Check_command openstack
+#  if [ -z $command_exist ]; then
+#    echo -e "\033[31mOpenstack cli not installed\033[0m"
+#    exit
+#  else
+#    printf "%s\n" "${green}openstack cli is already installed - success${normal}"
+#  fi
+
+
+  if [[ $CHECK_OPENSTACK = "true" ]]; then
+    echo -e "${violet}Check openstack cli...${normal}"
+    if ! bash $utils_dir/check_openstack_cli.sh; then
+      echo -e "${red}Failed to check openstack cli - ERROR${normal}"
+      exit 1
+    fi
   fi
 }
 
@@ -196,7 +234,7 @@ Check_connection_to_ipmi () {
   [ -z "$nova_state_list" ] && nova_state_list=$(openstack compute service list)
   [ -z "$ctrl_nodes" ] && ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
   [ -z "$nova_state_list" ] && comp_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
-  suffix_output=$(bash $script_dir/$edit_ha_region_config suffix)
+  suffix_output=$(bash $script_dir/$edit_ha_region_config_script suffix)
   suffix=$(echo "$suffix_output" | tail -n1)
   echo "BMC_SUFFIX: $suffix"
 
@@ -350,14 +388,15 @@ Check_consul_config () {
 }
 
 #clear
-#check_openstack_cli
-if [[ $CHECK_OPENSTACK = "true" ]]; then
-  if ! bash $utils_dir/check_openstack_cli.sh; then
-    echo -e "\033[31mFailed to check openstack cli - error\033[0m"
-    exit 1
-  fi
-fi
-Check_openrc_file
+##check_openstack_cli
+#if [[ $CHECK_OPENSTACK = "true" ]]; then
+#  if ! bash $utils_dir/check_openstack_cli.sh; then
+#    echo -e "\033[31mFailed to check openstack cli - error\033[0m"
+#    exit 1
+#  fi
+#fi
+Check_openstack_cli
+Check_and_source_openrc_file
 Check_host_command
 
 source $OPENRC_PATH

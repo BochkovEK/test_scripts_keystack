@@ -1,0 +1,6 @@
+export CENTRAL_AUTH_SERVICE_IP="ebochkov-keystack-add_vm-01"
+export CERTS_FOLDER="$HOME/certs"
+export RELEASE_URL="https://repo.itkey.com/repository/k-install/installer-ks2024.3-rc1-sberlinux-offline.tgz"
+export INSTALLER_CONF="Client_certs_Nexus_LDAP_Gitlab_Netbox_installer_envs"
+export INIT_INSTALLER_FOLDER="$HOME/installer"
+export INIT_INSTALLER_BACKUP_FOLDER="$HOME/installer_backup"

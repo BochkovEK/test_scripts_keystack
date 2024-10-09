@@ -1,0 +1,12 @@
+export KS_INSTALL_LCM_IP=10.224.129.239;
+export KS_CLIENT_NEXUS=y;
+export CLIENT_NEXUS_NAME=nexus.test.domain;
+export CLIENT_NEXUS_ADMIN=admin;
+export CLIENT_NEXUS_PASSWORD=;
+export KS_INSTALL_DOMAIN=test.domain;
+export KS_SELF_SIG=n;
+export KS_INSTALL_HOME="/installer";
+export KS_NEXUS_NAME=lcm-nexus;
+export KS_GITLAB_NAME=lcm-gitlab;
+export KS_VAULT_NAME=lcm-vault;
+export KS_NETBOX_NAME=lcm-netbox
