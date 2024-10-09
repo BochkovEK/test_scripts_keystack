@@ -426,13 +426,10 @@ $comp_nodes
 Check_openstack_cli
 Check_and_source_openrc_file
 Check_host_command
+Check_nova_srvice_list
 Get_ctrl_comp_nodes
-#source $OPENRC_PATH
-
-
 [ "$CHECK" = nova ] && { echo "Nova checking..."; Check_nova_srvice_list; Check_disabled_computes_in_nova; exit 0; }
 [ "$CHECK" = ipmi ] && { Check_connection_to_ipmi; exit 0; }
-Check_nova_srvice_list
 Check_connection_to_nodes "controls"
 Check_connection_to_nodes "computes"
 [ "$CHECK_IPMI" = true ] && { Check_connection_to_ipmi; }
