@@ -20,6 +20,7 @@ check_openstack_cli_script="check_openstack_cli.sh"
 [[ -z $OUTPUT_PERIOD ]] && OUTPUT_PERIOD=10
 [[ -z $NODE_NAME ]] && NODE_NAME=""
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
+[[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
 #========================
 
 # Define parameters
@@ -116,6 +117,7 @@ Check_openstack_cli
 # Check openrc file
 Check_and_source_openrc_file
 
+echo "Attempt to identify a leader in the consul cluster and read logs"
 if [ -z "${NODE_NAME}" ]; then
 
 # Check nova srvice list
