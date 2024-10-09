@@ -399,13 +399,13 @@ Get_ctrl_comp_nodes () {
   #comp_and_ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)|(nova-scheduler)" | awk '{print $6}')
   ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
   comp_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
-#  [ "$DEBUG" = true ] && echo -e "
-#  [DEBUG]: \"\$nova_state_list\": $nova_state_list\n
+  [ "$DEBUG" = true ] && echo -e "
+  [DEBUG]: \"\$nova_state_list\": $nova_state_list
+  "
 #  [DEBUG]: \"\$ctrl_nodes\": $ctrl_nodes\n
 #  [DEBUG]: \"\$comp_nodes\": $comp_nodes
 #  "
   echo -e "
-  nova_state_list: $nova_state_list
   ctrl_nodes: $ctrl_nodes
   comp_nodes: $comp_nodes
   "
