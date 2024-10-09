@@ -11,6 +11,15 @@ script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
 
+#Colors
+green=$(tput setaf 2)
+red=$(tput setaf 1)
+orange=$(tput setaf 3)
+violet=$(tput setaf 5)
+normal=$(tput sgr0)
+yellow=$(tput setaf 3)
+
+
 [[ -z $DEBUG ]] && DEBUG="true"
 [[ -z $ENV_FILE ]] && ENV_FILE="$self_signed_certs_folder/certs_envs"
 [[ -z $NEXUS_USER ]] && NEXUS_USER="admin"
@@ -61,7 +70,7 @@ for repo in repos_json_files; do
   [DEBUG]: sub_type: $sub_type
 "
 
-echo "curl -v -u $NEXUS_USER:$password -H \"Connection: close\" -H \"Content-Type: application/json\" -X POST \"$DOCKER_HTTP/$type/$sub_type\" -d @$script_dir/$release_tag/$repo"
+  echo "curl -v -u $NEXUS_USER:$password -H \"Connection: close\" -H \"Content-Type: application/json\" -X POST \"$DOCKER_HTTP/$type/$sub_type\" -d @$script_dir/$release_tag/$repo"
 
 done
 

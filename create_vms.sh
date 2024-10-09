@@ -20,6 +20,11 @@
 
 #The scrip can create flavor by name: 4c-4r -> 4 cpu cores, 4096 Mb ram
 
+#Script_dir, current folder
+script_dir=$(dirname $0)
+utils_dir=$script_dir/utils
+check_openrc_script="check_openrc.sh"
+
 #Colors
 green=$(tput setaf 2)
 red=$(tput setaf 1)
@@ -27,11 +32,6 @@ orange=$(tput setaf 3)
 violet=$(tput setaf 5)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
-
-#Script_dir, current folder
-script_dir=$(dirname $0)
-utils_dir=$script_dir/utils
-check_openrc_script="check_openrc.sh"
 
 # Constants
 TIMEOUT_BEFORE_NEXT_CREATION=10
