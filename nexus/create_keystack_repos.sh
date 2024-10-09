@@ -23,6 +23,7 @@ yellow=$(tput setaf 3)
 [[ -z $DEBUG ]] && DEBUG="true"
 [[ -z $ENV_FILE ]] && ENV_FILE="$self_signed_certs_folder/certs_envs"
 [[ -z $NEXUS_USER ]] && NEXUS_USER="admin"
+[[ -z $NEXUS_PASSWORD ]] && NEXUS_PASSWORD=""
 [[ -z $REMOTE_NEXUS_NAME ]] && REMOTE_NEXUS_NAME=""
 [[ -z $DOMAIN ]] && DOMAIN=""
 [[ -z $NEXUS_PORT ]] && NEXUS_PORT="8081"
@@ -40,7 +41,11 @@ else
 fi
 
 DOCKER_HTTP="http://$REMOTE_NEXUS_NAME.$DOMAIN:$NEXUS_PORT/service/rest/v1/repositories"
-password=$(docker exec -it nexus cat /nexus-data/admin.password)
+if [ -z "$NEXUS_PASSWORD" ]; then
+  password=$(docker exec -it nexus cat /nexus-data/admin.password)
+else
+  password=$NEXUS_PASSWORD
+fi
 
 echo -e "
   REMOTE_NEXUS_NAME:  $REMOTE_NEXUS_NAME
