@@ -281,7 +281,13 @@ Check_disabled_computes_in_nova () {
               if [ -n "$connection_success" ]; then
                 echo "Connetction to $cmpt success"
                 try_to_rise="true"
-                ssh -o StrictHostKeyChecking=no ${cmpt} docker start consul nova_compute
+                docker_nova_started=""
+                docker_nova_started=$(ssh -o StrictHostKeyChecking=no ${cmpt} docker ps| grep nova_compute)
+                if [ -z "$docker_nova_started" ];then
+                  ssh -o StrictHostKeyChecking=no ${cmpt} docker start consul nova_compute
+                else
+                  ssh -o StrictHostKeyChecking=no ${cmpt} docker start consul nova_compute
+                fi
                 openstack compute service set --enable --up "${cmpt}" nova-compute
               else
                 echo -e "${red}No connection to $cmpt - fail${normal}"
@@ -399,7 +405,7 @@ Check_openstack_cli
 Check_and_source_openrc_file
 Check_host_command
 
-source $OPENRC_PATH
+#source $OPENRC_PATH
 nova_state_list=$(openstack compute service list)
 #comp_and_ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)|(nova-scheduler)" | awk '{print $6}')
 ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
