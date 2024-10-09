@@ -6,21 +6,23 @@ image_name = "cirros-0.6.2-x86_64-disk.img"
 # VMs quantity
 qty = 4
 
-server_group = {
-  name      = "terraform_affinity_sg"
-  policies = [
-      "affinity"
-  ]
-}
-
-# ===================
-## Server group (anti-affinity)
-## VMs quantity
-#qty = <hypervisors_count>
-#
 #server_group = {
-#  name      = "terraform_anti-affinity_sg"
+#  name      = "terraform_affinity_sg"
 #  policies = [
-#      "anti-affinity"
+#      "affinity"
 #  ]
 #}
+
+#az_hint = nova:
+
+# ===================
+# Server group (anti-affinity)
+# VMs quantity
+#qty = <hypervisors_count>
+
+server_group = {
+  name      = "terraform_anti-affinity_sg"
+  policies = [
+      "anti-affinity"
+  ]
+}

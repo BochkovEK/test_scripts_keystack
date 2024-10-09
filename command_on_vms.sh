@@ -114,7 +114,7 @@ batch_run_command() {
 #          exit 1
 #        fi
 #      fi
-    echo -e "${violet}Get IPs VMs from hypervisor: $HYPERVISOR_NAME project $PROJECT "
+    echo -e "${violet}Get IPs VMs from hypervisor: $HYPERVISOR_NAME project $PROJECT...${normal}"
     export HYPERVISOR_NAME=$HYPERVISOR_NAME
     export PROJECT=$PROJECT
 #    export TS_DEBUG=$TS_DEBUG
