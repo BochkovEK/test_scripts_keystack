@@ -114,6 +114,7 @@ batch_run_command() {
 #          exit 1
 #        fi
 #      fi
+    echo -e "${violet}Get IPs VMs from hypervisor: $HYPERVISOR_NAME project $PROJECT "
     export HYPERVISOR_NAME=$HYPERVISOR_NAME
     export PROJECT=$PROJECT
     VMs_IPs=$(bash $openstack_utils/$get_active_vms_ips_list_script)
