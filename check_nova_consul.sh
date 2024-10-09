@@ -394,7 +394,7 @@ Check_consul_config () {
 }
 
 Get_ctrl_comp_nodes () {
-  echo -e ${violet}Get ctrl and comp list from compute service...${normal}"
+  echo -e "${violet}Get ctrl and comp list from compute service...${normal}"
   nova_state_list=$(openstack compute service list)
   #comp_and_ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)|(nova-scheduler)" | awk '{print $6}')
   ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
