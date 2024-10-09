@@ -375,7 +375,7 @@ Check_consul_logs () {
 # Check consul config
 Check_consul_config () {
   echo
-  printf "%s\n" "${violet}Check consul config...${normal}"
+  echo -e "${violet}Check consul config...${normal}"
   [ -n "$OS_REGION_NAME" ] && REGION=$OS_REGION_NAME
   [ "$DEBUG" = true ] && echo -e "
   [DEBUG]: \"\$OS_REGION_NAME\": $OS_REGION_NAME\n
@@ -394,7 +394,7 @@ Check_consul_config () {
 }
 
 Get_ctrl_comp_nodes () {
-  echo "Get ctrl and comp list from compute service..."
+  echo -e ${violet}Get ctrl and comp list from compute service...${normal}"
   nova_state_list=$(openstack compute service list)
   #comp_and_ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)|(nova-scheduler)" | awk '{print $6}')
   ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
@@ -406,8 +406,10 @@ Get_ctrl_comp_nodes () {
 #  [DEBUG]: \"\$comp_nodes\": $comp_nodes
 #  "
   echo -e "
-  ctrl_nodes: $ctrl_nodes
-  comp_nodes: $comp_nodes
+  ctrl_nodes:
+$ctrl_nodes
+  comp_nodes:
+$comp_nodes
   "
 
   for i in $ctrl_nodes; do ctrl_node_array+=("$i"); done
