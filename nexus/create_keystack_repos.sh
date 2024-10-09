@@ -28,7 +28,7 @@ yellow=$(tput setaf 3)
 [[ -z $NEXUS_PORT ]] && NEXUS_PORT="8081"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="true"
 
-[ -z $1 ] && { echo -e "${red}To run the script, you need to define keystack release as parameter${normal}"; exit 1; }
+[ -z $1 ] && { echo -e "${red}To run the script, you need to define keystack release as parameter - ERROR${normal}"; exit 1; }
 release_tag=$1
 
 if [ -f "$parent_dir/$ENV_FILE" ]; then

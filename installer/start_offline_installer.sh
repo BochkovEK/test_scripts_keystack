@@ -26,7 +26,7 @@ yellow=$(tput setaf 3)
 [[ -z $INIT_INSTALLER_FOLDER ]] && INIT_INSTALLER_FOLDER="$HOME/installer"
 [[ -z $INIT_INSTALLER_BACKUP_FOLDER ]] && INIT_INSTALLER_BACKUP_FOLDER="$HOME/installer_backup"
 
-[ -z $1 ] && { echo -e "${red}To run the script, you need to define keystack release as parameter${normal}"; exit 1; }
+[ -z $1 ] && { echo -e "${red}To run the script, you need to define keystack release as parameter - ERROR${normal}"; exit 1; }
 release_tag=$1
 
 installer_envs=$script_dir/$release_tag/$start_installer_envs
