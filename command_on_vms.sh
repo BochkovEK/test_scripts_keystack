@@ -1,5 +1,6 @@
 #!/bin/bashq!
 
+# TO-DO Rename this script to command_on_vm.sh with key check
 # The script checks access to the VM on HV
 
 #Colors
@@ -12,7 +13,7 @@ script_name=$(basename "$0")
 script_dir=$(dirname $0)
 utils_dir=$script_dir/utils
 openstack_utils=$utils_dir/openstack
-check_openrc_script="check_openrc.sh"
+#check_openrc_script="check_openrc.sh"
 get_active_vms_ips_list_script="get_active_vms_ips_list.sh"
 
 [[ -z $KEY_NAME ]] && KEY_NAME="key_test.pem"
@@ -25,7 +26,7 @@ get_active_vms_ips_list_script="get_active_vms_ips_list.sh"
 [[ -z $DONT_ASK ]] && DONT_ASK="true"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $VMs_IPs ]] && VMs_IPs=""
-#[[ -z $MODULE_MODE ]] && MODULE_MODE="false"
+
 
 echo "Start $script_name script..."
 
@@ -126,10 +127,10 @@ batch_run_command() {
 #        FIRST_IP=$(echo $raw_string_ip|awk '{print $1}')
 #    IP="${FIRST_IP##*=}"
     if ping -c 2 $IP &> /dev/null; then
-        printf "%40s\n" "${green}There is a connection with $IP - success${normal}"
+        echo -e "${green}There is a connection with $IP - success${normal}"
         [ "$ONLY_PING" == "false" ] && { ssh -t -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$IP "$COMMAND_STR"; }
     else
-        printf "%40s\n" "${red}No connection with $IP - error!${normal}"
+        echo -e "${red}No connection with $IP - error!${normal}"
         at_least_one_vm_is_not_avail="true"
     fi
     sleep 1

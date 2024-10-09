@@ -12,7 +12,7 @@ normal=$(tput sgr0)
 script_dir=$(dirname $0)
 utils_dir=$script_dir/utils
 openstack_utils=$utils_dir/openstack
-check_vm_script="check_vm.sh"
+check_vm_script="command_on_vms.sh"
 get_active_vms_ips_list_script="get_active_vms_ips_list.sh"
 #check_openrc_script="check_openrc.sh"
 
@@ -102,18 +102,18 @@ copy_and_stress() {
   local VM_IP=$1
 #  local MODE=$2
 
-  echo -e "\nStart checking $VM_IP..."
-  sleep 1
-  if ping -c 2 $VM_IP &> /dev/null; then
-    printf "%40s\n" "${green}There is a connection with $VM_IP - success${normal}"
-    ssh -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$VM_IP "echo 2>&1"
-    test $? -eq 0 && printf "%40s\n" "${green}There is a SSH connection with $VM_IP - success${normal}" || \
-    { printf "%40s\n" "${red}No SSH connection with $VM_IP - error!${normal}"; exit 1; }
-  else
-    printf "%40s\n" "${red}No connection with $VM_IP - error!${normal}"
-    exit 1
-#    return
-  fi
+#  echo -e "\nStart checking $VM_IP..."
+#  sleep 1
+#  if ping -c 2 $VM_IP &> /dev/null; then
+#    printf "%40s\n" "${green}There is a connection with $VM_IP - success${normal}"
+#    ssh -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$VM_IP "echo 2>&1"
+#    test $? -eq 0 && printf "%40s\n" "${green}There is a SSH connection with $VM_IP - success${normal}" || \
+#    { printf "%40s\n" "${red}No SSH connection with $VM_IP - error!${normal}"; exit 1; }
+#  else
+#    printf "%40s\n" "${red}No connection with $VM_IP - error!${normal}"
+#    exit 1
+##    return
+#  fi
 
   echo "Copy stress to $VM_IP..."
   scp -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $script_dir/stress $VM_USER@$VM_IP:~
