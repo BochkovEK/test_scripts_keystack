@@ -1,7 +1,6 @@
 resource "openstack_compute_instance_v2" "vm" {
 
   count                       = var.qty
-
   name                        = format("%s-%02d", var.vm_name, (count.index))
   flavor_name                 = openstack_compute_flavor_v2.flavor.name
   key_pair                    = openstack_compute_keypair_v2.keypair.name
@@ -38,6 +37,11 @@ resource "openstack_compute_instance_v2" "vm" {
 data "openstack_images_image_v2" "image_id" {
   name        = var.image_name
 }
+
+#resource "openstack_identity_project_v3" "test_project" {
+#name = "test_project_terraform"
+#description = "Created by Terraform"
+#}
 
 resource "openstack_compute_flavor_v2" "flavor" {
   flavor_id = var.flavor.name
