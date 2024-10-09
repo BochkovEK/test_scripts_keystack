@@ -393,6 +393,26 @@ Check_consul_config () {
                 -e 's/\(.*dead_compute_threshold.*\)/\o033[33m\1\o033[39m/'
 }
 
+Get_ctrl_comp_nodes () {
+  echo "Get ctrl and comp list from compute service..."
+  nova_state_list=$(openstack compute service list)
+  #comp_and_ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)|(nova-scheduler)" | awk '{print $6}')
+  ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
+  comp_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
+#  [ "$DEBUG" = true ] && echo -e "
+#  [DEBUG]: \"\$nova_state_list\": $nova_state_list\n
+#  [DEBUG]: \"\$ctrl_nodes\": $ctrl_nodes\n
+#  [DEBUG]: \"\$comp_nodes\": $comp_nodes
+#  "
+  echo -e "
+  nova_state_list: $nova_state_list
+  ctrl_nodes: $ctrl_nodes
+  comp_nodes: $comp_nodes
+  "
+
+  for i in $ctrl_nodes; do ctrl_node_array+=("$i"); done
+}
+
 #clear
 ##check_openstack_cli
 #if [[ $CHECK_OPENSTACK = "true" ]]; then
@@ -404,18 +424,9 @@ Check_consul_config () {
 Check_openstack_cli
 Check_and_source_openrc_file
 Check_host_command
-
+Get_ctrl_comp_nodes
 #source $OPENRC_PATH
-nova_state_list=$(openstack compute service list)
-#comp_and_ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)|(nova-scheduler)" | awk '{print $6}')
-ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
-comp_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
-[ "$DEBUG" = true ] && echo -e "
-  [DEBUG]: \"\$nova_state_list\": $nova_state_list\n
-  [DEBUG]: \"\$ctrl_nodes\": $ctrl_nodes\n
-  [DEBUG]: \"\$comp_nodes\": $comp_nodes
-  "
-for i in $ctrl_nodes; do ctrl_node_array+=("$i"); done;
+
 
 [ "$CHECK" = nova ] && { echo "Nova checking..."; Check_nova_srvice_list; Check_disabled_computes_in_nova; exit 0; }
 [ "$CHECK" = ipmi ] && { Check_connection_to_ipmi; exit 0; }
