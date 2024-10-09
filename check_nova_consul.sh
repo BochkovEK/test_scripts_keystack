@@ -162,7 +162,7 @@ Check_openstack_cli () {
 
 
   if [[ $CHECK_OPENSTACK = "true" ]]; then
-    echo -e "${violet}Check openstack cli...${normal}"
+#    echo -e "${violet}Check openstack cli...${normal}"
     if ! bash $utils_dir/check_openstack_cli.sh; then
       echo -e "${red}Failed to check openstack cli - ERROR${normal}"
       exit 1
