@@ -67,7 +67,7 @@ repos_json_files=$(ls -f $script_dir/$release_tag/*.json|sed -E s#.+/##)
 
 for repo in $repos_json_files; do
   type=$(echo $repo|awk 'BEGIN {FS="-";}{print $1}')
-  sub_type=$(echo $repo|awk 'BEGIN {FS="-";}{print $1}')
+  sub_type=$(echo $repo|awk 'BEGIN {FS="-";}{print $2}')
 
   "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]: type: $type
