@@ -97,7 +97,6 @@ while [ -n "$1" ]; do
 done
 
 # Functions
-
 copy_and_stress() {
   local VM_IP=$1
 #  local MODE=$2

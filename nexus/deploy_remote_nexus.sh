@@ -69,11 +69,10 @@ deploy_error () {
 
 get_init_vars () {
 
-
-if [ -f "$parent_dir/$ENV_FILE" ]; then
-  echo "$ENV_FILE file exists"
-  source $parent_dir/$ENV_FILE
-fi
+  if [ -f "$parent_dir/$ENV_FILE" ]; then
+    echo "$ENV_FILE file exists"
+    source $parent_dir/$ENV_FILE
+  fi
 
 # get Central Authentication Service folder
   if [[ -z "${CERTS_DIR}" ]]; then

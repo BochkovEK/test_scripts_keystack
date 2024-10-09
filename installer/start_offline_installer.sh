@@ -1,11 +1,23 @@
 #!/bin/bash
 
 # The script start installer
+# To start script define keystack release as parameter
+# Example command: bash start.sh ks2024.3
 
 script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
+utils_dir=$script_dir/utils
 start_installer_envs="start_installer_envs"
+install_wget_script="install_wget.sh"
+
+#Colors
+green=$(tput setaf 2)
+red=$(tput setaf 1)
+orange=$(tput setaf 3)
+violet=$(tput setaf 5)
+normal=$(tput sgr0)
+yellow=$(tput setaf 3)
 
 [[ -z $CENTRAL_AUTH_SERVICE_IP ]] && CENTRAL_AUTH_SERVICE_IP=""
 [[ -z $CERTS_FOLDER ]] && CERTS_FOLDER="$HOME/certs"
@@ -14,11 +26,19 @@ start_installer_envs="start_installer_envs"
 [[ -z $INIT_INSTALLER_FOLDER ]] && INIT_INSTALLER_FOLDER="$HOME/installer"
 [[ -z $INIT_INSTALLER_BACKUP_FOLDER ]] && INIT_INSTALLER_BACKUP_FOLDER="$HOME/installer_backup"
 
-if [ -f $script_dir/$start_installer_envs ]; then
-  source $script_dir/$start_installer_envs
+[ -z $1 ] && { echo -e "${red}To run the script, you need to define keystack release as parameter${normal}"; exit 1; }
+release_tag=$1
+
+installer_envs=$script_dir/$release_tag/$start_installer_envs
+
+if [ -f $installer_envs ]; then
+  source $installer_envs
+else
+  echo -e "${red}Environment variables file \'$installer_envs\' not found - ERROR${normal}"
+  exit 1
 fi
 
-bash $parent_dir/utils/install_wget.sh
+bash $utils_dir/$install_wget_script
 release_tar=$(echo "${RELEASE_URL##*/}")
 echo "release_tar: $release_tar"
 if [ ! -f ~/$release_tar ]; then
@@ -54,8 +74,8 @@ if [ -d "$HOME/installer" ]; then
   if [ -z "$( ls -A ~/installer/certs )" ]; then
     scp -r $CENTRAL_AUTH_SERVICE_IP:$CERTS_FOLDER $HOME/installer/
   fi
-  cd $HOME/installer/
-  echo "list of certs in $HOME/installer/certs folder"
+  cd $INIT_INSTALLER_FOLDER
+  echo "list of certs in $INIT_INSTALLER_FOLDER/certs folder"
   ls -la ./certs
   echo "Start installer.sh script"
   ./installer.sh| tee $HOME/installer-$(date '+%Y-%m-%d'-%H-%M).log
