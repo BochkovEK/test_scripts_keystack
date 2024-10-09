@@ -41,7 +41,8 @@ while [ -n "$1" ]; do
       -p, project   <project_name>
       -dont_ask     all actions will be performed automatically (without value)
       -ips          <ips list> (example: -ips \"<ip_vm_1> <ip_vm_2> ... \")
-      -v, -debug        enabled debug output (without parameter)
+      -v, -debug    enabled debug output (without parameter)
+      -check        only check access to OS vm (without parameter)
       "
       exit 0
       break ;;
@@ -62,8 +63,8 @@ while [ -n "$1" ]; do
       shift ;;
     -ping) ONLY_PING="true"
 	    echo "Found the -ping option, only ping checking";;
-    --) shift
-      break ;;
+    -check) ONLY_CHECK="true"
+	    echo "Found the -check option, only check access to OS vm";;
     -dont_ask) DONT_ASK=true
       echo "Found the -dont_ask. All actions will be performed automatically"
       ;;
@@ -73,6 +74,8 @@ while [ -n "$1" ]; do
     -ips) VMs_IPs="$2"
       echo "Found the -ips option, with parameter value $VMs_IPs"
       shift ;;
+    --) shift
+      break ;;
     *) echo "$1 is not an option";;
   esac
   shift
@@ -128,6 +131,7 @@ batch_run_command() {
 #    IP="${FIRST_IP##*=}"
     if ping -c 2 $IP &> /dev/null; then
         echo -e "${green}There is a connection with $IP - success${normal}"
+        [ "$ONLY_CHECK" == "true" ] && { COMMAND_STR="ls -la"; }
         [ "$ONLY_PING" == "false" ] && { ssh -t -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$IP "$COMMAND_STR"; }
     else
         echo -e "${red}No connection with $IP - error!${normal}"
