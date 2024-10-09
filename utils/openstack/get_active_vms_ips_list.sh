@@ -11,6 +11,7 @@ utils_dir=$parent_dir
 check_openrc_script="check_openrc.sh"
 
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
+[[ -z $MODULE_MODE ]] && MODULE_MODE="true"
 
 check_and_source_openrc_file () {
 #  echo "check openrc"
@@ -45,8 +46,10 @@ get_VMs_IPs () {
   [DEBUG]: VMs_IPs: $VMs_IPs
   "
     if [ -z "$VMs_IPs" ]; then
-      echo -e "No instance found in the $PROJECT project\nProject list:"
-      openstack project list
+#      [ "$MODULE_MODE" = true ] && {
+      echo -e "No instance found in the $PROJECT project - ERROR\nProject list:";
+      openstack project list;
+#      }
       exit 1
     fi
   fi
