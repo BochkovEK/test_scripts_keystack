@@ -117,6 +117,7 @@ batch_run_command() {
     echo -e "${violet}Get IPs VMs from hypervisor: $HYPERVISOR_NAME project $PROJECT "
     export HYPERVISOR_NAME=$HYPERVISOR_NAME
     export PROJECT=$PROJECT
+    export TS_DEBUG=$TS_DEBUG
     VMs_IPs=$(bash $openstack_utils/$get_active_vms_ips_list_script)
     if echo $VMs_IPs| grep "ERROR"; then
 #      echo -e "${red}$VMs_IPs${normal}"
