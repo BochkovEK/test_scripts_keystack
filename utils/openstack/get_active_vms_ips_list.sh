@@ -3,6 +3,13 @@
 # The script return active VMs IPs list from host
 # WARNING: only one designated port is supported (example: pub_net)
 
+
+#Colors
+green=$(tput setaf 2)
+red=$(tput setaf 1)
+violet=$(tput setaf 5)
+normal=$(tput sgr0)
+
 #script_name=$(basename "$0")
 script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
@@ -47,7 +54,7 @@ get_VMs_IPs () {
   "
     if [ -z "$VMs_IPs" ]; then
 #      [ "$MODULE_MODE" = true ] && {
-      echo -e "No instance found in the $PROJECT project - ERROR\nProject list:";
+      echo -e "${red}No instance found in the $PROJECT project - ERROR${normal}\nProject list:";
       openstack project list;
 #      }
       exit 1
