@@ -13,6 +13,8 @@ yallow=$(tput setaf 3)
 
 script_dir=$(dirname $0)
 utils_dir=$script_dir/utils
+check_openrc_script="check_openrc.sh"
+check_openstack_cli_script="check_openstack_cli.sh"
 
 [[ -z $LOG_LAST_LINES_NUMBER ]] && LOG_LAST_LINES_NUMBER=25
 [[ -z $OUTPUT_PERIOD ]] && OUTPUT_PERIOD=10
@@ -27,16 +29,51 @@ define_parameters () {
   [ "$count" = 3 ] && [[ -n $1 ]] && { LOG_LAST_LINES_NUMBER=$1; echo "log last lines number parameter found with value $LOG_LAST_LINES_NUMBER"; }
 }
 
+## Check openrc file
+#check_and_source_openrc_file () {
+#    echo "Check openrc file and source it..."
+#    check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
+#    if [ -z "$check_openrc_file" ]; then
+#        printf "%s\n" "${red}openrc file not found in $OPENRC_PATH - ERROR!${normal}"
+#        exit 1
+#    fi
+#    source $OPENRC_PATH
+#    #export OS_PROJECT_NAME=$PROJECT
+#}
+
 # Check openrc file
-check_and_source_openrc_file () {
-    echo "Check openrc file and source it..."
-    check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
-    if [ -z "$check_openrc_file" ]; then
-        printf "%s\n" "${red}openrc file not found in $OPENRC_PATH - ERROR!${normal}"
-        exit 1
+Check_and_source_openrc_file () {
+  echo -e "${violet}Check openrc file...${normal}"
+  if bash $utils_dir/$check_openrc_script &> /dev/null; then
+    openrc_file=$(bash $utils_dir/$check_openrc_script)
+    echo -e "${green}$openrc_file file exist - success${normal}"
+    source $openrc_file
+  else
+    bash $utils_dir/$check_openrc_script
+    echo -e "${red}openrc file not found in $openrc_file${normal} - ERROR"
+    exit 1
+  fi
+}
+
+# Сheck openstack cli
+Check_openstack_cli () {
+
+#  Check_command openstack
+#  if [ -z $command_exist ]; then
+#    echo -e "\033[31mOpenstack cli not installed\033[0m"
+#    exit
+#  else
+#    printf "%s\n" "${green}openstack cli is already installed - success${normal}"
+#  fi
+
+
+  if [[ $CHECK_OPENSTACK = "true" ]]; then
+#    echo -e "${violet}Check openstack cli...${normal}"
+    if ! bash $utils_dir/check_openstack_cli.sh; then
+      echo -e "${red}Failed to check openstack cli - ERROR${normal}"
+      exit 1
     fi
-    source $OPENRC_PATH
-    #export OS_PROJECT_NAME=$PROJECT
+  fi
 }
 
 count=1
@@ -70,12 +107,14 @@ while [ -n "$1" ]; do
     shift
 done
 
+#if ! bash $utils_dir/check_openstack_cli.sh; then
+#    exit 1
+#fi
+
 #check_openstack_cli
-if ! bash $utils_dir/check_openstack_cli.sh; then
-    exit 1
-fi
+Check_openstack_cli
 # Check openrc file
-check_and_source_openrc_file
+Check_and_source_openrc_file
 
 if [ -z "${NODE_NAME}" ]; then
 
