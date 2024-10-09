@@ -51,6 +51,8 @@ echo -e "
   password:           $password
 "
 
+read -p "Press enter to continue..."
+
 repos_json_files=$(ls -f $script_dir/$release_tag/*.json|sed -E s#.+/##)
 # example output
 #docker-hosted-k-images.json
@@ -72,17 +74,12 @@ for repo in $repos_json_files; do
   "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]: type: $type
   [DEBUG]: sub_type: $sub_type
+  [DEBUG]:
+curl -v -u $NEXUS_USER:$password -H \"Connection: close\" -H \"Content-Type: application/json\" -X POST \"$DOCKER_HTTP/$type/$sub_type\" -d @$script_dir/$release_tag/$repo
 "
-
-  echo "curl -v -u $NEXUS_USER:$password -H \"Connection: close\" -H \"Content-Type: application/json\" -X POST \"$DOCKER_HTTP/$type/$sub_type\" -d @$script_dir/$release_tag/$repo"
-
 done
 
-read -p "Press enter to continue..."
-echo foo
-exit 0
-
-
+curl -v -u $NEXUS_USER:$password -X GET "$DOCKER_HTTP/service/rest/v1/repositories"
 
 ## k-images docker(hosted)
 #curl -v -u $NEXUS_USER:$password -H "Connection: close" -H "Content-Type: application/json" -X POST "$DOCKER_HTTP/docker/hosted" -d @$script_dir/docker-hosted-k-images.json
