@@ -69,7 +69,7 @@ Before continue, make sure you have:
 
 read -p "Press enter to continue: "
 
-installer_envs=$script_dir/$release_tag/$start_installer_envs
+installer_envs=$script_dir/$KEYSTACK_RELEASE/$start_installer_envs
 
 if [ -f $installer_envs ]; then
   source $installer_envs
