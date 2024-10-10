@@ -116,7 +116,7 @@ lcm_mgmt_ip=$(ip a|grep mgmt|grep inet|grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1
   |awk '{p=index($1,"/");print substr($1,0,p-1)}')
 
 export KS_INSTALL_LCM_IP=$lcm_mgmt_ip
-echo "KS_INSTALL_LCM_IP: $KS_INSTALL_LCM_IP"
+echo "KS_INSTALL_LCM_IP: $KS_INSTALL_LCM_IP\n"
 
 if [ -d "$HOME/installer" ]; then
   if [ -z "$( ls -A ~/installer/certs )" ]; then
