@@ -11,7 +11,7 @@
 script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
-utils_dir=$script_dir/utils
+utils_dir=$parent_dir/utils
 installer_conf_folder="installer_conf"
 start_installer_envs="start_installer_envs"
 install_wget_script="install_wget.sh"
@@ -116,7 +116,7 @@ lcm_mgmt_ip=$(ip a|grep mgmt|grep inet|grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1
   |awk '{p=index($1,"/");print substr($1,0,p-1)}')
 
 export KS_INSTALL_LCM_IP=$lcm_mgmt_ip
-echo "KS_INSTALL_LCM_IP: $KS_INSTALL_LCM_IP\n"
+echo -e "KS_INSTALL_LCM_IP: $KS_INSTALL_LCM_IP\n"
 
 if [ -d "$HOME/installer" ]; then
   if [ -z "$( ls -A ~/installer/certs )" ]; then
