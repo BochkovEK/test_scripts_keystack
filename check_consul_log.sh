@@ -28,7 +28,7 @@ check_openstack_cli_script="check_openstack_cli.sh"
 
 # Define parameters
 define_parameters () {
-  echo foo
+#  echo foo
   [ "$count" = 1 ] && [[ -n $1 ]] && { NODE_NAME=$1; echo "Node name parameter found with value $NODE_NAME"; }
   [ "$count" = 2 ] && [[ -n $1 ]] && { OUTPUT_PERIOD=$1; echo "Check period parameter found with value $OUTPUT_PERIOD"; }
   [ "$count" = 3 ] && [[ -n $1 ]] && { LOG_LAST_LINES_NUMBER=$1; echo "log last lines number parameter found with value $LOG_LAST_LINES_NUMBER"; }
@@ -128,8 +128,8 @@ if [ -z "${NODE_NAME}" ]; then
       echo -e "${yallow}Check logs on all ctrl nodes${normal}"
       NODE_NAME=$ALL_NODES
     fi
-else
-  NODE_NAME=$1
+#else
+#  NODE_NAME=$1
 fi
 
 #clear
