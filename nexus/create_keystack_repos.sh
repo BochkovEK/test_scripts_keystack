@@ -94,6 +94,7 @@ for repo in $repos_json_files; do
   [DEBUG]:
 curl -v -u $NEXUS_USER:$password -H \"Connection: close\" -H \"Content-Type: application/json\" -X POST \"$DOCKER_HTTP/$type/$sub_type\" -d @$script_dir/$KEYSTACK_RELEASE/$repo
 "
+  curl -v -u $NEXUS_USER:$password -H \"Connection: close\" -H \"Content-Type: application/json\" -X POST \"$DOCKER_HTTP/$type/$sub_type\" -d @$script_dir/$KEYSTACK_RELEASE/$repo
 done
 
 curl -v -u $NEXUS_USER:$password -X GET "$DOCKER_HTTP"
