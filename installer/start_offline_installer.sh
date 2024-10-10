@@ -58,6 +58,8 @@ select_config_file () {
           echo 'Invalid choice, try again' >&2
       else
         config_file=${files[$REPLY]}
+        echo "Installer config selected:"
+        echo $config_file
         break
       fi
   done
