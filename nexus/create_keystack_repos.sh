@@ -55,6 +55,7 @@ else
 fi
 
 echo -e "
+  KEYSTACK_RELEASE:   $KEYSTACK_RELEASE
   REMOTE_NEXUS_NAME:  $REMOTE_NEXUS_NAME
   DOMAIN:             $DOMAIN
   DOCKER_HTTP:        $DOCKER_HTTP
@@ -75,9 +76,13 @@ repos_json_files=$(ls -f $script_dir/$KEYSTACK_RELEASE/*.json|sed -E s#.+/##)
 #yum-hosted-docker-sberlinux.json
 #yum-hosted-sberlinux.json
 
-"$TS_DEBUG" = true ] && echo -e "
+"$TS_DEBUG" = true ] && {
+  echo -e "
   [DEBUG]: repos_json_files: $repos_json_files
-"
+";
+  read -p "Press enter to continue...";
+
+}
 
 for repo in $repos_json_files; do
   type=$(echo $repo|awk 'BEGIN {FS="-";}{print $1}')
