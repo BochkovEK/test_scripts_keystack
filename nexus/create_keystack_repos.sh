@@ -28,9 +28,16 @@ yellow=$(tput setaf 3)
 [[ -z $DOMAIN ]] && DOMAIN=""
 [[ -z $NEXUS_PORT ]] && NEXUS_PORT="8081"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="true"
+[[ -z $KEYSTACK_RELEASE ]] && KEYSTACK_RELEASE=""
 
-[ -z $1 ] && { echo -e "${red}To run the script, you need to define keystack release as parameter - ERROR${normal}"; exit 1; }
-release_tag=$1
+if [ -z "$1" ]; then
+  if [ -z "$KEYSTACK_RELEASE" ]; then
+    echo -e "${red}To run the script, you need to define keystack release as parameter or env var KEYSTACK_RELEASE - ERROR${normal}"
+    exit 1
+  fi
+else
+  KEYSTACK_RELEASE=$1
+fi
 
 if [ -f "$parent_dir/$ENV_FILE" ]; then
   echo "$ENV_FILE file exists"
@@ -58,7 +65,7 @@ echo -e "
 
 read -p "Press enter to continue..."
 
-repos_json_files=$(ls -f $script_dir/$release_tag/*.json|sed -E s#.+/##)
+repos_json_files=$(ls -f $script_dir/$KEYSTACK_RELEASE/*.json|sed -E s#.+/##)
 # example output
 #docker-hosted-k-images.json
 #pypi-hosted-k-pip.json
@@ -80,7 +87,7 @@ for repo in $repos_json_files; do
   [DEBUG]: type: $type
   [DEBUG]: sub_type: $sub_type
   [DEBUG]:
-curl -v -u $NEXUS_USER:$password -H \"Connection: close\" -H \"Content-Type: application/json\" -X POST \"$DOCKER_HTTP/$type/$sub_type\" -d @$script_dir/$release_tag/$repo
+curl -v -u $NEXUS_USER:$password -H \"Connection: close\" -H \"Content-Type: application/json\" -X POST \"$DOCKER_HTTP/$type/$sub_type\" -d @$script_dir/$KEYSTACK_RELEASE/$repo
 "
 done
 

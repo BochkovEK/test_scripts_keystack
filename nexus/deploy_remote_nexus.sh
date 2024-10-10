@@ -32,7 +32,7 @@ script_name=$(basename "$0")
 script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
-#parentdir=$(builtin cd $script_dir; pwd)
+create_keystack_repos_script="create_keystack_repos_script.sh"
 
 [[ -z $DEBUG ]] && DEBUG="true"
 [[ -z $ENV_FILE ]] && ENV_FILE="$self_signed_certs_folder/certs_envs"
@@ -218,6 +218,19 @@ nexus_bootstarp () {
   #sed -i -e "s@OUTPUT_CERTS_DIR@$OUTPUT_CERTS_DIR@g" $script_dir/nginx_https.conf
 }
 
+create_repos () {
+  if [ ! -f $script_dir/$create_keystack_repos_script ]; then
+    echo -e "${yellow}Script \'create_keystack_repos_script\': $script_dir/$create_keystack_repos_script not found${normal}"
+    echo "Repositories were not created in remote nexus"
+  else
+    if [[ -z "${KEYSTACK_RELEASE}" ]]; then
+      read -rp "Enter KeyStack release [ks2024.2.5]: " KEYSTACK_RELEASE
+    fi
+    export KEYSTACK_RELEASE=${KEYSTACK_RELEASE:-"ks2024.2.5"}
+
+  fi
+}
+
 
 get_init_vars
 check_certs_for_nexus
@@ -234,3 +247,4 @@ nexus_bootstarp
 check_started_containers
 nexus_docker_up
 waiting_for_nexus_readiness
+create_repos
