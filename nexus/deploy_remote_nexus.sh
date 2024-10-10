@@ -156,7 +156,7 @@ check_running_containers () {
   done
   echo -e "${green}Nexus already deployed${normal}"
   waiting_for_nexus_readiness
-  exit 0
+#  exit 0
 }
 
 check_started_containers () {
