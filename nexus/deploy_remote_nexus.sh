@@ -177,7 +177,8 @@ check_started_containers () {
   if ((started_containers_count == 2)); then
     check_running_containers
   elif ((started_containers_count == 0)); then
-    return
+    nexus_docker_up
+    waiting_for_nexus_readiness
   else
     echo -e "${yellow}There may have already been a failed Nexus deployment${normal}"
     deploy_error
@@ -257,6 +258,6 @@ fi
 
 nexus_bootstarp
 check_started_containers
-nexus_docker_up
-waiting_for_nexus_readiness
+#nexus_docker_up
+#waiting_for_nexus_readiness
 create_repos
