@@ -32,7 +32,7 @@ script_name=$(basename "$0")
 script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
-create_keystack_repos_script="create_keystack_repos_script.sh"
+create_keystack_repos_script="create_keystack_repos.sh"
 
 [[ -z $DEBUG ]] && DEBUG="true"
 [[ -z $ENV_FILE ]] && ENV_FILE="$self_signed_certs_folder/certs_envs"
