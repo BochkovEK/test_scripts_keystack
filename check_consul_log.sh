@@ -119,7 +119,8 @@ if [ -z "${NODE_NAME}" ]; then
     ctrl_nodes_list=$CTRL_LIST
   fi
     for i in $ctrl_nodes_list; do nova_ctrl_arr+=("$i"); done
-    if [ -z "${ALL_CTRL}" ]; then
+    if [ ! "$ALL_CTRL" = true ]; then
+#    if [ -z "${ALL_CTRL}" ]; then
       first_ctrl_node=${nova_ctrl_arr[0]}
       leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no "$first_ctrl_node" "docker exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
       if [ -z "${leader_ctrl_node}" ]; then
@@ -131,7 +132,8 @@ if [ -z "${NODE_NAME}" ]; then
       fi
     else
       echo -e "${yallow}Check logs on all ctrl nodes${normal}"
-      NODE_NAME=$ALL_CTRL
+      NODE_NAME=ctrl_nodes_list
+#      NODE_NAME=$ALL_CTRL
     fi
 #else
 #  NODE_NAME=$1
