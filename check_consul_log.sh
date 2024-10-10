@@ -23,6 +23,7 @@ check_openstack_cli_script="check_openstack_cli.sh"
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
 [[ -z $CTRL_LIST ]] && CTRL_LIST=""
+[[ -z $ALL_CTRL ]] && ALL_CTRL="true"
 #========================
 
 
@@ -42,6 +43,7 @@ while [ -n "$1" ]; do
       -n,   -node_name        <node_name>
       -o,   -output_period    <output_period>
       -ctrl_list              <ctrl_list> example: -ctrl_list \"ctrl-01 ctrl-02 ctrl-02\"
+      -all_ctrl               check logs on all ctrl nodes (without parameter)
 
       Example satart command:
         bash $HOME/test_scripts_keystack/chack_consul_log.sh <ctrl_01> <check_period> <log last lines number>
@@ -62,6 +64,9 @@ while [ -n "$1" ]; do
     -ctrl_list) CTRL_LIST="$2"
       echo "Found the -ctrl_list option, with parameter value $CTRL_LIST"
       shift ;;
+    -all_ctrl) ALL_CTRL="true"
+      echo "Found the -all_ctrl option, with parameter value $ALL_CTRL"
+      ;;
     --) shift
       break ;;
     *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
@@ -99,8 +104,8 @@ Check_openstack_cli
 # Check openrc file
 Check_and_source_openrc_file
 
-echo "Attempt to identify a leader in the consul cluster and read logs..."
 if [ -z "${NODE_NAME}" ]; then
+  echo "Attempt to identify a leader in the consul cluster and read logs..."
   if [ -z "${CTRL_LIST}" ]; then
     nova_state_list=$(openstack compute service list)
     ctrl_nodes_list=$(echo "$nova_state_list" | grep -E "nova-scheduler" | awk '{print $6}')
@@ -114,7 +119,7 @@ if [ -z "${NODE_NAME}" ]; then
     ctrl_nodes_list=$CTRL_LIST
   fi
     for i in $ctrl_nodes_list; do nova_ctrl_arr+=("$i"); done
-    if [ -z "${ALL_NODES}" ]; then
+    if [ -z "${ALL_CTRL}" ]; then
       first_ctrl_node=${nova_ctrl_arr[0]}
       leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no "$first_ctrl_node" "docker exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
       if [ -z "${leader_ctrl_node}" ]; then
@@ -126,7 +131,7 @@ if [ -z "${NODE_NAME}" ]; then
       fi
     else
       echo -e "${yallow}Check logs on all ctrl nodes${normal}"
-      NODE_NAME=$ALL_NODES
+      NODE_NAME=$ALL_CTRL
     fi
 #else
 #  NODE_NAME=$1
