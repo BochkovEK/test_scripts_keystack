@@ -17,7 +17,7 @@ export KS_CLIENT_NEXUS_NAME="remote-nexus.test.domain"
 export KS_CLIENT_NEXUS_ADMIN="admin"
 
 #Enter the remote\existing Artifactory password(at least 8 characters):
-export KS_CLIENT_NEXUS_PASSWORD="cc158dfc-fc0b-41da-8625-80e86d48256b"
+export KS_CLIENT_NEXUS_PASSWORD=""
 
 # ====================== LDAP_NETBOX ======================
 #Enable auth LDAP for Netbox y/n [n]:
