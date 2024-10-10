@@ -23,7 +23,7 @@ check_openstack_cli_script="check_openstack_cli.sh"
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
 [[ -z $CTRL_LIST ]] && CTRL_LIST=""
-[[ -z $ALL_CTRL ]] && ALL_CTRL="true"
+[[ -z $ALL_CTRL ]] && ALL_CTRL="false"
 #========================
 
 
