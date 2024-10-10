@@ -57,6 +57,7 @@ select_config_file () {
       elif [[ -z $file ]]; then
           echo 'Invalid choice, try again' >&2
       else
+        (($REPLY = $REPLY - 1))
         config_file=${files[$REPLY]}
         echo -e "\nInstaller config selected:"
         echo -e "$config_file\n"
