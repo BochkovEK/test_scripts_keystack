@@ -2,6 +2,10 @@
 
 # The script start installer
 # To start script define keystack release as parameter
+# Before starting, make sure you have:
+#  - DNS (dnsmasq)
+#  - Self signed certs
+#  - Remote nexus with with the necessary repositories
 # Example command: bash start.sh ks2024.3
 
 script_file_path=$(realpath $0)
@@ -28,6 +32,16 @@ yellow=$(tput setaf 3)
 
 [ -z $1 ] && { echo -e "${red}To run the script, you need to define keystack release as parameter - ERROR${normal}"; exit 1; }
 release_tag=$1
+
+echo -e "
+${yellow}WARNING!${normal}
+Before continue, make sure you have:
+  - DNS (dnsmasq)
+  - Self signed certs
+  - Remote nexus with with the necessary repositories
+"
+
+read -p "Press enter to continue"
 
 installer_envs=$script_dir/$release_tag/$start_installer_envs
 
