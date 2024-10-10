@@ -42,7 +42,7 @@ else
 fi
 
 select_config_file () {
-  files=( "$script_dir/$KEYSTACK_RELEASE/$installer_config_folder" )
+  files=( "$script_dir/$KEYSTACK_RELEASE/$installer_config_folder/*" )
 
   PS3='Select file to upload, or 0 to exit: '
   select file in "${files[@]}"; do
