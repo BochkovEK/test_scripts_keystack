@@ -105,13 +105,12 @@ Check_openstack_cli
 Check_and_source_openrc_file
 
 if [ -z "${NODE_NAME}" ]; then
-  echo "Attempt to identify a leader in the consul cluster and read logs..."
   if [ -z "${CTRL_LIST}" ]; then
     nova_state_list=$(openstack compute service list)
     ctrl_nodes_list=$(echo "$nova_state_list" | grep -E "nova-scheduler" | awk '{print $6}')
     if [ -z "${ctrl_nodes_list}" ]; then
       echo -e "${yallow}Failed to determine node control list${normal}"
-      echo -e "Try Try passing the list of node controls via the key \'-ctrl_list\' (read --help)"
+      echo -e "Try passing the list of node controls via the key \'-ctrl_list\' (read --help)"
       echo -e "${red}Failed to determine node control list - ERROR${normal}"
       exit 1
     fi
@@ -121,6 +120,7 @@ if [ -z "${NODE_NAME}" ]; then
     for i in $ctrl_nodes_list; do nova_ctrl_arr+=("$i"); done
     if [ ! "$ALL_CTRL" = true ]; then
 #    if [ -z "${ALL_CTRL}" ]; then
+      echo "Attempt to identify a leader in the consul cluster and read logs..."
       first_ctrl_node=${nova_ctrl_arr[0]}
       leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no "$first_ctrl_node" "docker exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
       if [ -z "${leader_ctrl_node}" ]; then
@@ -138,8 +138,6 @@ if [ -z "${NODE_NAME}" ]; then
 #else
 #  NODE_NAME=$1
 fi
-
-#clear
 
 echo -e "Consul logs from $NODE_NAME node"
 echo -e "Output period check: $OUTPUT_PERIOD sec"
