@@ -12,6 +12,7 @@ script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
 utils_dir=$script_dir/utils
+installer_conf_folder="installer_conf"
 start_installer_envs="start_installer_envs"
 install_wget_script="install_wget.sh"
 
@@ -29,9 +30,34 @@ yellow=$(tput setaf 3)
 [[ -z $INSTALLER_CONF ]] && INSTALLER_CONF=""
 [[ -z $INIT_INSTALLER_FOLDER ]] && INIT_INSTALLER_FOLDER="$HOME/installer"
 [[ -z $INIT_INSTALLER_BACKUP_FOLDER ]] && INIT_INSTALLER_BACKUP_FOLDER="$HOME/installer_backup"
+[[ -z $KEYSTACK_RELEASE ]] && KEYSTACK_RELEASE=""
 
-[ -z $1 ] && { echo -e "${red}To run the script, you need to define keystack release as parameter - ERROR${normal}"; exit 1; }
-release_tag=$1
+if [ -z "$1" ]; then
+  if [ -z "$KEYSTACK_RELEASE" ]; then
+    echo -e "${red}To run this script, you need to define keystack release as parameter or env var KEYSTACK_RELEASE - ERROR${normal}"
+    exit 1
+  fi
+else
+  KEYSTACK_RELEASE=$1
+fi
+
+select_config_file () {
+  files=( "$script_dir/$KEYSTACK_RELEASE/$installer_config_folder/*_envs" )
+
+  PS3='Select file to upload, or 0 to exit: '
+  select file in "${files[@]}"; do
+      if [[ $REPLY == "0" ]]; then
+          echo 'Bye!' >&2
+          exit 0
+      elif [[ -z $file ]]; then
+          echo 'Invalid choice, try again' >&2
+      else
+          break
+      fi
+  done
+  source $file
+  # use scp to upload "$file" here
+}
 
 echo -e "
 ${yellow}WARNING!${normal}
@@ -41,7 +67,7 @@ Before continue, make sure you have:
   - Remote nexus with with the necessary repositories
 "
 
-read -p "Press enter to continue"
+read -p "Press enter to continue: "
 
 installer_envs=$script_dir/$release_tag/$start_installer_envs
 
@@ -72,7 +98,7 @@ if [ ! -d "$HOME/installer_backup" ]; then
   cp -r ~/installer ~/installer_backup
 fi
 
-source $script_dir/$INSTALLER_CONF
+select_config_file
 
 if [ ! -f "$HOME/.ssh/id_rsa_backup" ]; then
   cp $HOME/.ssh/id_rsa $HOME/.ssh/id_rsa_backup

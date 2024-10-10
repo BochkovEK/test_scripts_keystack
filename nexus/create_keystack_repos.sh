@@ -32,7 +32,7 @@ yellow=$(tput setaf 3)
 
 if [ -z "$1" ]; then
   if [ -z "$KEYSTACK_RELEASE" ]; then
-    echo -e "${red}To run the script, you need to define keystack release as parameter or env var KEYSTACK_RELEASE - ERROR${normal}"
+    echo -e "${red}To run this script, you need to define keystack release as parameter or env var KEYSTACK_RELEASE - ERROR${normal}"
     exit 1
   fi
 else
