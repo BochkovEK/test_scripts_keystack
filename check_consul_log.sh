@@ -118,7 +118,7 @@ if [ -z "${NODE_NAME}" ]; then
     ctrl_nodes_list=$CTRL_LIST
   fi
     for i in $ctrl_nodes_list; do nova_ctrl_arr+=("$i"); done
-    echo $ALL_CTRL
+#    echo $ALL_CTRL
     if [ ! "$ALL_CTRL" = true ]; then
 #    if [ -z "${ALL_CTRL}" ]; then
       echo "Attempt to identify a leader in the consul cluster and read logs..."
