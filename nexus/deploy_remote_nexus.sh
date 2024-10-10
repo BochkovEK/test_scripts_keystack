@@ -32,9 +32,9 @@ script_name=$(basename "$0")
 script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
-#parentdir=$(builtin cd $script_dir; pwd)
+create_keystack_repos_script="create_keystack_repos.sh"
 
-[[ -z $DEBUG ]] && DEBUG="true"
+[[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $ENV_FILE ]] && ENV_FILE="$self_signed_certs_folder/certs_envs"
 
 while [ -n "$1" ]; do
@@ -49,12 +49,13 @@ while [ -n "$1" ]; do
           scp -r $HOME/certs \$lcm:$HOME/installer/
 
       Add keys:
-        --debug       - enable debug
+        -debug       - enable debug
       "
       exit 0
       break ;;
-    --debug) DEBUG="true"
-      shift ;;
+    -debug) TS_DEBUG="true"
+      echo "Found the -debug option, with parameter value $TS_DEBUG"
+      ;;
     --) shift
       break ;;
     *) echo "$1 is not an option";;
@@ -69,11 +70,10 @@ deploy_error () {
 
 get_init_vars () {
 
-
-if [ -f "$parent_dir/$ENV_FILE" ]; then
-  echo "$ENV_FILE file exists"
-  source $parent_dir/$ENV_FILE
-fi
+  if [ -f "$parent_dir/$ENV_FILE" ]; then
+    echo "$ENV_FILE file exists"
+    source $parent_dir/$ENV_FILE
+  fi
 
 # get Central Authentication Service folder
   if [[ -z "${CERTS_DIR}" ]]; then
@@ -157,7 +157,7 @@ check_running_containers () {
   done
   echo -e "${green}Nexus already deployed${normal}"
   waiting_for_nexus_readiness
-  exit 0
+#  exit 0
 }
 
 check_started_containers () {
@@ -178,7 +178,8 @@ check_started_containers () {
   if ((started_containers_count == 2)); then
     check_running_containers
   elif ((started_containers_count == 0)); then
-    return
+    nexus_docker_up
+    waiting_for_nexus_readiness
   else
     echo -e "${yellow}There may have already been a failed Nexus deployment${normal}"
     deploy_error
@@ -190,21 +191,33 @@ nexus_docker_up () {
   docker compose -f $script_dir/docker-compose.yaml up -d
 }
 
-nexus_bootstarp () {
-
+check_and_install_docker () {
   #Install docker if need
   if ! command -v docker &> /dev/null; then
     is_ubuntu=$(cat /etc/os-release|grep ubuntu)
     if [ -n "$is_ubuntu" ]; then
       echo "Installing docker on ubuntu"
-      bash $script_dir/docker_ubuntu_installation.sh
+      if bash $script_dir/docker_ubuntu_installation.sh; then
+        return
+      fi
     fi
     is_sberlinux=$(cat /etc/os-release|grep sberlinux)
     if [ -n "$is_sberlinux" ]; then
       echo "Installing docker on sberlinux"
-      bash $script_dir/docker_sberlinux_installation.sh
+      if bash $script_dir/docker_sberlinux_installation.sh; then
+        return
+      fi
     fi
+  else
+    return
   fi
+  echo -e "${red}Failed to install docker - ERROR${normal}"
+  exit 1
+}
+
+nexus_bootstarp () {
+
+  check_and_install_docker
 
   #Add string to hosts
   nexus_string_exists=$(cat /etc/hosts|grep $REMOTE_NEXUS_NAME)
@@ -217,6 +230,22 @@ nexus_bootstarp () {
   sed -i "s/DOMAIN/$DOMAIN/g" $script_dir/nginx_https.conf
   sed -i "s/LCM_NEXUS_NAME/$REMOTE_NEXUS_NAME/g" $script_dir/nginx_https.conf
   #sed -i -e "s@OUTPUT_CERTS_DIR@$OUTPUT_CERTS_DIR@g" $script_dir/nginx_https.conf
+}
+
+create_repos () {
+  [ "$TS_DEBUG" = true ] && {
+  export TS_DEBUG=$TS_DEBUG;
+  }
+  if [ ! -f $script_dir/$create_keystack_repos_script ]; then
+    echo -e "${yellow}Script \'create_keystack_repos_script\': $script_dir/$create_keystack_repos_script not found${normal}"
+    echo "Repositories were not created in remote nexus"
+  else
+    if [[ -z "${KEYSTACK_RELEASE}" ]]; then
+      read -rp "Enter KeyStack release [ks2024.2.5]: " KEYSTACK_RELEASE
+    fi
+    export KEYSTACK_RELEASE=${KEYSTACK_RELEASE:-"ks2024.2.5"}
+    bash $script_dir/$create_keystack_repos_script
+  fi
 }
 
 
@@ -233,5 +262,6 @@ fi
 
 nexus_bootstarp
 check_started_containers
-nexus_docker_up
-waiting_for_nexus_readiness
+#nexus_docker_up
+#waiting_for_nexus_readiness
+create_repos

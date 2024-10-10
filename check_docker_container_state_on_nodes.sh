@@ -16,6 +16,7 @@ green=$(tput setaf 2)
 red=$(tput setaf 1)
 violet=$(tput setaf 5)
 normal=$(tput sgr0)
+yellow=$(tput setaf 3)
 
 [[ -z $CONTAINER_NAME ]] && CONTAINER_NAME=""
 [[ -z $NODES ]] && NODES=()
@@ -73,10 +74,21 @@ do
       shift
 done
 
+error_output () {
+  printf "%s\n" "${yellow}Docker container not checked on $NODES_TYPE nodes${normal}"
+  printf "%s\n" "${red}$error_message - error${normal}"
+  exit 1
+}
+
 [[ -z ${NODES[0]} ]] && { srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}'); for i in $srv; do NODES+=("$i"); done; }
 
 echo "Nodes for container checking:"
 echo "${NODES[*]}"
+
+if [ ${#NODES[@]} -eq 0 ]; then
+  error_message="Node list type of $nodes_to_find is empty"
+  error_output
+fi
 
 grep_string="| grep '$CONTAINER_NAME'"
 #echo "$grep_string"

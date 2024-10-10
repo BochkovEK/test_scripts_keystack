@@ -246,15 +246,15 @@ generate_ca_certs () {
       -CAkey $CERTS_DIR/root/ca.key -CAcreateserial \
       -out $CERTS_DIR/certs/cert.crt -days 728 -sha256
 
-    #external internal pem
-    cat $CERTS_DIR/certs/external_VIP.crt $CERTS_DIR/certs/cert.key > $CERTS_DIR/certs/haproxy_pem
-    cat $CERTS_DIR/certs/internal_VIP.crt $CERTS_DIR/certs/cert.key > $CERTS_DIR/certs/haproxy_internal_pem
-    cp $CERTS_DIR/certs/haproxy_pem $OUTPUT_CERTS_DIR/haproxy_pem
-    cp $CERTS_DIR/certs/haproxy_internal_pem $OUTPUT_CERTS_DIR/haproxy_internal_pem
+#    #external internal pem
+#    cat $CERTS_DIR/certs/external_VIP.crt $CERTS_DIR/certs/cert.key > $CERTS_DIR/certs/haproxy_pem
+#    cat $CERTS_DIR/certs/internal_VIP.crt $CERTS_DIR/certs/cert.key > $CERTS_DIR/certs/haproxy_internal_pem
+#    cp $CERTS_DIR/certs/haproxy_pem $OUTPUT_CERTS_DIR/haproxy_pem
+#    cp $CERTS_DIR/certs/haproxy_internal_pem $OUTPUT_CERTS_DIR/haproxy_internal_pem
 
-    #backend_pem
-    cp $CERTS_DIR/certs/backend.crt $OUTPUT_CERTS_DIR/backend_pem
-    cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/backend_key_pem
+#    #backend_pem
+#    cp $CERTS_DIR/certs/backend.crt $OUTPUT_CERTS_DIR/backend_pem
+#    cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/backend_key_pem
   else
     printf "%s\n" "${yellow}$CERTS_DIR/root/ca.key, $CERTS_DIR/root/ca.crt, $CERTS_DIR/certs/cert.csr, $CERTS_DIR/certs/cert.crt \
 already exists${normal}"
@@ -263,13 +263,13 @@ already exists${normal}"
 
 generate_internal_cert () {
   echo "Generate internal cert..."
-  if [ ! -f $CERTS_DIR/certs/external_VIP.csr ] && [ ! -f $CERTS_DIR/certs/internal_VIP.crt ]; then
+  if [ ! -f $CERTS_DIR/certs/internal_VIP.csr ] && [ ! -f $CERTS_DIR/certs/internal_VIP.crt ]; then
 
     openssl req -new -subj "/C=RU/ST=Msk/L=Moscow/O=ITKey/OU=KeyStack/CN=$INTERNAL_FQDN" \
       -key $CERTS_DIR/certs/cert.key \
-      -out $CERTS_DIR/certs/external_VIP.csr
+      -out $CERTS_DIR/certs/internal_VIP.csr
     export SAN=DNS:$INTERNAL_FQDN,IP:$INTERNAL_VIP
-    openssl x509 -req -in $CERTS_DIR/certs/external_VIP.csr \
+    openssl x509 -req -in $CERTS_DIR/certs/internal_VIP.csr \
       -extfile $script_dir/cert.cnf -CA $CERTS_DIR/root/ca.crt \
       -CAkey $CERTS_DIR/root/ca.key -CAcreateserial \
       -out $CERTS_DIR/certs/internal_VIP.crt -days 728 -sha256
@@ -278,7 +278,7 @@ generate_internal_cert () {
     cp $CERTS_DIR/certs/haproxy_internal_pem $OUTPUT_CERTS_DIR/haproxy_internal_pem
     echo "Internal cert was created"
   else
-    printf "%s\n" "${yellow}$CERTS_DIR/certs/external_VIP.csr, $CERTS_DIR/certs/internal_VIP.crt already exists${normal}"
+    printf "%s\n" "${yellow}$CERTS_DIR/certs/internal_VIP.csr, $CERTS_DIR/certs/internal_VIP.crt already exists${normal}"
   fi
 }
 

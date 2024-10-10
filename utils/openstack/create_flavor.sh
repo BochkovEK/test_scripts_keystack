@@ -72,7 +72,7 @@ fi
 #check_openstack_cli
 if [[ $CHECK_OPENSTACK = "true" ]]; then
   if ! bash $utils_dir/check_openstack_cli.sh; then
-    echo -e "\033[31mFailed to check openstack cli - error\033[0m"
+    echo -e "${red}Failed to check openstack cli - ERROR${normal}"
     exit 1
   fi
 fi

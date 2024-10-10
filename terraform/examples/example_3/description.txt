@@ -1,0 +1,16 @@
+[affinity\anti-affinity server group]
+
+This set of configs for terraform creates:
+    - server group (affinity\anti-affinity by var server_group)
+    - flavor
+    - key_pair
+    - security_group (ping, ssh)
+    - VM
+        - count
+        - volume by image
+        - port by network
+        - server group
+
+To crete VM in specify host\az use "az_hint" variable
+
+

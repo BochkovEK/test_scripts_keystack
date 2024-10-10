@@ -1,0 +1,14 @@
+{
+  "name":"k-pip",
+  "storage":{
+    "dataStoreName":"nexus",
+    "blobStoreName":"default",
+    "strictContentTypeValidation":true,
+    "writePolicy":"ALLOW"
+  },
+  "component":{
+    "proprietaryComponents":false
+  },
+  "online":true,
+  "recipe":"pypi-hosted"
+}

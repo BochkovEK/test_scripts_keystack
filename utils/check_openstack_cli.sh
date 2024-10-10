@@ -52,7 +52,7 @@ check_openstack_cli () {
             printf "%s\n" "${yellow}You will need to source your .bashrc or logout/login to openstack installation complete${normal}"
             exit 1
           else
-            printf "%s\n" "${red}Openstack cli failed to install - error${normal}"
+            printf "%s\n" "${red}Openstack cli failed to install - ERROR${normal}"
             exit 1
           fi
           ;;
