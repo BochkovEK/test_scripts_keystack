@@ -34,7 +34,7 @@ script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
 create_keystack_repos_script="create_keystack_repos.sh"
 
-[[ -z $DEBUG ]] && DEBUG="true"
+[[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $ENV_FILE ]] && ENV_FILE="$self_signed_certs_folder/certs_envs"
 
 while [ -n "$1" ]; do
@@ -49,12 +49,13 @@ while [ -n "$1" ]; do
           scp -r $HOME/certs \$lcm:$HOME/installer/
 
       Add keys:
-        --debug       - enable debug
+        -debug       - enable debug
       "
       exit 0
       break ;;
-    --debug) DEBUG="true"
-      shift ;;
+    -debug) TS_DEBUG="true"
+      echo "Found the -debug option, with parameter value $TS_DEBUG"
+      ;;
     --) shift
       break ;;
     *) echo "$1 is not an option";;
@@ -232,6 +233,9 @@ nexus_bootstarp () {
 }
 
 create_repos () {
+  [ "$TS_DEBUG" = true ] && {
+  export TS_DEBUG=$TS_DEBUG;
+  }
   if [ ! -f $script_dir/$create_keystack_repos_script ]; then
     echo -e "${yellow}Script \'create_keystack_repos_script\': $script_dir/$create_keystack_repos_script not found${normal}"
     echo "Repositories were not created in remote nexus"

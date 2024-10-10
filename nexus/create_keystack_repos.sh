@@ -27,7 +27,7 @@ yellow=$(tput setaf 3)
 [[ -z $REMOTE_NEXUS_NAME ]] && REMOTE_NEXUS_NAME=""
 [[ -z $DOMAIN ]] && DOMAIN=""
 [[ -z $NEXUS_PORT ]] && NEXUS_PORT="8081"
-[[ -z $TS_DEBUG ]] && TS_DEBUG="true"
+[[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $KEYSTACK_RELEASE ]] && KEYSTACK_RELEASE=""
 
 if [ -z "$1" ]; then
@@ -76,7 +76,7 @@ repos_json_files=$(ls -f $script_dir/$KEYSTACK_RELEASE/*.json|sed -E s#.+/##)
 #yum-hosted-docker-sberlinux.json
 #yum-hosted-sberlinux.json
 
-"$TS_DEBUG" = true ] && {
+[ "$TS_DEBUG" = true ] && {
   echo -e "
   [DEBUG]: repos_json_files: $repos_json_files
 ";
@@ -88,7 +88,7 @@ for repo in $repos_json_files; do
   type=$(echo $repo|awk 'BEGIN {FS="-";}{print $1}')
   sub_type=$(echo $repo|awk 'BEGIN {FS="-";}{print $2}')
 
-  "$TS_DEBUG" = true ] && echo -e "
+[ "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]: type: $type
   [DEBUG]: sub_type: $sub_type
   [DEBUG]:
