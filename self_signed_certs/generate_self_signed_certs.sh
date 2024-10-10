@@ -246,15 +246,15 @@ generate_ca_certs () {
       -CAkey $CERTS_DIR/root/ca.key -CAcreateserial \
       -out $CERTS_DIR/certs/cert.crt -days 728 -sha256
 
-    #external internal pem
-    cat $CERTS_DIR/certs/external_VIP.crt $CERTS_DIR/certs/cert.key > $CERTS_DIR/certs/haproxy_pem
-    cat $CERTS_DIR/certs/internal_VIP.crt $CERTS_DIR/certs/cert.key > $CERTS_DIR/certs/haproxy_internal_pem
-    cp $CERTS_DIR/certs/haproxy_pem $OUTPUT_CERTS_DIR/haproxy_pem
-    cp $CERTS_DIR/certs/haproxy_internal_pem $OUTPUT_CERTS_DIR/haproxy_internal_pem
+#    #external internal pem
+#    cat $CERTS_DIR/certs/external_VIP.crt $CERTS_DIR/certs/cert.key > $CERTS_DIR/certs/haproxy_pem
+#    cat $CERTS_DIR/certs/internal_VIP.crt $CERTS_DIR/certs/cert.key > $CERTS_DIR/certs/haproxy_internal_pem
+#    cp $CERTS_DIR/certs/haproxy_pem $OUTPUT_CERTS_DIR/haproxy_pem
+#    cp $CERTS_DIR/certs/haproxy_internal_pem $OUTPUT_CERTS_DIR/haproxy_internal_pem
 
-    #backend_pem
-    cp $CERTS_DIR/certs/backend.crt $OUTPUT_CERTS_DIR/backend_pem
-    cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/backend_key_pem
+#    #backend_pem
+#    cp $CERTS_DIR/certs/backend.crt $OUTPUT_CERTS_DIR/backend_pem
+#    cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/backend_key_pem
   else
     printf "%s\n" "${yellow}$CERTS_DIR/root/ca.key, $CERTS_DIR/root/ca.crt, $CERTS_DIR/certs/cert.csr, $CERTS_DIR/certs/cert.crt \
 already exists${normal}"
