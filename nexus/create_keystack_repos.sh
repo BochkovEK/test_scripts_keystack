@@ -96,7 +96,8 @@ curl -v -u $NEXUS_USER:$password -H \"Connection: close\" -H \"Content-Type: app
 "
 done
 
-curl -v -u $NEXUS_USER:$password -X GET "$DOCKER_HTTP/service/rest/v1/repositories"
+curl -v -u $NEXUS_USER:$password -X GET "$DOCKER_HTTP"
+#"$DOCKER_HTTP/service/rest/v1/repositories"
 
 ## k-images docker(hosted)
 #curl -v -u $NEXUS_USER:$password -H "Connection: close" -H "Content-Type: application/json" -X POST "$DOCKER_HTTP/docker/hosted" -d @$script_dir/docker-hosted-k-images.json
