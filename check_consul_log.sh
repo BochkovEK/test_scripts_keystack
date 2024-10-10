@@ -132,7 +132,7 @@ if [ -z "${NODE_NAME}" ]; then
       fi
     else
       echo -e "${yallow}Check logs on all ctrl nodes${normal}"
-      NODE_NAME=ctrl_nodes_list
+      NODE_NAME=$ctrl_nodes_list
 #      NODE_NAME=$ALL_CTRL
     fi
 #else
@@ -147,7 +147,7 @@ echo -e "Output period check: $OUTPUT_PERIOD sec"
 while :
 do
   for ctrl in $NODE_NAME; do
-    echo -e "${cyan}Check logs on $ctrl${normal}..."
+    echo -e "${cyan}Check logs on $ctrl...${normal}"
     ssh -o StrictHostKeyChecking=no "$NODE_NAME" tail -n $LOG_LAST_LINES_NUMBER /var/log/kolla/autoevacuate.log | \
         sed --unbuffered \
         -e 's/\(.*Force off.*\)/\o033[31m\1\o033[39m/' \
