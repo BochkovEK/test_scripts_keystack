@@ -121,7 +121,12 @@ echo -e "KS_INSTALL_LCM_IP: $KS_INSTALL_LCM_IP\n"
 
 if [ -d "$HOME/installer" ]; then
   if [ -z "$( ls -A ~/installer/certs )" ]; then
-    scp -r $CENTRAL_AUTH_SERVICE_IP:$CERTS_FOLDER $HOME/installer/
+    check_ssh_to_central_auth=$(ssh -o BatchMode=yes -o ConnectTimeout=5 $CENTRAL_AUTH_SERVICE_IP echo ok 2>&1)
+    if [ "$check_ssh_to_central_auth" = ok ]; then
+      scp -r $CENTRAL_AUTH_SERVICE_IP:$CERTS_FOLDER $HOME/installer/
+    else
+      echo -e "${red}No ssh access to $CENTRAL_AUTH_SERVICE_IP - ERROR${normal}"
+    fi
   fi
   cd $INIT_INSTALLER_FOLDER
   echo "list of certs in $INIT_INSTALLER_FOLDER/certs folder"
