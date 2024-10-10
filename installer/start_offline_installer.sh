@@ -42,9 +42,14 @@ else
 fi
 
 select_config_file () {
-  files=( "$script_dir/$KEYSTACK_RELEASE/$installer_config_folder/*" )
+  env_files="$script_dir/$KEYSTACK_RELEASE/$installer_conf_folder/*"
+#  search_dir=./ks2024.2.5/installer_conf/*
+  for file in $env_files; do
+    echo "$file"
+    files+=("$file")
+  done
 
-  PS3='Select file to upload, or 0 to exit: '
+  PS3='Select file or 0 to exit: '
   select file in "${files[@]}"; do
       if [[ $REPLY == "0" ]]; then
           echo 'Bye!' >&2
@@ -52,10 +57,11 @@ select_config_file () {
       elif [[ -z $file ]]; then
           echo 'Invalid choice, try again' >&2
       else
-          break
+        config_file=${files[$REPLY]}
+        break
       fi
   done
-  source $file
+  source $config_file
   # use scp to upload "$file" here
 }
 
