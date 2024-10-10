@@ -189,21 +189,33 @@ nexus_docker_up () {
   docker compose -f $script_dir/docker-compose.yaml up -d
 }
 
-nexus_bootstarp () {
-
+check_and_install_docker () {
   #Install docker if need
   if ! command -v docker &> /dev/null; then
     is_ubuntu=$(cat /etc/os-release|grep ubuntu)
     if [ -n "$is_ubuntu" ]; then
       echo "Installing docker on ubuntu"
-      bash $script_dir/docker_ubuntu_installation.sh
+      if bash $script_dir/docker_ubuntu_installation.sh; then
+        return
+      fi
     fi
     is_sberlinux=$(cat /etc/os-release|grep sberlinux)
     if [ -n "$is_sberlinux" ]; then
       echo "Installing docker on sberlinux"
-      bash $script_dir/docker_sberlinux_installation.sh
+      if bash $script_dir/docker_sberlinux_installation.sh; then
+        return
+      fi
     fi
+  else
+    return
   fi
+  echo -e "${red}Failed to install docker - ERROR${normal}"
+  exit 1
+}
+
+nexus_bootstarp () {
+
+  check_and_install_docker
 
   #Add string to hosts
   nexus_string_exists=$(cat /etc/hosts|grep $REMOTE_NEXUS_NAME)
@@ -227,7 +239,7 @@ create_repos () {
       read -rp "Enter KeyStack release [ks2024.2.5]: " KEYSTACK_RELEASE
     fi
     export KEYSTACK_RELEASE=${KEYSTACK_RELEASE:-"ks2024.2.5"}
-
+    bash $script_dir/$create_keystack_repos_script
   fi
 }
 
