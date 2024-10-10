@@ -45,11 +45,11 @@ select_config_file () {
   env_files="$script_dir/$KEYSTACK_RELEASE/$installer_conf_folder/*"
 #  search_dir=./ks2024.2.5/installer_conf/*
   for file in $env_files; do
-    echo "$file"
+#    echo "$file"
     files+=("$file")
   done
 
-  PS3='Select file or 0 to exit: '
+  PS3='Select installer config file or 0 to exit: '
   select file in "${files[@]}"; do
       if [[ $REPLY == "0" ]]; then
           echo 'Bye!' >&2
