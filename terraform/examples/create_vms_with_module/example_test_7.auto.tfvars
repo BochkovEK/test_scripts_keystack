@@ -24,7 +24,8 @@ VMs = {
 }
 
 # AZs
-#AZs = {
+AZs = {
+}
 #  aggr_1 = {
 #    az_name = "az_1"
 #    hosts_list = [
