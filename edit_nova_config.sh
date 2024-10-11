@@ -115,8 +115,8 @@ push_conf () {
     sed -i --regexp-extended "s/[0-9]+.[0-9]+.[0-9]+.[0-9]+/$ip/" \
       $script_dir/$test_node_conf_dir/$CONF_NAME
 
-    echo "Сopying $service_name conf to $node:$conf_dir/${CONF_NAME}_foo"
-    scp -o StrictHostKeyChecking=no $script_dir/$test_node_conf_dir/$CONF_NAME $node:$conf_dir/$CONF_NAME
+    echo "Сopying $service_name conf to $node:$conf_dir/${CONF_NAME}"
+    scp -o StrictHostKeyChecking=no $script_dir/$test_node_conf_dir/$CONF_NAME $node:$conf_dir/${CONF_NAME}
   done
 }
 
@@ -177,6 +177,6 @@ get_nodes_list
 [ "$PUSH" = true ] && { push_conf; conf_changed=true; }
 [ "$PULL" = true ] && { pull_conf; exit 0; }
 [ "$ADD_DEBUG" = true ] && { change_add_debug_param; }
-#[ -n "$conf_changed" ] && { cat_conf; echo "Restart $service_name containers..."; bash $script_dir/command_on_nodes.sh -nt $nodes_type -c "docker restart $service_name"; exit 0; }
+[ -n "$conf_changed" ] && { cat_conf; echo "Restart $service_name containers..."; bash $script_dir/command_on_nodes.sh -nt $nodes_type -c "docker restart $service_name"; exit 0; }
 [ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
 
