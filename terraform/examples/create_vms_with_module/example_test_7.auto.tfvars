@@ -1,6 +1,6 @@
 # VMs
 VMs = {
-  DRS_TEST_1 = {
+  TEST_VM = {
     image_name      = "ubuntu-20.04-server-cloudimg-amd64.img"
     flavor          = {
         vcpus = 4
