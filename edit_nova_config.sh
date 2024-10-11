@@ -1,7 +1,8 @@
 # The script change and check drs config
 # Start scrip to check conf: bash edit_drs_config.sh check
 
-nodes_pattern="\-comp\-..$"
+#nodes_pattern="\-comp\-..$"
+nodes_type="comp"
 service_name=nova-compute
 test_node_conf_dir=kolla/$service_name
 conf_dir=/etc/kolla/$service_name
@@ -12,6 +13,8 @@ green=`tput setaf 2`
 reset=`tput sgr0`
 
 script_dir=$(dirname $0)
+utils_dir="$script_dir/utils"
+get_nodes_list_script="get_nodes_list.sh"
 conf_changed=""
 
 #[[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
@@ -79,19 +82,23 @@ done
 
 cat_conf () {
   echo "Cat all $service_name configs..."
-  bash $script_dir/command_on_nodes.sh -nt ctrl -c "echo \"cat $conf_dir/$CONF_NAME\"; cat $conf_dir/$CONF_NAME"
+  bash $script_dir/command_on_nodes.sh -nt $nodes_type -c "echo \"cat $conf_dir/$CONF_NAME\"; cat $conf_dir/$CONF_NAME"
 }
 
 pull_conf () {
   echo "Pulling $CONF_NAME..."
   [ ! -d $script_dir/$test_node_conf_dir ] && { mkdir -p $script_dir/$test_node_conf_dir; }
-  node=$(cat /etc/hosts | grep -m 1 -E ${nodes_pattern} | awk '{print $2}')
+  nodes=$(bash $utils_dir/$get_nodes_list_script)
+#  node=$(cat /etc/hosts | grep -m 1 -E ${nodes_pattern} | awk '{print $2}')
   [ "$DEBUG" = true ] && echo -e "
   [DEBUG]: \"\$node\": $node\n
   "
-
-  echo "Сopying $service_name conf from $node:$conf_dir/$CONF_NAME"
-  scp -o StrictHostKeyChecking=no $node:$conf_dir/$CONF_NAME $script_dir/$test_node_conf_dir
+  for node in $nodes; do NODES+=("$node"); done
+  [ "$DEBUG" = true ] && echo -e "
+  [DEBUG]: \"\$NODES\": ${NODES[*]}
+  "
+  echo "Сopying $service_name conf from ${NODES[0]}:$conf_dir/$CONF_NAME"
+  scp -o StrictHostKeyChecking=no ${NODES[0]}:$conf_dir/$CONF_NAME $script_dir/$test_node_conf_dir
 }
 
 push_conf () {

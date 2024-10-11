@@ -28,7 +28,7 @@ yellow=$(tput setaf 3)
 [[ -z $NODES ]] && NODES=()
 [[ -z $NODES_TYPE ]] && NODES_TYPE=""
 [[ -z $PING ]] && PING="false"
-[[ -z $DEBUG ]] && DEBUG="false"
+[[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 #======================
 
 
@@ -37,22 +37,22 @@ note_type_func () {
         ctrl)
           NODES_TYPE=ctrl
           nodes_to_find=$ctrl_pattern
-          printf "%s\n" "${yellow}Execute command \'$COMMAND\' on ctrl nodes${normal}"
+          printf "%s\n" "${yellow}Execute command on ctrl nodes${normal}"
           ;;
         comp)
           NODES_TYPE=comp
           nodes_to_find=$comp_pattern
-          printf "%s\n" "${yellow}Execute command \'$COMMAND\' on comp nodes${normal}"
+          printf "%s\n" "${yellow}Execute command on comp nodes${normal}"
           ;;
         net)
           NODES_TYPE=net
           nodes_to_find=$net_pattern
-          printf "%s\n" "${yellow}Execute command \'$COMMAND\' on net nodes${normal}"
+          printf "%s\n" "${yellow}Execute command on net nodes${normal}"
           ;;
         *)
           NODES_TYPE=all
           nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
-          printf "%s\n" "${yellow}Nodes type is not specified correctly. Execute command \'$COMMAND\' on ctr, comp, net nodes${normal}"
+          printf "%s\n" "${yellow}Nodes type is not specified correctly. Execute command on ctr, comp, net nodes${normal}"
           ;;
         esac
 }
@@ -65,6 +65,7 @@ while [ -n "$1" ]; do
 
       -c,   -command        \"<command>\"
       -nt,  -type_of_nodes  <type_of_nodes> 'ctrl', 'comp', 'net'
+      -nn,  -node_name      <node_name\ip> example: -nn \"ebochkov-keystack-comp-01 ebochkov-keystack-comp-02\"
       -p,   -ping           ping before execution command
       --debug               debug mode
       Remove all containers on all nodes:
@@ -86,16 +87,19 @@ while [ -n "$1" ]; do
 #      echo "SENDENV: $SENDENV"
 #      shift ;;
     -nt|-type_of_nodes)
-      note_type_func "$2"
+      echo "Found the -command \"<command>\" option, with parameter value $COMMAND"
+      shift ;;
+    -nn|-node_name)
+      for i in $2; do NODES+=("$i"); done
+      echo "Found the -nn option, with parameter value ${NODES[*]}"
       shift ;;
     -p|-ping)
       PING="true"
       echo "Found the -ping option"
       ;;
-    --debug)
-      DEBUG="true"
-      echo "Found the --debug parameter"
-      shift ;;
+    -debug) TS_DEBUG="true"
+      echo "Found the -debug parameter"
+      ;;
     --) shift
       break ;;
     *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;

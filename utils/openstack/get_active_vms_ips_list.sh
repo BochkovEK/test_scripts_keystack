@@ -16,9 +16,16 @@ script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
 utils_dir=$parent_dir
 check_openrc_script="check_openrc.sh"
+check_openstack_cli_script="check_openstack_cli.sh"
 
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
-[[ -z $MODULE_MODE ]] && MODULE_MODE="true"
+#[[ -z $UTIL_MODE ]] && UTIL_MODE="true"
+
+check_openstack_cli () {
+  if ! bash $utils_dir/$check_openstack_cli_script &> /dev/null; then
+    exit 1
+  fi
+}
 
 check_and_source_openrc_file () {
 #  echo "check openrc"
@@ -53,7 +60,7 @@ get_VMs_IPs () {
   [DEBUG]: VMs_IPs: $VMs_IPs
   "
     if [ -z "$VMs_IPs" ]; then
-#      [ "$MODULE_MODE" = true ] && {
+#      [ "$UTIL_MODE" = true ] && {
       echo -e "${red}No instance found in the $PROJECT project - ERROR${normal}\nProject list:";
       openstack project list;
 #      }
@@ -67,5 +74,6 @@ get_VMs_IPs () {
   done
 }
 
+check_openstack_cli
 check_and_source_openrc_file
 get_VMs_IPs
