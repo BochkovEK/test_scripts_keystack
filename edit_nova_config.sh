@@ -19,7 +19,7 @@ conf_changed=""
 
 #[[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $ADD_DEBUG ]] && ADD_DEBUG="false"
-[[ -z $DEBUG ]] && DEBUG="false"
+[[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $ONLY_CONF_CHECK ]] && ONLY_CONF_CHECK="true"
 [[ -z $ADD_PROM_ALERT ]] && ADD_PROM_ALERT=""
 [[ -z $PROMETHEUS_PASS ]] && PROMETHEUS_PASS=""
@@ -55,8 +55,8 @@ do
         "
           exit 0
           break ;;
-        -v|-debug) DEBUG="true"
-	        echo "Found the -debug, parameter set $DEBUG"
+        -v|-debug) TS_DEBUG="true"
+	        echo "Found the -debug, parameter set $TS_DEBUG"
           ;;
         -add_debug) ADD_DEBUG="true"
 	        echo "Found the --add_debug, parameter set $ADD_DEBUG"
@@ -90,11 +90,11 @@ pull_conf () {
   [ ! -d $script_dir/$test_node_conf_dir ] && { mkdir -p $script_dir/$test_node_conf_dir; }
   nodes=$(bash $utils_dir/$get_nodes_list_script)
 #  node=$(cat /etc/hosts | grep -m 1 -E ${nodes_pattern} | awk '{print $2}')
-  [ "$DEBUG" = true ] && echo -e "
+  [ "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]: \"\$node\": $node\n
   "
   for node in $nodes; do NODES+=("$node"); done
-  [ "$DEBUG" = true ] && echo -e "
+  [ "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]: \"\$NODES\": ${NODES[*]}
   "
   echo "Сopying $service_name conf from ${NODES[0]}:$conf_dir/$CONF_NAME"
@@ -106,7 +106,7 @@ push_conf () {
   nodes=$(cat /etc/hosts | grep -E ${nodes_pattern} | awk '{print $1}')
 
   for node in $nodes; do
-    if [ "$DEBUG" = true ]; then
+    if [ "$TS_DEBUG" = true ]; then
       echo -e "
   [DEBUG]: \"\$node\": $node\n
   "
