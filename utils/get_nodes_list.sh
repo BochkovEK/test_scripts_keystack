@@ -68,7 +68,7 @@ define_parameters () {
   [ "$count" = 1 ] && [[ -n $1 ]] && { NODES_TYPE=$1; [ "$TS_DEBUG" = true ] && echo -e "Nodes type parameter found with value $NODES_TYPE"; }
 }
 
-note_type_func () {
+node_type_func () {
   case "$1" in
         ctrl)
           NODES_TYPE=ctrl
@@ -156,6 +156,7 @@ parse_hosts () {
   [ "$TS_DEBUG" = true ] && echo -e "
   Parse /etc/hosts to find pattern: $nodes_to_find
   "
+  node_type_func$NODES_TYPE
   [[ -z ${NODES[0]} ]] && { srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}'); for i in $srv; do NODES+=("$i"); done; }
   if [ "$TS_DEBUG" = true ]; then
     echo -e "

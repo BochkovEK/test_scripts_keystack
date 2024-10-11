@@ -32,7 +32,7 @@ yellow=$(tput setaf 3)
 #======================
 
 
-note_type_func () {
+node_type_func () {
   case "$1" in
         ctrl)
           NODES_TYPE=ctrl
@@ -86,8 +86,8 @@ while [ -n "$1" ]; do
 #      echo "Found the -send_env \"<ENV_NAME=env_value>\" option, with parameter value $2"
 #      echo "SENDENV: $SENDENV"
 #      shift ;;
-    -nt|-type_of_nodes)
-      echo "Found the -command \"<command>\" option, with parameter value $COMMAND"
+    -nt|-type_of_nodes) NODES_TYPE=$2
+      echo "Found the -type_of_nodes, with parameter value $NODES_TYPE"
       shift ;;
     -nn|-node_name)
       for i in $2; do NODES+=("$i"); done
@@ -235,7 +235,10 @@ get_list_from_compute_service () {
 
 
 echo "Parse /etc/hosts to find pattern: $nodes_to_find"
-[[ -z ${NODES[0]} ]] && { srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}'); for i in $srv; do NODES+=("$i"); done; }
+[[ -z ${NODES[0]} ]] && {
+  node_type_func $NODES_TYPE
+  srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}');
+  for i in $srv; do NODES+=("$i"); done; }
 if [ "$DEBUG" = true ]; then
   echo -e "
   [DEBUG]
