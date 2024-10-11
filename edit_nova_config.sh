@@ -106,6 +106,10 @@ push_conf () {
   "
     fi
     ip=$(host $node)
+    [ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]: \"node\": \"ip\"
+          $node: $ip
+  "
     #change api_host = 10.224.132.178
     echo "sed ip to $ip on $CONF_NAME"
     sed -i --regexp-extended "s/[0-9]+.[0-9]+.[0-9]+.[0-9]+/$ip/" \
@@ -176,7 +180,7 @@ get_nodes_list
 [ "$ADD_DEBUG" = true ] && { change_add_debug_param; }
 #[ -n "$ADD_PROM_ALERT" ] && { change_add_prometheus_alerting; }
 #[ -n "$CHANGE_FOO_PARAM" ] && change_foo_param $foo_param_value
-[ -n "$conf_changed" ] && { cat_conf; echo "Restart $service_name containers..."; bash $script_dir/command_on_nodes.sh -nt ctrl -c "docker restart $service_name"; exit 0; }
+[ -n "$conf_changed" ] && { cat_conf; echo "Restart $service_name containers..."; bash $script_dir/command_on_nodes.sh -nt $nodes_type -c "docker restart $service_name"; exit 0; }
 [ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
 #cat_conf
 
