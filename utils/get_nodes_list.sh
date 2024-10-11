@@ -156,7 +156,7 @@ parse_hosts () {
   [ "$TS_DEBUG" = true ] && echo -e "
   Parse /etc/hosts to find pattern: $nodes_to_find
   "
-  node_type_func$NODES_TYPE
+  node_type_func $NODES_TYPE
   [[ -z ${NODES[0]} ]] && { srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}'); for i in $srv; do NODES+=("$i"); done; }
   if [ "$TS_DEBUG" = true ]; then
     echo -e "
