@@ -205,7 +205,6 @@ check_bmc_suffix () {
 
 
 [ "$CHECK_SUFFIX" = true ] && { check_bmc_suffix; exit 0; }
-[ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
 [ "$PUSH" = true ] && { push_conf; conf_changed=true; }
 [ "$PULL" = true ] && { pull_conf; exit 0; }
 [ -n "$ALIVE_THRSHOLD" ] && change_alive_threshold $ALIVE_THRSHOLD
@@ -214,3 +213,4 @@ check_bmc_suffix () {
 [ -n "$NOVA_FENCING" ] && change_nova_fencing $NOVA_FENCING
 cat_conf
 [ -n "$conf_changed" ] && { echo "Restart consul containers..."; bash $script_dir/command_on_nodes.sh -nt ctrl -c "docker restart consul"; }
+[ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }

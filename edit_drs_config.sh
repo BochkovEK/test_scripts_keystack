@@ -150,13 +150,13 @@ change_add_prometheus_alerting () {
 }
 
 
-[ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
+#[ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
 [ "$PUSH" = true ] && { push_conf; conf_changed=true; }
 [ "$PULL" = true ] && { pull_conf; exit 0; }
 [ "$ADD_DEBUG" = true ] && { change_add_debug_param; }
 [ -n "$ADD_PROM_ALERT" ] && { change_add_prometheus_alerting; }
 #[ -n "$CHANGE_FOO_PARAM" ] && change_foo_param $foo_param_value
 [ -n "$conf_changed" ] && { cat_conf; echo "Restart $service_name containers..."; bash $script_dir/command_on_nodes.sh -nt ctrl -c "docker restart $service_name"; exit 0; }
-#[ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
+[ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
 #cat_conf
 

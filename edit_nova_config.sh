@@ -56,22 +56,22 @@ do
           exit 0
           break ;;
         -v|-debug) TS_DEBUG="true"
-	        echo "Found the -debug, parameter set $TS_DEBUG"
+	        echo "Found the -debug option with parameter $TS_DEBUG"
           ;;
         -add_debug) ADD_DEBUG="true"
-	        echo "Found the --add_debug, parameter set $ADD_DEBUG"
+	        echo "Found the --add_debug option with parameter $ADD_DEBUG"
           ;;
 #        -pa|-prometheus_alerting) PROMETHEUS_PASS="$2"; ADD_PROM_ALERT="true"
 #	        echo "Found the -prometheus_alerting, \$PROMETHEUS_PASS: $PROMETHEUS_PASS"
 #          shift;;
         -pull) PULL="true"
-	        echo "Found the -pull, parameter set $PULL"
+	        echo "Found the -pull option with parameter $PULL"
           ;;
         -push) PUSH="true"
-	        echo "Found the -push, parameter set $PUSH"
+	        echo "Found the -push option with parameter $PUSH"
           ;;
         -check) ONLY_CONF_CHECK="true"
-	        echo "Found the -check, parameter set $ONLY_CONF_CHECK"
+	        echo "Found the -check option with parameter $ONLY_CONF_CHECK"
           ;;
         --) shift
           break ;;
@@ -160,13 +160,13 @@ change_add_debug_param () {
 #}
 
 
-[ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
+#[ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
 [ "$PUSH" = true ] && { push_conf; conf_changed=true; }
 [ "$PULL" = true ] && { pull_conf; exit 0; }
 [ "$ADD_DEBUG" = true ] && { change_add_debug_param; }
 #[ -n "$ADD_PROM_ALERT" ] && { change_add_prometheus_alerting; }
 #[ -n "$CHANGE_FOO_PARAM" ] && change_foo_param $foo_param_value
 [ -n "$conf_changed" ] && { cat_conf; echo "Restart $service_name containers..."; bash $script_dir/command_on_nodes.sh -nt ctrl -c "docker restart $service_name"; exit 0; }
-#[ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
+[ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
 #cat_conf
 
