@@ -89,7 +89,37 @@ cat_conf () {
 pull_conf () {
   echo "Pulling $CONF_NAME..."
   [ ! -d $script_dir/$test_node_conf_dir ] && { mkdir -p $script_dir/$test_node_conf_dir; }
-  nodes=$(bash $utils_dir/$get_nodes_list_script -nt $nodes_type)
+
+
+  echo "Сopying $service_name conf from ${NODES[0]}:$conf_dir/$CONF_NAME"
+  scp -o StrictHostKeyChecking=no ${NODES[0]}:$conf_dir/$CONF_NAME $script_dir/$test_node_conf_dir
+}
+
+push_conf () {
+  echo "Pushing $CONF_NAME..."
+#  nodes=$(cat /etc/hosts | grep -E ${nodes_pattern} | awk '{print $1}')
+
+  for node in "${NODES[@]}"; do
+    if [ "$TS_DEBUG" = true ]; then
+      echo -e "
+  [DEBUG]: \"\$node\": $node\n
+  "
+    fi
+    ip=$(host $node)
+    #change api_host = 10.224.132.178
+    echo "sed ip to $ip on $CONF_NAME"
+    sed -i --regexp-extended "s/[0-9]+.[0-9]+.[0-9]+.[0-9]+/$ip/" \
+      $script_dir/$test_node_conf_dir/$CONF_NAME
+
+    echo "Сopying $service_name conf to $node:$conf_dir/${CONF_NAME}_foo"
+    scp -o StrictHostKeyChecking=no $script_dir/$test_node_conf_dir/$CONF_NAME $node:$conf_dir/$CONF_NAME
+  done
+}
+
+get_nodes_list () {
+  if [ -z "${NODES[*]}" ]; then
+    nodes=$(bash $utils_dir/$get_nodes_list_script -nt $nodes_type)
+  fi
 #  node=$(cat /etc/hosts | grep -m 1 -E ${nodes_pattern} | awk '{print $2}')
   [ "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]: \"\$node\": $node\n
@@ -105,32 +135,6 @@ pull_conf () {
     echo -e "${red}Failed to determine node list - ERROR${normal}"
     exit 1
   fi
-
-  echo "Сopying $service_name conf from ${NODES[0]}:$conf_dir/$CONF_NAME"
-  scp -o StrictHostKeyChecking=no ${NODES[0]}:$conf_dir/$CONF_NAME $script_dir/$test_node_conf_dir
-}
-
-push_conf () {
-  echo "Pushing $CONF_NAME..."
-  nodes=$(cat /etc/hosts | grep -E ${nodes_pattern} | awk '{print $1}')
-
-  for node in $nodes; do
-    if [ "$TS_DEBUG" = true ]; then
-      echo -e "
-  [DEBUG]: \"\$node\": $node\n
-  "
-    fi
-    #change api_host = 10.224.132.178
-    echo "sed api_host = $node on $CONF_NAME"
-    sed -i --regexp-extended "s/api_host\s+=\s+[0-9]+.[0-9]+.[0-9]+.[0-9]+/api_host = $node/" \
-      $script_dir/$test_node_conf_dir/$CONF_NAME
-#    sed -i --regexp-extended  "s/https\:\/\/[0-9]+.[0-9]+.[0-9]+.[0-9]+/https\:\/\/$node/" \
-#      $script_dir/$test_node_conf_dir/$CONF_NAME
-#    sed -i --regexp-extended  "s/\@[0-9]+.[0-9]+.[0-9]+.[0-9]+/@$node/" \
-#      $script_dir/$test_node_conf_dir/$CONF_NAME
-    echo "Сopying $service_name conf to $node:$conf_dir/$CONF_NAME"
-    scp -o StrictHostKeyChecking=no $script_dir/$test_node_conf_dir/$CONF_NAME $node:$conf_dir/$CONF_NAME
-  done
 }
 
 #change_foo_param () {
@@ -164,6 +168,7 @@ change_add_debug_param () {
 #  fi
 #}
 
+get_nodes_list
 
 #[ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
 [ "$PUSH" = true ] && { push_conf; conf_changed=true; }
