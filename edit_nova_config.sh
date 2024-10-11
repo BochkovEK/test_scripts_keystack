@@ -16,6 +16,7 @@ normal=`tput sgr0`
 script_dir=$(dirname $0)
 utils_dir="$script_dir/utils"
 get_nodes_list_script="get_nodes_list.sh"
+install_package_script="install_package.sh"
 conf_changed=""
 
 #[[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
@@ -99,12 +100,11 @@ push_conf () {
   echo "Pushing $CONF_NAME..."
 #  nodes=$(cat /etc/hosts | grep -E ${nodes_pattern} | awk '{print $1}')
 
+  if ! bash $utils_dir/$install_package_script host; then
+    exit 1
+  fi
   for node in "${NODES[@]}"; do
-    if [ "$TS_DEBUG" = true ]; then
-      echo -e "
-  [DEBUG]: \"\$node\": $node\n
-  "
-    fi
+
     ip=$(host $node)
     [ "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]: \"node\": \"ip\"
@@ -174,13 +174,9 @@ change_add_debug_param () {
 
 get_nodes_list
 
-#[ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
 [ "$PUSH" = true ] && { push_conf; conf_changed=true; }
 [ "$PULL" = true ] && { pull_conf; exit 0; }
 [ "$ADD_DEBUG" = true ] && { change_add_debug_param; }
-#[ -n "$ADD_PROM_ALERT" ] && { change_add_prometheus_alerting; }
-#[ -n "$CHANGE_FOO_PARAM" ] && change_foo_param $foo_param_value
-[ -n "$conf_changed" ] && { cat_conf; echo "Restart $service_name containers..."; bash $script_dir/command_on_nodes.sh -nt $nodes_type -c "docker restart $service_name"; exit 0; }
+#[ -n "$conf_changed" ] && { cat_conf; echo "Restart $service_name containers..."; bash $script_dir/command_on_nodes.sh -nt $nodes_type -c "docker restart $service_name"; exit 0; }
 [ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
-#cat_conf
 
