@@ -12,7 +12,8 @@
 repo="https://repo.itkey.com/repository/bootstrap/terraform"
 terraform_binary_name="terraform_1.8.5_linux_amd64"
 images_list=(
-  "ubuntu-20.04-server-cloudimg-amd64.img"
+#  "ubuntu-20.04-server-cloudimg-amd64.img"
+  "jammy-server-cloudimg-amd64.img"
   "cirros-0.6.2-x86_64-disk.img"
   )
 pub_net_name="pub_net"
