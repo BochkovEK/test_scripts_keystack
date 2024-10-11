@@ -40,7 +40,7 @@ while [ -n "$1" ]; do
 "
         exit 0
         break ;;
-    -nt|-type_of_nodes)
+    -nt|-type_of_nodes) NODES_TYPE=$2
       [ "$TS_DEBUG" = true ] && echo -e "
       Found the -type_of_nodes with parameter value $NODES_TYPE
       "
