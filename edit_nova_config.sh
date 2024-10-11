@@ -97,6 +97,10 @@ pull_conf () {
   [ "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]: \"\$NODES\": ${NODES[*]}
   "
+  echo -e "
+  [DEBUG]: \"\$NODES\": ${NODES[*]}
+  "
+  exit 0
   echo "Сopying $service_name conf from ${NODES[0]}:$conf_dir/$CONF_NAME"
   scp -o StrictHostKeyChecking=no ${NODES[0]}:$conf_dir/$CONF_NAME $script_dir/$test_node_conf_dir
 }
