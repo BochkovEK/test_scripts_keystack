@@ -99,7 +99,7 @@ pull_conf () {
   [DEBUG]: \"\$NODES\": ${NODES[*]}
   "
   echo -e "
-  [DEBUG]: \"\$NODES\": ${NODES[*]}
+  NODES: ${NODES[*]}
   "
   if [ -z "${NODES[*]}" ]; then
     echo -e "${red}Failed to determine node list - ERROR${normal}"
