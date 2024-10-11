@@ -126,6 +126,7 @@ if [ -d "$HOME/installer" ]; then
       scp -r $CENTRAL_AUTH_SERVICE_IP:$CERTS_FOLDER $HOME/installer/
     else
       echo -e "${red}No ssh access to $CENTRAL_AUTH_SERVICE_IP - ERROR${normal}"
+      exit 1
     fi
   fi
   cd $INIT_INSTALLER_FOLDER

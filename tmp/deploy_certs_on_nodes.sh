@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# The script for deploing pub keys from gitlab and lcm, nexus and docker crts, by IPs list or by hosts
+# The script for deploying pub keys from gitlab and lcm, nexus and docker certs, by IPs list or by hosts
 
 cmpt_pattern="\-comp\-..$"
 ctrl_pattern="\-ctrl\-..$"
