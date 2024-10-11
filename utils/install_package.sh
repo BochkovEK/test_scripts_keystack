@@ -55,9 +55,12 @@ check_package () {
         sberlinux)
           case $package_name in
             host)
-              package_name="bind-utils"
+              yum install -y "bind-utils"
+              ;;
+            *)
+              yum install -y $package_name
+              ;;
           esac
-          yum install -y $package_name
           check_command $package_name
           if [ -z $command_exist ]; then
             echo "For sberlinux try this command:"
