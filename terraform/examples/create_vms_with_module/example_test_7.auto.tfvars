@@ -1,7 +1,7 @@
 # VMs
 VMs = {
   DRS_TEST_1 = {
-    image_name      = "jammy-server-cloudimg-amd64.img"
+    image_name      = "ubuntu-20.04-server-cloudimg-amd64.img"
     flavor          = {
         vcpus = 4
         ram   = 4096
