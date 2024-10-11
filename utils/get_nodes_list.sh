@@ -126,6 +126,7 @@ get_list_from_compute_service () {
       nova_state_list=$(openstack compute service list)
       if [[ -z $nova_state_list ]];then
         [ "$TS_DEBUG" = true ] && echo -e "
+        [DEBUG]
         ${red}Failed to determine node $NODES_TYPE list${normal}
         "
         exit 1
@@ -136,14 +137,14 @@ get_list_from_compute_service () {
         #control
         nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
       fi
-      [ "$TS_DEBUG" = true ] && echo -e "
-      nodes: $nodes
-      "
       if [[ -z $nodes ]];then
         [ "$TS_DEBUG" = true ] && echo -e "
+        [DEBUG]
         ${red}Failed to determine node $NODES_TYPE list${normal}
         "
         exit 1
+      else
+        echo $nodes
       fi
     fi
   else
@@ -152,18 +153,27 @@ get_list_from_compute_service () {
 }
 
 parse_hosts () {
-  echo "Parse /etc/hosts to find pattern: $nodes_to_find"
+  [ "$TS_DEBUG" = true ] && echo -e "
+  Parse /etc/hosts to find pattern: $nodes_to_find
+  "
   [[ -z ${NODES[0]} ]] && { srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}'); for i in $srv; do NODES+=("$i"); done; }
-  if [ "$DEBUG" = true ]; then
+  if [ "$TS_DEBUG" = true ]; then
     echo -e "
     [DEBUG]
     NODES:
     "
     for host in "${NODES[@]}"; do
-      echo $host
+      [ "$TS_DEBUG" = true ] && echo -e "
+      [DEBUG]
+      host: $host
+      "
     done
-    echo "NODES_TYPE: $NODES_TYPE"
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG]
+    NODES_TYPE: $NODES_TYPE
+    "
   fi
+  echo "${NODES[*]}"
 }
 
 check_openstack_cli
