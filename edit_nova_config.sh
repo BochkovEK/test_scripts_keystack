@@ -89,7 +89,7 @@ cat_conf () {
 pull_conf () {
   echo "Pulling $CONF_NAME..."
   [ ! -d $script_dir/$test_node_conf_dir ] && { mkdir -p $script_dir/$test_node_conf_dir; }
-  nodes=$(bash $utils_dir/$get_nodes_list_script)
+  nodes=$(bash $utils_dir/$get_nodes_list_script -nt $nodes_type)
 #  node=$(cat /etc/hosts | grep -m 1 -E ${nodes_pattern} | awk '{print $2}')
   [ "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]: \"\$node\": $node\n
@@ -102,7 +102,7 @@ pull_conf () {
   [DEBUG]: \"\$NODES\": ${NODES[*]}
   "
   if [ -z "${NODES[*]}" ]; then
-    echo -e "${red}Failed to determine node list${normal}"
+    echo -e "${red}Failed to determine node list - ERROR${normal}"
     exit 1
   fi
 
