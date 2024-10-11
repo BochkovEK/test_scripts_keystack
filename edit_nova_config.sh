@@ -1,11 +1,11 @@
 # The script change and check drs config
 # Start scrip to check conf: bash edit_drs_config.sh check
 
-ctrl_pattern="\-ctrl\-..$"
-service_name=drs
+nodes_pattern="\-comp\-..$"
+service_name=nova-compute
 test_node_conf_dir=kolla/$service_name
 conf_dir=/etc/kolla/$service_name
-conf_name=drs.ini
+conf_name=nova.conf
 
 red=`tput setaf 1`
 green=`tput setaf 2`
@@ -21,7 +21,7 @@ conf_changed=""
 [[ -z $ADD_PROM_ALERT ]] && ADD_PROM_ALERT=""
 [[ -z $PROMETHEUS_PASS ]] && PROMETHEUS_PASS=""
 [[ -z $PUSH ]] && PUSH="false"
-[[ -z $CONF_NAME ]] && CONF_NAME="drs.ini"
+[[ -z $CONF_NAME ]] && CONF_NAME=$conf_name
 #[[ -z $FOO_PARAM ]] && FOO_PARAM=""
 
 
@@ -40,7 +40,6 @@ do
         -foo,       -bar                  <baz>
         -add_debug                        without value, add DEBUG level to log by drs config
         -v,         -debug                without value, set DEBUG=\"true\"
-        -pa,        -prometheus_alerting  <prometheus_password>
         -p,         -push                 without value, push region-config_<region_name>.json from
                                           $HOME/test_scripts_keystack/$test_node_conf_dir/$CONF_NAME to
                                           $conf_dir/$CONF_NAME on ctrl nodes
@@ -55,9 +54,9 @@ do
         -add_debug) ADD_DEBUG="true"
 	        echo "Found the --add_debug, parameter set $ADD_DEBUG"
           ;;
-        -pa|-prometheus_alerting) PROMETHEUS_PASS="$2"; ADD_PROM_ALERT="true"
-	        echo "Found the -prometheus_alerting, \$PROMETHEUS_PASS: $PROMETHEUS_PASS"
-          shift;;
+#        -pa|-prometheus_alerting) PROMETHEUS_PASS="$2"; ADD_PROM_ALERT="true"
+#	        echo "Found the -prometheus_alerting, \$PROMETHEUS_PASS: $PROMETHEUS_PASS"
+#          shift;;
         -p|-push) PUSH="true"
 	        echo "Found the -push, parameter set $PUSH"
           ;;
@@ -74,25 +73,25 @@ cat_conf () {
 }
 
 pull_conf () {
-  echo "Pulling drs.ini..."
+  echo "Pulling $CONF_NAME..."
   [ ! -d $script_dir/$test_node_conf_dir ] && { mkdir -p $script_dir/$test_node_conf_dir; }
-  ctrl_node=$(cat /etc/hosts | grep -m 1 -E ${ctrl_pattern} | awk '{print $2}')
+  node=$(cat /etc/hosts | grep -m 1 -E ${nodes_pattern} | awk '{print $2}')
   [ "$DEBUG" = true ] && echo -e "
-  [DEBUG]: \"\$ctrl_node\": $ctrl_node\n
+  [DEBUG]: \"\$node\": $node\n
   "
 
-  echo "Сopying $service_name conf from $ctrl_node:$conf_dir/$CONF_NAME"
-  scp -o StrictHostKeyChecking=no $ctrl_node:$conf_dir/$CONF_NAME $script_dir/$test_node_conf_dir
+  echo "Сopying $service_name conf from $node:$conf_dir/$CONF_NAME"
+  scp -o StrictHostKeyChecking=no $node:$conf_dir/$CONF_NAME $script_dir/$test_node_conf_dir
 }
 
 push_conf () {
-  echo "Pushing drs.ini..."
-  ctrl_nodes=$(cat /etc/hosts | grep -E ${ctrl_pattern} | awk '{print $1}')
+  echo "Pushing $CONF_NAME..."
+  nodes=$(cat /etc/hosts | grep -E ${nodes_pattern} | awk '{print $1}')
 
-  for node in $ctrl_nodes; do
+  for node in $nodes; do
     if [ "$DEBUG" = true ]; then
       echo -e "
-  [DEBUG]: \"\$ctrl_nodes\": $node\n
+  [DEBUG]: \"\$node\": $node\n
   "
     fi
     #change api_host = 10.224.132.178
@@ -121,23 +120,23 @@ change_add_debug_param () {
   conf_changed="true"
 }
 
-change_add_prometheus_alerting () {
-  echo "Add prometheus alerting to drs.ini..."
-  if [ -z "${PROMETHEUS_PASS}" ]; then
-    echo "${red}\$PROMETHEUS_PASS not set. Prometheus alerting not set in $conf_name${reset}"
-    ONLY_CONF_CHECK="false"
-  else
-    pull_conf
-    prom_pass_exists=$(cat $script_dir/$test_node_conf_dir/$CONF_NAME|grep prometheus_alert_manager_password)
-    if [ -z "$prom_pass_exists" ]; then
-  #    sed -i "s/\[prometheus\]/\[prometheus\]\nenable_prometheus_alert_manager_auth = true\nprometheus_alert_manager_user = admin\nprometheus_alert_manager_password = $PROMETHEUS_PASS/" $script_dir/$test_node_conf_dir/$conf_name
-    sed -i "s/\[alerting\]/\[alerting\]\nenable_prometheus_alert_manager_auth = true\nprometheus_alert_manager_user = admin\nprometheus_alert_manager_password = $PROMETHEUS_PASS/" $script_dir/$test_node_conf_dir/$conf_name
-    sed -i "s/enable_alerting = false/enable_alerting = true/" $script_dir/$test_node_conf_dir/$conf_name
-    fi
-    push_conf
-    conf_changed="true"
-  fi
-}
+#change_add_prometheus_alerting () {
+#  echo "Add prometheus alerting to drs.ini..."
+#  if [ -z "${PROMETHEUS_PASS}" ]; then
+#    echo "${red}\$PROMETHEUS_PASS not set. Prometheus alerting not set in $conf_name${reset}"
+#    ONLY_CONF_CHECK="false"
+#  else
+#    pull_conf
+#    prom_pass_exists=$(cat $script_dir/$test_node_conf_dir/$CONF_NAME|grep prometheus_alert_manager_password)
+#    if [ -z "$prom_pass_exists" ]; then
+#  #    sed -i "s/\[prometheus\]/\[prometheus\]\nenable_prometheus_alert_manager_auth = true\nprometheus_alert_manager_user = admin\nprometheus_alert_manager_password = $PROMETHEUS_PASS/" $script_dir/$test_node_conf_dir/$conf_name
+#    sed -i "s/\[alerting\]/\[alerting\]\nenable_prometheus_alert_manager_auth = true\nprometheus_alert_manager_user = admin\nprometheus_alert_manager_password = $PROMETHEUS_PASS/" $script_dir/$test_node_conf_dir/$conf_name
+#    sed -i "s/enable_alerting = false/enable_alerting = true/" $script_dir/$test_node_conf_dir/$conf_name
+#    fi
+#    push_conf
+#    conf_changed="true"
+#  fi
+#}
 
 
 [ "$PUSH" = true ] && { push_conf; conf_changed=true; }
