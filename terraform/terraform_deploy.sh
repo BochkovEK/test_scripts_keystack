@@ -13,8 +13,13 @@ repo="https://repo.itkey.com/repository/bootstrap/terraform"
 terraform_binary_name="terraform_1.8.5_linux_amd64"
 images_list=(
 #  "ubuntu-20.04-server-cloudimg-amd64.img"
-  "jammy-server-cloudimg-amd64.img"
+#  "jammy-server-cloudimg-amd64.img"
   "cirros-0.6.2-x86_64-disk.img"
+  )
+public_images_list=(
+#  "ubuntu-20.04-server-cloudimg-amd64.img"
+#  "jammy-server-cloudimg-amd64.img"
+  "https://cloud-images.ubuntu.com/releases/focal/release/ubuntu-20.04-server-cloudimg-amd64.img"
   )
 pub_net_name="pub_net"
 
@@ -163,6 +168,18 @@ for image_name in "${images_list[@]}"; do
     exit 1
   fi
 done
+
+# Create images from public repo
+for image_name in "${public_images_list[@]}"; do
+  image_source=$(echo "${image_name##*/}")
+  export IMAGE_SOURCE=$image_source
+  image_name_cut=$(echo "${image_name%/*}")
+  if ! bash $utils_dir/openstack/create_image.sh $image_name_cut; then
+    exit 1
+  fi
+  export IMAGE_SOURCE=""
+done
+
 # Create network
 export NETWORK=$NETWORK
 if ! bash $utils_dir/openstack/create_pub_network.sh; then
@@ -173,6 +190,10 @@ echo -E "${green}
 Terraform installed - ok!
 cloud.yml config in $script_dir - ok!${normal}"
 for image_name in "${images_list[@]}"; do
+  echo -E "${green}Image $image_name created - ok!${normal}"
+done
+# created from public repo
+for image_name in "${public_images_list[@]}"; do
   echo -E "${green}Image $image_name created - ok!${normal}"
 done
 echo -E "${green}Network $pub_net_name created - ok!
