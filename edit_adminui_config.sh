@@ -89,7 +89,7 @@ push_conf () {
   for node in $ctrl_nodes; do
     if [ "$DEBUG" = true ]; then
       echo -e "
-  [DEBUG]: \"\$ctrl_nodes\": $string\n
+  [DEBUG]: \"\$ctrl_nodes\": $node\n
   "
     fi
     echo "Сopying $service_name conf to $node:$conf_dir/$CONF_NAME"

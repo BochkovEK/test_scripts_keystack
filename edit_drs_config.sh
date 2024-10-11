@@ -9,7 +9,7 @@ conf_name=drs.ini
 
 red=`tput setaf 1`
 green=`tput setaf 2`
-reset=`tput sgr0`
+normal=`tput sgr0`
 
 script_dir=$(dirname $0)
 conf_changed=""
@@ -134,7 +134,7 @@ change_add_debug_param () {
 change_add_prometheus_alerting () {
   echo "Add prometheus alerting to drs.ini..."
   if [ -z "${PROMETHEUS_PASS}" ]; then
-    echo "${red}\$PROMETHEUS_PASS not set. Prometheus alerting not set in $conf_name${reset}"
+    echo "${red}\$PROMETHEUS_PASS not set. Prometheus alerting not set in $conf_name${normal}"
     ONLY_CONF_CHECK="false"
   else
     pull_conf

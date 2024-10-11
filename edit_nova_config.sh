@@ -8,9 +8,10 @@ test_node_conf_dir=kolla/$service_name
 conf_dir=/etc/kolla/$service_name
 conf_name=nova.conf
 
+#Colors
 red=`tput setaf 1`
 green=`tput setaf 2`
-reset=`tput sgr0`
+normal=`tput sgr0`
 
 script_dir=$(dirname $0)
 utils_dir="$script_dir/utils"
@@ -100,7 +101,11 @@ pull_conf () {
   echo -e "
   [DEBUG]: \"\$NODES\": ${NODES[*]}
   "
-  exit 0
+  if [ -z "${NODES[*]}" ]; then
+    echo -e "${red}Failed to determine node list${normal}"
+    exit 1
+  fi
+
   echo "Сopying $service_name conf from ${NODES[0]}:$conf_dir/$CONF_NAME"
   scp -o StrictHostKeyChecking=no ${NODES[0]}:$conf_dir/$CONF_NAME $script_dir/$test_node_conf_dir
 }
