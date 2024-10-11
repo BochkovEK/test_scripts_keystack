@@ -48,6 +48,8 @@ do
         -push                           without value, push region-config_<region_name>.json from
                                         $script_dir/$test_node_conf_dir to
                                         /etc/kolla/consul/region-config_<region_name>.json on ctrl nodes
+       -check                          only check option (without parameter)
+
 
         start script with parameter suffix: bash edit_ha_region_config.sh suffix - return bmc suffix
         start script with parameter suffix: bash edit_ha_region_config.sh check  - return contents of the config file
@@ -74,6 +76,9 @@ do
           ;;
         -push) PUSH="true"
 	        echo "Found the -push, parameter set $PUSH"
+          ;;
+        -check) ONLY_CONF_CHECK="true"
+	        echo "Found the -check, parameter set $ONLY_CONF_CHECK"
           ;;
         --) shift
           break ;;

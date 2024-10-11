@@ -21,6 +21,7 @@ conf_changed=""
 [[ -z $ADD_PROM_ALERT ]] && ADD_PROM_ALERT=""
 [[ -z $PROMETHEUS_PASS ]] && PROMETHEUS_PASS=""
 [[ -z $PUSH ]] && PUSH="false"
+[[ -z $PULL ]] && PULL="false"
 [[ -z $CONF_NAME ]] && CONF_NAME="drs.ini"
 #[[ -z $FOO_PARAM ]] && FOO_PARAM=""
 
@@ -41,9 +42,12 @@ do
         -add_debug                        without value, add DEBUG level to log by drs config
         -v,         -debug                without value, set DEBUG=\"true\"
         -pa,        -prometheus_alerting  <prometheus_password>
-        -p,         -push                 without value, push region-config_<region_name>.json from
-                                          $HOME/test_scripts_keystack/$test_node_conf_dir/$CONF_NAME to
-                                          $conf_dir/$CONF_NAME on ctrl nodes
+        -pull                           without value, pull config from $conf_dir/$conf_name
+                                        on $ctrl_pattern node to
+                                        $script_dir/$test_node_conf_dir
+        -push                           without value, push config from $script_dir/$test_node_conf_dir
+                                        on $ctrl_pattern node to $conf_dir/$conf_name
+        -check                          only check option (without parameter)
 
         Start the scrip with parameter check to check conf: bash edit_drs_config.sh check
         "
@@ -58,8 +62,14 @@ do
         -pa|-prometheus_alerting) PROMETHEUS_PASS="$2"; ADD_PROM_ALERT="true"
 	        echo "Found the -prometheus_alerting, \$PROMETHEUS_PASS: $PROMETHEUS_PASS"
           shift;;
-        -p|-push) PUSH="true"
+        -pull) PULL="true"
+	        echo "Found the -pull, parameter set $PULL"
+          ;;
+        -push) PUSH="true"
 	        echo "Found the -push, parameter set $PUSH"
+          ;;
+        -check) ONLY_CONF_CHECK="true"
+	        echo "Found the -check, parameter set $ONLY_CONF_CHECK"
           ;;
         --) shift
           break ;;
@@ -140,11 +150,13 @@ change_add_prometheus_alerting () {
 }
 
 
+[ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
 [ "$PUSH" = true ] && { push_conf; conf_changed=true; }
+[ "$PULL" = true ] && { pull_conf; exit 0; }
 [ "$ADD_DEBUG" = true ] && { change_add_debug_param; }
 [ -n "$ADD_PROM_ALERT" ] && { change_add_prometheus_alerting; }
 #[ -n "$CHANGE_FOO_PARAM" ] && change_foo_param $foo_param_value
 [ -n "$conf_changed" ] && { cat_conf; echo "Restart $service_name containers..."; bash $script_dir/command_on_nodes.sh -nt ctrl -c "docker restart $service_name"; exit 0; }
-[ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
+#[ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
 #cat_conf
 
