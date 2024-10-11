@@ -31,8 +31,7 @@ yellow=$(tput setaf 3)
 [[ -z $PING ]] && PING="false"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 #======================
-#
-#
+
 #node_type_func () {
 #  case "$1" in
 #        ctrl)
