@@ -105,7 +105,7 @@ push_conf () {
   fi
   for node in "${NODES[@]}"; do
 
-    ip=$(host $node)
+    ip=$(host $node|awk '{print $4}')
     [ "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]: \"node\": \"ip\"
           $node: $ip
