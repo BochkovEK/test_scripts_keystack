@@ -111,6 +111,8 @@ select_config_file
 
 if [ ! -f "$HOME/.ssh/id_rsa_backup" ]; then
   cp $HOME/.ssh/id_rsa $HOME/.ssh/id_rsa_backup
+else
+  cp $HOME/.ssh/id_rsa_backup $HOME/.ssh/id_rsa
 fi
 
 lcm_mgmt_ip=$(ip a|grep mgmt|grep inet|grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/[0-9]{1,3}' \
