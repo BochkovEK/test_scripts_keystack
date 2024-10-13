@@ -127,7 +127,7 @@ get_nodes_list
 echo "UNHEALTHY: $UNHEALTHY"
 echo "CONTAINER_NAME: $CONTAINER_NAME"
 
-grep_string="| grep -E \\"$UNHEALTHY\\s+$CONTAINER_NAME\\""
+grep_string="| grep -E \"$UNHEALTHY\\s+$CONTAINER_NAME\""
 echo "$grep_string"
 #[[ -z ${CONTAINER_NAME} ]] && { grep_string=""; }
 
