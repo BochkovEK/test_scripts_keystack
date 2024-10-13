@@ -122,9 +122,9 @@ get_nodes_list
 #  error_output
 #fi
 
-[[ "$CHECK_UNHEALTHY" = true  ]] && { UNHEALTHY="unhealthy"; }
+[[ "$CHECK_UNHEALTHY" = true  ]] && { UNHEALTHY="(unhealthy)"; }
 
-grep_string="| grep -E '$UNHEALTHY\s+$CONTAINER_NAME'"
+grep_string="| grep -E \"$UNHEALTHY\s+$CONTAINER_NAME\""
 #echo "$grep_string"
 [[ -z ${CONTAINER_NAME} ]] && { grep_string=""; }
 
