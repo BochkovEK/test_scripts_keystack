@@ -122,7 +122,7 @@ get_nodes_list
 #  error_output
 #fi
 
-[[ "$CHECK_UNHEALTHY" = true  ]] && { UNHEALTHY="(unhealthy)"; }
+[[ "$CHECK_UNHEALTHY" = true  ]] && { UNHEALTHY="\(unhealthy\)"; }
 
 echo "UNHEALTHY: $UNHEALTHY"
 echo "CONTAINER_NAME: $CONTAINER_NAME"
