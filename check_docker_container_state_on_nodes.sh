@@ -124,9 +124,12 @@ get_nodes_list
 
 [[ "$CHECK_UNHEALTHY" = true  ]] && { UNHEALTHY="(unhealthy)"; }
 
-grep_string="| grep -E \"$UNHEALTHY\s+$CONTAINER_NAME\""
-#echo "$grep_string"
-[[ -z ${CONTAINER_NAME} ]] && { grep_string=""; }
+echo "UNHEALTHY: $UNHEALTHY"
+echo "CONTAINER_NAME: $CONTAINER_NAME"
+
+grep_string="| grep -E \\"$UNHEALTHY\\s+$CONTAINER_NAME\\""
+echo "$grep_string"
+#[[ -z ${CONTAINER_NAME} ]] && { grep_string=""; }
 
 for host in "${NODES[@]}"; do
   echo "Check container $CONTAINER_NAME on ${host}"
