@@ -7,6 +7,8 @@
 #sudo systemctl stop systemd-resolved
 #sudo systemctl disable systemd-resolved
 
+#Every time /etc/dnsmasq.conf and /etc/hosts are changed, restart the service 'systemctl restart dnsmasq'
+
 #nc -vzu <IP> 53
 
 script_dir=$(dirname $0)
