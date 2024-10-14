@@ -57,7 +57,8 @@ check_openstack_cli () {
           fi
           ;;
         ubuntu)
-          echo "Coming soon..."
+          python3 -m pip install -i https://pypi.org/simple/ python-openstackclient$osc_version_string
+#          echo "Coming soon..."
           ;;
         *)
           echo "There is no provision for openstack cli to be installed on the $os operating system."
