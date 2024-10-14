@@ -58,6 +58,11 @@ check_openstack_cli () {
           ;;
         ubuntu)
           python3 -m pip install -i https://pypi.org/simple/ python-openstackclient$osc_version_string
+          check_command openstack
+            if [ -z $command_exist ]; then
+              printf "%s\n" "${red}Openstack cli failed to install - ERROR${normal}"
+              exit 1
+            fi
 #          echo "Coming soon..."
           ;;
         *)
