@@ -49,13 +49,6 @@ Check_connection_to_node () {
   fi
 }
 
-#check_openstack_cli
-if [[ $CHECK_OPENSTACK = "true" ]]; then
-  if ! bash $utils_dir/$check_openstack_cli_script; then
-    exit 1
-  fi
-fi
-
 check_and_source_openrc_file () {
 #  echo "check openrc"
   if bash $utils_dir/$check_openrc_script &> /dev/null; then
@@ -67,6 +60,16 @@ check_and_source_openrc_file () {
     exit 1
   fi
 }
+
+
+#check_openstack_cli
+if [[ $CHECK_OPENSTACK = "true" ]]; then
+  if ! bash $utils_dir/$check_openstack_cli_script; then
+    exit 1
+  fi
+fi
+
+check_and_source_openrc_file
 
 echo "Trying to raise and enable nova service on $COMP_NODE_NAME..."
 echo "Check connection to host: $COMP_NODE_NAME..."
