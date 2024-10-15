@@ -36,6 +36,16 @@ Check_nova_srvice_list () {
       #-e 's/\(.*enabled | up.*\)/\o033[92m\1\o033[39m/' \
 }
 
+# Check connection to node
+Check_connection_to_node () {
+  if ping -c 2 $1 &> /dev/null; then
+    echo -e "${green}There is a connection with $1 - success${normal}"
+  else
+    printf "%s\n" "${red}No connection with $1 - error!${normal}"
+    echo -e "${red}The node may be turned off.${normal}\n"
+  fi
+}
+
 #check_openstack_cli
 if [[ $CHECK_OPENSTACK = "true" ]]; then
   if ! bash $utils_dir/check_openstack_cli.sh; then
@@ -49,7 +59,7 @@ fi
 
 echo "Trying to raise and enable nova service on $COMP_NODE_NAME..."
 echo "Check connection to host: $COMP_NODE_NAME..."
-connection_success=$(Check_connection_to_node $COMP_NODE_NAME|grep success)
+connection_success=$(Check_connection_to_node $COMP_NODE_NAME)
 [ "$TS_DEBUG" = true ] && echo "[DEBUG]: connection_success: $connection_success"
 if [ -n "$connection_success" ]; then
   echo "Connetction to $COMP_NODE_NAME success"
