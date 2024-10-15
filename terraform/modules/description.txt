@@ -1,0 +1,4 @@
+# add modules:
+#- flavor
+#- key_pair
+#- secur_group

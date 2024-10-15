@@ -274,25 +274,11 @@ Check_disabled_computes_in_nova () {
             done
 #            echo $yes_no_input
             if [ "$yes_no_input" = "true" ]; then
-              echo "Trying to raise and enable nova service on $cmpt..."
-              echo "Check connection to host: $cmpt..."
-              connection_success=$(Check_connection_to_node $cmpt|grep success)
-              [ "$DEBUG" = true ] && echo "[DEBUG]: connection_success: $connection_success"
-              if [ -n "$connection_success" ]; then
-                echo "Connetction to $cmpt success"
-                try_to_rise="true"
-                docker_nova_started=""
-                docker_nova_started=$(ssh -o StrictHostKeyChecking=no ${cmpt} docker ps| grep nova_compute)
-                if [ -z "$docker_nova_started" ];then
-                  ssh -o StrictHostKeyChecking=no ${cmpt} docker start consul nova_compute
-                else
-                  ssh -o StrictHostKeyChecking=no ${cmpt} docker start consul nova_compute
-                fi
-                openstack compute service set --enable --up "${cmpt}" nova-compute
-              else
-                echo -e "${red}No connection to $cmpt - fail${normal}"
-                echo -e "${red}Enable nova service on $cmpt - fail${normal}"
-              fi
+              try_to_rise="true"
+              export CHECK_OPENSTACK="false"
+              export COMP_NODE_NAME=$cmpt
+              export CHECK_AFTER="false"
+              bash $utils_dir/try_to_rise_node.sh
             fi
           done
           if [ "$try_to_rise" = "true" ]; then
