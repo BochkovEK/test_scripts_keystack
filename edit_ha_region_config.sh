@@ -122,11 +122,16 @@ push_conf () {
   ctrl_nodes=$(echo "$nova_state_list" | grep -E "nova-scheduler" | awk '{print $6}')
 #  ctrl_nodes=$(cat /etc/hosts | grep -E ${ctrl_pattern} | awk '{print $1}')
   [ "$DEBUG" = true ] && { for string in $ctrl_nodes; do debug_echo $string; done; }
+  if ! bash $utils_dir/$install_package_script host; then
+    exit 1
+  fi
 
 #  "bind_address": "10.224.132.178",
 
   for node in $ctrl_nodes; do
-    echo "\"bind_address\": \"$node\" on $CONF_NAME"
+    ip=$(host $node|awk '{print $4}')
+    [ "$DEBUG" = true ] && { debug_echo $ip; }
+    echo "\"bind_address\": \"$ip\" on $CONF_NAME"
     sed -i --regexp-extended "s/\"bind_address\"(\s+|):\s+\"[0-9]+.[0-9]+.[0-9]+.[0-9]+\"\,/\"bind_address\": \"$node\",/" \
       $script_dir/$test_node_conf_dir/$CONF_NAME
     echo "Push consul conf to $node:$conf_dir/$CONF_NAME"
