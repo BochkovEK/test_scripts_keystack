@@ -8,6 +8,9 @@ service_name=consul
 test_node_conf_dir=kolla/$service_name
 conf_dir=/etc/kolla/$service_name
 script_dir=$(dirname $0)
+utils_dir="$script_dir/utils"
+#get_nodes_list_script="get_nodes_list.sh"
+install_package_script="install_package.sh"
 
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $ALIVE_THRSHOLD ]] && ALIVE_THRSHOLD=""
