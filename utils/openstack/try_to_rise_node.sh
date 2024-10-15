@@ -67,6 +67,7 @@ if [ -n "$connection_success" ]; then
   docker_nova_started=""
   docker_nova_started=$(ssh -o StrictHostKeyChecking=no ${COMP_NODE_NAME} docker ps| grep nova_compute)
   if [ -z "$docker_nova_started" ];then
+    ssh -o "StrictHostKeyChecking=no" -t ${COMP_NODE_NAME} "systemctl start kolla-consul-container.service kolla-nova_compute-container.service"
     ssh -o StrictHostKeyChecking=no ${COMP_NODE_NAME} docker start consul nova_compute
   else
     ssh -o StrictHostKeyChecking=no ${COMP_NODE_NAME} docker restart consul nova_compute
