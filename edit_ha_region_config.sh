@@ -132,7 +132,7 @@ push_conf () {
 #  "bind_address": "10.224.132.178",
 
   for node in $ctrl_nodes; do
-    ip=$(host $node|awk '{print $4}')
+    ip=$(host $node|grep -m 1 $node|awk '{print $4}')
     [ "$DEBUG" = true ] && { debug_echo $ip; }
     echo "\"bind_address\": \"$ip\" on $CONF_NAME"
     sed -i --regexp-extended "s/\"bind_address\"(\s+|):\s+\"[0-9]+.[0-9]+.[0-9]+.[0-9]+\"\,/\"bind_address\": \"$ip\",/" \
