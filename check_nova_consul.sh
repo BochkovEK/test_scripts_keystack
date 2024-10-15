@@ -278,7 +278,7 @@ Check_disabled_computes_in_nova () {
               export CHECK_OPENSTACK="false"
               export COMP_NODE_NAME=$cmpt
               export CHECK_AFTER="false"
-              bash $utils_dir/try_to_rise_node.sh
+              bash $openstack_utils/try_to_rise_node.sh
             fi
           done
           if [ "$try_to_rise" = "true" ]; then
