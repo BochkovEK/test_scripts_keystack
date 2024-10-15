@@ -16,6 +16,9 @@ script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
 utils_dir=$parent_dir
+check_openrc_script="check_openrc.sh"
+check_openstack_cli_script="check_openstack_cli.sh"
+
 
 [[ -z $COMP_NODE_NAME ]] && COMP_NODE_NAME="$1"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
@@ -48,14 +51,22 @@ Check_connection_to_node () {
 
 #check_openstack_cli
 if [[ $CHECK_OPENSTACK = "true" ]]; then
-  if ! bash $utils_dir/check_openstack_cli.sh; then
+  if ! bash $utils_dir/$check_openstack_cli_script; then
     exit 1
   fi
 fi
 
-if ! bash $utils_dir/check_openrc.sh; then
-  exit 1
-fi
+check_and_source_openrc_file () {
+#  echo "check openrc"
+  if bash $utils_dir/$check_openrc_script &> /dev/null; then
+#  if bash $utils_dir/$check_openrc_script 2>&1; then
+    openrc_file=$(bash $utils_dir/$check_openrc_script)
+    source $openrc_file
+  else
+    bash $utils_dir/$check_openrc_script
+    exit 1
+  fi
+}
 
 echo "Trying to raise and enable nova service on $COMP_NODE_NAME..."
 echo "Check connection to host: $COMP_NODE_NAME..."
