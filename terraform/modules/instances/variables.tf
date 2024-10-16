@@ -2,7 +2,7 @@
 variable "default_image_name" {
   description = "Default image name"
   type        = string
-  default = "cirros-0.6.2-x86_64-disk"
+  default = "cirros-0.6.2-x86_64-disk.img"
 }
 
 variable "default_flavor_name" {
