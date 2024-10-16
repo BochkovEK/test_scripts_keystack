@@ -12,13 +12,3 @@ module "AZs" {
     source = "../../modules/aggregate"
     AZs    = var.AZs
 }
-
-module "server_groups" {
-    source          = "../../modules/server_groups"
-    server_groups   = var.server_groups
-}
-
-#
-#output "foo" {
-#  value = local.instances
-#}
