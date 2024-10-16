@@ -16,7 +16,8 @@ resource "openstack_compute_instance_v2" "vm" {
     test_meta = "Created by Terraform"
   }
   scheduler_hints {
-     group = each.value.server_group == null ? "" : module.server_groups[each.value.server_group].server_group_id
+    group = each.value.server_group == null ? "" : openstack_compute_servergroup_v2.server_groups[each.key].id
+#     group = each.value.server_group == null ? "" : module.server_groups[each.value.server_group].server_group_id
 #    group                  = each.value.server_group_name.id
   }
 #  dynamic "block_device" {
@@ -80,11 +81,11 @@ dynamic block_device {
   ]
 }
 
-module "server_groups" {
-  source        = "../../modules/server_groups"
-#  for_each      = { for k, v in local.instances : v.name => v }
-#  server_groups = each.value.server_group
-}
+#module "server_groups" {
+#  source        = "../../modules/server_groups"
+##  for_each      = { for k, v in local.instances : v.name => v }
+##  server_groups = each.value.server_group
+#}
 
 resource "openstack_compute_flavor_v2" flavor {
 #  for_each    = { for k, v in local.instances : v.name => v }
@@ -105,6 +106,11 @@ data "openstack_images_image_v2" "image_id" {
   name        = each.value.image_name
 }
 
+resource "openstack_compute_servergroup_v2" "server_groups" {
+  for_each    = { for k, v in local.instances : v.name => v }
+  name      = each.value.server_group.name
+  policies  = each.value.server_group.policies
+}
 
 #resource "openstack_blockstorage_volume_v3" "volume" {
 ##  for_each = { for volume_key, volume in local.instance.disks }
