@@ -8,13 +8,13 @@ VMs = {
       }
     vm_qty          = 2
 #    az_hint         = "az_1:ebochkov-ks-sber-comp-01"
-  server_groups = {
-  foo = {
-    policies = ["affinity"]
-  }
-  bar = {
-    policies = ["anti-affinity"]
-  }
+#  server_groups = {
+#  foo = {
+#    policies = ["affinity"]
+#  }
+#  bar = {
+#    policies = ["anti-affinity"]
+#  }
 }
   }
 #  DRS_TEST_2 = {

@@ -18,6 +18,8 @@ locals {
     network_name     = try(instance.network_name, var.default_network_name)
     boot_volume_size = try(instance.boot_volume_size, var.default_boot_volume_size)
     disks            = try(instance.disks, var.default_disks)
+#    servergroup    = try(instance.server_group, {})
+#    servergroup_id = module.server_group[each.value.servergroup].srvgrp_id
   }
   ]
   ])

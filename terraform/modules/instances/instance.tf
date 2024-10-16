@@ -15,11 +15,11 @@ resource "openstack_compute_instance_v2" "vm" {
   metadata = {
     test_meta = "Created by Terraform"
   }
-  scheduler_hints {
-#    group = each.value.server_group == {} ? "" : openstack_compute_servergroup_v2.server_groups[each.key].id
-     group = each.value.server_group == null ? "" : module.server_group[each.value.server_group][0].server_group_id
+#  scheduler_hints {
+#    group = each.value.server_group == null ? "" : openstack_compute_servergroup_v2.server_groups[each.key].id
+#     group = each.value.server_group == null ? "" : module.server_group[each.value.server_group][0].server_group_id
 #    group                  = each.value.server_group_name.id
-  }
+#  }
 #  dynamic "block_device" {
 #    for_each = each.value.disk
 #    content {
@@ -81,9 +81,9 @@ dynamic block_device {
   ]
 }
 
-module "server_group" {
-    source        = "../../modules/server_group"
-}
+#module "server_group" {
+#    source        = "../../modules/server_group"
+#}
 #  for_each = var.enable ? var.resource_groups : {}
 ##  for_each      = { for k, v in local.instances : v.name => v }
 ##  server_groups = each.value.server_group
