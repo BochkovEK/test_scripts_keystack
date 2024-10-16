@@ -105,6 +105,7 @@ data "openstack_images_image_v2" "image_id" {
   name        = each.value.image_name
 }
 
+
 #resource "openstack_blockstorage_volume_v3" "volume" {
 ##  for_each = { for volume_key, volume in local.instance.disks }
 #  for_each    = { for k, v in local.instances.disks : v.name => v }
