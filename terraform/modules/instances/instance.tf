@@ -1,3 +1,5 @@
+
+
 resource "openstack_compute_instance_v2" "vm" {
   for_each     = { for k, v in local.instances : v.name => v
 #  if try(v.image_name, null) != null
@@ -12,6 +14,10 @@ resource "openstack_compute_instance_v2" "vm" {
   availability_zone_hints     = each.value.az_hint
   metadata = {
     test_meta = "Created by Terraform"
+  }
+   scheduler_hints {
+     group = each.value.server_group == null ? module.server_groups[each.value.server_group].srvgrp_id  : ""
+#    group                  = each.value.server_group_name.id
   }
 #  dynamic "block_device" {
 #    for_each = each.value.disk
@@ -74,6 +80,11 @@ dynamic block_device {
   ]
 }
 
+module "server_groups" {
+  source         = "../../modules/server_groups"
+#  server_group   = var.server_group
+}
+
 resource "openstack_compute_flavor_v2" flavor {
 #  for_each    = { for k, v in local.instances : v.name => v }
   for_each = var.VMs
@@ -88,6 +99,12 @@ resource "openstack_compute_flavor_v2" flavor {
   is_public = "true"
 }
 
+data "openstack_images_image_v2" "image_id" {
+  for_each    = { for k, v in local.instances : v.name => v }
+  name        = each.value.image_name
+}
+
+!!! foo
 data "openstack_images_image_v2" "image_id" {
   for_each    = { for k, v in local.instances : v.name => v }
   name        = each.value.image_name

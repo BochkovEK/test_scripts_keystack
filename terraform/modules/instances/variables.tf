@@ -61,6 +61,22 @@ variable "default_az_hints" {
   default     = ""
 }
 
+#variable "default_server_group" {
+#  description = "Default server group"
+#  default     = {}
+#}
+
+#variable "default_server_group_id" {
+#  description = "Default server group id"
+#  default     = ""
+#}
+
+# server_group = {
+#   name = "affinity_group"
+#   policies = []
+# }
+
+
 variable "VMs" {
   description = "VMs list source"
   default = {}
