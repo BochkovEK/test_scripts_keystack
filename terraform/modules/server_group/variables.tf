@@ -8,7 +8,15 @@
 #  default = []
 #}
 
-variable "server_groups" {
+#variable "server_groups" {
+#  description = "default server group"
+#  default = {}
+#}
+
+variable "server_group" {
   description = "default server group"
-  default = {}
+  default = {
+#    name =
+#  policies = var.server_group.policies
+  }
 }
