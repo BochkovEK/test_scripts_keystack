@@ -1,6 +1,14 @@
-module "server_groups" {
-    source          = "../../modules/server_groups"
-    server_groups   = var.server_groups
+module "server_group" {
+    source          = "../../modules/server_group"
+#    for_each = var.server_groups ? var.server_groups : {}
+#    name       = each.key
+#     policies = each.value.policies
+    for_each = [for group in var.server_groups: {
+#            boot_index = volume.boot_index
+#            size = volume.size
+      name       = group.name
+     policies = group.policies
+    }]
 }
 
 module "VMs" {

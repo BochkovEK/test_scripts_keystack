@@ -14,8 +14,10 @@
 #  }
 #}
 
-resource "openstack_compute_servergroup_v2" "server_groups" {
-  for_each = var.server_groups
-  name     = each.key
-  policies = each.value.policies
+resource "openstack_compute_servergroup_v2" "server_group" {
+#  for_each = var.server_groups
+  name = var.server_group.name
+  policies = var.server_group.policies
+#  name     = each.key
+#  policies = each.value.policies
 }

@@ -42,11 +42,11 @@ AZs = {
 #  }
 #}
 
-server_groups = {
-  foo = {
+server_groups = [
+  {name = "foo"
     policies = ["affinity"]
-  }
-    baz = {
+  },
+  {name = "bar"
     policies = ["anti-affinity"]
-  }
-}
+  },
+]
