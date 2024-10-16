@@ -10,6 +10,6 @@
 
 resource "openstack_compute_servergroup_v2" "servergroup" {
   for_each = var.server_groups
-  name     = each.value.name
+  name     = each.key
   policies = each.value.policies
 }
