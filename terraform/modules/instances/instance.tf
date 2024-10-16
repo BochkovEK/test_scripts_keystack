@@ -82,7 +82,8 @@ dynamic block_device {
 
 module "server_groups" {
   source        = "../../modules/server_groups"
-#  server_group   = var.server_group
+  for_each      = { for k, v in local.instances : v.name => v }
+  server_groups = each.value.server_group
 }
 
 resource "openstack_compute_flavor_v2" flavor {
