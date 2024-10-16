@@ -29,7 +29,7 @@ VMs = {
 #    keypair_name    = "key_test"
 #    security_groups = ["test_security_group"]
 #  }
-}
+#}
 
 # AZs
 AZs = {
