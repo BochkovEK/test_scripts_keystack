@@ -1,7 +1,7 @@
-#module "server_groups" {
-#    source          = "../../modules/server_groups"
-#    server_groups   = var.server_groups
-#}
+module "server_groups" {
+    source          = "../../modules/server_groups"
+    server_groups   = var.server_groups
+}
 
 module "VMs" {
     source = "../../modules/instances"
@@ -13,10 +13,10 @@ module "AZs" {
     AZs    = var.AZs
 }
 
-#module "server_groups" {
-#    source          = "../../modules/server_groups"
-#    server_groups   = var.server_groups
-#}
+module "server_groups" {
+    source          = "../../modules/server_groups"
+    server_groups   = var.server_groups
+}
 
 #
 #output "foo" {

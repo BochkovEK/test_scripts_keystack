@@ -8,7 +8,7 @@
 #  default = []
 #}
 
-variable "server_group" {
+variable "server_groups" {
   description = "default server group"
   default = {}
 }
