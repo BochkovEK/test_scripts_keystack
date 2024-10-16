@@ -61,10 +61,10 @@ variable "default_az_hints" {
   default     = ""
 }
 
-#variable "default_server_group" {
-#  description = "Default server group"
-#  default     = {}
-#}
+variable "default_server_group" {
+  description = "Default server group"
+  default     = {}
+}
 
 #variable "default_server_group_id" {
 #  description = "Default server group id"
