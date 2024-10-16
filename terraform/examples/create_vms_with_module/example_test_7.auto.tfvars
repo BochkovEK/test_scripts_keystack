@@ -41,3 +41,12 @@ AZs = {
 #    ]
 #  }
 #}
+
+server_groups = {
+  foo = {
+    policies = ["affinity"]
+  }
+    baz = {
+    policies = ["anti-affinity"]
+  }
+}
