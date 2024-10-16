@@ -16,7 +16,7 @@ resource "openstack_compute_instance_v2" "vm" {
     test_meta = "Created by Terraform"
   }
    scheduler_hints {
-     group = each.value.server_group == null ? module.server_groups[each.value.server_group].srvgrp_id  : ""
+     group = each.value.server_group == null ? "" : module.server_groups[each.value.server_group].srvgrp_id
 #    group                  = each.value.server_group_name.id
   }
 #  dynamic "block_device" {
