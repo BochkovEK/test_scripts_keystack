@@ -4,7 +4,7 @@ image_name = "cirros-0.5.2-x86_64-disk"
 
 subnetpool = "lab_sk_bgp"
 
-vimage_user = "cirros"
+image_user = "cirros"
 
 pub_net = "pub_net"
 
