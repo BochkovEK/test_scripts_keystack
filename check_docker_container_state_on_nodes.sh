@@ -26,6 +26,7 @@ yellow=$(tput setaf 3)
 [[ -z $NODES ]] && NODES=()
 [[ -z $CHECK_UNHEALTHY ]] && CHECK_UNHEALTHY="false"
 [[ -z $NODES_TYPE ]] && NODES_TYPE=""
+[[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 #======================
 
 #note_type_func () {
@@ -63,6 +64,8 @@ do
       <container_name> as parameter
       -c, 	-container_name		<container_name>
       -nt, 	-type_of_nodes		<type_of_nodes> 'ctrl', 'comp', 'net'
+      -check_unhealthy        check only unhealthy containers (without parameter)
+      -debug                  enable debug output (without parameter)
 "
       exit 0
       break ;;
@@ -75,6 +78,9 @@ do
       shift ;;
     -check_unhealthy) CHECK_UNHEALTHY="true"
       echo "Found the -check_unhealthy  with parameter value $CHECK_UNHEALTHY"
+      ;;
+    -debug) TS_DEBUG="true"
+      echo "Found the -debug with parameter value $TS_DEBUG"
       ;;
     --) shift
       break ;;
@@ -122,14 +128,18 @@ get_nodes_list
 #  error_output
 #fi
 
-[[ "$CHECK_UNHEALTHY" = true  ]] && { UNHEALTHY="\(unhealthy\)"; }
-
-echo "UNHEALTHY: $UNHEALTHY"
-echo "CONTAINER_NAME: $CONTAINER_NAME"
+[[ "$CHECK_UNHEALTHY" = true  ]] && {
+  UNHEALTHY="\(unhealthy\)";
+  echo "UNHEALTHY: $UNHEALTHY";
+  }
 
 grep_string="| grep -E \"$UNHEALTHY\\s+$CONTAINER_NAME\""
-echo "$grep_string"
-#[[ -z ${CONTAINER_NAME} ]] && { grep_string=""; }
+
+[ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]
+  CONTAINER_NAME: $CONTAINER_NAME
+  grep_string: $grep_string
+  "
 
 for host in "${NODES[@]}"; do
   echo "Check container $CONTAINER_NAME on ${host}"

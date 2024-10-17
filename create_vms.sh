@@ -57,7 +57,7 @@ CIRROS_IMAGE_NAME="cirros-0.6.2-x86_64-disk"
 [[ -z $BATCH ]] && BATCH="false"
 [[ -z $DONT_CHECK ]] && DONT_CHECK="false"
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
-[[ -z $DEBUG ]] && DEBUG="false"
+[[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $WAIT_FOR_CREATED ]] && WAIT_FOR_CREATED="true"
 #======================
 
@@ -151,8 +151,8 @@ while [ -n "$1" ]; do
       echo "Found the -wait <true/false> option, with parameter value $wait_for_created"
       WAIT_FOR_CREATED=$wait_for_created
       shift ;;
-    -debug) DEBUG="true"
-            echo "Found the -debug, with parameter value $DEBUG"
+    -debug) TS_DEBUG="true"
+            echo "Found the -debug, with parameter value $TS_DEBUG"
       ;;
     --) shift
       break ;;
@@ -287,7 +287,7 @@ VMs will be created with the following parameters:
         OS compute api version: $API_VERSION
         Addition key:           $ADD_KEY
         Creating VMs without a timeout (bool): $BATCH
-        Debug:                  $DEBUG
+        Debug:                  $TS_DEBUG
         Wait for creating       $WAIT_FOR_CREATED
         "
 
@@ -546,7 +546,7 @@ image_exists_in_openstack () {
 check_image () {
   echo "Check for exist image: \"$IMAGE\""
   IMAGE_NAME_EXIST=$(image_exists_in_openstack $IMAGE)
-  [ "$DEBUG" = true ] && echo -e "
+  [ "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]
   IMAGE: $IMAGE
   IMAGE_NAME_EXIST: $IMAGE_NAME_EXIST
@@ -556,7 +556,7 @@ check_image () {
   is_cirros=$(echo $IMAGE|grep -E "cirros|$CIRROS_IMAGE_NAME")
   is_ubuntu=$(echo $IMAGE|grep -E "ubuntu|$UBUNTU_IMAGE_NAME")
 
-  [ "$DEBUG" = true ] && echo -e "
+  [ "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]
   is_cirros_or_ubuntu: $is_cirros_or_ubuntu
   is_cirros: $is_cirros
@@ -658,7 +658,7 @@ wait_vms_created () {
     echo "Wait for $building_vms vms created..."
     building_vms=$VM_QTY
     id_vms_list=$(openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks|grep -E "$1"|awk '{print $2}')
-      [ "$DEBUG" = true ] && echo -e "
+      [ "$TS_DEBUG" = true ] && echo -e "
       [DEBUG]
       building_id_vms_list: $id_vms_list
     "
@@ -666,7 +666,7 @@ wait_vms_created () {
       break
     else
       for id in $id_vms_list; do
-        [ "$DEBUG" = true ] && echo -e "
+        [ "$TS_DEBUG" = true ] && echo -e "
         [DEBUG]
         id: $id
         "
@@ -735,7 +735,7 @@ create_vms () {
     fi
     echo "Creating VM: $INSTANCE_NAME"
 
-  [ "$DEBUG" = true ] && echo -e "
+  [ "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]
   VM_BASE_NAME: $VM_BASE_NAME
   IMAGE: $IMAGE
