@@ -9,11 +9,12 @@ utils_dir=$script_dir
 check_openrc_script="check_openrc.sh"
 check_openstack_cli_script="check_openstack_cli.sh"
 
-comp_pattern="\-comp\-.."
+comp_pattern="comp\-.."
 #$"
-ctrl_pattern="\-ctrl\-.."
+ctrl_pattern="ctrl\-.."
 #$"
-net_pattern="\-net\-.."
+net_pattern="net\-.."
+#net_pattern="\-net\-.."
 #$"
 
 #Colors
