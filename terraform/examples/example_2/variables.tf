@@ -36,3 +36,7 @@ variable "flavor_name" {
 variable "az_hint" {
   default = ""
 }
+
+variable "volume_size" {
+  default = 1
+}

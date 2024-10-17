@@ -49,7 +49,7 @@ resource "openstack_blockstorage_volume_v3" "fc_hdd_sda" {
   count = var.qty
 #  image_id             = data.openstack_images_image_v2.image.id
   name         = "fc_hdd_sda"
-  size                 = 1
+  size                 = var.volume_size
   enable_online_resize = true
   lifecycle {
     ignore_changes  = [image_id, volume_type]
@@ -59,7 +59,7 @@ resource "openstack_blockstorage_volume_v3" "fc_hdd_sda" {
 resource "openstack_blockstorage_volume_v3" "fc_hdd_sdb" {
   count = var.qty
   name         = "fc_hdd_sdb"
-  size                 = 1
+  size                 = var.volume_size
   enable_online_resize = true
   lifecycle {
     ignore_changes  = [image_id, volume_type]
@@ -69,7 +69,7 @@ resource "openstack_blockstorage_volume_v3" "fc_hdd_sdb" {
 resource "openstack_blockstorage_volume_v3" "fc_hdd_sdc" {
   count = var.qty
   name         = "fc_hdd_sdc"
-  size                 = 1
+  size                 = var.volume_size
   enable_online_resize = true
   lifecycle {
     ignore_changes  = [image_id, volume_type]
@@ -79,7 +79,7 @@ resource "openstack_blockstorage_volume_v3" "fc_hdd_sdc" {
 resource "openstack_blockstorage_volume_v3" "fc_hdd_sdd" {
   count = var.qty
   name         = "fc_hdd_sdd"
-  size                 = 1
+  size                 = var.volume_size
   enable_online_resize = true
   lifecycle {
     ignore_changes  = [image_id, volume_type]
