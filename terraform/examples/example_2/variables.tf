@@ -32,3 +32,7 @@ variable "qty" {
 variable "flavor_name" {
   default = "2-cpu-2-ram_HA_test"
 }
+
+variable "az_hint" {
+  default = ""
+}

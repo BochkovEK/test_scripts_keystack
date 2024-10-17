@@ -12,7 +12,7 @@ resource "openstack_compute_instance_v2" "fc_hdd" {
   name         = "fc_hdd-vm"
   flavor_name  = var.flavor_name
   key_pair     = var.keypair
-  availability_zone_hints     = "cpu:cdm-bl-pca11"
+  availability_zone_hints     = var.az_hint
   network {
     port = openstack_networking_port_v2.fc_hdd_port[count.index].id
   }
