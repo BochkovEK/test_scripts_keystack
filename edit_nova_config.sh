@@ -28,6 +28,7 @@ conf_changed=""
 [[ -z $PUSH ]] && PUSH="false"
 [[ -z $PULL ]] && PULL="false"
 [[ -z $CONF_NAME ]] && CONF_NAME=$conf_name
+[[ -z $NODES ]] && NODES=()
 #[[ -z $FOO_PARAM ]] && FOO_PARAM=""
 
 

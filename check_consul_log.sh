@@ -91,7 +91,7 @@ Check_and_source_openrc_file () {
 # Сheck openstack cli
 Check_openstack_cli () {
   if [[ $CHECK_OPENSTACK = "true" ]]; then
-    if ! bash $utils_dir/check_openstack_cli.sh; then
+    if ! bash $utils_dir/$check_openstack_cli_script; then
 #      echo -e "${red}Failed to check openstack cli - ERROR${normal}"
       exit 1
     fi
