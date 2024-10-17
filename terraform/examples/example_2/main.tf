@@ -13,6 +13,9 @@ resource "openstack_compute_instance_v2" "fc_hdd" {
   flavor_name  = var.flavor_name
   key_pair     = var.keypair
   availability_zone_hints     = var.az_hint
+  metadata = {
+    test_meta = "Created by Terraform example_2"
+  }
   network {
     port = openstack_networking_port_v2.fc_hdd_port[count.index].id
   }

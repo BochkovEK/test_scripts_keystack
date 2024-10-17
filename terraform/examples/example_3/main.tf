@@ -8,8 +8,8 @@ resource "openstack_compute_instance_v2" "vm" {
     openstack_compute_secgroup_v2.secgroup.name
   ]
   availability_zone_hints     = var.az_hint
-  metadata                    = {
-    test_meta             = "Created by Terraform"
+  metadata = {
+    test_meta = "Created by Terraform example_3"
   }
   scheduler_hints {
     group                  = openstack_compute_servergroup_v2.servergroup.id

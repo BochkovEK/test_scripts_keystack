@@ -22,4 +22,7 @@ resource "openstack_compute_servergroup_v2" "server_groups" {
 #  policies = var.server_group.policies
 #  name     = each.key
 #  policies = each.value.policies
+   metadata = {
+    test_meta = "Created by Terraform server_group_module"
+  }
 }
