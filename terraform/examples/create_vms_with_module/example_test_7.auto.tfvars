@@ -51,10 +51,10 @@ AZs = {
 #}
 
 server_groups = {
-  foo = {
-    policies = ["affinity"]
-  }
-  bar = {
-    policies = ["anti-affinity"]
-  }
+#  foo = {
+#    policies = ["affinity"]
+#  }
+#  bar = {
+#    policies = ["anti-affinity"]
+#  }
 }
