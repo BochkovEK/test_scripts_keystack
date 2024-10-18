@@ -708,12 +708,12 @@ wait_vms_created () {
 create_vms () {
 
   if [ "$BATCH" = "true" ]; then
-    echo "Creating VMs (batch)..."
+    echo "Creating $VM_QTY VMs (batch)..."
     MAX_KEY="--max $VM_QTY"
     SEQ=1
 #    VM_QTY=1
   else
-    echo "Creating VMs with timeout: $TIMEOUT_BEFORE_NEXT_CREATION..."
+    echo "Creating $VM_QTY VMs with timeout: $TIMEOUT_BEFORE_NEXT_CREATION..."
     SEQ=$VM_QTY
   fi
 

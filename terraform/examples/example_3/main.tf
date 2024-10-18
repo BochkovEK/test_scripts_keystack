@@ -79,4 +79,9 @@ resource "openstack_compute_servergroup_v2" "servergroup" {
   policies = var.server_group.policies
 }
 
+module "AZs" {
+    source = "../../modules/aggregate"
+    AZs    = var.AZs
+}
+
 
