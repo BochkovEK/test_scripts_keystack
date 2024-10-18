@@ -334,7 +334,8 @@ check_hv () {
 # Check project
 check_project () {
     echo "Check for exist project: \"$PROJECT\""
-    PROJ_ID=$(openstack project list| grep $PROJECT| awk '{print $2}')
+    PROJ_ID=$(openstack project list| grep -E -m 1 "\s$PROJECT\s"| awk '{print $2}')
+#    PROJ_ID=$(openstack project list| grep $PROJECT| awk '{print $2}')
     if [ -z "$PROJ_ID" ]; then
         printf "%s\n" "${orange}Project \"$PROJECT\" does not exist${normal}"
         [[ ! $DONT_ASK = "true" ]] && {
@@ -380,13 +381,16 @@ check_project () {
 # Check secur_group
 check_and_add_secur_group () {
     echo "Check for exist security group: \"$SECURITY_GR\""
-    PROJ_ID=$(openstack project list| grep $PROJECT| awk '{print $2}')
+    if [ -z "$PROJ_ID" ]; then
+      check_project
+    fi
+#    PROJ_ID=$(openstack project list| grep -E -m 1 "\s$PROJECT\s"| awk '{print $2}')
     [ "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]
   PROJ_ID: $PROJ_ID
   "
     SECURITY_GR_ID=$(openstack security group list|grep -E "($SECURITY_GR(.)*$PROJ_ID)" | head -1 | awk '{print $2}')
-    if [ -z $SECURITY_GR_ID ]; then
+    if [ -z "$SECURITY_GR_ID" ]; then
         printf "%s\n" "${orange}Security group \"$SECURITY_GR\" not found in project \"$PROJECT\"${normal}"
         [[ ! $DONT_ASK = "true" ]] && {
           echo "Сreate a Security group with a name: \"$SECURITY_GR\"?";
@@ -802,6 +806,7 @@ if [[ $CHECK_OPENSTACK = "true" ]]; then
 fi
 
 check_and_source_openrc_file
+
 
 [[ ! $DONT_CHECK = "true" ]] && \
   {
