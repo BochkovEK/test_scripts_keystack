@@ -5,6 +5,7 @@ image_name = "ubuntu-20.04-server-cloudimg-amd64.img"
 qty = 4
 vcpus = 2
 ram = 2048
+volume_size = 5
 
 az_hint = "az_1:ebochkov-ks-sber-comp-01"
 
