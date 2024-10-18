@@ -81,6 +81,9 @@ while [ -n "$1" ]; do
     -dont_check                 disable resource availability checks (without value)
     -dont_ask                   all actions will be performed automatically (without value)
     -add                        <add command key>
+                                Examples:
+                                  -add \"--availability-zone \$az_name\"
+                                  -add \"--hint group=\$anti_aff_gr\"
     -b            -batch        creating VMs without a timeout (without value)
     -debug                      enabled debug output (without parameter)
     -wait                       wait for vms created <true\false>

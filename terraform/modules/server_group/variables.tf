@@ -20,3 +20,11 @@ variable "server_group" {
 #  policies = var.server_group.policies
   }
 }
+
+#  server_groups = {
+#  foo = {
+#    policies = ["affinity"]
+#  }
+#  bar = {
+#    policies = ["anti-affinity"]
+#  }
