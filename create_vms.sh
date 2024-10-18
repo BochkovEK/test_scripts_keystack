@@ -335,7 +335,7 @@ check_hv () {
 check_project () {
     echo "Check for exist project: \"$PROJECT\""
     PROJ_ID=$(openstack project list| grep $PROJECT| awk '{print $2}')
-    if [ -z $PROJ_ID ]; then
+    if [ -z "$PROJ_ID" ]; then
         printf "%s\n" "${orange}Project \"$PROJECT\" does not exist${normal}"
         [[ ! $DONT_ASK = "true" ]] && {
           echo "Сreate a Project with name: \"$PROJECT\"?";
