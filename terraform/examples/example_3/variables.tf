@@ -38,20 +38,20 @@ variable "ram" {
   default = 2048
 }
 
-variable "default_flavor_disk" {
+variable "flavor_disk" {
   default = 0
 }
 
-variable "flavor" {
-  description = "Please flavor name"
-  default     = {
-    name        = var.flavor_name
-    vcpus       = var.vcpus
-    ram         = var.ram
-    disk        = var.default_flavor_disk
-    is_public   = "true"
-  }
-}
+#variable "flavor" {
+#  description = "Please flavor name"
+#  default     = {
+#    name        = var.flavor_name
+#    vcpus       = var.vcpus
+#    ram         = var.ram
+#    disk        = var.default_flavor_disk
+#    is_public   = "true"
+#  }
+#}
 
 variable "az_hint" {
   description = "The AZ name if needed. Valid format: '<az_name>' or '<az_name>:<hypervisor_name>'"

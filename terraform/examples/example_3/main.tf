@@ -44,12 +44,12 @@ data "openstack_images_image_v2" "image_id" {
 #}
 
 resource "openstack_compute_flavor_v2" "flavor" {
-  flavor_id = var.flavor.name
-  name      = var.flavor.name
-  vcpus     = var.flavor.vcpus
-  ram       = var.flavor.ram
-  disk      = var.flavor.disk
-  is_public = var.flavor.is_public
+  flavor_id = var.flavor_name
+  name      = var.flavor_name
+  vcpus     = var.vcpus
+  ram       = var.ram
+  disk      = var.flavor_disk
+  is_public = "true"
 }
 
 resource "openstack_compute_keypair_v2" "keypair" {
