@@ -381,6 +381,10 @@ check_project () {
 check_and_add_secur_group () {
     echo "Check for exist security group: \"$SECURITY_GR\""
     PROJ_ID=$(openstack project list| grep $PROJECT| awk '{print $2}')
+    [ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]
+  PROJ_ID: $PROJ_ID
+  "
     SECURITY_GR_ID=$(openstack security group list|grep -E "($SECURITY_GR(.)*$PROJ_ID)" | head -1 | awk '{print $2}')
     if [ -z $SECURITY_GR_ID ]; then
         printf "%s\n" "${orange}Security group \"$SECURITY_GR\" not found in project \"$PROJECT\"${normal}"
