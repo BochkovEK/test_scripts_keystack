@@ -97,6 +97,11 @@ find_leader () {
 
 srv=$(cat /etc/hosts | grep -E "$CTRL_NODES" | awk '{print $1}')
 
+[ "$DEBUG" = true ] && echo -e "
+  [DEBUG]:
+  NODE_NAME: $NODE_NAME
+  "
+
 if [ -n "${NODE_NAME}" ]; then
   echo "Read logs from $NODE_NAME..."
   periodic_read_logs $NODE_NAME
