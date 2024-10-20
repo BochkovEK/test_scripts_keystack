@@ -3,6 +3,8 @@
 # TO-DO Rename this script to command_on_vm.sh with key check
 # The script checks access to the VM on HV
 
+#foo
+
 #Colors
 green=$(tput setaf 2)
 red=$(tput setaf 1)
