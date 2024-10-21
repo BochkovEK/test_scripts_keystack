@@ -166,7 +166,7 @@ fi
 
 get_var
 sed_var_in_conf
-echo -e "\n${yellow}Cat conf...${reset}"
+echo -e "\n${yellow}Cat conf...${normal}"
 echo
 cat $script_dir/$CONF_NAME
 echo
