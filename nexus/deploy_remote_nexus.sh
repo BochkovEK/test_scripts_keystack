@@ -233,7 +233,7 @@ nexus_bootstarp () {
 }
 
 create_repos () {
-  echo -e "${yellow}Create repos..."
+  echo -e "${yellow}Create repos...${normal}"
   [ "$TS_DEBUG" = true ] && {
   export TS_DEBUG=$TS_DEBUG;
   }
