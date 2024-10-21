@@ -84,6 +84,10 @@ select_os () {
   done
 }
 
+validate_url () {
+  if [[ `wget -S --spider $1  2>&1 | grep 'HTTP/1.1 200 OK'` ]]; then echo "true"; fi
+}
+
 if [ -z "$1" ]; then
   if [ -z "$KEYSTACK_RELEASE" ]; then
     echo -e "${red}To run this script, you need to define keystack release as parameter or env var KEYSTACK_RELEASE - ERROR${normal}"
@@ -134,7 +138,13 @@ bash $utils_dir/$install_wget_script
 release_tar=$(echo "${RELEASE_URL##*/}")
 echo "release_tar: $release_tar"
 if [ ! -f ~/$release_tar ]; then
-  wget $RELEASE_URL -P $HOME/
+  url_valid=$(validate_url $RELEASE_URL)
+  if [ "$url_valid" = true ]; then
+    wget $RELEASE_URL -P $HOME/
+  else
+    echo -e "${red}Failed to download from link $RELEASE_URL - ERROR${normal}"
+    exit 1
+  fi
 fi
 if [ ! -d $INIT_INSTALLER_FOLDER ]; then
   if [ ! -d $INIT_INSTALLER_BACKUP_FOLDER ]; then
