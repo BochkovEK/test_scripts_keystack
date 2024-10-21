@@ -141,15 +141,8 @@ copy_dnsmasq_conf () {
   else
     cp "$script_dir"/hosts_backup $parses_file
   fi
-  if [ -f $script_dir/$dns_ip_mapping_file ]; then
-    echo "$add_string" >> $parses_file
-    cat "$script_dir"/$dns_ip_mapping_file >> $parses_file
-  else
-    echo -e "${red}$script_dir/$dns_ip_mapping_file file not found - ERROR${normal}"
-  fi
-#    cat "$script_dir"/hosts_backup > $parses_file
-#    echo "$add_string" >> $parses_file
-#    cat "$script_dir"/$dns_ip_mapping_file >> $parses_file
+  echo "$add_string" >> $parses_file
+  cat "$script_dir"/$dns_ip_mapping_file >> $parses_file
   echo "Hosts file: "
   cat $parses_file
 #  exit 0
@@ -178,6 +171,12 @@ echo
 cat $script_dir/$dns_ip_mapping_file
 echo
 read -p "Press enter to continue: "
+
+if [ ! -f $script_dir/$dns_ip_mapping_file ]; then
+  echo -e "${red}$script_dir/$dns_ip_mapping_file file not found - ERROR${normal}"
+  exit 1
+fi
+
 install_dnsmasq
 copy_dnsmasq_conf
 
