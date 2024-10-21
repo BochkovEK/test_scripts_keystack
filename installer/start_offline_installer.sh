@@ -91,8 +91,6 @@ else
   KEYSTACK_RELEASE=$1
 fi
 
-select_os
-
 echo -e "
 ${yellow}WARNING!${normal}
 Before continue, make sure you have:
@@ -102,6 +100,8 @@ Before continue, make sure you have:
 "
 
 read -p "Press enter to continue: "
+
+select_os
 
 if [ -z "$SYSTEM" ]; then
   echo -e "${red}\$SYSTEM variable not defined - ERROR${normal}"
