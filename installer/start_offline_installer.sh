@@ -35,6 +35,7 @@ yellow=$(tput setaf 3)
 [[ -z $INIT_INSTALLER_FOLDER ]] && INIT_INSTALLER_FOLDER="$HOME/installer"
 [[ -z $INIT_INSTALLER_BACKUP_FOLDER ]] && INIT_INSTALLER_BACKUP_FOLDER="$HOME/installer_backup"
 [[ -z $KEYSTACK_RELEASE ]] && KEYSTACK_RELEASE=""
+[[ -z $KEYSTACK_RC_VERSION ]] && KEYSTACK_RC_VERSION=""
 
 select_config_file () {
   env_files="$script_dir/$KEYSTACK_RELEASE/$installer_conf_folder/*"
@@ -64,6 +65,7 @@ select_config_file () {
 }
 
 select_os () {
+  echo
   PS3='Select OS: '
   select os in "${systems[@]}"; do
       if [[ $REPLY == "0" ]]; then
@@ -89,6 +91,7 @@ if [ -z "$1" ]; then
   fi
 else
   KEYSTACK_RELEASE=$1
+  export KEYSTACK_RELEASE=$KEYSTACK_RELEASE
 fi
 
 echo -e "
@@ -106,6 +109,16 @@ select_os
 if [ -z "$SYSTEM" ]; then
   echo -e "${red}\$SYSTEM variable not defined - ERROR${normal}"
   exit 1
+fi
+
+# get Release candidate version
+if [[ -z "${KEYSTACK_RC_VERSION}" ]]; then
+  read -rp "If necessary, specify the release candidate (exp: rc7) version or press Enter : " KEYSTACK_RC_VERSION
+fi
+export KEYSTACK_RC_VERSION=${KEYSTACK_RC_VERSION:-""}
+
+if [ -n "$KEYSTACK_RC_VERSION" ]; then
+  export KEYSTACK_RC_VERSION="$KEYSTACK_RC_VERSION-"
 fi
 
 installer_envs=$script_dir/$KEYSTACK_RELEASE/$start_installer_envs
