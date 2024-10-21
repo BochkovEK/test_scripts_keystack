@@ -80,7 +80,7 @@ get_var () {
   fi
   export DOMAIN=${DOMAIN:-"test.domain"}
 
-  echo -e "\n${yellow}Output ip a:${reset}"
+  echo -e "\n${yellow}Output ip a:${normal}"
   echo "-----------------------"
   ip a
   echo -e "-----------------------\n"
@@ -93,14 +93,14 @@ get_var () {
     export DNS_SERVER_IP=${DNS_SERVER_IP}
   done
 
-  echo -e "\n${yellow}vars:${reset}"
+  echo -e "\n${yellow}vars:${normal}"
   echo DOMAIN: $DOMAIN
   echo DNS_SERVER_IP: $DNS_SERVER_IP
   echo
 }
 
 sed_var_in_conf () {
-  echo -e "\n${yellow}Sed vars in conf...${reset}"
+  echo -e "\n${yellow}Sed vars in conf...${normal}"
   sed -i --regexp-extended "s/DOMAIN/$DOMAIN/" \
       $script_dir/$CONF_NAME
   sed -i --regexp-extended "s/DNS_SERVER_IP/$DNS_SERVER_IP/" \
