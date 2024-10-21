@@ -14,11 +14,17 @@
 script_dir=$(dirname $0)
 nodes_to_find='\-ctrl\-..( |$)|\-comp\-..( |$)|\-net\-..( |$)|\-lcm\-..( |$)'
 add_string="# ----- ADD from deploy_dnsmasq_service.sh -----"
-dns_ip_mapping=dns_ip_mapping.txt
+dns_ip_mapping_file=dns_ip_mapping.txt
 #parses_file=$script_dir/dns_ip_mapping.txt
 parses_file=/etc/hosts
-yellow=`tput setaf 3`
-reset=`tput sgr0`
+
+
+#Colors
+green=$(tput setaf 2)
+red=$(tput setaf 1)
+violet=$(tput setaf 5)
+normal=$(tput sgr0)
+yellow=$(tput setaf 3)
 
 [[ -z $DOMAIN ]] && DOMAIN=""
 [[ -z $DNS_SERVER_IP ]] && DNS_SERVER_IP=""
@@ -33,7 +39,7 @@ do
         --help) echo -E "
         The script install dnsmasq
         To deploy dnsmasq on DNS server:
-        1) Edit $dns_ip_mapping file like /etc/hosts to mapping <ip> <nameserver>
+        1) Edit $dns_ip_mapping_file file like /etc/hosts to mapping <ip> <nameserver>
 
 cat <<-EOF > ~/test_scripts_keystack/dnsmasq/dns_ip_mapping.txt
 10.224.129.227 int.ebochkov.test.domain
@@ -49,7 +55,7 @@ cat <<-EOF > ~/test_scripts_keystack/dnsmasq/dns_ip_mapping.txt
 EOF
 
         2) permissionless access to all stand nodes is required
-          The script parses the $dns_ip_mapping file for the presence of the following pattern:
+          The script parses the $dns_ip_mapping_file file for the presence of the following pattern:
            $nodes_to_find
            and edits /etc/resolv.conf on all of them
         3) bash $script_dir/deploy_dnsmasq_service.sh
@@ -128,16 +134,22 @@ install_dnsmasq () {
 
 copy_dnsmasq_conf () {
   cp "$script_dir"/$CONF_NAME /etc/$CONF_NAME
+  # Checking the hosts file for the line # ----- ADD from deploy_dnsmasq_service.sh -----
   strings_from_dnsmasq_deployer=$(cat < $parses_file|grep "$add_string")
   if [ -z "$strings_from_dnsmasq_deployer" ]; then
     cp $parses_file "$script_dir"/hosts_backup
-    echo "$add_string" >> $parses_file
-    cat "$script_dir"/dns_ip_mapping.txt >> $parses_file
   else
-    cat "$script_dir"/hosts_backup > $parses_file
-    echo "$add_string" >> $parses_file
-    cat "$script_dir"/dns_ip_mapping.txt >> $parses_file
+    cp "$script_dir"/hosts_backup $parses_file
   fi
+  if [ -f $script_dir/$dns_ip_mapping_file ]; then
+    echo "$add_string" >> $parses_file
+    cat "$script_dir"/$dns_ip_mapping_file >> $parses_file
+  else
+    echo -e "${red}$script_dir/$dns_ip_mapping_file file not found - ERROR${normal}"
+  fi
+#    cat "$script_dir"/hosts_backup > $parses_file
+#    echo "$add_string" >> $parses_file
+#    cat "$script_dir"/$dns_ip_mapping_file >> $parses_file
   echo "Hosts file: "
   cat $parses_file
 #  exit 0
@@ -161,9 +173,9 @@ echo -e "\n${yellow}Cat conf...${reset}"
 echo
 cat $script_dir/$CONF_NAME
 echo
-echo -e "\n${yellow}Cat $dns_ip_mapping...${reset}"
+echo -e "\n${yellow}Cat $dns_ip_mapping_file...${normal}"
 echo
-cat $script_dir/$dns_ip_mapping
+cat $script_dir/$dns_ip_mapping_file
 echo
 read -p "Press enter to continue: "
 install_dnsmasq
