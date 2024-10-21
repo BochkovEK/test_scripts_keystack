@@ -159,6 +159,10 @@ copy_dnsmasq_conf () {
   done
 }
 
+if [ ! -f $script_dir/$dns_ip_mapping_file ]; then
+  echo -e "${red}$script_dir/$dns_ip_mapping_file file not found - ERROR${normal}"
+  exit 1
+fi
 
 get_var
 sed_var_in_conf
@@ -171,12 +175,6 @@ echo
 cat $script_dir/$dns_ip_mapping_file
 echo
 read -p "Press enter to continue: "
-
-if [ ! -f $script_dir/$dns_ip_mapping_file ]; then
-  echo -e "${red}$script_dir/$dns_ip_mapping_file file not found - ERROR${normal}"
-  exit 1
-fi
-
 install_dnsmasq
 copy_dnsmasq_conf
 
