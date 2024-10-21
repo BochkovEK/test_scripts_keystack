@@ -121,6 +121,10 @@ install_dnsmasq () {
     is_ubuntu=$(cat /etc/os-release|grep ubuntu)
     if [ -n "$is_ubuntu" ]; then
       echo "Installing dnsmasq on ubuntu"
+      systemd_resolved_enabled=$(systemctl list-unit-files | grep enabled| grep systemd-resolved)
+      if [ -n "$systemd_resolved_enabled" ]; then
+        systemctl stop systemd-resolved
+        systemctl disable systemd-resolved
       sudo apt install -y dnsmasq
     fi
     is_sberlinux=$(cat /etc/os-release|grep sberlinux)
