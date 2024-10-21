@@ -15,6 +15,10 @@ utils_dir=$parent_dir/utils
 installer_conf_folder="installer_conf"
 start_installer_envs="start_installer_envs"
 install_wget_script="install_wget.sh"
+systems=(
+  "ubuntu"
+  "sberlinux"
+)
 
 #Colors
 green=$(tput setaf 2)
@@ -31,15 +35,6 @@ yellow=$(tput setaf 3)
 [[ -z $INIT_INSTALLER_FOLDER ]] && INIT_INSTALLER_FOLDER="$HOME/installer"
 [[ -z $INIT_INSTALLER_BACKUP_FOLDER ]] && INIT_INSTALLER_BACKUP_FOLDER="$HOME/installer_backup"
 [[ -z $KEYSTACK_RELEASE ]] && KEYSTACK_RELEASE=""
-
-if [ -z "$1" ]; then
-  if [ -z "$KEYSTACK_RELEASE" ]; then
-    echo -e "${red}To run this script, you need to define keystack release as parameter or env var KEYSTACK_RELEASE - ERROR${normal}"
-    exit 1
-  fi
-else
-  KEYSTACK_RELEASE=$1
-fi
 
 select_config_file () {
   env_files="$script_dir/$KEYSTACK_RELEASE/$installer_conf_folder/*"
@@ -68,6 +63,36 @@ select_config_file () {
   # use scp to upload "$file" here
 }
 
+select_os () {
+  PS3='Select OS: '
+  select os in "${systems[@]}"; do
+      if [[ $REPLY == "0" ]]; then
+          echo 'Bye!' >&2
+          exit 0
+      elif [[ -z $os ]]; then
+          echo 'Invalid choice, try again' >&2
+      else
+        REPLY=$(( $REPLY - 1 ))
+        system=${systems[$REPLY]}
+        echo -e "\nOS selected: "
+        echo -e "$system\n"
+        export SYSTEM=$system
+        break
+      fi
+  done
+}
+
+if [ -z "$1" ]; then
+  if [ -z "$KEYSTACK_RELEASE" ]; then
+    echo -e "${red}To run this script, you need to define keystack release as parameter or env var KEYSTACK_RELEASE - ERROR${normal}"
+    exit 1
+  fi
+else
+  KEYSTACK_RELEASE=$1
+fi
+
+select_os
+
 echo -e "
 ${yellow}WARNING!${normal}
 Before continue, make sure you have:
@@ -77,6 +102,11 @@ Before continue, make sure you have:
 "
 
 read -p "Press enter to continue: "
+
+if [ -z "$SYSTEM" ]; then
+  echo -e "${red}\$SYSTEM variable not defined - ERROR${normal}"
+  exit 1
+fi
 
 installer_envs=$script_dir/$KEYSTACK_RELEASE/$start_installer_envs
 
