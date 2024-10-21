@@ -34,7 +34,6 @@ yellow=`tput setaf 3`
 normal=`tput sgr0`
 ldaps_crt=$script_dir/ldaps.pem
 
-
 while [ -n "$1" ]; do
   case "$1" in
     --help) echo -E "
