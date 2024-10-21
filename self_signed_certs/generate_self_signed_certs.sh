@@ -32,7 +32,7 @@ env_file="certs_envs"
 green=`tput setaf 2`
 yellow=`tput setaf 3`
 normal=`tput sgr0`
-ldaps_crt=$script_dir/ldaps.pem
+ldaps_crt=ldaps.pem
 
 while [ -n "$1" ]; do
   case "$1" in
