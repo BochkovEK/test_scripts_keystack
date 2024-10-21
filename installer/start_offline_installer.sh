@@ -176,7 +176,7 @@ echo -e "KS_INSTALL_LCM_IP: $KS_INSTALL_LCM_IP\n"
 
 if [ -d "$HOME/installer" ]; then
   [[ ! -d "$HOME/installer/certs" ]] && { mkdir -p ~/installer/certs; }
-  if [ -z "$( ls -A ~/installer/certs 2>&1)" ]; then
+  if [ -z "$( ls -A ~/installer/certs )" ]; then
     mkdir -p ~/installer/certs
     check_ssh_to_central_auth=$(ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=5 $CENTRAL_AUTH_SERVICE_IP echo ok 2>&1)
     if [ "$check_ssh_to_central_auth" = ok ]; then
