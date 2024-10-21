@@ -371,6 +371,6 @@ generate_certs () {
   fi
 }
 
-
 get_init_vars
 generate_certs
+ls -la $OUTPUT_CERTS_DIR
