@@ -114,7 +114,7 @@ curl -v -u $NEXUS_USER:$NEXUS_PASSWORD -H \"Connection: close\" -H \"Content-Typ
 done
 
 # Get repos list
-curl -X GET https://$REMOTE_NEXUS_NAME.$DOMAIN/service/rest/v1/repositories -H 'accept: application/json'| jq '.[]|.name'
+curl -X GET http://$DOCKER_HTTP/service/rest/v1/repositories -H 'accept: application/json'| jq '.[]|.name'
 
 #curl -v -u $NEXUS_USER:$NEXUS_PASSWORD -X GET "$DOCKER_HTTP"
 #"$DOCKER_HTTP/service/rest/v1/repositories"
