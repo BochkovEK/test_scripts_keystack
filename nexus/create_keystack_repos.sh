@@ -45,8 +45,15 @@ else
   KEYSTACK_RELEASE=$1
 fi
 
+repos_json_files=$(ls -f $script_dir/$KEYSTACK_RELEASE/*.json|sed -E s#.+/##)
+#ls -ls $script_dir/$KEYSTACK_RELEASE/
+if [ -z "$repos_json_files" ]; then
+  echo "${red}Config files not found in $script_dir/$KEYSTACK_RELEASE/ - ERROR!${normal}"
+  exit 1
+fi
+
 echo "Create repositories according to the list?"
-ls -ls $script_dir/$KEYSTACK_RELEASE/
+echo $repos_json_files
 read -p "Press enter to continue: "
 
 if [ -f "$parent_dir/$ENV_FILE" ]; then
@@ -91,7 +98,7 @@ echo -e "
 
 read -p "Press enter to continue: "
 
-repos_json_files=$(ls -f $script_dir/$KEYSTACK_RELEASE/*.json|sed -E s#.+/##)
+
 # example output
 #docker-hosted-k-images.json
 #pypi-hosted-k-pip.json
