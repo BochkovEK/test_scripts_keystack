@@ -36,6 +36,7 @@ create_keystack_repos_script="create_keystack_repos.sh"
 
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $ENV_FILE ]] && ENV_FILE="$self_signed_certs_folder/certs_envs"
+[[ -z $REMOTE_NEXUS_IP ]] && REMOTE_NEXUS_IP=""
 
 while [ -n "$1" ]; do
   case "$1" in
@@ -75,6 +76,31 @@ get_init_vars () {
     source $parent_dir/$ENV_FILE
   fi
 
+# get REMOTE_NEXUS_IP
+  echo -e "\n${yellow}Output ip a:${normal}"
+  echo "-----------------------"
+  ip a
+  echo -e "-----------------------\n"
+
+  while [ -z "${REMOTE_NEXUS_IP}" ]; do
+    if [[ -z "${REMOTE_NEXUS_IP}" ]]; then
+      read -rp "Enter remote nexus IP: " REMOTE_NEXUS_IP
+    fi
+    export REMOTE_NEXUS_IP=${REMOTE_NEXUS_IP}
+  done
+
+# get Remote Nexus domain nama
+  if [[ -z "${REMOTE_NEXUS_NAME}" ]]; then
+    read -rp "Enter the Remote Nexus domain name [remote-nexus]: " REMOTE_NEXUS_NAME
+  fi
+  export REMOTE_NEXUS_NAME=${REMOTE_NEXUS_NAME:-"remote-nexus"}
+
+# get domain name
+  if [[ -z "${DOMAIN}" ]]; then
+    read -rp "Enter certs output folder for installer [test.domain]: " DOMAIN
+  fi
+  export DOMAIN=${DOMAIN:-"test.domain"}
+
 # get Central Authentication Service folder
   if [[ -z "${CERTS_DIR}" ]]; then
     read -rp "Enter Central Authentication Service folder [$HOME/central_auth_service]: " CERTS_DIR
@@ -87,25 +113,14 @@ get_init_vars () {
   fi
   export OUTPUT_CERTS_DIR=${OUTPUT_CERTS_DIR:-"$HOME/certs"}
 
-  # get domain name
-  if [[ -z "${DOMAIN}" ]]; then
-    read -rp "Enter certs output folder for installer [test.domain]: " DOMAIN
-  fi
-  export DOMAIN=${DOMAIN:-"test.domain"}
-
-  # get Remote Nexus domain nama
-  if [[ -z "${REMOTE_NEXUS_NAME}" ]]; then
-    read -rp "Enter the Remote Nexus domain name [remote-nexus]: " REMOTE_NEXUS_NAME
-  fi
-  export REMOTE_NEXUS_NAME=${REMOTE_NEXUS_NAME:-"remote-nexus"}
-
   echo -E "
   envs list:
     script_dir:         $script_dir
     parent_dir:         $parent_dir
-    CERTS_DIR:          $CERTS_DIR
-    DOMAIN:             $DOMAIN
+    REMOTE_NEXUS_IP:    $REMOTE_NEXUS_IP
     REMOTE_NEXUS_NAME:  $REMOTE_NEXUS_NAME
+    DOMAIN:             $DOMAIN
+    CERTS_DIR:          $CERTS_DIR
   "
   read -p "Press enter to continue: "
 }
@@ -222,7 +237,9 @@ nexus_bootstarp () {
   #Add string to hosts
   nexus_string_exists=$(cat /etc/hosts|grep $REMOTE_NEXUS_NAME)
   if [ -z "$nexus_string_exists" ]; then
-    sed -i "s/127.0.0.1 localhost/127.0.0.1 localhost $REMOTE_NEXUS_NAME.$DOMAIN/" /etc/hosts
+#    sed -i "s/127.0.0.1 localhost/127.0.0.1 localhost $REMOTE_NEXUS_NAME.$DOMAIN/" /etc/hosts
+    echo "# --- Remote nexus ---" >> /etc/hosts
+    echo "$REMOTE_NEXUS_IP $REMOTE_NEXUS_NAME.$DOMAIN" >> /etc/hosts
   fi
 
   #Change nginx conf
@@ -233,6 +250,9 @@ nexus_bootstarp () {
 }
 
 create_repos () {
+  echo "Create repositories according to the list?"
+  ls -ls $script_dir/$KEYSTACK_RELEASE
+  read -p "Press enter to continue: "
   echo -e "${yellow}Create repos...${normal}"
   [ "$TS_DEBUG" = true ] && {
   export TS_DEBUG=$TS_DEBUG;
