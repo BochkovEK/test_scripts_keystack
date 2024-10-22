@@ -56,7 +56,8 @@ echo "Create repositories according to the list?"
 for config in $repos_json_files; do
   echo $config
 done
-read -p "\nPress enter to continue: "
+echo
+read -p "Press enter to continue: "
 
 if [ -f "$parent_dir/$ENV_FILE" ]; then
   echo "$ENV_FILE file exists"
