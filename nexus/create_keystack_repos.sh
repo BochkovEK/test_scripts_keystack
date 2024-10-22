@@ -50,7 +50,7 @@ fi
 DOCKER_HTTP="http://$REMOTE_NEXUS_NAME.$DOMAIN:$NEXUS_PORT/service/rest/v1/repositories"
 if [ -z "$NEXUS_PASSWORD" ]; then
   password=$(docker exec -it nexus cat /nexus-data/admin.password)
-  password_not_exists=$(echo $password|grep -E "No such" && echo true)
+  password_not_exists=$(echo $password|grep -E "No such" && echo true 2>&1)
   echo "password_not_exists: $password_not_exists"
   if [ "$password_not_exists" = "true" ]; then
     # get Remote Nexus domain nama
