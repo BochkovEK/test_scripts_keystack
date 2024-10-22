@@ -1,5 +1,5 @@
 {
-  "name": "foo-docker-ubuntu",
+  "name": "ubuntu",
   "online": true,
   "routingRuleId": "",
   "component": {
