@@ -53,7 +53,9 @@ if [ -z "$repos_json_files" ]; then
 fi
 
 echo "Create repositories according to the list?"
-echo $repos_json_files
+for config in $repos_json_files; do
+  echo $config
+done
 read -p "Press enter to continue: "
 
 if [ -f "$parent_dir/$ENV_FILE" ]; then
