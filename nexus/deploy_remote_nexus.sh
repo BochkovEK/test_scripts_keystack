@@ -251,7 +251,7 @@ nexus_bootstarp () {
 
 create_repos () {
   echo "Create repositories according to the list?"
-  ls -ls $script_dir/$KEYSTACK_RELEASE
+  ls -ls $script_dir/$KEYSTACK_RELEASE/
   read -p "Press enter to continue: "
   echo -e "${yellow}Create repos...${normal}"
   [ "$TS_DEBUG" = true ] && {
