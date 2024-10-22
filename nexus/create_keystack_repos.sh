@@ -123,14 +123,15 @@ read -p "Press enter to continue: "
 #curl -X GET $DOCKER_HTTP -H 'accept: application/json'| jq '.[]|.name'
 
 for repo in $repos_json_files; do
+  echo "Create repo from $repo..."
   type=$(echo $repo|awk 'BEGIN {FS="-";}{print $1}')
   sub_type=$(echo $repo|awk 'BEGIN {FS="-";}{print $2}')
 
 [ "$TS_DEBUG" = true ] && { echo -e "
-  [DEBUG]: type: $type
-  [DEBUG]: sub_type: $sub_type
   [DEBUG]:
-curl -v -u $NEXUS_USER:$NEXUS_PASSWORD -H \"Connection: close\" -H \"Content-Type: application/json\" -X POST \"$DOCKER_HTTP/$type/$sub_type\" -d @$script_dir/$KEYSTACK_RELEASE/$repo
+  type: $type
+  sub_type: $sub_type
+  curl -v -u $NEXUS_USER:$NEXUS_PASSWORD -H \"Connection: close\" -H \"Content-Type: application/json\" -X POST \"$DOCKER_HTTP/$type/$sub_type\" -d @$script_dir/$KEYSTACK_RELEASE/$repo
 ";
   read -p "Press enter to continue: ";
   }
