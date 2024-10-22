@@ -139,6 +139,13 @@ for repo in $repos_json_files; do
 done
 
 echo -e "\nRepo list:"
+
+[ "$TS_DEBUG" = true ] && { echo -e "
+  [DEBUG]:
+  curl -X GET $DOCKER_HTTP -H \'accept: application/json\'| jq \'.[]|.name\'
+";
+}
+
 curl -X GET $DOCKER_HTTP -H 'accept: application/json'| jq '.[]|.name'
 
 #curl -v -u $NEXUS_USER:$NEXUS_PASSWORD -X GET "$DOCKER_HTTP"
