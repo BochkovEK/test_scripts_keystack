@@ -107,11 +107,17 @@ get_init_vars () {
   fi
   export CERTS_DIR=${CERTS_DIR:-"$HOME/central_auth_service"}
 
-  # get Output certs folder
+# get Output certs folder
   if [[ -z "${OUTPUT_CERTS_DIR}" ]]; then
     read -rp "Enter certs output folder for installer [$HOME/certs]: " OUTPUT_CERTS_DIR
   fi
   export OUTPUT_CERTS_DIR=${OUTPUT_CERTS_DIR:-"$HOME/certs"}
+
+# get Keystack release
+  if [[ -z "${KEYSTACK_RELEASE}" ]]; then
+    read -rp "Enter KeyStack release [ks2024.2.5]: " KEYSTACK_RELEASE
+  fi
+  export KEYSTACK_RELEASE=${KEYSTACK_RELEASE:-"ks2024.2.5"}
 
   echo -E "
   envs list:
@@ -121,6 +127,7 @@ get_init_vars () {
     REMOTE_NEXUS_NAME:  $REMOTE_NEXUS_NAME
     DOMAIN:             $DOMAIN
     CERTS_DIR:          $CERTS_DIR
+    KEYSTACK_RELEASE:   $KEYSTACK_RELEASE
   "
   read -p "Press enter to continue: "
 }
@@ -261,10 +268,6 @@ create_repos () {
     echo -e "${yellow}Script \'create_keystack_repos_script\': $script_dir/$create_keystack_repos_script not found${normal}"
     echo "Repositories were not created in remote nexus"
   else
-    if [[ -z "${KEYSTACK_RELEASE}" ]]; then
-      read -rp "Enter KeyStack release [ks2024.2.5]: " KEYSTACK_RELEASE
-    fi
-    export KEYSTACK_RELEASE=${KEYSTACK_RELEASE:-"ks2024.2.5"}
     bash $script_dir/$create_keystack_repos_script
   fi
 }
