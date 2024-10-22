@@ -257,13 +257,6 @@ nexus_bootstarp () {
 }
 
 create_repos () {
-  echo "Create repositories according to the list?"
-  ls -ls $script_dir/$KEYSTACK_RELEASE/
-  read -p "Press enter to continue: "
-  echo -e "${yellow}Create repos...${normal}"
-  [ "$TS_DEBUG" = true ] && {
-  export TS_DEBUG=$TS_DEBUG;
-  }
   if [ ! -f $script_dir/$create_keystack_repos_script ]; then
     echo -e "${yellow}Script \'create_keystack_repos_script\': $script_dir/$create_keystack_repos_script not found${normal}"
     echo "Repositories were not created in remote nexus"

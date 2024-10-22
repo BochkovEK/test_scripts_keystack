@@ -30,6 +30,12 @@ yellow=$(tput setaf 3)
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $KEYSTACK_RELEASE ]] && KEYSTACK_RELEASE=""
 
+echo -e "${yellow}Create repos...${normal}"
+
+#  echo "Create repositories according to the list?"
+#  ls -ls $script_dir/$KEYSTACK_RELEASE/
+#  read -p "Press enter to continue: "
+
 if [ -z "$1" ]; then
   if [ -z "$KEYSTACK_RELEASE" ]; then
     echo -e "${red}To run this script, you need to define keystack release as parameter or env var KEYSTACK_RELEASE - ERROR${normal}"
@@ -91,12 +97,16 @@ repos_json_files=$(ls -f $script_dir/$KEYSTACK_RELEASE/*.json|sed -E s#.+/##)
 #yum-hosted-docker-sberlinux.json
 #yum-hosted-sberlinux.json
 
-[ "$TS_DEBUG" = true ] && {
-  echo -e "
-  [DEBUG]: repos_json_files: $repos_json_files
-";
-  read -p "Press enter to continue: ";
-}
+#[ "$TS_DEBUG" = true ] && {
+#  echo -e "
+#  [DEBUG]: repos_json_files: $repos_json_files
+#";
+#  read -p "Press enter to continue: ";
+#}
+
+echo "Create repositories according to the list?"
+ls -ls $script_dir/$KEYSTACK_RELEASE/
+read -p "Press enter to continue: "
 
 # Get repos list
 curl -X GET $DOCKER_HTTP/service/rest/v1/repositories -H 'accept: application/json'| jq '.[]|.name'
