@@ -115,9 +115,9 @@ get_init_vars () {
 
 # get Keystack release
   if [[ -z "${KEYSTACK_RELEASE}" ]]; then
-    read -rp "Enter KeyStack release [ks2024.2.5]: " KEYSTACK_RELEASE
+    read -rp "Enter KeyStack release [ks2024.3]: " KEYSTACK_RELEASE
   fi
-  export KEYSTACK_RELEASE=${KEYSTACK_RELEASE:-"ks2024.2.5"}
+  export KEYSTACK_RELEASE=${KEYSTACK_RELEASE:-"ks2024.3"}
 
   echo -E "
   envs list:

@@ -142,7 +142,7 @@ echo -e "\nRepo list:"
 
 [ "$TS_DEBUG" = true ] && { echo -e "
   [DEBUG]:
-  curl -X GET $DOCKER_HTTP -H \'accept: application/json\'| jq \'.[]|.name\'
+  curl -X GET $DOCKER_HTTP -H 'accept: application/json'| jq '.[]|.name'
 ";
 }
 
