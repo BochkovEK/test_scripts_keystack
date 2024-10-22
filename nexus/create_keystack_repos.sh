@@ -53,6 +53,7 @@ if [ -z "$repos_json_files" ]; then
 fi
 
 echo "Create repositories according to the list?"
+echo
 for config in $repos_json_files; do
   echo $config
 done
