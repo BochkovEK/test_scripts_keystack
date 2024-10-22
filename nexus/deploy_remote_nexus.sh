@@ -142,6 +142,7 @@ waiting_for_nexus_readiness () {
 
   echo -e "${yellow}\nTo get initial nexus admin password:${normal}"
   echo "docker exec -it nexus cat /nexus-data/admin.password"
+  echo
 }
 
 #Checking if directory $CERTS_DIR and $OUTPUT_CERTS_DIR are empty

@@ -45,6 +45,10 @@ else
   KEYSTACK_RELEASE=$1
 fi
 
+echo "Create repositories according to the list?"
+ls -ls $script_dir/$KEYSTACK_RELEASE/
+read -p "Press enter to continue: "
+
 if [ -f "$parent_dir/$ENV_FILE" ]; then
   echo "$ENV_FILE file exists"
   source $parent_dir/$ENV_FILE
@@ -103,10 +107,6 @@ repos_json_files=$(ls -f $script_dir/$KEYSTACK_RELEASE/*.json|sed -E s#.+/##)
 #";
 #  read -p "Press enter to continue: ";
 #}
-
-echo "Create repositories according to the list?"
-ls -ls $script_dir/$KEYSTACK_RELEASE/
-read -p "Press enter to continue: "
 
 # Get repos list
 curl -X GET $DOCKER_HTTP/service/rest/v1/repositories -H 'accept: application/json'| jq '.[]|.name'
