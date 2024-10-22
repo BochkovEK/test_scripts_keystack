@@ -98,6 +98,9 @@ repos_json_files=$(ls -f $script_dir/$KEYSTACK_RELEASE/*.json|sed -E s#.+/##)
   read -p "Press enter to continue: ";
 }
 
+# Get repos list
+curl -X GET $DOCKER_HTTP/service/rest/v1/repositories -H 'accept: application/json'| jq '.[]|.name'
+
 for repo in $repos_json_files; do
   type=$(echo $repo|awk 'BEGIN {FS="-";}{print $1}')
   sub_type=$(echo $repo|awk 'BEGIN {FS="-";}{print $2}')
@@ -114,7 +117,7 @@ curl -v -u $NEXUS_USER:$NEXUS_PASSWORD -H \"Connection: close\" -H \"Content-Typ
 done
 
 # Get repos list
-curl -X GET http://$DOCKER_HTTP/service/rest/v1/repositories -H 'accept: application/json'| jq '.[]|.name'
+curl -X GET $DOCKER_HTTP/service/rest/v1/repositories -H 'accept: application/json'| jq '.[]|.name'
 
 #curl -v -u $NEXUS_USER:$NEXUS_PASSWORD -X GET "$DOCKER_HTTP"
 #"$DOCKER_HTTP/service/rest/v1/repositories"
