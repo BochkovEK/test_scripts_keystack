@@ -74,7 +74,7 @@ echo -e "
   NEXUS_PASSWORD:     $NEXUS_PASSWORD
 "
 
-read -p "Press enter to continue..."
+read -p "Press enter to continue: "
 
 repos_json_files=$(ls -f $script_dir/$KEYSTACK_RELEASE/*.json|sed -E s#.+/##)
 # example output
