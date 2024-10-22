@@ -268,6 +268,7 @@ create_repos () {
     echo -e "${yellow}Script \'create_keystack_repos_script\': $script_dir/$create_keystack_repos_script not found${normal}"
     echo "Repositories were not created in remote nexus"
   else
+    export TS_DEBUG=$TS_DEBUG
     bash $script_dir/$create_keystack_repos_script
   fi
 }

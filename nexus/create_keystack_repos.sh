@@ -95,24 +95,28 @@ repos_json_files=$(ls -f $script_dir/$KEYSTACK_RELEASE/*.json|sed -E s#.+/##)
   echo -e "
   [DEBUG]: repos_json_files: $repos_json_files
 ";
-  read -p "Press enter to continue...";
-
+  read -p "Press enter to continue: ";
 }
 
 for repo in $repos_json_files; do
   type=$(echo $repo|awk 'BEGIN {FS="-";}{print $1}')
   sub_type=$(echo $repo|awk 'BEGIN {FS="-";}{print $2}')
 
-[ "$TS_DEBUG" = true ] && echo -e "
+[ "$TS_DEBUG" = true ] && { echo -e "
   [DEBUG]: type: $type
   [DEBUG]: sub_type: $sub_type
   [DEBUG]:
-curl -v -u $NEXUS_USER:$password -H \"Connection: close\" -H \"Content-Type: application/json\" -X POST \"$DOCKER_HTTP/$type/$sub_type\" -d @$script_dir/$KEYSTACK_RELEASE/$repo
-"
-  curl -v -u $NEXUS_USER:$password -H "Connection: close" -H "Content-Type: application/json" -X POST "$DOCKER_HTTP/$type/$sub_type" -d @$script_dir/$KEYSTACK_RELEASE/$repo
+curl -v -u $NEXUS_USER:$NEXUS_PASSWORD -H \"Connection: close\" -H \"Content-Type: application/json\" -X POST \"$DOCKER_HTTP/$type/$sub_type\" -d @$script_dir/$KEYSTACK_RELEASE/$repo
+";
+  read -p "Press enter to continue: ";
+  }
+  curl -v -u $NEXUS_USER:$NEXUS_PASSWORD -H "Connection: close" -H "Content-Type: application/json" -X POST "$DOCKER_HTTP/$type/$sub_type" -d @$script_dir/$KEYSTACK_RELEASE/$repo
 done
 
-curl -v -u $NEXUS_USER:$password -X GET "$DOCKER_HTTP"
+# Get repos list
+curl -X GET https://$REMOTE_NEXUS_NAME.$DOMAIN/service/rest/v1/repositories -H 'accept: application/json'| jq '.[]|.name'
+
+#curl -v -u $NEXUS_USER:$NEXUS_PASSWORD -X GET "$DOCKER_HTTP"
 #"$DOCKER_HTTP/service/rest/v1/repositories"
 
 ## k-images docker(hosted)
