@@ -120,7 +120,7 @@ read -p "Press enter to continue: "
 #}
 
 # Get repos list
-curl -X GET $DOCKER_HTTP/service/rest/v1/repositories -H 'accept: application/json'| jq '.[]|.name'
+#curl -X GET $DOCKER_HTTP -H 'accept: application/json'| jq '.[]|.name'
 
 for repo in $repos_json_files; do
   type=$(echo $repo|awk 'BEGIN {FS="-";}{print $1}')
@@ -137,8 +137,8 @@ curl -v -u $NEXUS_USER:$NEXUS_PASSWORD -H \"Connection: close\" -H \"Content-Typ
   curl -v -u $NEXUS_USER:$NEXUS_PASSWORD -H "Connection: close" -H "Content-Type: application/json" -X POST "$DOCKER_HTTP/$type/$sub_type" -d @$script_dir/$KEYSTACK_RELEASE/$repo
 done
 
-# Get repos list
-curl -X GET $DOCKER_HTTP/service/rest/v1/repositories -H 'accept: application/json'| jq '.[]|.name'
+echo "Repo list:"
+curl -X GET $DOCKER_HTTP -H 'accept: application/json'| jq '.[]|.name'
 
 #curl -v -u $NEXUS_USER:$NEXUS_PASSWORD -X GET "$DOCKER_HTTP"
 #"$DOCKER_HTTP/service/rest/v1/repositories"
