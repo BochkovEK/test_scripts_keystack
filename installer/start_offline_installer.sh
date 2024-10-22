@@ -15,10 +15,10 @@ utils_dir=$parent_dir/utils
 installer_conf_folder="installer_conf"
 start_installer_envs="start_installer_envs"
 install_wget_script="install_wget.sh"
-systems=(
-  "ubuntu"
-  "sberlinux"
-)
+#systems=(
+#  "ubuntu"
+#  "sberlinux"
+#)
 
 #Colors
 green=$(tput setaf 2)
@@ -64,24 +64,87 @@ select_config_file () {
   # use scp to upload "$file" here
 }
 
+#select_os () {
+#  echo
+#  PS3='Select OS: '
+#  select os in "${systems[@]}"; do
+#      if [[ $REPLY == "0" ]]; then
+#          echo 'Bye!' >&2
+#          exit 0
+#      elif [[ -z $os ]]; then
+#          echo 'Invalid choice, try again' >&2
+#      else
+#        REPLY=$(( $REPLY - 1 ))
+#        system=${systems[$REPLY]}
+#        echo -e "\nOS selected: "
+#        echo -e "$system\n"
+#        export SYSTEM=$system
+#        break
+#      fi
+#  done
+#}
+
 select_os () {
-  echo
-  PS3='Select OS: '
-  select os in "${systems[@]}"; do
-      if [[ $REPLY == "0" ]]; then
-          echo 'Bye!' >&2
-          exit 0
-      elif [[ -z $os ]]; then
-          echo 'Invalid choice, try again' >&2
-      else
-        REPLY=$(( $REPLY - 1 ))
-        system=${systems[$REPLY]}
-        echo -e "\nOS selected: "
-        echo -e "$system\n"
-        export SYSTEM=$system
-        break
+  # check os release
+  os=unknown
+  [[ -f /etc/os-release ]] && os=$({ . /etc/os-release; echo ${ID,,}; })
+
+  case "$os" in
+    ubuntu|sberlinux)
+      system=$os
+      ;;
+#    sberlinux)
+#      ;;
+    *)
+      echo -e "${red}OS $os is not supported - ERROR${normal}"
+      exit 1
+      ;;
+  esac
+  export SYSTEM=$system
+}
+
+#
+#
+#  is_ubuntu=$(cat /etc/os-release|grep ubuntu)
+#  if [ -n "$is_ubuntu" ]; then
+#    SYSTEM="ubuntu"
+#  fi
+#  is_sberlinux=$(cat /etc/os-release|grep sberlinux)
+#  if [ -n "$is_sberlinux" ]; then
+#    echo "Installing docker on sberlinux"
+#    if bash $script_dir/docker_sberlinux_installation.sh; then
+#      return
+#    fi
+#  fi
+#else
+#  return
+#fi
+#echo -e "${red}Failed to install docker - ERROR${normal}"
+#exit 1
+#}
+
+check_and_install_docker () {
+  #Install docker if need
+  if ! command -v docker &> /dev/null; then
+    is_ubuntu=$(cat /etc/os-release|grep ubuntu)
+    if [ -n "$is_ubuntu" ]; then
+      echo "Installing docker on ubuntu"
+      if bash $script_dir/docker_ubuntu_installation.sh; then
+        return
       fi
-  done
+    fi
+    is_sberlinux=$(cat /etc/os-release|grep sberlinux)
+    if [ -n "$is_sberlinux" ]; then
+      echo "Installing docker on sberlinux"
+      if bash $script_dir/docker_sberlinux_installation.sh; then
+        return
+      fi
+    fi
+  else
+    return
+  fi
+  echo -e "${red}Failed to install docker - ERROR${normal}"
+  exit 1
 }
 
 validate_url () {
