@@ -123,7 +123,7 @@ read -p "Press enter to continue: "
 #curl -X GET $DOCKER_HTTP -H 'accept: application/json'| jq '.[]|.name'
 
 for repo in $repos_json_files; do
-  echo "Create repo from $repo..."
+  echo -e "\nCreate repo from $repo..."
   type=$(echo $repo|awk 'BEGIN {FS="-";}{print $1}')
   sub_type=$(echo $repo|awk 'BEGIN {FS="-";}{print $2}')
 
@@ -138,7 +138,7 @@ for repo in $repos_json_files; do
   curl -v -u $NEXUS_USER:$NEXUS_PASSWORD -H "Connection: close" -H "Content-Type: application/json" -X POST "$DOCKER_HTTP/$type/$sub_type" -d @$script_dir/$KEYSTACK_RELEASE/$repo
 done
 
-echo "Repo list:"
+echo -e "\nRepo list:"
 curl -X GET $DOCKER_HTTP -H 'accept: application/json'| jq '.[]|.name'
 
 #curl -v -u $NEXUS_USER:$NEXUS_PASSWORD -X GET "$DOCKER_HTTP"
