@@ -50,8 +50,17 @@ fi
 DOCKER_HTTP="http://$REMOTE_NEXUS_NAME.$DOMAIN:$NEXUS_PORT/service/rest/v1/repositories"
 if [ -z "$NEXUS_PASSWORD" ]; then
   password=$(docker exec -it nexus cat /nexus-data/admin.password)
-else
-  password=$NEXUS_PASSWORD
+  password_not_exists=$(echo $password|grep -E "No such" && echo true)
+  if [ "$password_not_exists" = "true" ]; then
+    # get Remote Nexus domain nama
+    read -rp "Enter the nexus admin password for Remote Nexus: " NEXUS_PASSWORD
+    if [[ -z "${NEXUS_PASSWORD}" ]]; then
+     echo -e "${red}Variable \$NEXUS_PASSWORD is not define - ERROR${normal}"
+     exit 1
+    fi
+  else
+    NEXUS_PASSWORD=$password
+  fi
 fi
 
 echo -e "
@@ -61,7 +70,7 @@ echo -e "
   DOCKER_HTTP:        $DOCKER_HTTP
   NEXUS_USER:         $NEXUS_USER
   NEXUS_PORT:         $NEXUS_PORT
-  password:           $password
+  NEXUS_PASSWORD:     $NEXUS_PASSWORD
 "
 
 read -p "Press enter to continue..."
