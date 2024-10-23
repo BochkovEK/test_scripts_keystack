@@ -64,8 +64,8 @@ while [ -n "$1" ]; do
       define_parameters "$1"
       count=$(( $count + 1 ))
       ;;
-    esac
-    shift
+  esac
+  shift
 done
 
 
@@ -103,6 +103,7 @@ node_type_func () {
 }
 
 check_openstack_cli () {
+  export ASK_TO_INSTALL=false
   if ! bash $utils_dir/$check_openstack_cli_script &> /dev/null; then
     exit 1
   fi

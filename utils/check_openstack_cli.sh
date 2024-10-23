@@ -8,6 +8,7 @@ normal=$(tput sgr0)
 yellow=$(tput setaf 3)
 
 [[ -z $OSC_VERSION ]] && OSC_VERSION="6.2.0"
+[[ -z $ASK_TO_INSTALL ]] && ASK_TO_INSTALL="true"
 
 osc_version_string="==$OSC_VERSION"
 
@@ -26,16 +27,20 @@ check_openstack_cli () {
   check_command openstack
   if [ -z $command_exist ]; then
     echo -e "\033[31mOpenstack cli not installed\033[0m"
-    while true; do
-      read -p "Do you want to try to install openstack cli [Yes]: " yn
-      yn=${yn:-"Yes"}
-      echo $yn
-      case $yn in
-        [Yy]* ) yes_no_input="true"; break;;
-        [Nn]* ) yes_no_input="false"; break ;;
-        * ) echo "Please answer yes or no.";;
-      esac
-    done
+    if [ "$ASK_TO_INSTALL" = "true" ]; then
+      while true; do
+        read -p "Do you want to try to install openstack cli [Yes]: " yn
+        yn=${yn:-"Yes"}
+        echo $yn
+        case $yn in
+          [Yy]* ) yes_no_input="true"; break;;
+          [Nn]* ) yes_no_input="false"; break ;;
+          * ) echo "Please answer yes or no.";;
+        esac
+      done
+    else
+      yes_no_input=true
+    fi
     if [ "$yes_no_input" = "true" ]; then
       [[ -f /etc/os-release ]] && os=$({ . /etc/os-release; echo ${ID,,}; })
       case $os in
