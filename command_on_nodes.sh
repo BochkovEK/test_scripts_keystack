@@ -271,7 +271,7 @@ get_nodes_list () {
     nodes=$(bash $utils_dir/$get_nodes_list_script -nt $NODES_TYPE)
   fi
   if echo $nodes| grep "ERROR"; then
-    echo -e "$nodes"
+#    echo -e "$nodes"
     exit 1
   fi
 #  node=$(cat /etc/hosts | grep -m 1 -E ${nodes_pattern} | awk '{print $2}')
