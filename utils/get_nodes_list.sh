@@ -103,6 +103,7 @@ node_type_func () {
 }
 
 check_openstack_cli () {
+#  echo "check"
   export ASK_TO_INSTALL=false
   if ! bash $utils_dir/$check_openstack_cli_script &> /dev/null; then
     exit 1
