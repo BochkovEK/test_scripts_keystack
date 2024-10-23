@@ -29,6 +29,10 @@ yellow=$(tput setaf 3)
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 #======================
 
+# Define parameters
+define_parameters () {
+  [ "$count" = 1 ] && [[ -n $1 ]] && { NODES_TYPE=$1; [ "$TS_DEBUG" = true ] && echo -e "Nodes type parameter found with value $NODES_TYPE"; }
+}
 
 count=1
 while [ -n "$1" ]; do
@@ -64,10 +68,6 @@ while [ -n "$1" ]; do
     shift
 done
 
-# Define parameters
-define_parameters () {
-  [ "$count" = 1 ] && [[ -n $1 ]] && { NODES_TYPE=$1; [ "$TS_DEBUG" = true ] && echo -e "Nodes type parameter found with value $NODES_TYPE"; }
-}
 
 node_type_func () {
   case "$1" in
