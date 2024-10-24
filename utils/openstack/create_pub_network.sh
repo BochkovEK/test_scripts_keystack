@@ -39,20 +39,20 @@ error_output () {
   exit 1
 }
 
-yes_no_answer () {
-  yes_no_input=""
-  while true; do
-    read -p "$yes_no_question" yn
-    yn=${yn:-"Yes"}
-    echo $yn
-    case $yn in
-        [Yy]* ) yes_no_input="true"; break;;
-        [Nn]* ) yes_no_input="false"; break ;;
-        * ) echo "Please answer yes or no.";;
-    esac
-  done
-  yes_no_question="<Empty yes\no question>"
-}
+#yes_no_answer () {
+#  yes_no_input=""
+#  while true; do
+#    read -p "$yes_no_question" yn
+#    yn=${yn:-"Yes"}
+#    echo $yn
+#    case $yn in
+#        [Yy]* ) yes_no_input="true"; break;;
+#        [Nn]* ) yes_no_input="false"; break ;;
+#        * ) echo "Please answer yes or no.";;
+#    esac
+#  done
+#  yes_no_question="<Empty yes\no question>"
+#}
 
 check_and_source_openrc_file () {
 #  echo "check openrc"
@@ -81,11 +81,11 @@ create_pub_network () {
   echo "Check for exist network: \"$NETWORK\""
   NETWORK_NAME_EXIST=$(openstack network list| grep "$NETWORK"| awk '{print $2}')
   if [ -z "$NETWORK_NAME_EXIST" ]; then
-    printf "%s\n" "${yellow}Network \"$NETWORK\" not found in project \"$PROJECT\"${normal}"
+    echo -e "${yellow}Network \"$NETWORK\" not found in project \"$PROJECT\"${normal}"
     if [ "$NETWORK" = "pub_net" ]; then
       if [ ! $DONT_ASK = "true" ]; then
         export TS_YES_NO_QUESTION="Do you want to try to create $NETWORK [Yes]:"
-        yes_no_input=$(bash $utils_dir/yes_no_answer.sh)
+        yes_no_input=$(bash $utils_dir/$yes_no_answer_script)
       else
         yes_no_input="true"
       fi
@@ -147,25 +147,25 @@ create_pub_network () {
               $NETWORK
           else
             warning_message="Script can't create network for $mask_pub_net mask"
-            error_message="Network $NETWORK does not exist"
+            error_message="Network $NETWORK does not created"
             error_output
           fi
         else
           warning_message="Script can't define CIDR or GATEWAY on this node. Try use the script on lcm or jump node"
-          error_message="Network $NETWORK does not exist"
+          error_message="Network $NETWORK does not created"
           error_output
         fi
       else
-        error_message="Network $NETWORK does not exist"
+        error_message="Network $NETWORK does not created"
         error_output
       fi
     else
       warning_message="The script can only create a 'pub_net' network"
-      error_message="Network $NETWORK does not exist"
+      error_message="Network $NETWORK does not created"
       error_output
     fi
   else
-    printf "%s\n" "${green}Network \"$NETWORK\" already exist in project \"$PROJECT\"${normal}"
+    echo -e "${green}Network \"$NETWORK\" already exist in project \"$PROJECT\"${normal}"
   fi
 }
 

@@ -8,7 +8,7 @@ normal=$(tput sgr0)
 yellow=$(tput setaf 3)
 
 [[ -z $OSC_VERSION ]] && OSC_VERSION="6.2.0"
-[[ -z $ASK_TO_INSTALL ]] && ASK_TO_INSTALL="true"
+[[ -z $DONT_ASK ]] && DONT_ASK="true"
 
 osc_version_string="==$OSC_VERSION"
 
@@ -27,7 +27,7 @@ check_openstack_cli () {
   check_command openstack
   if [ -z $command_exist ]; then
     echo -e "\033[31mOpenstack cli not installed\033[0m"
-    if [ "$ASK_TO_INSTALL" = "true" ]; then
+    if [ "$DONT_ASK" = "false" ]; then
       while true; do
         read -p "Do you want to try to install openstack cli [Yes]: " yn
         yn=${yn:-"Yes"}

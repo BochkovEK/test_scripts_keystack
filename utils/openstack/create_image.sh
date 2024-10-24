@@ -5,6 +5,9 @@
 #   1) get list of images from repo.itkey.com images repo
 #      curl -X 'GET' 'https://repo.itkey.com/service/rest/v1/search?repository=images&name=*' -H 'accept: application/json'| jq '.items[]|.name'
 #   2) bash create_image.sh <image name from repo.itkey.com 'images' repo>
+# OR
+#    1) export IMAGE_SOURCE="https://cloud-images.ubuntu.com/releases/focal/release"
+#    2) bash ~/test_scripts_keystack/utils/openstack/create_image.sh ubuntu-20.04-server-cloudimg-amd64.img
 
 
 #Colors
@@ -21,6 +24,10 @@ script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
 utils_dir=$parent_dir
+check_openrc_script="check_openrc.sh"
+check_openstack_cli_script="check_openstack_cli.sh"
+install_wget_script="install_wget.sh"
+yes_no_answer_script="yes_no_answer.sh"
 
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
@@ -29,7 +36,7 @@ utils_dir=$parent_dir
 [[ -z $IMAGE_DIR ]] && IMAGE_DIR="$HOME/images"
 # --min-disk $min_disk
 [[ -z $MIN_DISK ]] && MIN_DISK=""
-[[ -z $PROJECT ]] && PROJECT="admin"
+#[[ -z $PROJECT ]] && PROJECT="admin"
 [[ -z $API_VERSION ]] && API_VERSION="2.74"
 #[[ -z $TS_YES_NO_INPUT ]] && TS_YES_NO_INPUT=""
 [[ -z $TS_DEBUG ]] && TS_DEBUG="true"
@@ -45,50 +52,106 @@ error_output () {
   exit 1
 }
 
-yes_no_answer () {
-  yes_no_input=""
-  while true; do
-    read -p "$yes_no_question" yn
-    yn=${yn:-"Yes"}
-    echo $yn
-    case $yn in
-        [Yy]* ) yes_no_input="true"; break;;
-        [Nn]* ) yes_no_input="false"; break ;;
-        * ) echo "Please answer yes or no.";;
-    esac
-  done
-  yes_no_question="<Empty yes\no question>"
+#yes_no_answer () {
+#  yes_no_input=""
+#  while true; do
+#    read -p "$yes_no_question" yn
+#    yn=${yn:-"Yes"}
+#    echo $yn
+#    case $yn in
+#        [Yy]* ) yes_no_input="true"; break;;
+#        [Nn]* ) yes_no_input="false"; break ;;
+#        * ) echo "Please answer yes or no.";;
+#    esac
+#  done
+#  yes_no_question="<Empty yes\no question>"
+#}
+
+check_and_source_openrc_file () {
+#  echo "check openrc"
+  if bash $utils_dir/$check_openrc_script &> /dev/null; then
+#  if bash $utils_dir/$check_openrc_script 2>&1; then
+    openrc_file=$(bash $utils_dir/$check_openrc_script)
+    source $openrc_file
+  else
+    bash $utils_dir/$check_openrc_script
+    exit 1
+  fi
+}
+
+check_openstack_cli () {
+#  echo "check"
+  if [[ $CHECK_OPENSTACK = "true" ]]; then
+    if ! bash $utils_dir/$check_openstack_cli_script &> /dev/null; then
+      echo -e "${red}Failed to check openstack cli - ERROR${normal}"
+      exit 1
+    fi
+  fi
 }
 
 # Create image
 create_image () {
+  echo "Check for exist image: \"$IMAGE\""
+   #in project \"$PROJECT\""
   image_exists_in_openstack=$(openstack image list| grep -m 1 "$IMAGE"| awk '{print $2}')
   [ "$TS_DEBUG" = true ] && echo -e "image_exists_in_openstack: $image_exists_in_openstack"
-  if [ -n "${image_exists_in_openstack}" ]; then
-    if [ ! $DONT_ASK = "true" ]; then
-      echo -E "${green}$IMAGE already exists in $PROJECT - ok${normal}"
-      exit 0
-    else
-      yes_no_input="true"
-    fi
-  else
-    yes_no_input="true"
-  fi
-  if [ "$yes_no_input" = "true" ]; then
-    bash $utils_dir/install_wget.sh
-    echo "Creating image \"$IMAGE\" in project \"$PROJECT\"..."
-    [ -f $script_dir/"$IMAGE" ] && echo "File $IMAGE_DIR/$IMAGE exist." \
-    || { echo "File $IMAGE_DIR/$IMAGE does not exist. Try to download it..."; \
-    wget $IMAGE_SOURCE/$IMAGE -P $IMAGE_DIR/; }
-
-    openstack image create "$IMAGE" \
-      --disk-format qcow2 \
-      --container-format bare \
-      --public \
-      $MIN_DISK --file $IMAGE_DIR/$IMAGE
-  else
-    echo -E "${yellow}$IMAGE not created${normal}"
+  if [ -n "$image_exists_in_openstack" ]; then
+    echo -e "${green}Image \"$IMAGE\" already exist - ok!${normal}"
     exit 0
+  else
+    echo -e "${yellow}Image \"$IMAGE\" not found${normal}"
+     #in project \"$PROJECT\"${normal}"
+    if [ $DONT_ASK = "true" ]; then
+      yes_no_input="true"
+    else
+      export TS_YES_NO_QUESTION="Do you want to try to create $IMAGE [Yes]:"
+#       in project $PROJECT [Yes]:"
+      yes_no_input=$(bash $utils_dir/$yes_no_answer_script)
+    fi
+    if [ ! "$yes_no_input" = "true" ]; then
+      error_message="Image $IMAGE does not created - ERROR"
+      error_output
+    else
+      if [ -f $script_dir/"$IMAGE" ]; then
+        mkdir -p $IMAGE_DIR
+        cp $script_dir/"$IMAGE" $IMAGE_DIR/$IMAGE
+      fi
+      if [ -f $IMAGE_DIR/"$IMAGE" ]; then
+        echo -e "${green}File $IMAGE exist - ok!${normal}"
+      else
+        echo -e "${yellow}File $IMAGE does not exist${normal}"
+        if [ -z "$IMAGE_SOURCE" ]; then
+          warning_message="Global variable \$IMAGE_SOURCE does not define"
+          error_message="Image $IMAGE does not created - ERROR"
+          error_output
+        else
+          if [ $DONT_ASK = "true" ]; then
+            yes_no_input="true"
+          else
+            export TS_YES_NO_QUESTION="Do you want to try to download $IMAGE from source: $IMAGE_SOURCE [Yes]:"
+            yes_no_input=$(bash $utils_dir/$yes_no_answer_script)
+          fi
+          if [ ! "$yes_no_input" = "true" ]; then
+            error_message="Image $IMAGE does not created - ERROR"
+            error_output
+          else
+            if ! bash $utils_dir/install_wget.sh; then
+              error_message="Image $IMAGE does not created - ERROR"
+              error_output
+            else
+              wget $IMAGE_SOURCE/$IMAGE -P $IMAGE_DIR/
+            fi
+            echo "Creating image \"$IMAGE\""
+#             in project \"$PROJECT\"..."
+            openstack image create "$IMAGE" \
+              --disk-format qcow2 \
+              --container-format bare \
+              --public \
+              $MIN_DISK --file $IMAGE_DIR/$IMAGE
+          fi
+        fi
+      fi
+    fi
   fi
   image_exists_in_openstack=$(openstack image list| grep -m 1 "$IMAGE"| awk '{print $2}')
   echo "image_exists_in_openstack: $image_exists_in_openstack"
@@ -110,18 +173,6 @@ if [ -z $IMAGE ]; then
   curl -X 'GET' 'https://repo.itkey.com/service/rest/v1/search?repository=images&name=*' -H 'accept: application/json'| jq '.items[]|.name'
   error_message="You mast define image name as start parameter script"
   error_output
-fi
-
-#check_openstack_cli
-if [[ $CHECK_OPENSTACK = "true" ]]; then
-  if ! bash $utils_dir/check_openstack_cli.sh; then
-#    echo -e "\033[31mFailed to check openstack cli - error\033[0m"
-    exit 1
-  fi
-fi
-
-if ! bash $utils_dir/check_openrc.sh; then
-  exit 1
 fi
 
 [ "$TS_DEBUG" = true ] && echo -e "
@@ -146,5 +197,7 @@ fi
   IMAGE_DIR:                $IMAGE_DIR
 "
 
+check_openstack_cli
+check_and_source_openrc_file
 create_image
 
