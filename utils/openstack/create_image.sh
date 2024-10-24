@@ -135,7 +135,7 @@ create_image () {
             error_message="Image $IMAGE does not created - ERROR"
             error_output
           else
-            if ! bash $utils_dir/install_wget.sh; then
+            if ! bash $utils_dir/$install_wget_script; then
               error_message="Image $IMAGE does not created - ERROR"
               error_output
             else
