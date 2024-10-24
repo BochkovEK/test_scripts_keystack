@@ -20,4 +20,16 @@ VMs = {
   }
 }
 
+# AZs
+AZs = {
+ foo = {
+    az_name = "foo_az"
+    hosts_list = [
+      "ebochkov-keystack-comp-01",
+      "ebochkov-keystack-comp-01",
+    ]
+  }
+}
+
+server_groups = {}
 
