@@ -13,13 +13,13 @@ variable "server_groups" {
   default = {}
 }
 
-variable "server_group" {
-  description = "default server group"
-  default = {
-#    name =
-#  policies = var.server_group.policies
-  }
-}
+#variable "server_group" {
+#  description = "default server group"
+#  default = {
+##    name =
+##  policies = var.server_group.policies
+#  }
+#}
 
 #  server_groups = {
 #  foo = {

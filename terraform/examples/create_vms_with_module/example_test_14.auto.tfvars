@@ -21,5 +21,6 @@ VMs = {
 }
 
 # AZs
-AZs = {
-}
+AZs = {}
+
+server_groups = {}
