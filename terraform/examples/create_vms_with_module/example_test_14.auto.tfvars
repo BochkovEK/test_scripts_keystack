@@ -21,6 +21,8 @@ VMs = {
 }
 
 # AZs
-AZs = {}
+AZs = {
+  foo = "bast"
+}
 
 server_groups = {}
