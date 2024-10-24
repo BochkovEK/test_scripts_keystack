@@ -141,16 +141,16 @@ create_image () {
             else
               wget $IMAGE_SOURCE/$IMAGE -P $IMAGE_DIR/
             fi
-            echo "Creating image \"$IMAGE\""
-#             in project \"$PROJECT\"..."
-            openstack image create "$IMAGE" \
-              --disk-format qcow2 \
-              --container-format bare \
-              --public \
-              $MIN_DISK --file $IMAGE_DIR/$IMAGE
           fi
         fi
       fi
+      echo "Creating image \"$IMAGE\""
+#       in project \"$PROJECT\"..."
+      openstack image create "$IMAGE" \
+        --disk-format qcow2 \
+        --container-format bare \
+        --public \
+        $MIN_DISK --file $IMAGE_DIR/$IMAGE
     fi
   fi
   image_exists_in_openstack=$(openstack image list| grep -m 1 "$IMAGE"| awk '{print $2}')
