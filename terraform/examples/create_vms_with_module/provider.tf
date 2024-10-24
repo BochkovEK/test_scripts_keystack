@@ -8,24 +8,18 @@ required_version = ">= 0.14.0"
   }
 }
 
-provider "openstack" {
-#     cloud = "openstack"
-
-  user_name             = "admin"
-  tenant_name           = "admin"
-  password              = "56OnOHXYLVdsS5a46cdFXct2c9kI2vzYK3uivdFd"
-  auth_url              = "https://int.ebochkov.test.domain:5000"
-  user_domain_name      = "Default"
-  insecure              = "true"
-  #  region_name           = "ebochkov"
-  #  project_id            = "bee56048988140faa81bc8d30fc07b1f"
-  #  interface             = "public"
-  #  identity_api_version  = 3
-  #cacert: "~/bundle.crt"
-  #insecure: true
-}
-
-#    endpoint_overrides = {
-#        "volumev3" = var.volumev3
-#    }
+#provider "openstack" {
+#  cloud = "openstack"
 #}
+
+provider "openstack" {
+  user_name        = "admin"
+  tenant_name      = "admin"
+  password         = "56OnOHXYLVdsS5a46cdFXct2c9kI2vzYK3uivdFd"
+  auth_url         = "https://int.ebochkov.test.domain:5000"
+  user_domain_name = "Default"
+#  insecure         = "true"
+  cert              = "client.ctr"
+  key               = "cert.key"
+
+}
