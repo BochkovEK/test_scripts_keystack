@@ -59,7 +59,7 @@ get_VMs_IPs () {
       #awk '{print $12}')
     [ "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]: command to define vms ip list
-    VMs_IPs=\$(openstack server list --project $PROJECT --long | grep -E \"ACTIVE.*$HYPERVISOR_NAME\" | grep -ohE \"$ip_pub_net_grep_string\"
+    VMs_IPs=\$(openstack server list $project_string --long | grep -E \"ACTIVE.*$HYPERVISOR_NAME\" | grep -ohE \"$ip_pub_net_grep_string\"
   [DEBUG]: VMs_IPs: $VMs_IPs
   "
 #      grep -E "ACTIVE.*$HYPERVISOR_NAME" |awk '{print \$12}')
