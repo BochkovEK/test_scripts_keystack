@@ -19,7 +19,8 @@ provider "openstack" {
   auth_url         = "https://int.ebochkov.test.domain:5000"
   user_domain_name = "Default"
 #  insecure         = "true"
-  cert              = "client.ctr"
-  key               = "cert.key"
+  cert              = "/root/test_scripts_keystack/terraform/examples/create_vms_with_module/client.crt"
+  key               = "/root/test_scripts_keystack/terraform/examples/create_vms_with_module/cert.key"
+#  cacert_file      = "/installer/data/ca/root/ca.crt"
 
 }
