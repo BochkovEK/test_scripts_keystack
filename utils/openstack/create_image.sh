@@ -109,7 +109,7 @@ create_image () {
       yes_no_input=$(bash $utils_dir/$yes_no_answer_script)
     fi
     if [ ! "$yes_no_input" = "true" ]; then
-      echo -e "${yellow}Image $IMAGE does not created"{normal}
+      echo -e "${yellow}Image $IMAGE does not created${normal}"
       exit 0
     else
       if [ -f $script_dir/"$IMAGE" ]; then
