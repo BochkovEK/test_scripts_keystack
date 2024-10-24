@@ -20,8 +20,4 @@ VMs = {
   }
 }
 
-# AZs
-AZs = {
-}
 
-server_groups = {}
