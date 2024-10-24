@@ -11,6 +11,8 @@ violet=$(tput setaf 5)
 normal=$(tput sgr0)
 
 #script_name=$(basename "$0")
+# grep ip regex: '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'
+ip_pub_net_grep_string="10\.224\.[0-9]{1,3}\.[0-9]{1,3}"
 script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
@@ -42,11 +44,12 @@ check_and_source_openrc_file () {
 get_VMs_IPs () {
   [[ -n $PROJECT ]] && { project_string="--project $PROJECT"; }
   [[ -n $HYPERVISOR_NAME ]] && { host_string="--host $HYPERVISOR_NAME"; }
-  VMs_IPs=$(openstack server list $project_string $host_string |grep ACTIVE |awk '{print $8}')
+  VMs_IPs=$(openstack server list $project_string $host_string |grep ACTIVE | grep -E "ip_pub_net_grep_string")
+  #awk '{print $8}')
   [ "$TS_DEBUG" = true ] && echo -e "
 
   [DEBUG]: command to define vms ip list
-    VMs_IPs=\$(openstack server list $host_string $project_string |grep ACTIVE |awk '{print \$8}')
+    VMs_IPs=\$(openstack server list $host_string $project_string |grep ACTIVE | grep -E \"$ip_pub_net_grep_string\")
   [DEBUG]: VMs_IPs: $VMs_IPs
   "
   # in openstack cli version 6.2 the --host key gives an empty output
