@@ -198,8 +198,10 @@ done
 for image_name in "${public_images_list[@]}"; do
   echo -E "${green}Image $image_name created - ok!${normal}"
 done
-echo -E "${green}Network $pub_net_name created - ok!
-${normal}"
+echo -E "${green}Network $pub_net_name created - ok!${normal}"
+
+[[ -f ~/.bashrc ]] && { echo "alias tf='terraform'" >> ~/.bashrc; }
+
 echo "
 You can create resources using terraform.
   1) Create <name>.auto.tfvars configs and copy clouds.yml from $script_dir to the following 'examples' dir:"
