@@ -16,7 +16,7 @@ provider "openstack" {
   auth_url              = "https://int.ebochkov.test.domain:5000"
   region_name           = "ebochkov"
   user_domain_name      = "Default"
-  project_id: bee56048988140faa81bc8d30fc07b1f
+  project_id            = "bee56048988140faa81bc8d30fc07b1f"
   interface             = "public"
   identity_api_version  = 3
       #cacert: "~/bundle.crt"
