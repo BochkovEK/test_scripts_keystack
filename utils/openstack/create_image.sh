@@ -48,7 +48,7 @@ error_output () {
     printf "%s\n" "${yellow}$warning_message${normal}"
     warning_message=""
   fi
-  printf "%s\n" "${red}$error_message - error${normal}"
+  printf "%s\n" "${red}$error_message - ERROR${normal}"
   exit 1
 }
 
@@ -109,8 +109,8 @@ create_image () {
       yes_no_input=$(bash $utils_dir/$yes_no_answer_script)
     fi
     if [ ! "$yes_no_input" = "true" ]; then
-      error_message="Image $IMAGE does not created - ERROR"
-      error_output
+      echo -e "${yellow}Image $IMAGE does not created"{normal}
+      exit 0
     else
       if [ -f $script_dir/"$IMAGE" ]; then
         mkdir -p $IMAGE_DIR
@@ -122,7 +122,7 @@ create_image () {
         echo -e "${yellow}File $IMAGE does not exist${normal}"
         if [ -z "$IMAGE_SOURCE" ]; then
           warning_message="Global variable \$IMAGE_SOURCE does not define"
-          error_message="Image $IMAGE does not created - ERROR"
+          error_message="Image $IMAGE does not created"
           error_output
         else
           if [ $DONT_ASK = "true" ]; then
@@ -132,11 +132,11 @@ create_image () {
             yes_no_input=$(bash $utils_dir/$yes_no_answer_script)
           fi
           if [ ! "$yes_no_input" = "true" ]; then
-            error_message="Image $IMAGE does not created - ERROR"
+            error_message="Image $IMAGE does not created"
             error_output
           else
             if ! bash $utils_dir/$install_wget_script; then
-              error_message="Image $IMAGE does not created - ERROR"
+              error_message="Image $IMAGE does not created"
               error_output
             else
               wget $IMAGE_SOURCE/$IMAGE -P $IMAGE_DIR/
@@ -158,8 +158,8 @@ create_image () {
   if [ -n "${image_exists_in_openstack}" ]; then
     echo -E "${green}$IMAGE created in $PROJECT - ok!${normal}"
   else
-    echo -E "${red}$IMAGE not created - error${normal}"
-    exit 1
+    error_message="Image $IMAGE does not created"
+    error_output
   fi
 }
 
