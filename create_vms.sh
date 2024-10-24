@@ -417,7 +417,7 @@ check_and_add_secur_group () {
 # Check keypair
 check_and_add_keypair () {
   echo "Check for exist keypair: \"$KEY_NAME\""
-  KEY_NAME_EXIST=$(openstack keypair list | grep $KEY_NAME| awk '{print $2}')
+  KEY_NAME_EXIST=$(openstack keypair list | grep -E "\s$KEY_NAME\s"| awk '{print $2}')
   if [ -z "$KEY_NAME_EXIST" ]; then
     printf "%s\n" "${orange}Keypair \"$KEY_NAME\" not found in project \"$PROJECT\"${normal}"
     [[ ! $DONT_ASK = "true" ]] && {
