@@ -21,6 +21,7 @@ check_openrc_script="check_openrc.sh"
 check_openstack_cli_script="check_openstack_cli.sh"
 
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
+[[ -z $PROJECT ]] && PROJECT="admin"
 #[[ -z $UTIL_MODE ]] && UTIL_MODE="true"
 
 check_openstack_cli () {
