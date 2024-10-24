@@ -16,6 +16,8 @@ script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
 utils_dir=$parent_dir
+check_openrc_script="check_openrc.sh"
+check_openstack_cli_script="check_openstack_cli.sh"
 
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
@@ -50,6 +52,28 @@ yes_no_answer () {
     esac
   done
   yes_no_question="<Empty yes\no question>"
+}
+
+check_and_source_openrc_file () {
+#  echo "check openrc"
+  if bash $utils_dir/$check_openrc_script &> /dev/null; then
+#  if bash $utils_dir/$check_openrc_script 2>&1; then
+    openrc_file=$(bash $utils_dir/$check_openrc_script)
+    source $openrc_file
+  else
+    bash $utils_dir/$check_openrc_script
+    exit 1
+  fi
+}
+
+check_openstack_cli () {
+#  echo "check"
+  if [[ $CHECK_OPENSTACK = "true" ]]; then
+    if ! bash $utils_dir/$check_openstack_cli_script &> /dev/null; then
+      echo -e "${red}Failed to check openstack cli - ERROR${normal}"
+      exit 1
+    fi
+  fi
 }
 
 # Check network
@@ -147,17 +171,6 @@ create_pub_network () {
 
 
 echo "$script_name script started..."
-#check_openstack_cli
-if [[ $CHECK_OPENSTACK = "true" ]]; then
-  if ! bash $utils_dir/check_openstack_cli.sh; then
-    echo -e "\033[31mFailed to check openstack cli - error\033[0m"
-    exit 1
-  fi
-fi
-
-if ! bash $utils_dir/check_openrc.sh; then
-  exit 1
-fi
 
 [ "$TS_DEBUG" = true ] && echo -e "
   [TS_DEBUG]
@@ -179,4 +192,6 @@ fi
   NETWORK:                  $NETWORK
 "
 
+check_openstack_cli
+check_and_source_openrc_file
 create_pub_network
