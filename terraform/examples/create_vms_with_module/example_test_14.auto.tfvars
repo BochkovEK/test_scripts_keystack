@@ -22,7 +22,6 @@ VMs = {
 
 # AZs
 AZs = {
-  foo = "bast"
 }
 
 server_groups = {}
