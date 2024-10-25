@@ -77,10 +77,12 @@ yes_no_answer () {
 get_init_vars () {
 
   echo "Get init variables"
-  echo "source $script_dir/$env_file ..."
+  echo "Try to source $script_dir/$env_file"
 
   if [ -f $script_dir/$env_file ]; then
     source $script_dir/$env_file
+  else
+    echo -e "${yellow}Env file $script_dir/$env_file not exists"
   fi
 
   # get Central Authentication Service folder
