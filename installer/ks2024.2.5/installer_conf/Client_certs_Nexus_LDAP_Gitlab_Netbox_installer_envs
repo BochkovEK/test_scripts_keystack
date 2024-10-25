@@ -11,7 +11,7 @@ export KS_INSTALL_LCM_IP=""
 export KS_CLIENT_NEXUS="y"
 
 #Enter the remote\existing Artifactory FQDN for the KeyStack:
-export KS_CLIENT_NEXUS_NAME="remote-nexus.test.domain"
+export KS_CLIENT_NEXUS_NAME="remote-nexus.$KS_INSTALL_DOMAIN"
 
 #Enter the remote\existing Artifactory user name:
 export KS_CLIENT_NEXUS_ADMIN="admin"

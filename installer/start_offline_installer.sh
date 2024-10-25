@@ -78,6 +78,14 @@ get_init_vars () {
   export INIT_INSTALLER_BACKUP_FOLDER=${INIT_INSTALLER_BACKUP_FOLDER:-"$HOME/installer_backup"}
   [[ -z "${INIT_INSTALLER_BACKUP_FOLDER}" ]] && { echo -e "${red}env INIT_INSTALLER_BACKUP_FOLDER not define - ERROR${normal}"; exit 1; }
 
+  # get domain
+  if [[ -z "${KS_INSTALL_DOMAIN}" ]]; then
+    read -rp "Enter domain [test.domain]: " KS_INSTALL_DOMAIN
+  fi
+  export KS_INSTALL_DOMAIN=${KS_INSTALL_DOMAIN:-"test.domain"}
+  [[ -z "${KS_INSTALL_DOMAIN}" ]] && { echo -e "${red}env KS_INSTALL_DOMAIN not define - ERROR${normal}"; exit 1; }
+
+
   echo -E "
     KEYSTACK_RELEASE:               $KEYSTACK_RELEASE
     KEYSTACK_RC_VERSION:            $KEYSTACK_RC_VERSION
@@ -85,6 +93,7 @@ get_init_vars () {
     RELEASE_URL:                    $RELEASE_URL
     INIT_INSTALLER_FOLDER:          $INIT_INSTALLER_FOLDER
     INIT_INSTALLER_BACKUP_FOLDER:   $INIT_INSTALLER_BACKUP_FOLDER
+    KS_INSTALL_DOMAIN:              $KS_INSTALL_DOMAIN
   "
 
   read -p "Press enter to continue: "
