@@ -71,7 +71,7 @@ export KS_LDAP_REQUIRE_GROUP_DN_GITLAB="CN=grp.ro,OU=Keystack,OU=Applications,DC
 
 # =============== DOMAIN AND SERVICE NAME ==================
 #Enter the LCM root domain for the KeyStack [demo.local]:
-export KS_INSTALL_DOMAIN="test.domain"
+#export KS_INSTALL_DOMAIN="test.domain"
 
 #Enter the LCM Nexus domain name for the KeyStack [nexus]:
 export KS_NEXUS_NAME="lcm-nexus"
