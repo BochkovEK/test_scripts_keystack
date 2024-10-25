@@ -66,7 +66,7 @@ get_init_vars () {
   export CERTS_FOLDER=${CERTS_FOLDER:-"$HOME/certs"}
 
   [[ -z "${KEYSTACK_RELEASE}" ]] && { echo -e "${red}env KEYSTACK_RELEASE not define - ERROR${normal}"; exit 1; }
-  [[ -z "${KEYSTACK_RC_VERSION}" ]] && { echo -e "${red}env KEYSTACK_RC_VERSION not define - ERROR${normal}"; exit 1; }
+#  [[ -z "${KEYSTACK_RC_VERSION}" ]] && { echo -e "${red}env KEYSTACK_RC_VERSION not define - ERROR${normal}"; exit 1; }
   [[ -z "${SYSTEM}" ]] && { echo -e "${red}env SYSTEM not define - ERROR${normal}"; exit 1; }
 
   # get RELEASE_URL
