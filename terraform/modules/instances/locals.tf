@@ -12,10 +12,14 @@ locals {
     keypair_name     = try(instance.keypair_name, null) #var.default_key_pair_name)
     security_groups  = try(instance.security_groups, null) #var.default_security_groups)
     az_hint          = try(instance.az_hint, null)
+#    server_group     = try(instance.server_group, null) #var.default_server_group)
+#    server_group_id  = try(instance.server_group_id, var.default_server_group_id)
     #        volume_size       = try(instance.volume_size, var.default_volume_size)
     network_name     = try(instance.network_name, var.default_network_name)
     boot_volume_size = try(instance.boot_volume_size, var.default_boot_volume_size)
     disks            = try(instance.disks, var.default_disks)
+#    servergroup    = try(instance.server_group, {})
+#    servergroup_id = module.server_group[each.value.servergroup].srvgrp_id
   }
   ]
   ])

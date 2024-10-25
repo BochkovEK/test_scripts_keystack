@@ -8,13 +8,14 @@
 
 script_dir=$(dirname $0)
 utils_dir=$script_dir/utils
+get_nodes_list_script="get_nodes_list.sh"
 
-comp_pattern="\-comp\-.."
-#$"
-ctrl_pattern="\-ctrl\-.."
-#$"
-net_pattern="\-net\-.."
-#$"
+#comp_pattern="\-comp\-.."
+##$"
+#ctrl_pattern="\-ctrl\-.."
+##$"
+#net_pattern="\-net\-.."
+##$"
 
 #Colors
 green=$(tput setaf 2)
@@ -28,34 +29,33 @@ yellow=$(tput setaf 3)
 [[ -z $NODES ]] && NODES=()
 [[ -z $NODES_TYPE ]] && NODES_TYPE=""
 [[ -z $PING ]] && PING="false"
-[[ -z $DEBUG ]] && DEBUG="false"
+[[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 #======================
 
-
-note_type_func () {
-  case "$1" in
-        ctrl)
-          NODES_TYPE=ctrl
-          nodes_to_find=$ctrl_pattern
-          printf "%s\n" "${yellow}Execute command \'$COMMAND\' on ctrl nodes${normal}"
-          ;;
-        comp)
-          NODES_TYPE=comp
-          nodes_to_find=$comp_pattern
-          printf "%s\n" "${yellow}Execute command \'$COMMAND\' on comp nodes${normal}"
-          ;;
-        net)
-          NODES_TYPE=net
-          nodes_to_find=$net_pattern
-          printf "%s\n" "${yellow}Execute command \'$COMMAND\' on net nodes${normal}"
-          ;;
-        *)
-          NODES_TYPE=all
-          nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
-          printf "%s\n" "${yellow}Nodes type is not specified correctly. Execute command \'$COMMAND\' on ctr, comp, net nodes${normal}"
-          ;;
-        esac
-}
+#node_type_func () {
+#  case "$1" in
+#        ctrl)
+#          NODES_TYPE=ctrl
+#          nodes_to_find=$ctrl_pattern
+#          printf "%s\n" "${yellow}Execute command on ctrl nodes${normal}"
+#          ;;
+#        comp)
+#          NODES_TYPE=comp
+#          nodes_to_find=$comp_pattern
+#          printf "%s\n" "${yellow}Execute command on comp nodes${normal}"
+#          ;;
+#        net)
+#          NODES_TYPE=net
+#          nodes_to_find=$net_pattern
+#          printf "%s\n" "${yellow}Execute command on net nodes${normal}"
+#          ;;
+#        *)
+#          NODES_TYPE=all
+#          nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
+#          printf "%s\n" "${yellow}Nodes type is not specified correctly. Execute command on ctr, comp, net nodes${normal}"
+#          ;;
+#        esac
+#}
 
 count=1
 while [ -n "$1" ]; do
@@ -65,6 +65,7 @@ while [ -n "$1" ]; do
 
       -c,   -command        \"<command>\"
       -nt,  -type_of_nodes  <type_of_nodes> 'ctrl', 'comp', 'net'
+      -nn,  -node_name      <node_name\ip> example: -nn \"ebochkov-keystack-comp-01 ebochkov-keystack-comp-02\"
       -p,   -ping           ping before execution command
       --debug               debug mode
       Remove all containers on all nodes:
@@ -85,17 +86,20 @@ while [ -n "$1" ]; do
 #      echo "Found the -send_env \"<ENV_NAME=env_value>\" option, with parameter value $2"
 #      echo "SENDENV: $SENDENV"
 #      shift ;;
-    -nt|-type_of_nodes)
-      note_type_func "$2"
+    -nt|-type_of_nodes) NODES_TYPE=$2
+      echo "Found the -type_of_nodes, with parameter value $NODES_TYPE"
+      shift ;;
+    -nn|-node_name)
+      for i in $2; do NODES+=("$i"); done
+      echo "Found the -nn option, with parameter value ${NODES[*]}"
       shift ;;
     -p|-ping)
       PING="true"
       echo "Found the -ping option"
       ;;
-    --debug)
-      DEBUG="true"
-      echo "Found the --debug parameter"
-      shift ;;
+    -debug) TS_DEBUG="true"
+      echo "Found the -debug parameter"
+      ;;
     --) shift
       break ;;
     *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
@@ -166,25 +170,25 @@ yes_no_answer () {
   yes_no_question="<Empty yes\no question>"
 }
 
-#check_openstack_cli
-check_openstack_cli () {
-  if ! bash $utils_dir/check_openstack_cli.sh; then
-#    error_message="Failed to check openstack"
-#    error_output
-    exit 1
-  fi
-}
-
-check_and_source_openrc_file () {
-  echo "check openrc"
-  openrc_file=$(bash $utils_dir/check_openrc.sh)
-  if [[ -z $openrc_file ]]; then
-    exit 1
-  else
-    echo $openrc_file
-    source $openrc_file
-  fi
-}
+##check_openstack_cli
+#check_openstack_cli () {
+#  if ! bash $utils_dir/check_openstack_cli.sh; then
+##    error_message="Failed to check openstack"
+##    error_output
+#    exit 1
+#  fi
+#}
+#
+#check_and_source_openrc_file () {
+#  echo "check openrc"
+#  openrc_file=$(bash $utils_dir/check_openrc.sh)
+#  if [[ -z $openrc_file ]]; then
+#    exit 1
+#  else
+#    echo $openrc_file
+#    source $openrc_file
+#  fi
+#}
 
 check_ping () {
   if ping -c 2 $1 &> /dev/null; then
@@ -199,65 +203,95 @@ check_ping () {
 
 }
 
-get_list_from_compute_service () {
-  check_openstack_cli
-  check_and_source_openrc_file
-  nova_state_list=$(openstack compute service list)
-  if [[ -z $nova_state_list ]];then
-    error_message="Failed to determine node $NODES_TYPE list"
-    error_output
-    exit 1
-  else
-    if  [ "$NODES_TYPE" = comp ]; then
-      #compute
-      nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
-    else
-      #control
-      nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
-    fi
-    echo "nodes: $nodes"
-    if [[ -z $nodes ]];then
-      error_message="Failed to determine node $NODES_TYPE list"
-      error_output
-      exit 1
-    fi
-  fi
-  echo "Check connection to $NODES_TYPE"
-  for node in $nodes; do
-    check_ping $node
-  done
+#get_list_from_compute_service () {
+#  check_openstack_cli
+#  check_and_source_openrc_file
+#  nova_state_list=$(openstack compute service list)
+#  if [[ -z $nova_state_list ]];then
+#    error_message="Failed to determine node $NODES_TYPE list"
+#    error_output
+#    exit 1
+#  else
+#    if  [ "$NODES_TYPE" = comp ]; then
+#      #compute
+#      nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
+#    else
+#      #control
+#      nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
+#    fi
+#    echo "nodes: $nodes"
+#    if [[ -z $nodes ]];then
+#      error_message="Failed to determine node $NODES_TYPE list"
+#      error_output
+#      exit 1
+#    fi
+#  fi
+#  echo "Check connection to $NODES_TYPE"
+#  for node in $nodes; do
+#    check_ping $node
+#  done
+#
+#}
 
+
+#echo "Parse /etc/hosts to find pattern: $nodes_to_find"
+#[[ -z ${NODES[0]} ]] && {
+#  node_type_func $NODES_TYPE
+#  srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}');
+#  for i in $srv; do NODES+=("$i"); done; }
+#if [ "$DEBUG" = true ]; then
+#  echo -e "
+#  [DEBUG]
+#  NODES:
+#  "
+#  for host in "${NODES[@]}"; do
+#    echo $host
+#  done
+#  echo "NODES_TYPE: $NODES_TYPE"
+#fi
+#
+#if [ -z ${NODES[0]} ]; then
+#  if [ "$NODES_TYPE" = comp ] || [ "$NODES_TYPE" = ctrl ]; then
+#    yes_no_question="Do you want to try to compute service list to define $NODES_TYPE list [Yes]: "
+#    yes_no_answer
+#    if [ "$yes_no_input" = "true" ]; then
+#      get_list_from_compute_service
+#    else
+#      error_message="Pattern: $nodes_to_find could not be found in /etc/hosts"
+#      error_output
+#    fi
+#  else
+#    error_message="Pattern: $nodes_to_find could not be found in /etc/hosts"
+#    error_output
+#  fi
+#fi
+
+get_nodes_list () {
+  if [ -z "${NODES[*]}" ]; then
+    nodes=$(bash $utils_dir/$get_nodes_list_script -nt $NODES_TYPE)
+  fi
+  if echo $nodes| grep "ERROR"; then
+#    echo -e "$nodes"
+    exit 1
+  fi
+#  node=$(cat /etc/hosts | grep -m 1 -E ${nodes_pattern} | awk '{print $2}')
+  [ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]: \"\$node\": $node\n
+  "
+  for node in $nodes; do NODES+=("$node"); done
+  [ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]: \"\$NODES\": ${NODES[*]}
+  "
+  echo -e "
+  NODES: ${NODES[*]}
+  "
+  if [ -z "${NODES[*]}" ]; then
+    echo -e "${red}Failed to determine node list - ERROR${normal}"
+    exit 1
+  fi
 }
 
-
-echo "Parse /etc/hosts to find pattern: $nodes_to_find"
-[[ -z ${NODES[0]} ]] && { srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}'); for i in $srv; do NODES+=("$i"); done; }
-if [ "$DEBUG" = true ]; then
-  echo -e "
-  [DEBUG]
-  NODES:
-  "
-  for host in "${NODES[@]}"; do
-    echo $host
-  done
-  echo "NODES_TYPE: $NODES_TYPE"
-fi
-
-if [ -z ${NODES[0]} ]; then
-  if [ "$NODES_TYPE" = comp ] || [ "$NODES_TYPE" = ctrl ]; then
-    yes_no_question="Do you want to try to compute service list to define $NODES_TYPE list [Yes]: "
-    yes_no_answer
-    if [ "$yes_no_input" = "true" ]; then
-      get_list_from_compute_service
-    else
-      error_message="Pattern: $nodes_to_find could not be found in /etc/hosts"
-      error_output
-    fi
-  else
-    error_message="Pattern: $nodes_to_find could not be found in /etc/hosts"
-    error_output
-  fi
-fi
+get_nodes_list
 
 if [ "$connection_problem" = true ]; then
   yes_no_question="Do you want to run a command on nodes without connection problems? [Yes]: "

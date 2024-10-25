@@ -89,7 +89,7 @@ push_conf () {
   for node in $ctrl_nodes; do
     if [ "$DEBUG" = true ]; then
       echo -e "
-  [DEBUG]: \"\$ctrl_nodes\": $string\n
+  [DEBUG]: \"\$ctrl_nodes\": $node\n
   "
     fi
     echo "Сopying $service_name conf to $node:$conf_dir/$CONF_NAME"
@@ -115,11 +115,11 @@ apply_changes () {
 }
 
 
-[ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
 [ "$PUSH" = true ] && { push_conf; conf_changed=true; }
 #[ "$ADD_DEBUG" = true ] && { change_add_debug_param; }
 [ -n "$GITLAB_TOKEN" ] && { change_gitlab_password_param; }
 #[ -n "$CHANGE_FOO_PARAM" ] && change_foo_param $foo_param_value
 [ "$conf_changed" = true ] && { container_service_name=$(echo "$service_name" | sed 's/-/_/g' ); cat_conf; apply_changes; exit 0; }
 #cat_conf
+[ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
 

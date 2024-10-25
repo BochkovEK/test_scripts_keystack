@@ -1,7 +1,8 @@
 # The script change and check drs config
 # Start scrip to check conf: bash edit_drs_config.sh check
 
-ctrl_pattern="\-ctrl\-..$"
+#ctrl_pattern="\-ctrl\-..$"
+nodes_type="ctrl"
 service_name=drs
 test_node_conf_dir=kolla/$service_name
 conf_dir=/etc/kolla/$service_name
@@ -9,9 +10,12 @@ conf_name=drs.ini
 
 red=`tput setaf 1`
 green=`tput setaf 2`
-reset=`tput sgr0`
+normal=`tput sgr0`
 
 script_dir=$(dirname $0)
+utils_dir="$script_dir/utils"
+get_nodes_list_script="get_nodes_list.sh"
+install_package_script="install_package.sh"
 conf_changed=""
 
 #[[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
@@ -21,8 +25,10 @@ conf_changed=""
 [[ -z $ADD_PROM_ALERT ]] && ADD_PROM_ALERT=""
 [[ -z $PROMETHEUS_PASS ]] && PROMETHEUS_PASS=""
 [[ -z $PUSH ]] && PUSH="false"
+[[ -z $PULL ]] && PULL="false"
 [[ -z $CONF_NAME ]] && CONF_NAME="drs.ini"
 #[[ -z $FOO_PARAM ]] && FOO_PARAM=""
+[[ -z $NODES ]] && NODES=()
 
 
 # Define parameters
@@ -41,9 +47,12 @@ do
         -add_debug                        without value, add DEBUG level to log by drs config
         -v,         -debug                without value, set DEBUG=\"true\"
         -pa,        -prometheus_alerting  <prometheus_password>
-        -p,         -push                 without value, push region-config_<region_name>.json from
-                                          $HOME/test_scripts_keystack/$test_node_conf_dir/$CONF_NAME to
-                                          $conf_dir/$CONF_NAME on ctrl nodes
+        -pull                           without value, pull config from $conf_dir/$conf_name
+                                        on $nodes_type node to
+                                        $script_dir/$test_node_conf_dir
+        -push                           without value, push config from $script_dir/$test_node_conf_dir
+                                        on $nodes_type node to $conf_dir/$conf_name
+        -check                          only check option (without parameter)
 
         Start the scrip with parameter check to check conf: bash edit_drs_config.sh check
         "
@@ -58,8 +67,14 @@ do
         -pa|-prometheus_alerting) PROMETHEUS_PASS="$2"; ADD_PROM_ALERT="true"
 	        echo "Found the -prometheus_alerting, \$PROMETHEUS_PASS: $PROMETHEUS_PASS"
           shift;;
-        -p|-push) PUSH="true"
+        -pull) PULL="true"
+	        echo "Found the -pull, parameter set $PULL"
+          ;;
+        -push) PUSH="true"
 	        echo "Found the -push, parameter set $PUSH"
+          ;;
+        -check) ONLY_CONF_CHECK="true"
+	        echo "Found the -check, parameter set $ONLY_CONF_CHECK"
           ;;
         --) shift
           break ;;
@@ -73,45 +88,95 @@ cat_conf () {
   bash $script_dir/command_on_nodes.sh -nt ctrl -c "echo \"cat $conf_dir/$CONF_NAME\"; cat $conf_dir/$CONF_NAME"
 }
 
-pull_conf () {
-  echo "Pulling drs.ini..."
-  [ ! -d $script_dir/$test_node_conf_dir ] && { mkdir -p $script_dir/$test_node_conf_dir; }
-  ctrl_node=$(cat /etc/hosts | grep -m 1 -E ${ctrl_pattern} | awk '{print $2}')
-  [ "$DEBUG" = true ] && echo -e "
-  [DEBUG]: \"\$ctrl_node\": $ctrl_node\n
-  "
+#pull_conf () {
+#  echo "Pulling drs.ini..."
+#  [ ! -d $script_dir/$test_node_conf_dir ] && { mkdir -p $script_dir/$test_node_conf_dir; }
+#  ctrl_node=$(cat /etc/hosts | grep -m 1 -E ${ctrl_pattern} | awk '{print $2}')
+#  [ "$DEBUG" = true ] && echo -e "
+#  [DEBUG]: \"\$ctrl_node\": $ctrl_node\n
+#  "
+#
+#  echo "Сopying $service_name conf from $ctrl_node:$conf_dir/$CONF_NAME"
+#  scp -o StrictHostKeyChecking=no $ctrl_node:$conf_dir/$CONF_NAME $script_dir/$test_node_conf_dir
+#}
 
-  echo "Сopying $service_name conf from $ctrl_node:$conf_dir/$CONF_NAME"
-  scp -o StrictHostKeyChecking=no $ctrl_node:$conf_dir/$CONF_NAME $script_dir/$test_node_conf_dir
+pull_conf () {
+  echo "Pulling $CONF_NAME..."
+  [ ! -d $script_dir/$test_node_conf_dir ] && { mkdir -p $script_dir/$test_node_conf_dir; }
+
+
+  echo "Сopying $service_name conf from ${NODES[0]}:$conf_dir/$CONF_NAME"
+  scp -o StrictHostKeyChecking=no ${NODES[0]}:$conf_dir/$CONF_NAME $script_dir/$test_node_conf_dir
+  [ ! -f $script_dir/$test_node_conf_dir/${CONF_NAME}_backup ] && { cp $script_dir/$test_node_conf_dir/${CONF_NAME} $script_dir/$test_node_conf_dir/${CONF_NAME}_backup; }
 }
 
-push_conf () {
-  echo "Pushing drs.ini..."
-  ctrl_nodes=$(cat /etc/hosts | grep -E ${ctrl_pattern} | awk '{print $1}')
+#push_conf () {
+#  echo "Pushing drs.ini..."
+#  ctrl_nodes=$(cat /etc/hosts | grep -E ${ctrl_pattern} | awk '{print $1}')
+#
+#  for node in $ctrl_nodes; do
+#    if [ "$DEBUG" = true ]; then
+#      echo -e "
+#  [DEBUG]: \"\$ctrl_nodes\": $node\n
+#  "
+#    fi
+#    #change api_host = 10.224.132.178
+#    echo "sed api_host = $node on $CONF_NAME"
+#    sed -i --regexp-extended "s/api_host\s+=\s+[0-9]+.[0-9]+.[0-9]+.[0-9]+/api_host = $node/" \
+#      $script_dir/$test_node_conf_dir/$CONF_NAME
+##    sed -i --regexp-extended  "s/https\:\/\/[0-9]+.[0-9]+.[0-9]+.[0-9]+/https\:\/\/$node/" \
+##      $script_dir/$test_node_conf_dir/$CONF_NAME
+##    sed -i --regexp-extended  "s/\@[0-9]+.[0-9]+.[0-9]+.[0-9]+/@$node/" \
+##      $script_dir/$test_node_conf_dir/$CONF_NAME
+#    echo "Сopying $service_name conf to $node:$conf_dir/$CONF_NAME"
+#    scp -o StrictHostKeyChecking=no $script_dir/$test_node_conf_dir/$CONF_NAME $node:$conf_dir/$CONF_NAME
+#  done
+#}
 
-  for node in $ctrl_nodes; do
-    if [ "$DEBUG" = true ]; then
-      echo -e "
-  [DEBUG]: \"\$ctrl_nodes\": $string\n
+push_conf () {
+  echo "Pushing $CONF_NAME..."
+#  nodes=$(cat /etc/hosts | grep -E ${nodes_pattern} | awk '{print $1}')
+
+  if ! bash $utils_dir/$install_package_script host; then
+    exit 1
+  fi
+  for node in "${NODES[@]}"; do
+
+    ip=$(host $node|grep -m 1 $node|awk '{print $4}')
+    [ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]: \"node\": \"ip\"
+          $node: $ip
   "
-    fi
     #change api_host = 10.224.132.178
-    echo "sed api_host = $node on $CONF_NAME"
-    sed -i --regexp-extended "s/api_host\s+=\s+[0-9]+.[0-9]+.[0-9]+.[0-9]+/api_host = $node/" \
+    echo "sed ip to $ip on $CONF_NAME"
+    sed -i --regexp-extended "s/[0-9]+.[0-9]+.[0-9]+.[0-9]+/$ip/" \
       $script_dir/$test_node_conf_dir/$CONF_NAME
-#    sed -i --regexp-extended  "s/https\:\/\/[0-9]+.[0-9]+.[0-9]+.[0-9]+/https\:\/\/$node/" \
-#      $script_dir/$test_node_conf_dir/$CONF_NAME
-#    sed -i --regexp-extended  "s/\@[0-9]+.[0-9]+.[0-9]+.[0-9]+/@$node/" \
-#      $script_dir/$test_node_conf_dir/$CONF_NAME
-    echo "Сopying $service_name conf to $node:$conf_dir/$CONF_NAME"
-    scp -o StrictHostKeyChecking=no $script_dir/$test_node_conf_dir/$CONF_NAME $node:$conf_dir/$CONF_NAME
+
+    echo "Сopying $service_name conf to $node:$conf_dir/${CONF_NAME}"
+    scp -o StrictHostKeyChecking=no $script_dir/$test_node_conf_dir/$CONF_NAME $node:$conf_dir/${CONF_NAME}
   done
 }
 
-#change_foo_param () {
-#  <logics>
-#  conf_changed=true
-#}
+get_nodes_list () {
+  if [ -z "${NODES[*]}" ]; then
+    nodes=$(bash $utils_dir/$get_nodes_list_script -nt $nodes_type)
+  fi
+#  node=$(cat /etc/hosts | grep -m 1 -E ${nodes_pattern} | awk '{print $2}')
+  [ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]: \"\$node\": $node\n
+  "
+  for node in $nodes; do NODES+=("$node"); done
+  [ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]: \"\$NODES\": ${NODES[*]}
+  "
+  echo -e "
+  NODES: ${NODES[*]}
+  "
+  if [ -z "${NODES[*]}" ]; then
+    echo -e "${red}Failed to determine node list - ERROR${normal}"
+    exit 1
+  fi
+}
 
 change_add_debug_param () {
   echo "Add debug to drs.ini..."
@@ -124,7 +189,7 @@ change_add_debug_param () {
 change_add_prometheus_alerting () {
   echo "Add prometheus alerting to drs.ini..."
   if [ -z "${PROMETHEUS_PASS}" ]; then
-    echo "${red}\$PROMETHEUS_PASS not set. Prometheus alerting not set in $conf_name${reset}"
+    echo "${red}\$PROMETHEUS_PASS not set. Prometheus alerting not set in $conf_name${normal}"
     ONLY_CONF_CHECK="false"
   else
     pull_conf
@@ -139,8 +204,11 @@ change_add_prometheus_alerting () {
   fi
 }
 
+get_nodes_list
 
+#[ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
 [ "$PUSH" = true ] && { push_conf; conf_changed=true; }
+[ "$PULL" = true ] && { pull_conf; exit 0; }
 [ "$ADD_DEBUG" = true ] && { change_add_debug_param; }
 [ -n "$ADD_PROM_ALERT" ] && { change_add_prometheus_alerting; }
 #[ -n "$CHANGE_FOO_PARAM" ] && change_foo_param $foo_param_value

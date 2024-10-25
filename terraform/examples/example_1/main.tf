@@ -7,7 +7,7 @@ resource "openstack_compute_instance_v2" "vm" {
   availability_zone_hints     = "cpu:cdm-bl-pca11"
   count                       = 20
   metadata = {
-    test_meta = "Created by Terraform"
+    test_meta = "Created by Terraform example_1"
   }
   network {
     name = 	"pub_net"

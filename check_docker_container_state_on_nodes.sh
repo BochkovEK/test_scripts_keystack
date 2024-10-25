@@ -6,10 +6,14 @@
 # example nodes list define
 # NODES=("<IP_1>" "<IP_2>" "<IP_3>" "...")
 
-comp_pattern="\-comp\-..($|\s)"
-ctrl_pattern="\-ctrl\-..($|\s)"
-net_pattern="\-net\-..($|\s)"
-nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
+#comp_pattern="\-comp\-..($|\s)"
+#ctrl_pattern="\-ctrl\-..($|\s)"
+#net_pattern="\-net\-..($|\s)"
+#nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
+
+script_dir=$(dirname $0)
+utils_dir=$script_dir/utils
+get_nodes_list_script="get_nodes_list.sh"
 
 #Colors
 green=$(tput setaf 2)
@@ -20,27 +24,30 @@ yellow=$(tput setaf 3)
 
 [[ -z $CONTAINER_NAME ]] && CONTAINER_NAME=""
 [[ -z $NODES ]] && NODES=()
+[[ -z $CHECK_UNHEALTHY ]] && CHECK_UNHEALTHY="false"
+[[ -z $NODES_TYPE ]] && NODES_TYPE=""
+[[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 #======================
 
-note_type_func () {
-  case "$1" in
-        ctrl)
-          nodes_to_find=$ctrl_pattern
-          echo "Сontainer will be checked on ctrl nodes"
-          ;;
-        comp)
-          nodes_to_find=$comp_pattern
-          echo "Сontainer will be checked on comp nodes"
-          ;;
-        net)
-          nodes_to_find=$net_pattern
-          echo "Сontainer will be checked on net nodes"
-          ;;
-        *)
-          echo "type is not specified correctly. Сontainers will be checked on ctr, comp, net nodes"
-          ;;
-        esac
-}
+#note_type_func () {
+#  case "$1" in
+#        ctrl)
+#          nodes_to_find=$ctrl_pattern
+#          echo "Сontainer will be checked on ctrl nodes"
+#          ;;
+#        comp)
+#          nodes_to_find=$comp_pattern
+#          echo "Сontainer will be checked on comp nodes"
+#          ;;
+#        net)
+#          nodes_to_find=$net_pattern
+#          echo "Сontainer will be checked on net nodes"
+#          ;;
+#        *)
+#          echo "type is not specified correctly. Сontainers will be checked on ctr, comp, net nodes"
+#          ;;
+#        esac
+#}
 
 #======================
 
@@ -57,16 +64,24 @@ do
       <container_name> as parameter
       -c, 	-container_name		<container_name>
       -nt, 	-type_of_nodes		<type_of_nodes> 'ctrl', 'comp', 'net'
+      -check_unhealthy        check only unhealthy containers (without parameter)
+      -debug                  enable debug output (without parameter)
 "
       exit 0
       break ;;
 	  -c|-container_name) CONTAINER_NAME="$2"
 	    echo "Found the -container_name <container_name> option, with parameter value $CONTAINER_NAME"
       shift ;;
-    -nt|-type_of_nodes)
-      echo "Found the -type_of_nodes  with parameter value $2"
-      note_type_func "$2"
+    -nt|-type_of_nodes) NODES_TYPE=$2
+      echo "Found the -type_of_nodes  with parameter value $NODES_TYPE"
+#      note_type_func "$2"
       shift ;;
+    -check_unhealthy) CHECK_UNHEALTHY="true"
+      echo "Found the -check_unhealthy  with parameter value $CHECK_UNHEALTHY"
+      ;;
+    -debug) TS_DEBUG="true"
+      echo "Found the -debug with parameter value $TS_DEBUG"
+      ;;
     --) shift
       break ;;
     *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
@@ -80,19 +95,51 @@ error_output () {
   exit 1
 }
 
-[[ -z ${NODES[0]} ]] && { srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}'); for i in $srv; do NODES+=("$i"); done; }
+get_nodes_list () {
+  if [ -z "${NODES[*]}" ]; then
+    nodes=$(bash $utils_dir/$get_nodes_list_script -nt $NODES_TYPE)
+  fi
+#  node=$(cat /etc/hosts | grep -m 1 -E ${nodes_pattern} | awk '{print $2}')
+  [ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]: \"\$node\": $node\n
+  "
+  for node in $nodes; do NODES+=("$node"); done
+  [ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]: \"\$NODES\": ${NODES[*]}
+  "
+#  echo -e "
+#  NODES: ${NODES[*]}
+#  "
+  if [ -z "${NODES[*]}" ]; then
+    echo -e "${red}Failed to determine node list - ERROR${normal}"
+    exit 1
+  fi
+}
 
-echo "Nodes for container checking:"
-echo "${NODES[*]}"
+get_nodes_list
 
-if [ ${#NODES[@]} -eq 0 ]; then
-  error_message="Node list type of $nodes_to_find is empty"
-  error_output
-fi
+#[[ -z ${NODES[0]} ]] && { srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}'); for i in $srv; do NODES+=("$i"); done; }
 
-grep_string="| grep '$CONTAINER_NAME'"
-#echo "$grep_string"
-[[ -z ${CONTAINER_NAME} ]] && { grep_string=""; }
+#echo "Nodes for container checking:"
+#echo "${NODES[*]}"
+#
+#if [ ${#NODES[@]} -eq 0 ]; then
+#  error_message="Node list type of $nodes_to_find is empty"
+#  error_output
+#fi
+
+[[ "$CHECK_UNHEALTHY" = true  ]] && {
+  UNHEALTHY="\(unhealthy\)";
+  echo "UNHEALTHY: $UNHEALTHY";
+  }
+
+grep_string="| grep -E \"$UNHEALTHY\\s+$CONTAINER_NAME\""
+
+[ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]
+  CONTAINER_NAME: $CONTAINER_NAME
+  grep_string: $grep_string
+  "
 
 for host in "${NODES[@]}"; do
   echo "Check container $CONTAINER_NAME on ${host}"

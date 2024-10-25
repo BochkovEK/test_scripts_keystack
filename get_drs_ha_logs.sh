@@ -57,7 +57,7 @@ do
   case "$1" in
     --help) echo -E "
       -nt,    -type_of_nodes     <type_of_nodes> 'ctrl', 'comp', 'net'
-      -l,     -logs               <logs_type> 'drs', 'ha'
+      -l,     -logs              <logs_type> 'drs', 'ha'
       "
       exit 0
       break ;;

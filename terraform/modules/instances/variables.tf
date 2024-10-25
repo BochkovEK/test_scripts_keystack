@@ -2,7 +2,7 @@
 variable "default_image_name" {
   description = "Default image name"
   type        = string
-  default = "cirros-0.6.2-x86_64-disk"
+  default = "cirros-0.6.2-x86_64-disk.img"
 }
 
 variable "default_flavor_name" {
@@ -61,12 +61,28 @@ variable "default_az_hints" {
   default     = ""
 }
 
+variable "default_server_group" {
+  description = "Default server group"
+  default     = {}
+}
+
+#variable "default_server_group_id" {
+#  description = "Default server group id"
+#  default     = ""
+#}
+
+# server_group = {
+#   name = "affinity_group"
+#   policies = []
+# }
+
+
 variable "VMs" {
   description = "VMs list source"
   default = {}
 }
 
-variable "AZs" {
-  description = "AZs list source"
-  default = {}
-}
+#variable "AZs" {
+#  description = "AZs list source"
+#  default = {}
+#}

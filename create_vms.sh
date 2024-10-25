@@ -57,7 +57,7 @@ CIRROS_IMAGE_NAME="cirros-0.6.2-x86_64-disk"
 [[ -z $BATCH ]] && BATCH="false"
 [[ -z $DONT_CHECK ]] && DONT_CHECK="false"
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
-[[ -z $DEBUG ]] && DEBUG="false"
+[[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $WAIT_FOR_CREATED ]] && WAIT_FOR_CREATED="true"
 #======================
 
@@ -81,6 +81,9 @@ while [ -n "$1" ]; do
     -dont_check                 disable resource availability checks (without value)
     -dont_ask                   all actions will be performed automatically (without value)
     -add                        <add command key>
+                                Examples:
+                                  -add \"--availability-zone \$az_name\"
+                                  -add \"--hint group=\$anti_aff_gr\"
     -b            -batch        creating VMs without a timeout (without value)
     -debug                      enabled debug output (without parameter)
     -wait                       wait for vms created <true\false>
@@ -151,8 +154,8 @@ while [ -n "$1" ]; do
       echo "Found the -wait <true/false> option, with parameter value $wait_for_created"
       WAIT_FOR_CREATED=$wait_for_created
       shift ;;
-    -debug) DEBUG="true"
-            echo "Found the -debug, with parameter value $DEBUG"
+    -debug) TS_DEBUG="true"
+            echo "Found the -debug, with parameter value $TS_DEBUG"
       ;;
     --) shift
       break ;;
@@ -287,7 +290,7 @@ VMs will be created with the following parameters:
         OS compute api version: $API_VERSION
         Addition key:           $ADD_KEY
         Creating VMs without a timeout (bool): $BATCH
-        Debug:                  $DEBUG
+        Debug:                  $TS_DEBUG
         Wait for creating       $WAIT_FOR_CREATED
         "
 
@@ -334,8 +337,9 @@ check_hv () {
 # Check project
 check_project () {
     echo "Check for exist project: \"$PROJECT\""
-    PROJ_ID=$(openstack project list| grep $PROJECT| awk '{print $2}')
-    if [ -z $PROJ_ID ]; then
+    PROJ_ID=$(openstack project list| grep -E -m 1 "\s$PROJECT\s"| awk '{print $2}')
+#    PROJ_ID=$(openstack project list| grep $PROJECT| awk '{print $2}')
+    if [ -z "$PROJ_ID" ]; then
         printf "%s\n" "${orange}Project \"$PROJECT\" does not exist${normal}"
         [[ ! $DONT_ASK = "true" ]] && {
           echo "Сreate a Project with name: \"$PROJECT\"?";
@@ -380,9 +384,16 @@ check_project () {
 # Check secur_group
 check_and_add_secur_group () {
     echo "Check for exist security group: \"$SECURITY_GR\""
-    PROJ_ID=$(openstack project list| grep $PROJECT| awk '{print $2}')
+    if [ -z "$PROJ_ID" ]; then
+      check_project
+    fi
+#    PROJ_ID=$(openstack project list| grep -E -m 1 "\s$PROJECT\s"| awk '{print $2}')
+    [ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]
+  PROJ_ID: $PROJ_ID
+  "
     SECURITY_GR_ID=$(openstack security group list|grep -E "($SECURITY_GR(.)*$PROJ_ID)" | head -1 | awk '{print $2}')
-    if [ -z $SECURITY_GR_ID ]; then
+    if [ -z "$SECURITY_GR_ID" ]; then
         printf "%s\n" "${orange}Security group \"$SECURITY_GR\" not found in project \"$PROJECT\"${normal}"
         [[ ! $DONT_ASK = "true" ]] && {
           echo "Сreate a Security group with a name: \"$SECURITY_GR\"?";
@@ -406,7 +417,7 @@ check_and_add_secur_group () {
 # Check keypair
 check_and_add_keypair () {
   echo "Check for exist keypair: \"$KEY_NAME\""
-  KEY_NAME_EXIST=$(openstack keypair list | grep $KEY_NAME| awk '{print $2}')
+  KEY_NAME_EXIST=$(openstack keypair list | grep -E "\s$KEY_NAME\s"| awk '{print $2}')
   if [ -z "$KEY_NAME_EXIST" ]; then
     printf "%s\n" "${orange}Keypair \"$KEY_NAME\" not found in project \"$PROJECT\"${normal}"
     [[ ! $DONT_ASK = "true" ]] && {
@@ -546,7 +557,7 @@ image_exists_in_openstack () {
 check_image () {
   echo "Check for exist image: \"$IMAGE\""
   IMAGE_NAME_EXIST=$(image_exists_in_openstack $IMAGE)
-  [ "$DEBUG" = true ] && echo -e "
+  [ "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]
   IMAGE: $IMAGE
   IMAGE_NAME_EXIST: $IMAGE_NAME_EXIST
@@ -556,7 +567,7 @@ check_image () {
   is_cirros=$(echo $IMAGE|grep -E "cirros|$CIRROS_IMAGE_NAME")
   is_ubuntu=$(echo $IMAGE|grep -E "ubuntu|$UBUNTU_IMAGE_NAME")
 
-  [ "$DEBUG" = true ] && echo -e "
+  [ "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]
   is_cirros_or_ubuntu: $is_cirros_or_ubuntu
   is_cirros: $is_cirros
@@ -658,7 +669,7 @@ wait_vms_created () {
     echo "Wait for $building_vms vms created..."
     building_vms=$VM_QTY
     id_vms_list=$(openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks|grep -E "$1"|awk '{print $2}')
-      [ "$DEBUG" = true ] && echo -e "
+      [ "$TS_DEBUG" = true ] && echo -e "
       [DEBUG]
       building_id_vms_list: $id_vms_list
     "
@@ -666,7 +677,7 @@ wait_vms_created () {
       break
     else
       for id in $id_vms_list; do
-        [ "$DEBUG" = true ] && echo -e "
+        [ "$TS_DEBUG" = true ] && echo -e "
         [DEBUG]
         id: $id
         "
@@ -700,12 +711,12 @@ wait_vms_created () {
 create_vms () {
 
   if [ "$BATCH" = "true" ]; then
-    echo "Creating VMs (batch)..."
+    echo "Creating $VM_QTY VMs (batch)..."
     MAX_KEY="--max $VM_QTY"
     SEQ=1
 #    VM_QTY=1
   else
-    echo "Creating VMs with timeout: $TIMEOUT_BEFORE_NEXT_CREATION..."
+    echo "Creating $VM_QTY VMs with timeout: $TIMEOUT_BEFORE_NEXT_CREATION..."
     SEQ=$VM_QTY
   fi
 
@@ -735,7 +746,7 @@ create_vms () {
     fi
     echo "Creating VM: $INSTANCE_NAME"
 
-  [ "$DEBUG" = true ] && echo -e "
+  [ "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]
   VM_BASE_NAME: $VM_BASE_NAME
   IMAGE: $IMAGE
@@ -798,6 +809,7 @@ if [[ $CHECK_OPENSTACK = "true" ]]; then
 fi
 
 check_and_source_openrc_file
+
 
 [[ ! $DONT_CHECK = "true" ]] && \
   {

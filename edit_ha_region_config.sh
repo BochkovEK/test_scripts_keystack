@@ -8,6 +8,9 @@ service_name=consul
 test_node_conf_dir=kolla/$service_name
 conf_dir=/etc/kolla/$service_name
 script_dir=$(dirname $0)
+utils_dir="$script_dir/utils"
+#get_nodes_list_script="get_nodes_list.sh"
+install_package_script="install_package.sh"
 
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $ALIVE_THRSHOLD ]] && ALIVE_THRSHOLD=""
@@ -48,6 +51,8 @@ do
         -push                           without value, push region-config_<region_name>.json from
                                         $script_dir/$test_node_conf_dir to
                                         /etc/kolla/consul/region-config_<region_name>.json on ctrl nodes
+       -check                          only check option (without parameter)
+
 
         start script with parameter suffix: bash edit_ha_region_config.sh suffix - return bmc suffix
         start script with parameter suffix: bash edit_ha_region_config.sh check  - return contents of the config file
@@ -74,6 +79,9 @@ do
           ;;
         -push) PUSH="true"
 	        echo "Found the -push, parameter set $PUSH"
+          ;;
+        -check) ONLY_CONF_CHECK="true"
+	        echo "Found the -check, parameter set $ONLY_CONF_CHECK"
           ;;
         --) shift
           break ;;
@@ -117,12 +125,19 @@ push_conf () {
   ctrl_nodes=$(echo "$nova_state_list" | grep -E "nova-scheduler" | awk '{print $6}')
 #  ctrl_nodes=$(cat /etc/hosts | grep -E ${ctrl_pattern} | awk '{print $1}')
   [ "$DEBUG" = true ] && { for string in $ctrl_nodes; do debug_echo $string; done; }
+  if ! bash $utils_dir/$install_package_script host; then
+    exit 1
+  fi
 
 #  "bind_address": "10.224.132.178",
 
   for node in $ctrl_nodes; do
-    echo "\"bind_address\": \"$node\" on $CONF_NAME"
-    sed -i --regexp-extended "s/\"bind_address\"(\s+|):\s+\"[0-9]+.[0-9]+.[0-9]+.[0-9]+\"\,/\"bind_address\": \"$node\",/" \
+    ip=$(host $node|grep -m 1 $node|awk '{print $4}')
+    [ "$DEBUG" = true ] && { debug_echo $ip; }
+    echo "\"bind_address\": \"$ip\" on $CONF_NAME"
+    sed -i --regexp-extended "s/\"bind_address\"(\s+|):\s+\"[0-9]+.[0-9]+.[0-9]+.[0-9]+\"\,/\"bind_address\": \"$ip\",/" \
+      $script_dir/$test_node_conf_dir/$CONF_NAME
+    sed -i --regexp-extended "s/\"bind_address\"(\s+|):\s+\".+\"\,/\"bind_address\": \"$ip\",/" \
       $script_dir/$test_node_conf_dir/$CONF_NAME
     echo "Push consul conf to $node:$conf_dir/$CONF_NAME"
     scp -o StrictHostKeyChecking=no $script_dir/$test_node_conf_dir/$CONF_NAME $node:$conf_dir/$CONF_NAME
@@ -200,7 +215,6 @@ check_bmc_suffix () {
 
 
 [ "$CHECK_SUFFIX" = true ] && { check_bmc_suffix; exit 0; }
-[ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
 [ "$PUSH" = true ] && { push_conf; conf_changed=true; }
 [ "$PULL" = true ] && { pull_conf; exit 0; }
 [ -n "$ALIVE_THRSHOLD" ] && change_alive_threshold $ALIVE_THRSHOLD
@@ -209,3 +223,4 @@ check_bmc_suffix () {
 [ -n "$NOVA_FENCING" ] && change_nova_fencing $NOVA_FENCING
 cat_conf
 [ -n "$conf_changed" ] && { echo "Restart consul containers..."; bash $script_dir/command_on_nodes.sh -nt ctrl -c "docker restart consul"; }
+[ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }

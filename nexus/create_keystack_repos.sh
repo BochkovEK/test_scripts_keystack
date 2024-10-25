@@ -30,6 +30,12 @@ yellow=$(tput setaf 3)
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $KEYSTACK_RELEASE ]] && KEYSTACK_RELEASE=""
 
+echo -e "${yellow}Create repos...${normal}"
+
+#  echo "Create repositories according to the list?"
+#  ls -ls $script_dir/$KEYSTACK_RELEASE/
+#  read -p "Press enter to continue: "
+
 if [ -z "$1" ]; then
   if [ -z "$KEYSTACK_RELEASE" ]; then
     echo -e "${red}To run this script, you need to define keystack release as parameter or env var KEYSTACK_RELEASE - ERROR${normal}"
@@ -38,6 +44,21 @@ if [ -z "$1" ]; then
 else
   KEYSTACK_RELEASE=$1
 fi
+
+repos_json_files=$(ls -f $script_dir/$KEYSTACK_RELEASE/*.json|sed -E s#.+/##)
+#ls -ls $script_dir/$KEYSTACK_RELEASE/
+if [ -z "$repos_json_files" ]; then
+  echo "${red}Config files not found in $script_dir/$KEYSTACK_RELEASE/ - ERROR!${normal}"
+  exit 1
+fi
+
+echo "Create repositories according to the list?"
+echo
+for config in $repos_json_files; do
+  echo $config
+done
+echo
+read -p "Press enter to continue: "
 
 if [ -f "$parent_dir/$ENV_FILE" ]; then
   echo "$ENV_FILE file exists"
@@ -50,8 +71,23 @@ fi
 DOCKER_HTTP="http://$REMOTE_NEXUS_NAME.$DOMAIN:$NEXUS_PORT/service/rest/v1/repositories"
 if [ -z "$NEXUS_PASSWORD" ]; then
   password=$(docker exec -it nexus cat /nexus-data/admin.password)
-else
-  password=$NEXUS_PASSWORD
+  password_not_exists=$(echo $password|grep -E "No such" > /dev/null && echo true)
+  [ "$TS_DEBUG" = true ] && {
+  echo -e "
+  [DEBUG]:
+  password_not_exists: $password_not_exists
+  ";
+  }
+  if [ "$password_not_exists" = "true" ]; then
+    # get Remote Nexus domain nama
+    read -rp "Enter the nexus admin password for Remote Nexus: " NEXUS_PASSWORD
+    if [[ -z "${NEXUS_PASSWORD}" ]]; then
+     echo -e "${red}Variable \$NEXUS_PASSWORD is not define - ERROR${normal}"
+     exit 1
+    fi
+  else
+    NEXUS_PASSWORD=$password
+  fi
 fi
 
 echo -e "
@@ -61,12 +97,12 @@ echo -e "
   DOCKER_HTTP:        $DOCKER_HTTP
   NEXUS_USER:         $NEXUS_USER
   NEXUS_PORT:         $NEXUS_PORT
-  password:           $password
+  NEXUS_PASSWORD:     $NEXUS_PASSWORD
 "
 
-read -p "Press enter to continue..."
+read -p "Press enter to continue: "
 
-repos_json_files=$(ls -f $script_dir/$KEYSTACK_RELEASE/*.json|sed -E s#.+/##)
+
 # example output
 #docker-hosted-k-images.json
 #pypi-hosted-k-pip.json
@@ -76,28 +112,43 @@ repos_json_files=$(ls -f $script_dir/$KEYSTACK_RELEASE/*.json|sed -E s#.+/##)
 #yum-hosted-docker-sberlinux.json
 #yum-hosted-sberlinux.json
 
-[ "$TS_DEBUG" = true ] && {
-  echo -e "
-  [DEBUG]: repos_json_files: $repos_json_files
-";
-  read -p "Press enter to continue...";
+#[ "$TS_DEBUG" = true ] && {
+#  echo -e "
+#  [DEBUG]: repos_json_files: $repos_json_files
+#";
+#  read -p "Press enter to continue: ";
+#}
 
-}
+# Get repos list
+#curl -X GET $DOCKER_HTTP -H 'accept: application/json'| jq '.[]|.name'
 
 for repo in $repos_json_files; do
+  echo -e "\nCreate repo from $repo..."
   type=$(echo $repo|awk 'BEGIN {FS="-";}{print $1}')
   sub_type=$(echo $repo|awk 'BEGIN {FS="-";}{print $2}')
 
-[ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]: type: $type
-  [DEBUG]: sub_type: $sub_type
+[ "$TS_DEBUG" = true ] && { echo -e "
   [DEBUG]:
-curl -v -u $NEXUS_USER:$password -H \"Connection: close\" -H \"Content-Type: application/json\" -X POST \"$DOCKER_HTTP/$type/$sub_type\" -d @$script_dir/$KEYSTACK_RELEASE/$repo
-"
-  curl -v -u $NEXUS_USER:$password -H "Connection: close" -H "Content-Type: application/json" -X POST "$DOCKER_HTTP/$type/$sub_type" -d @$script_dir/$KEYSTACK_RELEASE/$repo
+  type: $type
+  sub_type: $sub_type
+  curl -v -u $NEXUS_USER:$NEXUS_PASSWORD -H \"Connection: close\" -H \"Content-Type: application/json\" -X POST \"$DOCKER_HTTP/$type/$sub_type\" -d @$script_dir/$KEYSTACK_RELEASE/$repo
+";
+  read -p "Press enter to continue: ";
+  }
+  curl -v -u $NEXUS_USER:$NEXUS_PASSWORD -H "Connection: close" -H "Content-Type: application/json" -X POST "$DOCKER_HTTP/$type/$sub_type" -d @$script_dir/$KEYSTACK_RELEASE/$repo
 done
 
-curl -v -u $NEXUS_USER:$password -X GET "$DOCKER_HTTP"
+echo -e "\nRepo list:"
+
+[ "$TS_DEBUG" = true ] && { echo -e "
+  [DEBUG]:
+  curl -X GET $DOCKER_HTTP -H 'accept: application/json'| jq '.[]|.name'
+";
+}
+
+curl -X GET $DOCKER_HTTP -H 'accept: application/json'| jq '.[]|.name'
+
+#curl -v -u $NEXUS_USER:$NEXUS_PASSWORD -X GET "$DOCKER_HTTP"
 #"$DOCKER_HTTP/service/rest/v1/repositories"
 
 ## k-images docker(hosted)

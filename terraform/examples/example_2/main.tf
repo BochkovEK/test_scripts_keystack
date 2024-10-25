@@ -12,7 +12,10 @@ resource "openstack_compute_instance_v2" "fc_hdd" {
   name         = "fc_hdd-vm"
   flavor_name  = var.flavor_name
   key_pair     = var.keypair
-  availability_zone_hints     = "cpu:cdm-bl-pca11"
+  availability_zone_hints     = var.az_hint
+  metadata = {
+    test_meta = "Created by Terraform example_2"
+  }
   network {
     port = openstack_networking_port_v2.fc_hdd_port[count.index].id
   }
@@ -46,7 +49,7 @@ resource "openstack_blockstorage_volume_v3" "fc_hdd_sda" {
   count = var.qty
 #  image_id             = data.openstack_images_image_v2.image.id
   name         = "fc_hdd_sda"
-  size                 = 1
+  size                 = var.volume_size
   enable_online_resize = true
   lifecycle {
     ignore_changes  = [image_id, volume_type]
@@ -56,7 +59,7 @@ resource "openstack_blockstorage_volume_v3" "fc_hdd_sda" {
 resource "openstack_blockstorage_volume_v3" "fc_hdd_sdb" {
   count = var.qty
   name         = "fc_hdd_sdb"
-  size                 = 1
+  size                 = var.volume_size
   enable_online_resize = true
   lifecycle {
     ignore_changes  = [image_id, volume_type]
@@ -66,7 +69,7 @@ resource "openstack_blockstorage_volume_v3" "fc_hdd_sdb" {
 resource "openstack_blockstorage_volume_v3" "fc_hdd_sdc" {
   count = var.qty
   name         = "fc_hdd_sdc"
-  size                 = 1
+  size                 = var.volume_size
   enable_online_resize = true
   lifecycle {
     ignore_changes  = [image_id, volume_type]
@@ -76,7 +79,7 @@ resource "openstack_blockstorage_volume_v3" "fc_hdd_sdc" {
 resource "openstack_blockstorage_volume_v3" "fc_hdd_sdd" {
   count = var.qty
   name         = "fc_hdd_sdd"
-  size                 = 1
+  size                 = var.volume_size
   enable_online_resize = true
   lifecycle {
     ignore_changes  = [image_id, volume_type]

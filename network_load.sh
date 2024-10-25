@@ -45,7 +45,7 @@ Network load will be $2 for hypervisor $1
 VMs on hypervisor $1:
 $VMs_IPs
 "
-    read -r -p "Press enter to continue"
+    read -r -p "Press enter to continue: "
     for raw_string_ip in $VMs_IPs; do
         IP="${raw_string_ip##*=}"
         network_stress "$IP"

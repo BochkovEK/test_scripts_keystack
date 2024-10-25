@@ -32,7 +32,7 @@ env_file="certs_envs"
 green=`tput setaf 2`
 yellow=`tput setaf 3`
 normal=`tput sgr0`
-
+ldaps_crt=ldaps.pem
 
 while [ -n "$1" ]; do
   case "$1" in
@@ -364,12 +364,13 @@ generate_certs () {
     cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/$LCM_VAULT_NAME.key;
     cp $CERTS_DIR/certs/cert.crt $OUTPUT_CERTS_DIR/$LCM_NETBOX_NAME.crt;
     cp $CERTS_DIR/certs/cert.key $OUTPUT_CERTS_DIR/$LCM_NETBOX_NAME.key
+    cp $script_dir/$ldaps_crt $OUTPUT_CERTS_DIR/$ldaps_crt
   else
     printf "%s\n" "${yellow}No self-signed certificates were created!${normal}"
     exit 0
   fi
 }
 
-
 get_init_vars
 generate_certs
+ls -la $OUTPUT_CERTS_DIR

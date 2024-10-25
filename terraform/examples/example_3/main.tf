@@ -8,8 +8,8 @@ resource "openstack_compute_instance_v2" "vm" {
     openstack_compute_secgroup_v2.secgroup.name
   ]
   availability_zone_hints     = var.az_hint
-  metadata                    = {
-    test_meta             = "Created by Terraform"
+  metadata = {
+    test_meta = "Created by Terraform example_3"
   }
   scheduler_hints {
     group                  = openstack_compute_servergroup_v2.servergroup.id
@@ -44,12 +44,12 @@ data "openstack_images_image_v2" "image_id" {
 #}
 
 resource "openstack_compute_flavor_v2" "flavor" {
-  flavor_id = var.flavor.name
-  name      = var.flavor.name
-  vcpus     = var.flavor.vcpus
-  ram       = var.flavor.ram
-  disk      = var.flavor.disk
-  is_public = var.flavor.is_public
+  flavor_id = var.flavor_name
+  name      = var.flavor_name
+  vcpus     = var.vcpus
+  ram       = var.ram
+  disk      = var.flavor_disk
+  is_public = "true"
 }
 
 resource "openstack_compute_keypair_v2" "keypair" {
@@ -77,6 +77,11 @@ resource "openstack_compute_secgroup_v2" "secgroup" {
 resource "openstack_compute_servergroup_v2" "servergroup" {
   name     = var.server_group.name
   policies = var.server_group.policies
+}
+
+module "AZs" {
+    source = "../../modules/aggregate"
+    AZs    = var.AZs
 }
 
 

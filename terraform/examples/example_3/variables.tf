@@ -26,16 +26,32 @@ variable "volume_size" {
   default = 1
 }
 
-variable "flavor" {
-  description = "Please flavor name"
-  default     = {
-    name        = "terraform_test_flavor"
-    vcpus       = 2
-    ram         = 2048
-    disk        = 1
-    is_public   = "true"
-  }
+variable "flavor_name" {
+  default     = "terraform_test_flavor"
 }
+
+variable "vcpus" {
+  default = 2
+}
+
+variable "ram" {
+  default = 2048
+}
+
+variable "flavor_disk" {
+  default = 0
+}
+
+#variable "flavor" {
+#  description = "Please flavor name"
+#  default     = {
+#    name        = var.flavor_name
+#    vcpus       = var.vcpus
+#    ram         = var.ram
+#    disk        = var.default_flavor_disk
+#    is_public   = "true"
+#  }
+#}
 
 variable "az_hint" {
   description = "The AZ name if needed. Valid format: '<az_name>' or '<az_name>:<hypervisor_name>'"
@@ -55,4 +71,9 @@ variable "server_group" {
       "affinity"
     ]
   }
+}
+
+variable "AZs" {
+  description = "AZs list source"
+  default = {}
 }

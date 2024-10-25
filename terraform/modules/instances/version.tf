@@ -7,10 +7,3 @@ required_version = ">= 0.14.0"
     }
   }
 }
-
-provider "openstack" {
-     cloud = "openstack"
-#    endpoint_overrides = {
-#        "volumev3" = var.volumev3
-#    }
-}

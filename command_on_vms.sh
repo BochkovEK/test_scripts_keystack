@@ -3,6 +3,8 @@
 # TO-DO Rename this script to command_on_vm.sh with key check
 # The script checks access to the VM on HV
 
+#foo
+
 #Colors
 green=$(tput setaf 2)
 red=$(tput setaf 1)
@@ -20,7 +22,9 @@ get_active_vms_ips_list_script="get_active_vms_ips_list.sh"
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $HYPERVISOR_NAME ]] && HYPERVISOR_NAME=""
 [[ -z $ONLY_PING ]] && ONLY_PING="false"
+[[ -z $ONLY_CHECK ]] && ONLY_CHECK="false"
 [[ -z $VM_USER ]] && VM_USER="ubuntu"
+#[[ -z $COMMAND_CHECK ]] && COMMAND_CHECK="ls -la"
 [[ -z $COMMAND_STR ]] && COMMAND_STR="ls -la"
 [[ -z $PROJECT ]] && PROJECT="admin"
 [[ -z $DONT_ASK ]] && DONT_ASK="true"
@@ -133,12 +137,23 @@ batch_run_command() {
 #        FIRST_IP=$(echo $raw_string_ip|awk '{print $1}')
 #    IP="${FIRST_IP##*=}"
     if ping -c 2 $IP &> /dev/null; then
-        echo -e "${green}There is a connection with $IP - success${normal}"
-        [ "$ONLY_CHECK" == "true" ] && { COMMAND_STR="ls -la"; }
-        [ "$ONLY_PING" == "false" ] && { ssh -t -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$IP "$COMMAND_STR"; }
+      echo -e "${green}There is a connection with $IP - success${normal}"
+      if [ "$ONLY_PING" = "false" ]; then
+        ssh_conn=$(ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=5 -q -i $script_dir/$KEY_NAME $VM_USER@$IP echo ok 2>&1)
+        if [ "$ssh_conn" = "ok" ]; then
+          echo -e "${green}There is a SSH connection with $IP - success${normal}"
+        else
+          echo $ssh_conn
+          echo -e "${red}No SSH connection with $IP - error!${normal}"
+          at_least_one_vm_is_not_avail="true"
+        fi
+        if [ "$ONLY_CHECK" = "false" ]; then
+          ssh -t -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$IP "$COMMAND_STR"
+        fi
+      fi
     else
-        echo -e "${red}No connection with $IP - error!${normal}"
-        at_least_one_vm_is_not_avail="true"
+      echo -e "${red}No connection with $IP - error!${normal}"
+      at_least_one_vm_is_not_avail="true"
     fi
     sleep 1
   done

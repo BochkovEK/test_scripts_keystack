@@ -7,3 +7,8 @@ variable "AZs" {
   description = "AZs list source"
   default = {}
 }
+
+variable "server_groups" {
+  description = "Server group list source"
+  default = {}
+}
