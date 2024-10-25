@@ -243,10 +243,11 @@ nexus_bootstarp () {
   check_and_install_docker
 
   #Add string to hosts
-  echo "Add $REMOTE_NEXUS_IP $REMOTE_NEXUS_NAME string to /etc/hosts..."
+  echo "Check $REMOTE_NEXUS_IP $REMOTE_NEXUS_NAME string in /etc/hosts..."
   nexus_string_exists=$(cat /etc/hosts|grep $REMOTE_NEXUS_NAME)
   if [ -z "$nexus_string_exists" ]; then
 #    sed -i "s/127.0.0.1 localhost/127.0.0.1 localhost $REMOTE_NEXUS_NAME.$DOMAIN/" /etc/hosts
+    echo "Add $REMOTE_NEXUS_IP $REMOTE_NEXUS_NAME string in /etc/hosts..."
     echo "# --- Remote nexus ---" >> /etc/hosts
     echo "$REMOTE_NEXUS_IP $REMOTE_NEXUS_NAME.$DOMAIN" >> /etc/hosts
   fi
