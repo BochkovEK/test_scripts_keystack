@@ -124,7 +124,7 @@ select_config_file () {
   done
   source $config_file
 
-    # get RELEASE_URL
+  # check KS_SELF_SIG
   if [[ -z "${KS_SELF_SIG}" ]]; then
     read -rp "Will self-signed certificates be used during installation y/n [y]: " KS_SELF_SIG
   fi
@@ -147,9 +147,25 @@ select_config_file () {
     echo -E "
   CENTRAL_AUTH_SERVICE_IP:        $CENTRAL_AUTH_SERVICE_IP
   CERTS_FOLDER:                   $CERTS_FOLDER
-  "
-    read -p "Press enter to continue: "
+    "
   fi
+
+  if [[ -z "${KS_CLIENT_NEXUS}" ]]; then
+    read -rp "remote\existing Artifactory y/n [n]: " KS_CLIENT_NEXUS
+  fi
+  export KS_CLIENT_NEXUS=${KS_CLIENT_NEXUS:-"n"}
+  [[ -z "${KS_CLIENT_NEXUS}" ]] && { echo -e "${red}env KS_CLIENT_NEXUS not define - ERROR${normal}"; exit 1; }
+  if [ "$KS_CLIENT_NEXUS" = y ]; then
+    if [[ -z "${KS_CLIENT_NEXUS_PASSWORD}" ]]; then
+      read -rp "Enter the remote\existing Artifactory password(at least 8 characters): " KS_CLIENT_NEXUS_PASSWORD
+    fi
+    export KS_CLIENT_NEXUS_PASSWORD=$KS_CLIENT_NEXUS_PASSWORD
+    [[ -z "${KS_CLIENT_NEXUS_PASSWORD}" ]] && { echo -e "${red}env KS_CLIENT_NEXUS_PASSWORD not define - ERROR${normal}"; exit 1; }
+    echo -E "
+  KS_CLIENT_NEXUS_PASSWORD:   $KS_CLIENT_NEXUS_PASSWORD
+    "
+  fi
+  read -p "Press enter to continue: "
 }
 
 #select_os () {
