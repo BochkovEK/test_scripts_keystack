@@ -52,19 +52,7 @@ source_envs () {
 
 get_init_vars () {
 
-  # get Central Authentication Service ip
-  if [[ -z "${CENTRAL_AUTH_SERVICE_IP}" ]]; then
-    read -rp "Enter Central Authentication Service IP: " CENTRAL_AUTH_SERVICE_IP
-  fi
-  export CENTRAL_AUTH_SERVICE_IP=$CENTRAL_AUTH_SERVICE_IP
-  [[ -z "${CENTRAL_AUTH_SERVICE_IP}" ]] && { echo -e "${red}env CENTRAL_AUTH_SERVICE_IP not define - ERROR${normal}"; exit 1; }
-
-  # get CERTS_FOLDER
-  if [[ -z "${CERTS_FOLDER}" ]]; then
-    read -rp "Enter certs folder for installer [$HOME/certs]: " CERTS_FOLDER
-  fi
-  export CERTS_FOLDER=${CERTS_FOLDER:-"$HOME/certs"}
-
+   # check KEYSTACK_RELEASE SYSTEM vars
   [[ -z "${KEYSTACK_RELEASE}" ]] && { echo -e "${red}env KEYSTACK_RELEASE not define - ERROR${normal}"; exit 1; }
 #  [[ -z "${KEYSTACK_RC_VERSION}" ]] && { echo -e "${red}env KEYSTACK_RC_VERSION not define - ERROR${normal}"; exit 1; }
   [[ -z "${SYSTEM}" ]] && { echo -e "${red}env SYSTEM not define - ERROR${normal}"; exit 1; }
@@ -128,6 +116,28 @@ select_config_file () {
       fi
   done
   source $config_file
+
+    # get RELEASE_URL
+  if [[ -z "${KS_SELF_SIG}" ]]; then
+    read -rp "Will self-signed certificates be used during installation y/n [y]: " KS_SELF_SIG
+  fi
+  export KS_SELF_SIG=${KS_SELF_SIG:-"y"}
+  [[ -z "${KS_SELF_SIG}" ]] && { echo -e "${red}env KS_SELF_SIG not define - ERROR${normal}"; exit 1; }
+
+  if [ "$KS_SELF_SIG" = n ]; then
+      # get Central Authentication Service ip
+    if [[ -z "${CENTRAL_AUTH_SERVICE_IP}" ]]; then
+      read -rp "Enter Central Authentication Service server IP: " CENTRAL_AUTH_SERVICE_IP
+    fi
+    export CENTRAL_AUTH_SERVICE_IP=$CENTRAL_AUTH_SERVICE_IP
+    [[ -z "${CENTRAL_AUTH_SERVICE_IP}" ]] && { echo -e "${red}env CENTRAL_AUTH_SERVICE_IP not define - ERROR${normal}"; exit 1; }
+
+    # get CERTS_FOLDER
+    if [[ -z "${CERTS_FOLDER}" ]]; then
+      read -rp "Enter certs folder on Central Authentication Service server [$HOME/certs]: " CERTS_FOLDER
+    fi
+    export CERTS_FOLDER=${CERTS_FOLDER:-"$HOME/certs"}
+  fi
   # use scp to upload "$file" here
 }
 
@@ -254,20 +264,6 @@ if [ -n "$KEYSTACK_RC_VERSION" ]; then
 fi
 
 select_os
-
-#========================================
-#CENTRAL_AUTH_SERVICE_IP
-#
-#[[ -z $CENTRAL_AUTH_SERVICE_IP ]] && CENTRAL_AUTH_SERVICE_IP=""
-#[[ -z $CERTS_FOLDER ]] && CERTS_FOLDER="$HOME/certs"
-#[[ -z $RELEASE_URL ]] && RELEASE_URL=""
-#[[ -z $INSTALLER_CONF ]] && INSTALLER_CONF=""
-#[[ -z $INIT_INSTALLER_FOLDER ]] && INIT_INSTALLER_FOLDER="$HOME/installer"
-#[[ -z $INIT_INSTALLER_BACKUP_FOLDER ]] && INIT_INSTALLER_BACKUP_FOLDER="$HOME/installer_backup"
-#[[ -z $KEYSTACK_RELEASE ]] && KEYSTACK_RELEASE=""
-#[[ -z $KEYSTACK_RC_VERSION ]] && KEYSTACK_RC_VERSION=""
-#===========================================
-
 source_envs
 get_init_vars
 
