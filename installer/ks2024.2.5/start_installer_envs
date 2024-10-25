@@ -4,3 +4,4 @@ export RELEASE_URL="https://repo.itkey.com/repository/k-install/installer-$KEYST
 #export INSTALLER_CONF="Client_certs_Nexus_LDAP_Gitlab_Netbox_installer_envs"
 export INIT_INSTALLER_FOLDER="$HOME/installer"
 export INIT_INSTALLER_BACKUP_FOLDER="$HOME/installer_backup"
+export KEYSTACK_RELEASE="ks2024.2.5"
