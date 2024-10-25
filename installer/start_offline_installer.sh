@@ -79,8 +79,6 @@ get_init_vars () {
   [[ -z "${INIT_INSTALLER_BACKUP_FOLDER}" ]] && { echo -e "${red}env INIT_INSTALLER_BACKUP_FOLDER not define - ERROR${normal}"; exit 1; }
 
   echo -E "
-    CENTRAL_AUTH_SERVICE_IP:        $CENTRAL_AUTH_SERVICE_IP
-    CERTS_FOLDER:                   $CERTS_FOLDER
     KEYSTACK_RELEASE:               $KEYSTACK_RELEASE
     KEYSTACK_RC_VERSION:            $KEYSTACK_RC_VERSION
     SYSTEM:                         $SYSTEM
@@ -137,8 +135,12 @@ select_config_file () {
       read -rp "Enter certs folder on Central Authentication Service server [$HOME/certs]: " CERTS_FOLDER
     fi
     export CERTS_FOLDER=${CERTS_FOLDER:-"$HOME/certs"}
+    echo -E "
+  CENTRAL_AUTH_SERVICE_IP:        $CENTRAL_AUTH_SERVICE_IP
+  CERTS_FOLDER:                   $CERTS_FOLDER
+  "
+    read -p "Press enter to continue: "
   fi
-  # use scp to upload "$file" here
 }
 
 #select_os () {
