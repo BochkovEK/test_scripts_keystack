@@ -77,6 +77,7 @@ yes_no_answer () {
 get_init_vars () {
 
   echo "Get init variables"
+  echo "source $script_dir/$env_file ..."
 
   if [ -f $script_dir/$env_file ]; then
     source $script_dir/$env_file
