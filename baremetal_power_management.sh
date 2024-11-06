@@ -166,7 +166,7 @@ start_python_power_management_script () {
 }
 
 
-[ -z "$HOST_NAME" ] || [ -z "$IPMI_IP" ] && { echo "Host name or IP needed as env (HOST_NAME or IPMI_IP) or first start script parameter"; exit 1; }
+[ -z "$HOST_NAME" ] && [ -z "$IPMI_IP" ] && { echo "Host name or IP needed as env (HOST_NAME or IPMI_IP) or first start script parameter"; exit 1; }
 check_module_exist
 start_python_power_management_script
 
