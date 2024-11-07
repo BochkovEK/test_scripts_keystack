@@ -8,9 +8,12 @@ test_node_conf_dir=kolla/$service_name
 conf_dir=/etc/kolla/$service_name
 conf_name=drs.ini
 
-red=`tput setaf 1`
-green=`tput setaf 2`
-normal=`tput sgr0`
+#Colors
+green=$(tput setaf 2)
+red=$(tput setaf 1)
+violet=$(tput setaf 5)
+normal=$(tput sgr0)
+yellow=$(tput setaf 3)
 
 script_dir=$(dirname $0)
 utils_dir="$script_dir/utils"
@@ -26,7 +29,7 @@ conf_changed=""
 [[ -z $PROMETHEUS_PASS ]] && PROMETHEUS_PASS=""
 [[ -z $PUSH ]] && PUSH="false"
 [[ -z $PULL ]] && PULL="false"
-[[ -z $CONF_NAME ]] && CONF_NAME="drs.ini"
+[[ -z $CONF_NAME ]] && CONF_NAME=$conf_name
 #[[ -z $FOO_PARAM ]] && FOO_PARAM=""
 [[ -z $NODES ]] && NODES=()
 
@@ -102,6 +105,7 @@ cat_conf () {
 
 pull_conf () {
   echo "Pulling $CONF_NAME..."
+  echo "Check and create folder $test_node_conf_dir in $script_dir folder"
   [ ! -d $script_dir/$test_node_conf_dir ] && { mkdir -p $script_dir/$test_node_conf_dir; }
 
 
