@@ -110,9 +110,9 @@ for node in $NODES;do
   [DEBUG]:
     node: $node
     command:
-      scp \"$TS_SOURCE\" \"${node}\":\"${TS_DESTINATION}\"
+      scp $TS_SOURCE ${node}:${TS_DESTINATION}
   "
-  scp "$TS_SOURCE" "${node}":"${TS_DESTINATION}"
+  scp $TS_SOURCE ${node}:${TS_DESTINATION}
 done
 
 #script_dir=$(dirname $0)
