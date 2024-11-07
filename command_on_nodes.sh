@@ -193,7 +193,7 @@ yes_no_answer () {
 check_ping () {
   if ping -c 2 $1 &> /dev/null; then
     printf "%40s\n" "${green}There is a connection with $1 - success${normal}"
-    NODES+=("$1")
+#    NODES+=("$1")
     sleep 1
   else
     connection_problem="true"
@@ -292,6 +292,11 @@ get_nodes_list () {
 }
 
 get_nodes_list
+
+echo "Check connection to $NODES_TYPE"
+for node in $NODES; do
+  check_ping $node
+done
 
 if [ "$connection_problem" = true ]; then
   yes_no_question="Do you want to run a command on nodes without connection problems? [Yes]: "
