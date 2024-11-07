@@ -279,6 +279,7 @@ REGION=$OS_REGION_NAME
 conf_name="region-config_${REGION}.json"
 CONF_NAME=$conf_name
 
+[ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
 [ "$CHECK_SUFFIX" = true ] && { check_bmc_suffix; exit 0; }
 [ "$PUSH" = true ] && { push_conf; conf_changed=true; }
 [ "$PULL" = true ] && { pull_conf; exit 0; }
@@ -286,6 +287,5 @@ CONF_NAME=$conf_name
 [ -n "$DEAD_THRSHOLD" ] && change_dead_threshold $DEAD_THRSHOLD
 [ -n "$IPMI_FENCING" ] && change_ipmi_fencing $IPMI_FENCING
 [ -n "$NOVA_FENCING" ] && change_nova_fencing $NOVA_FENCING
-cat_conf
 [ -n "$conf_changed" ] && { echo "Restart consul containers..."; bash $script_dir/command_on_nodes.sh -nt ctrl -c "docker restart consul"; }
-[ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
+cat_conf
