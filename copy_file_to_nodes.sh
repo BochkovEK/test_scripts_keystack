@@ -33,7 +33,7 @@ while [ -n "$1" ]; do
       -d,   -dest           <destination_file_path_on_node>
       --debug               debug mode
       Example:
-        bash $script_name -nt ctrl -s ~/foo/bar -d ~/baz
+        bash $script_name -nt ctrl -s /foo/bar -d /baz
 "
         exit 0
         break ;;
