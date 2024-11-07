@@ -100,6 +100,7 @@ get_nodes_list () {
 get_nodes_list
 
 for node in $NODES;do
+  echo "scp \"$TS_SOURCE\" \"${node}\":\"${TS_DESTINATION}\""
   scp "$TS_SOURCE" "${node}":"${TS_DESTINATION}"
 done
 
