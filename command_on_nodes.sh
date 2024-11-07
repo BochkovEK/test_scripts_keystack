@@ -275,9 +275,9 @@ get_nodes_list () {
     exit 1
   fi
 #  node=$(cat /etc/hosts | grep -m 1 -E ${nodes_pattern} | awk '{print $2}')
-  [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]: \"\$node\": $node\n
-  "
+#  [ "$TS_DEBUG" = true ] && echo -e "
+#  [DEBUG]: \"\$node\": $node\n
+#  "
   for node in $nodes; do NODES+=("$node"); done
   [ "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]: \"\$NODES\": ${NODES[*]}

@@ -43,7 +43,7 @@ while [ -n "$1" ]; do
     -nt|-type_of_nodes) NODES_TYPE=$2
       echo "Found the -type_of_nodes, with parameter value $NODES_TYPE"
       shift ;;
-    -d|-dest) $TS_DESTINATION="$2"
+    -d|-dest) TS_DESTINATION="$2"
       echo "Found the -dest option, with parameter value $TS_DESTINATION"
       shift ;;
     -nn|-node_name)
@@ -81,9 +81,9 @@ get_nodes_list () {
     exit 1
   fi
 #  node=$(cat /etc/hosts | grep -m 1 -E ${nodes_pattern} | awk '{print $2}')
-  [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]: \"\$node\": $node\n
-  "
+#  [ "$TS_DEBUG" = true ] && echo -e "
+#  [DEBUG]: \"\$node\": $node\n
+#  "
   for node in $nodes; do NODES+=("$node"); done
   [ "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]: \"\$NODES\": ${NODES[*]}
