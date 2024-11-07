@@ -43,7 +43,7 @@ while [ -n "$1" ]; do
     -nt|-type_of_nodes) NODES_TYPE=$2
       echo "Found the -type_of_nodes, with parameter value $NODES_TYPE"
       shift ;;
-    -d|-dest) TS_SOURCE="$2"
+    -d|-dest) $TS_DESTINATION="$2"
       echo "Found the -dest option, with parameter value $TS_DESTINATION"
       shift ;;
     -nn|-node_name)
@@ -99,8 +99,19 @@ get_nodes_list () {
 
 get_nodes_list
 
+[ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]:
+    TS_SOURCE:      $TS_SOURCE
+    TS_DESTINATION: $TS_DESTINATION
+"
+
 for node in $NODES;do
-  echo "scp \"$TS_SOURCE\" \"${node}\":\"${TS_DESTINATION}\""
+  [ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]:
+    node: $node
+    command:
+      scp \"$TS_SOURCE\" \"${node}\":\"${TS_DESTINATION}\"
+  "
   scp "$TS_SOURCE" "${node}":"${TS_DESTINATION}"
 done
 
