@@ -294,7 +294,7 @@ get_nodes_list () {
 get_nodes_list
 
 echo "Check connection to $NODES_TYPE"
-for node in $NODES; do
+for node in "${NODES[@]}"; do
   check_ping $node
 done
 

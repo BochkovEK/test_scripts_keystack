@@ -105,7 +105,7 @@ get_nodes_list
     TS_DESTINATION: $TS_DESTINATION
 "
 
-for node in $NODES;do
+for node in "${NODES[@]}"; do
   [ "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]:
     node: $node
