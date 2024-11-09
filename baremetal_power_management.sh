@@ -80,14 +80,14 @@ do
    shift
 done
 
-# Check openrc file
-Check_openrc_file () {
-    echo "Check openrc file here: $OPENRC_PATH"
-    check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
-    #echo $OPENRC_PATH
-    #echo $check_openrc_file
-    [[ -z "$check_openrc_file" ]] && { echo "openrc file not found in $OPENRC_PATH"; exit 1; }
-}
+## Check openrc file
+#Check_openrc_file () {
+#    echo "Check openrc file here: $OPENRC_PATH"
+#    check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
+#    #echo $OPENRC_PATH
+#    #echo $check_openrc_file
+#    [[ -z "$check_openrc_file" ]] && { echo "openrc file not found in $OPENRC_PATH"; exit 1; }
+#}
 
 check_connection_to_ipmi () {
   echo "Check connection to $BMC_HOST_NAME"
@@ -138,8 +138,8 @@ start_python_power_management_script () {
         actual_power_state=$(python_script_execute check| tail -n1)
         echo "Actual ipmi satus: $actual_power_state"
         if [ "$actual_power_state" = "PowerState.OFF" ]; then
-          Check_openrc_file
-          source $OPENRC_PATH
+#          Check_openrc_file
+#          source $OPENRC_PATH
           # The next two lines are commented out because the functionality of the consul has been changed 2024.2-rc-1
 #          echo "Trying set --disable-reason \"test disable\" to $HOST_NAME"
 #          openstack compute service set --disable --disable-reason "test disable" $HOST_NAME nova-compute
