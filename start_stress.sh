@@ -153,10 +153,10 @@ get_VMs_IPs () {
   if [ -z $VMs_IPs ]; then
     if [ -z $IP_LIST_FILE ]; then
       if [ -z $HYPERVISOR_NAME ]; then
-        hv="start stress test on all VMs on project: $PROJECT"
+        hv="all VMs on project: $PROJECT"
         host_string=""
       else
-        hv=$HYPERVISOR_NAME
+        hv="$HYPERVISOR_NAME"
         host_string="--host $hv"
       fi
 #
@@ -168,10 +168,10 @@ get_VMs_IPs () {
       fi
     else
       VMs_IPs=$(cat $IP_LIST_FILE)
-      hv="start stress test on VMs list: $VMs_IPs"
+      hv="VMs list: $VMs_IPs"
     fi
   else
-    hv="start stress test on VMs list: $VMs_IPs"
+    hv="VMs list: $VMs_IPs"
   fi
 
   [ "$TS_DEBUG" = true ] && echo -e "
@@ -212,7 +212,7 @@ batch_run_stress () {
   echo -E "
 Stress test: $TYPE_TEST will be launched on the hypervisor ($HV_STRING) VMs
     Stress test parameters:
-        Hypervisor:               $hv
+        Start stress test on:     $hv
         Key:                      $KEY_NAME
         User on VM (SSH):         $VM_USER
         Stress test type:         $TYPE_TEST
