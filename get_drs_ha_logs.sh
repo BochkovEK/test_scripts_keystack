@@ -165,7 +165,8 @@ get_drs_logs () {
 	  echo $tail_strings > $DRS_LOGS_DEST/drs_log_from_${host_name}_tail_${TAIL_NUM}.txt
 	  echo "Copy docker logs drs from $host_name..."
 	   read -p "Press enter to continue: "
-	  docker_logs_drs_strings=$(ssh -t -o "StrictHostKeyChecking=no" $node docker logs drs > /tmp/docker_logs_drs.txt) #&> /dev/null)
+	  ssh -o "StrictHostKeyChecking=no" $node "docker logs drs 2>&1 | tee /tmp/docker_logs_drs.txt" &> /dev/null
+#	  ssh -t -o "StrictHostKeyChecking=no" $node docker logs drs > /tmp/docker_logs_drs.txt #&> /dev/null)
 #	  echo $docker_logs_drs_strings > $DRS_LOGS_DEST/docker_logs_drs_from_${host_name}.txt
     scp -o "StrictHostKeyChecking=no" $node:/tmp/docker_logs_drs.txt $DRS_LOGS_DEST/docker_logs_drs_from_${host_name}.txt
 	  echo "Copy docker inspect drs from $host_name..."
