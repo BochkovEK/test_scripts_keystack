@@ -151,10 +151,10 @@ get_drs_logs () {
 #    exit 1;
 #    }
   for node in "${NODES[@]}"; do
-	  host_name=$(cat /etc/hosts | grep -E ${node} | awk '{print $2}')
-    [[ -z $host_name ]] && { host_name=$node; }
-#    host_name=$(host $node)
-    echo $node
+#	  host_name=$(cat /etc/hosts | grep -E ${node} | awk '{print $2}')
+#    [[ -z $host_name ]] && { host_name=$node; }
+    host_name=$node
+#    echo $node
     echo "Copy drs logs from $host_name..."
 #    scp -o "StrictHostKeyChecking=no" $node:$DRS_LOGS_SRC $DRS_LOGS_DEST/drs_log_from_$host_name.log
 #    echo "Copy drs logs tail: ${TAIL_NUM} from $host_name..."
@@ -188,7 +188,7 @@ get_ha_logs () {
 #  srv=$(cat /etc/hosts | grep -E ${NODES_TO_FIND} | awk '{print $2}')
   for node in "${NODES[@]}"; do
 #	  host_name=$(cat /etc/hosts | grep -E ${node} | awk '{print $2}')
-    host_name=$(host $node)
+    host_name=$node
     echo "Copy ha logs from $host_name..."
     scp -o "StrictHostKeyChecking=no" $node:$AUTOEVA_LOGS_SRC $AUTOEVA_LOGS_DEST/ha_log_from_$host_name.log
     echo "Copy ha logs tail: ${TAIL_NUM} from $host_name..."
