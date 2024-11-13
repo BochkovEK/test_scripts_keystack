@@ -209,18 +209,18 @@ get_mode_string () {
 }
 
 batch_run_stress () {
+#Stress test: $TYPE_TEST will be launched on the hypervisor ($HV_STRING) VMs
   echo -E "
-Stress test: $TYPE_TEST will be launched on the hypervisor ($HV_STRING) VMs
-    Stress test parameters:
-        Start stress test on:     $hv
-        Key:                      $KEY_NAME
-        User on VM (SSH):         $VM_USER
-        Stress test type:         $TYPE_TEST
-        VMs IPs list file:        $IP_LIST_FILE
-        Debug:                    $TS_DEBUG
-        $load_string
-        $time_out_help_string
-  "
+Stress test parameters:
+    Start stress test on:     $hv
+    Key:                      $KEY_NAME
+    User on VM (SSH):         $VM_USER
+    Stress test type:         $TYPE_TEST
+    VMs IPs list file:        $IP_LIST_FILE
+    Debug:                    $TS_DEBUG
+    $load_string
+    $time_out_help_string
+"
 
   read -p "Press enter to continue:"
 
