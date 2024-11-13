@@ -22,6 +22,7 @@ normal=$(tput sgr0)
 script_dir=$(dirname $0)
 utils_dir=$script_dir/utils
 get_nodes_list_script="get_nodes_list.sh"
+install_package_script="install_package.sh"
 
 [[ -z $TAIL_NUM ]] && TAIL_NUM=100
 [[ -z $NODES_TYPE ]] && NODES_TYPE="ctrl"
@@ -74,18 +75,36 @@ do
 done
 
 # Check_host_command
+#check_host_command () {
+#  Check_command host
+#  if [ -z $command_exist ]; then
+#    echo -e "\033[33mbind-utils not installed\033[0m"
+#    read -p "Press enter to install bind-utils: "
+#    is_sber_os=$(cat /etc/os-release| grep 'NAME="SberLinux"')
+#    if [ -n "${is_sber_os}" ]; then
+#      yum in -y bind-utils
+#    fi
+#  else
+#    printf "%s\n" "${green}'host' command is available - success${normal}"
+#  fi
+#}
+
 check_host_command () {
-  Check_command host
-  if [ -z $command_exist ]; then
-    echo -e "\033[33mbind-utils not installed\033[0m"
-    read -p "Press enter to install bind-utils"
-    is_sber_os=$(cat /etc/os-release| grep 'NAME="SberLinux"')
-    if [ -n "${is_sber_os}" ]; then
-      yum in -y bind-utils
-    fi
-  else
-    printf "%s\n" "${green}'host' command is available - success${normal}"
+  if ! bash $utils_dir/$install_package_script host; then
+    echo -e "${red}Failed to check 'host' command - ERROR${normal}"
+    exit 1
   fi
+#  Check_command host
+#  if [ -z $command_exist ]; then
+#    echo -e "\033[33mbind-utils not installed\033[0m"
+#    read -p "Press enter to install bind-utils: "
+#    is_sber_os=$(cat /etc/os-release| grep 'NAME="SberLinux"')
+#    if [ -n "${is_sber_os}" ]; then
+#      yum in -y bind-utils
+#    fi
+#  else
+#    printf "%s\n" "${green}'host' command is available - success${normal}"
+#  fi
 }
 
 add_to_archive () {

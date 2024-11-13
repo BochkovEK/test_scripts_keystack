@@ -22,6 +22,7 @@ utils_dir=$script_dir/utils
 openstack_utils=$utils_dir/openstack
 check_openrc_script="check_openrc.sh"
 check_openstack_cli_script="check_openstack_cli.sh"
+install_package_script="install_package.sh"
 
 edit_ha_region_config_script="edit_ha_region_config.sh"
 
@@ -107,18 +108,23 @@ Check_command () {
 #}
 
 # Check_host_command
+
 Check_host_command () {
-  Check_command host
-  if [ -z $command_exist ]; then
-    echo -e "\033[33mbind-utils not installed\033[0m"
-    read -p "Press enter to install bind-utils"
-    is_sber_os=$(cat /etc/os-release| grep 'NAME="SberLinux"')
-    if [ -n "${is_sber_os}" ]; then
-      yum in -y bind-utils
-    fi
-  else
-    printf "%s\n" "${green}'host' command is available - success${normal}"
+  if ! bash $utils_dir/$install_package_script host; then
+    echo -e "${red}Failed to check 'host' command - ERROR${normal}"
+    exit 1
   fi
+#  Check_command host
+#  if [ -z $command_exist ]; then
+#    echo -e "\033[33mbind-utils not installed\033[0m"
+#    read -p "Press enter to install bind-utils: "
+#    is_sber_os=$(cat /etc/os-release| grep 'NAME="SberLinux"')
+#    if [ -n "${is_sber_os}" ]; then
+#      yum in -y bind-utils
+#    fi
+#  else
+#    printf "%s\n" "${green}'host' command is available - success${normal}"
+#  fi
 }
 
 ## Check openrc file
@@ -163,7 +169,7 @@ Check_openstack_cli () {
 
   if [[ $CHECK_OPENSTACK = "true" ]]; then
 #    echo -e "${violet}Check openstack cli...${normal}"
-    if ! bash $utils_dir/check_openstack_cli.sh; then
+    if ! bash $utils_dir/$check_openstack_cli_script; then
       echo -e "${red}Failed to check openstack cli - ERROR${normal}"
       exit 1
     fi
