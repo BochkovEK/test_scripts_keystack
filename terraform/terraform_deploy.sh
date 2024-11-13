@@ -15,11 +15,13 @@ images_list=(
 #  "ubuntu-20.04-server-cloudimg-amd64.img"
 #  "jammy-server-cloudimg-amd64.img"
   "cirros-0.6.2-x86_64-disk.img"
+  "ubuntu-20.04-server-cloudimg-amd64.img"
   )
 public_images_list=(
 #  "ubuntu-20.04-server-cloudimg-amd64.img"
 #  "jammy-server-cloudimg-amd64.img"
-  "https://cloud-images.ubuntu.com/releases/focal/release/ubuntu-20.04-server-cloudimg-amd64.img"
+#  !!!Updated 12_11_24 ssh key not applied
+#  "https://cloud-images.ubuntu.com/releases/focal/release/ubuntu-20.04-server-cloudimg-amd64.img"
   )
 pub_net_name="pub_net"
 

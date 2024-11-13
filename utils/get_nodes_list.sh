@@ -78,7 +78,7 @@ node_type_func () {
           ${yellow}Execute command on ctrl nodes${normal}
           "
           ;;
-        comp)
+        comp|cmpt)
           NODES_TYPE=comp
           nodes_to_find=$comp_pattern
           [ "$TS_DEBUG" = true ] && echo -e "
