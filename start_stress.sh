@@ -185,7 +185,7 @@ get_VMs_IPs () {
       export HYPERVISOR_NAME=$HYPERVISOR_NAME
       export PROJECT=$PROJECT
       VMs_IPs=$(bash $openstack_utils/$get_active_vms_ips_list_script)
-      if echo $VMs_IPs| grep "ERROR!"; then
+      if echo $VMs_IPs| grep "ERROR"; then
         exit 1
       fi
     else
