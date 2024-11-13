@@ -66,7 +66,7 @@ get_VMs_IPs () {
 #      grep -E "ACTIVE.*$HYPERVISOR_NAME" |awk '{print \$12}')
     if [ -z "$VMs_IPs" ]; then
 #      [ "$UTIL_MODE" = true ] && {
-      echo -e "${red}No instance found in the $PROJECT project on $HYPERVISOR_NAME - ERROR!${normal}\nProject list:";
+      echo -e "${red}No instance found in the $PROJECT project on $HYPERVISOR_NAME - ERROR!${normal}";
 #      openstack project list;
 #      }
       exit 1
