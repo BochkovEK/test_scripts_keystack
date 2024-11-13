@@ -156,7 +156,7 @@ get_VMs_IPs () {
         hv="all VMs on project: $PROJECT"
         host_string=""
       else
-        hv="$HYPERVISOR_NAME"
+        hv="all VMs on hypervisor $HYPERVISOR_NAME"
         host_string="--host $hv"
       fi
 #
