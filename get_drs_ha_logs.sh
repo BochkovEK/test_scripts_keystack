@@ -157,15 +157,19 @@ get_drs_logs () {
 #    echo $node
     echo "Copy drs logs from $host_name..."
     scp -o "StrictHostKeyChecking=no" $node:$DRS_LOGS_SRC $DRS_LOGS_DEST/drs_log_from_$host_name.log
+     read -p "Press enter to continue: "
     echo "Copy drs logs tail: ${TAIL_NUM} from $host_name..."
-	  tail_strins=$(ssh -o "StrictHostKeyChecking=no" $node tail -$TAIL_NUM $DRS_LOGS_SRC)
-	  echo $tail_strins > $DRS_LOGS_DEST/drs_log_from_${host_name}_tail_${TAIL_NUM}.txt
+	  tail_strings=$(ssh -o "StrictHostKeyChecking=no" $node tail -$TAIL_NUM $DRS_LOGS_SRC)
+	  echo $tail_strings > $DRS_LOGS_DEST/drs_log_from_${host_name}_tail_${TAIL_NUM}.txt
+	   read -p "Press enter to continue: "
 	  echo "Copy docker logs drs from $host_name..."
 	  docker_logs_drs_strings=$(ssh -o "StrictHostKeyChecking=no" $node docker logs drs)
 	  echo $docker_logs_drs_strings > $DRS_LOGS_DEST/docker_logs_drs_from_${host_name}.txt
+	   read -p "Press enter to continue: "
 	  echo "Copy docker inspect drs from $host_name..."
 	  docker_inspect_drs_strings=$(ssh -o "StrictHostKeyChecking=no" $node docker inspect drs)
 	  echo $docker_inspect_drs_strings > $DRS_LOGS_DEST/docker_inspect_drs_from_${host_name}.txt
+	   read -p "Press enter to continue: "
 	  echo "Copy drs.ini from $host_name..."
     scp -o "StrictHostKeyChecking=no" $node:/etc/kolla/drs/drs.ini $DRS_LOGS_DEST/drs_ini_${host_name}.txt
     echo "Save optimization list from $host_name..."
@@ -192,8 +196,8 @@ get_ha_logs () {
     echo "Copy ha logs from $host_name..."
     scp -o "StrictHostKeyChecking=no" $node:$AUTOEVA_LOGS_SRC $AUTOEVA_LOGS_DEST/ha_log_from_$host_name.log
     echo "Copy ha logs tail: ${TAIL_NUM} from $host_name..."
-	  tail_strins=$(ssh  -o "StrictHostKeyChecking=no" $node tail -$TAIL_NUM $AUTOEVA_LOGS_SRC)
-	  echo $tail_strins > $AUTOEVA_LOGS_DEST/ha_log_from_${host_name}_tail_${TAIL_NUM}.txt
+	  tail_strings=$(ssh  -o "StrictHostKeyChecking=no" $node tail -$TAIL_NUM $AUTOEVA_LOGS_SRC)
+	  echo $tail_strings > $AUTOEVA_LOGS_DEST/ha_log_from_${host_name}_tail_${TAIL_NUM}.txt
   done
   add_to_archive $LOGS_TYPE $AUTOEVA_LOGS_DEST
 }
