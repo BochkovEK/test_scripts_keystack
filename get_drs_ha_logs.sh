@@ -156,6 +156,8 @@ get_drs_logs () {
     host_name=$node
 #    echo $node
     echo "Copy drs logs from $host_name..."
+    echo "DRS_LOGS_SRC: $DRS_LOGS_SRC"
+    read -p "Press enter to continue: "
     scp -o "StrictHostKeyChecking=no" $node:$DRS_LOGS_SRC $DRS_LOGS_DEST/drs_log_from_$host_name.log
     echo "Copy drs logs tail: ${TAIL_NUM} from $host_name..."
      read -p "Press enter to continue: "
