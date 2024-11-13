@@ -151,9 +151,9 @@ get_drs_logs () {
 #    exit 1;
 #    }
   for node in "${NODES[@]}"; do
-#	  host_name=$(cat /etc/hosts | grep -E ${node} | awk '{print $2}')
-
-    host_name=$(host $node)
+	  host_name=$(cat /etc/hosts | grep -E ${node} | awk '{print $2}')
+    [[ -z $host_name ]] && { host_name=$node; }
+#    host_name=$(host $node)
     echo $node
     echo "Copy drs logs from $host_name..."
 #    scp -o "StrictHostKeyChecking=no" $node:$DRS_LOGS_SRC $DRS_LOGS_DEST/drs_log_from_$host_name.log
