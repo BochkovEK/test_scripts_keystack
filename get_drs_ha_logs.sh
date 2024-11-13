@@ -152,26 +152,28 @@ get_drs_logs () {
 #    }
   for node in "${NODES[@]}"; do
 #	  host_name=$(cat /etc/hosts | grep -E ${node} | awk '{print $2}')
+
     host_name=$(host $node)
+    echo $node
     echo "Copy drs logs from $host_name..."
-    scp -o "StrictHostKeyChecking=no" $node:$DRS_LOGS_SRC $DRS_LOGS_DEST/drs_log_from_$host_name.log
-    echo "Copy drs logs tail: ${TAIL_NUM} from $host_name..."
-	  tail_strins=$(ssh -o "StrictHostKeyChecking=no" $node tail -$TAIL_NUM $DRS_LOGS_SRC)
-	  echo $tail_strins > $DRS_LOGS_DEST/drs_log_from_${host_name}_tail_${TAIL_NUM}.txt
-	  echo "Copy docker logs drs from $host_name..."
-	  docker_logs_drs_strings=$(ssh -o "StrictHostKeyChecking=no" $node docker logs drs)
-	  echo $docker_logs_drs_strings > $DRS_LOGS_DEST/docker_logs_drs_from_${host_name}.txt
-	  echo "Copy docker inspect drs from $host_name..."
-	  docker_inspect_drs_strings=$(ssh -o "StrictHostKeyChecking=no" $node docker inspect drs)
-	  echo $docker_inspect_drs_strings > $DRS_LOGS_DEST/docker_inspect_drs_from_${host_name}.txt
-	  echo "Copy drs.ini from $host_name..."
-    scp -o "StrictHostKeyChecking=no" $node:/etc/kolla/drs/drs.ini $DRS_LOGS_DEST/drs_ini_${host_name}.txt
-    echo "Save optimization list from $host_name..."
-    drs optimization list > $script_dir/drs_logs/optimization.list
-    echo "Save recommendation list from $host_name..."
-    drs recommendation list > $script_dir/drs_logs/recommendation.list
-    echo "Save migration list from $host_name..."
-    drs migration list > $script_dir/drs_logs/migration.list
+#    scp -o "StrictHostKeyChecking=no" $node:$DRS_LOGS_SRC $DRS_LOGS_DEST/drs_log_from_$host_name.log
+#    echo "Copy drs logs tail: ${TAIL_NUM} from $host_name..."
+#	  tail_strins=$(ssh -o "StrictHostKeyChecking=no" $node tail -$TAIL_NUM $DRS_LOGS_SRC)
+#	  echo $tail_strins > $DRS_LOGS_DEST/drs_log_from_${host_name}_tail_${TAIL_NUM}.txt
+#	  echo "Copy docker logs drs from $host_name..."
+#	  docker_logs_drs_strings=$(ssh -o "StrictHostKeyChecking=no" $node docker logs drs)
+#	  echo $docker_logs_drs_strings > $DRS_LOGS_DEST/docker_logs_drs_from_${host_name}.txt
+#	  echo "Copy docker inspect drs from $host_name..."
+#	  docker_inspect_drs_strings=$(ssh -o "StrictHostKeyChecking=no" $node docker inspect drs)
+#	  echo $docker_inspect_drs_strings > $DRS_LOGS_DEST/docker_inspect_drs_from_${host_name}.txt
+#	  echo "Copy drs.ini from $host_name..."
+#    scp -o "StrictHostKeyChecking=no" $node:/etc/kolla/drs/drs.ini $DRS_LOGS_DEST/drs_ini_${host_name}.txt
+#    echo "Save optimization list from $host_name..."
+#    drs optimization list > $script_dir/drs_logs/optimization.list
+#    echo "Save recommendation list from $host_name..."
+#    drs recommendation list > $script_dir/drs_logs/recommendation.list
+#    echo "Save migration list from $host_name..."
+#    drs migration list > $script_dir/drs_logs/migration.list
   done
   add_to_archive $LOGS_TYPE $DRS_LOGS_DEST
 #  echo "Add logs to archive... $LOGS_TYPE-logs-"`date +"%d-%m-%Y"`""
