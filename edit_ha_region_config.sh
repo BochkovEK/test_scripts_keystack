@@ -154,6 +154,10 @@ pull_conf () {
   echo "Сopying $service_name conf from ${NODES[0]}:$conf_dir/$CONF_NAME"
   scp -o StrictHostKeyChecking=no ${NODES[0]}:$conf_dir/$CONF_NAME $script_dir/$test_node_conf_dir
   [ ! -f $script_dir/$test_node_conf_dir/${CONF_NAME}_backup ] && { cp $script_dir/$test_node_conf_dir/${CONF_NAME} $script_dir/$test_node_conf_dir/${CONF_NAME}_backup; }
+  echo "To edit the config: "
+  echo "vi $script_dir/$test_node_conf_dir/$CONF_NAME"
+  echo "To apply the config: "
+  echo "bash ~/test_scripts_keystack/edit_ha_region_config.sh -push"
 }
 
 push_conf () {
