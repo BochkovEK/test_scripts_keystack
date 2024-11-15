@@ -8,10 +8,14 @@ required_version = ">= 0.14.0"
   }
 }
 
+# authentication by clouds.yml file
+#----------------------------------
 #provider "openstack" {
 #  cloud = "openstack"
 #}
 
+# MTSL (two-factor authentication)
+#----------------------------------
 provider "openstack" {
   user_name        = "admin"
   tenant_name      = "admin"

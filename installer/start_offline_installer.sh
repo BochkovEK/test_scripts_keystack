@@ -37,6 +37,68 @@ yellow=$(tput setaf 3)
 [[ -z $KEYSTACK_RELEASE ]] && KEYSTACK_RELEASE=""
 [[ -z $KEYSTACK_RC_VERSION ]] && KEYSTACK_RC_VERSION=""
 
+source_envs () {
+
+  installer_envs=$script_dir/$KEYSTACK_RELEASE/$start_installer_envs
+
+  echo "Try to source $installer_envs"
+
+  if [ -f $installer_envs ]; then
+    source $installer_envs
+  else
+    echo -e "${yellow}Env file $installer_envs not exists"
+  fi
+}
+
+get_init_vars () {
+
+   # check KEYSTACK_RELEASE SYSTEM vars
+  [[ -z "${KEYSTACK_RELEASE}" ]] && { echo -e "${red}env KEYSTACK_RELEASE not define - ERROR${normal}"; exit 1; }
+#  [[ -z "${KEYSTACK_RC_VERSION}" ]] && { echo -e "${red}env KEYSTACK_RC_VERSION not define - ERROR${normal}"; exit 1; }
+  [[ -z "${SYSTEM}" ]] && { echo -e "${red}env SYSTEM not define - ERROR${normal}"; exit 1; }
+
+  # get RELEASE_URL
+  if [[ -z "${RELEASE_URL}" ]]; then
+    read -rp "Enter release download url [https://repo.itkey.com/repository/k-install/installer-$KEYSTACK_RELEASE-$KEYSTACK_RC_VERSION$SYSTEM-offline.tgz]: " RELEASE_URL
+  fi
+  export RELEASE_URL=${RELEASE_URL:-"https://repo.itkey.com/repository/k-install/installer-$KEYSTACK_RELEASE-$KEYSTACK_RC_VERSION$SYSTEM-offline.tgz"}
+  [[ -z "${RELEASE_URL}" ]] && { echo -e "${red}env RELEASE_URL not define - ERROR${normal}"; exit 1; }
+
+  # get INIT_INSTALLER_FOLDER
+  if [[ -z "${INIT_INSTALLER_FOLDER}" ]]; then
+    read -rp "Enter region name [$HOME/installer]: " INIT_INSTALLER_FOLDER
+  fi
+  export INIT_INSTALLER_FOLDER=${INIT_INSTALLER_FOLDER:-"$HOME/installer"}
+  [[ -z "${INIT_INSTALLER_FOLDER}" ]] && { echo -e "${red}env INIT_INSTALLER_FOLDER not define - ERROR${normal}"; exit 1; }
+
+   # get INIT_INSTALLER_BACKUP_FOLDER
+  if [[ -z "${INIT_INSTALLER_BACKUP_FOLDER}" ]]; then
+    read -rp "Enter region name [$HOME/installer_backup]: " INIT_INSTALLER_BACKUP_FOLDER
+  fi
+  export INIT_INSTALLER_BACKUP_FOLDER=${INIT_INSTALLER_BACKUP_FOLDER:-"$HOME/installer_backup"}
+  [[ -z "${INIT_INSTALLER_BACKUP_FOLDER}" ]] && { echo -e "${red}env INIT_INSTALLER_BACKUP_FOLDER not define - ERROR${normal}"; exit 1; }
+
+  # get domain
+  if [[ -z "${KS_INSTALL_DOMAIN}" ]]; then
+    read -rp "Enter domain [test.domain]: " KS_INSTALL_DOMAIN
+  fi
+  export KS_INSTALL_DOMAIN=${KS_INSTALL_DOMAIN:-"test.domain"}
+  [[ -z "${KS_INSTALL_DOMAIN}" ]] && { echo -e "${red}env KS_INSTALL_DOMAIN not define - ERROR${normal}"; exit 1; }
+
+
+  echo -E "
+    KEYSTACK_RELEASE:               $KEYSTACK_RELEASE
+    KEYSTACK_RC_VERSION:            $KEYSTACK_RC_VERSION
+    SYSTEM:                         $SYSTEM
+    RELEASE_URL:                    $RELEASE_URL
+    INIT_INSTALLER_FOLDER:          $INIT_INSTALLER_FOLDER
+    INIT_INSTALLER_BACKUP_FOLDER:   $INIT_INSTALLER_BACKUP_FOLDER
+    KS_INSTALL_DOMAIN:              $KS_INSTALL_DOMAIN
+  "
+
+  read -p "Press enter to continue: "
+}
+
 select_config_file () {
   env_files="$script_dir/$KEYSTACK_RELEASE/$installer_conf_folder/*"
 #  search_dir=./ks2024.2.5/installer_conf/*
@@ -61,7 +123,49 @@ select_config_file () {
       fi
   done
   source $config_file
-  # use scp to upload "$file" here
+
+  # check KS_SELF_SIG
+  if [[ -z "${KS_SELF_SIG}" ]]; then
+    read -rp "Will self-signed certificates be used during installation y/n [y]: " KS_SELF_SIG
+  fi
+  export KS_SELF_SIG=${KS_SELF_SIG:-"y"}
+  [[ -z "${KS_SELF_SIG}" ]] && { echo -e "${red}env KS_SELF_SIG not define - ERROR${normal}"; exit 1; }
+
+  if [ "$KS_SELF_SIG" = n ]; then
+      # get Central Authentication Service ip
+    if [[ -z "${CENTRAL_AUTH_SERVICE_IP}" ]]; then
+      read -rp "Enter Central Authentication Service server IP: " CENTRAL_AUTH_SERVICE_IP
+    fi
+    export CENTRAL_AUTH_SERVICE_IP=$CENTRAL_AUTH_SERVICE_IP
+    [[ -z "${CENTRAL_AUTH_SERVICE_IP}" ]] && { echo -e "${red}env CENTRAL_AUTH_SERVICE_IP not define - ERROR${normal}"; exit 1; }
+
+    # get CERTS_FOLDER
+    if [[ -z "${CERTS_FOLDER}" ]]; then
+      read -rp "Enter certs folder on Central Authentication Service server [$HOME/certs]: " CERTS_FOLDER
+    fi
+    export CERTS_FOLDER=${CERTS_FOLDER:-"$HOME/certs"}
+    echo -E "
+  CENTRAL_AUTH_SERVICE_IP:        $CENTRAL_AUTH_SERVICE_IP
+  CERTS_FOLDER:                   $CERTS_FOLDER
+    "
+  fi
+
+  if [[ -z "${KS_CLIENT_NEXUS}" ]]; then
+    read -rp "remote\existing Artifactory y/n [n]: " KS_CLIENT_NEXUS
+  fi
+  export KS_CLIENT_NEXUS=${KS_CLIENT_NEXUS:-"n"}
+  [[ -z "${KS_CLIENT_NEXUS}" ]] && { echo -e "${red}env KS_CLIENT_NEXUS not define - ERROR${normal}"; exit 1; }
+  if [ "$KS_CLIENT_NEXUS" = y ]; then
+    if [[ -z "${KS_CLIENT_NEXUS_PASSWORD}" ]]; then
+      read -rp "Enter the remote\existing Artifactory password(at least 8 characters): " KS_CLIENT_NEXUS_PASSWORD
+    fi
+    export KS_CLIENT_NEXUS_PASSWORD=$KS_CLIENT_NEXUS_PASSWORD
+    [[ -z "${KS_CLIENT_NEXUS_PASSWORD}" ]] && { echo -e "${red}env KS_CLIENT_NEXUS_PASSWORD not define - ERROR${normal}"; exit 1; }
+    echo -E "
+  KS_CLIENT_NEXUS_PASSWORD:   $KS_CLIENT_NEXUS_PASSWORD
+    "
+  fi
+  read -p "Press enter to continue: "
 }
 
 #select_os () {
@@ -101,6 +205,10 @@ select_os () {
       ;;
   esac
   export SYSTEM=$system
+  if [ -z "$SYSTEM" ]; then
+    echo -e "${red}\$SYSTEM variable not defined - ERROR${normal}"
+   exit 1
+  fi
 }
 
 #
@@ -123,34 +231,45 @@ select_os () {
 #exit 1
 #}
 
-check_and_install_docker () {
-  #Install docker if need
-  if ! command -v docker &> /dev/null; then
-    is_ubuntu=$(cat /etc/os-release|grep ubuntu)
-    if [ -n "$is_ubuntu" ]; then
-      echo "Installing docker on ubuntu"
-      if bash $script_dir/docker_ubuntu_installation.sh; then
-        return
-      fi
-    fi
-    is_sberlinux=$(cat /etc/os-release|grep sberlinux)
-    if [ -n "$is_sberlinux" ]; then
-      echo "Installing docker on sberlinux"
-      if bash $script_dir/docker_sberlinux_installation.sh; then
-        return
-      fi
-    fi
-  else
-    return
-  fi
-  echo -e "${red}Failed to install docker - ERROR${normal}"
-  exit 1
-}
+#check_and_install_docker () {
+#  #Install docker if need
+#  if ! command -v docker &> /dev/null; then
+#    is_ubuntu=$(cat /etc/os-release|grep ubuntu)
+#    if [ -n "$is_ubuntu" ]; then
+#      echo "Installing docker on ubuntu"
+#      if bash $script_dir/docker_ubuntu_installation.sh; then
+#        return
+#      fi
+#    fi
+#    is_sberlinux=$(cat /etc/os-release|grep sberlinux)
+#    if [ -n "$is_sberlinux" ]; then
+#      echo "Installing docker on sberlinux"
+#      if bash $script_dir/docker_sberlinux_installation.sh; then
+#        return
+#      fi
+#    fi
+#  else
+#    return
+#  fi
+#  echo -e "${red}Failed to install docker - ERROR${normal}"
+#  exit 1
+#}
 
 validate_url () {
   if [[ `wget -S --spider $1  2>&1 | grep 'HTTP/1.1 200 OK'` ]]; then echo "true"; fi
 }
 
+# WARNING
+echo -e "
+${yellow}WARNING!${normal}
+Before continue, make sure you have:
+  - DNS (dnsmasq)
+  - Self signed certs
+  - Remote nexus with with the necessary repositories
+"
+read -p "Press enter to continue: "
+
+# Get KEYSTACK_RELEASE
 if [ -z "$1" ]; then
   if [ -z "$KEYSTACK_RELEASE" ]; then
     read -rp "Enter KeyStack release [ks2024.3]: " KEYSTACK_RELEASE
@@ -161,24 +280,7 @@ else
   export KEYSTACK_RELEASE=$KEYSTACK_RELEASE
 fi
 
-echo -e "
-${yellow}WARNING!${normal}
-Before continue, make sure you have:
-  - DNS (dnsmasq)
-  - Self signed certs
-  - Remote nexus with with the necessary repositories
-"
-
-read -p "Press enter to continue: "
-
-select_os
-
-if [ -z "$SYSTEM" ]; then
-  echo -e "${red}\$SYSTEM variable not defined - ERROR${normal}"
-  exit 1
-fi
-
-# get Release candidate version
+# Get Release candidate version
 if [[ -z "${KEYSTACK_RC_VERSION}" ]]; then
   read -rp "If necessary, specify the release candidate (exp: rc7) version or press Enter : " KEYSTACK_RC_VERSION
 fi
@@ -188,14 +290,10 @@ if [ -n "$KEYSTACK_RC_VERSION" ]; then
   export KEYSTACK_RC_VERSION="$KEYSTACK_RC_VERSION-"
 fi
 
-installer_envs=$script_dir/$KEYSTACK_RELEASE/$start_installer_envs
+select_os
+source_envs
+get_init_vars
 
-if [ -f $installer_envs ]; then
-  source $installer_envs
-else
-  echo -e "${red}Environment variables file \'$installer_envs\' not found - ERROR${normal}"
-  exit 1
-fi
 
 bash $utils_dir/$install_wget_script
 release_tar=$(echo "${RELEASE_URL##*/}")

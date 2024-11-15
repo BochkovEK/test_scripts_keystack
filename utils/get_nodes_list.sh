@@ -9,11 +9,11 @@ utils_dir=$script_dir
 check_openrc_script="check_openrc.sh"
 check_openstack_cli_script="check_openstack_cli.sh"
 
-comp_pattern="comp\-.."
+comp_pattern="comp\-..(\s|$)"
 #$"
-ctrl_pattern="ctrl\-.."
+ctrl_pattern="ctrl\-..(\s|$)"
 #$"
-net_pattern="net\-.."
+net_pattern="net\-..(\s|$)"
 #net_pattern="\-net\-.."
 #$"
 
@@ -78,7 +78,7 @@ node_type_func () {
           ${yellow}Execute command on ctrl nodes${normal}
           "
           ;;
-        comp)
+        comp|cmpt)
           NODES_TYPE=comp
           nodes_to_find=$comp_pattern
           [ "$TS_DEBUG" = true ] && echo -e "

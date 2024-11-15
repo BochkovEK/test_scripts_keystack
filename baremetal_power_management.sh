@@ -18,6 +18,7 @@ required_modules=(
 script_dir=$(dirname $0)
 
 [[ -z $HOST_NAME ]] && HOST_NAME=""
+[[ -z $IPMI_IP ]] && IPMI_IP=""
 [[ -z $POWER_STATE ]] && POWER_STATE="check"
 [[ -z $USER_NAME ]] && USER_NAME=""
 [[ -z $PASSWORD ]] && PASSWORD=""
@@ -41,8 +42,9 @@ do
   case "$1" in
   --help) echo -E "
     The power management script
-      -hv, -host_name,       <host_name>     Host name for power management (ipmi)
-      -p,  -power_state      <power_state>   check, on, off, restart
+      -ip                   <ipmi_ip>       IPMI IP
+      -hv, -host_name,      <host_name>     Host name for power management (ipmi)
+      -p,  -power_state     <power_state>   check, on, off, restart
       -v,  -debug  enabled debug output (without parameter)
 
       Example to start script:
@@ -53,6 +55,9 @@ do
 
     exit 0
     break ;;
+  -ip) IPMI_IP="$2"
+    echo "Found the -ip <ipmi_ip> option, with parameter value $IPMI_IP"
+    shift ;;
   -hv|-host_name) HOST_NAME="$2"
     echo "Found the -host_name <host_name> option, with parameter value $HOST_NAME"
     shift ;;
@@ -75,14 +80,14 @@ do
    shift
 done
 
-# Check openrc file
-Check_openrc_file () {
-    echo "Check openrc file here: $OPENRC_PATH"
-    check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
-    #echo $OPENRC_PATH
-    #echo $check_openrc_file
-    [[ -z "$check_openrc_file" ]] && { echo "openrc file not found in $OPENRC_PATH"; exit 1; }
-}
+## Check openrc file
+#Check_openrc_file () {
+#    echo "Check openrc file here: $OPENRC_PATH"
+#    check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
+#    #echo $OPENRC_PATH
+#    #echo $check_openrc_file
+#    [[ -z "$check_openrc_file" ]] && { echo "openrc file not found in $OPENRC_PATH"; exit 1; }
+#}
 
 check_connection_to_ipmi () {
   echo "Check connection to $BMC_HOST_NAME"
@@ -114,12 +119,16 @@ python_script_execute () {
 
 start_python_power_management_script () {
     echo "Check power state parameter: $POWER_STATE..."
-    echo "Check bmc suffix by script $EDIT_HA_REGION_CONFIG..."
-    bmc_suffix=$(bash $script_dir/$EDIT_HA_REGION_CONFIG suffix| tail -n1)
-    [[ -z $bmc_suffix ]] && { printf "%40s\n" "${red}variable bmc_suffix id empty${normal}"; exit 0; }
-    echo "bmc_suffix: $bmc_suffix"
-    BMC_HOST_NAME=$HOST_NAME$bmc_suffix
-    echo "BMC_HOST_NAME: $BMC_HOST_NAME"
+    if [ -n "$IPMI_IP" ]; then
+      BMC_HOST_NAME=$IPMI_IP
+    else
+      echo "Check bmc suffix by script $EDIT_HA_REGION_CONFIG..."
+      bmc_suffix=$(bash $script_dir/$EDIT_HA_REGION_CONFIG suffix| tail -n1)
+      [[ -z $bmc_suffix ]] && { printf "%40s\n" "${red}variable bmc_suffix id empty${normal}"; exit 0; }
+      echo "bmc_suffix: $bmc_suffix"
+      BMC_HOST_NAME=$HOST_NAME$bmc_suffix
+      echo "BMC_HOST_NAME: $BMC_HOST_NAME"
+    fi
     check_connection_to_ipmi
     case $POWER_STATE in
       check)
@@ -129,8 +138,8 @@ start_python_power_management_script () {
         actual_power_state=$(python_script_execute check| tail -n1)
         echo "Actual ipmi satus: $actual_power_state"
         if [ "$actual_power_state" = "PowerState.OFF" ]; then
-          Check_openrc_file
-          source $OPENRC_PATH
+#          Check_openrc_file
+#          source $OPENRC_PATH
           # The next two lines are commented out because the functionality of the consul has been changed 2024.2-rc-1
 #          echo "Trying set --disable-reason \"test disable\" to $HOST_NAME"
 #          openstack compute service set --disable --disable-reason "test disable" $HOST_NAME nova-compute
@@ -157,7 +166,7 @@ start_python_power_management_script () {
 }
 
 
-[ -z "$HOST_NAME" ] && { echo "Host name needed as env (HOST_NAME) or first start script parameter"; exit 1; }
+[ -z "$HOST_NAME" ] && [ -z "$IPMI_IP" ] && { echo "Host name or IP needed as env (HOST_NAME or IPMI_IP) or first start script parameter"; exit 1; }
 check_module_exist
 start_python_power_management_script
 

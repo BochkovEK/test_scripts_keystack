@@ -1,7 +1,7 @@
 #Envs list
 export CERTS_DIR=$HOME/central_auth_service
 export OUTPUT_CERTS_DIR=$HOME/certs
-export DOMAIN=test.domain
+export DOMAIN=foo.domain
 export REGION_NAME=ebochkov
 export INTERNAL_FQDN=int.$REGION_NAME.$DOMAIN
 export INTERNAL_VIP=""

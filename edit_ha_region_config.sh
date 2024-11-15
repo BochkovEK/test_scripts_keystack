@@ -4,13 +4,23 @@
 
 #ctrl_pattern="\-ctrl\-..$"
 service_name=consul
+nodes_type="ctrl"
 #consul_conf_dir=kolla/$service_name
 test_node_conf_dir=kolla/$service_name
 conf_dir=/etc/kolla/$service_name
+#conf_name=drs.ini
 script_dir=$(dirname $0)
 utils_dir="$script_dir/utils"
-#get_nodes_list_script="get_nodes_list.sh"
+check_openrc_script="check_openrc.sh"
+get_nodes_list_script="get_nodes_list.sh"
 install_package_script="install_package.sh"
+
+#Colors
+green=$(tput setaf 2)
+red=$(tput setaf 1)
+violet=$(tput setaf 5)
+normal=$(tput sgr0)
+yellow=$(tput setaf 3)
 
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $ALIVE_THRSHOLD ]] && ALIVE_THRSHOLD=""
@@ -90,33 +100,66 @@ do
         shift
 done
 
-source $OPENRC_PATH
-REGION=$OS_REGION_NAME
-[[ -z "${REGION}" ]] && { echo "Region name not found"; exit 1; }
+#source $OPENRC_PATH
 
-Check_openrc_file () {
-    echo "Check openrc file here: $OPENRC_PATH"
-    check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
-    #echo $OPENRC_PATH
-    #echo $check_openrc_file
-    [[ -z "$check_openrc_file" ]] && { echo "openrc file not found in $OPENRC_PATH"; exit 1; }
+
+#Check_openrc_file () {
+#    echo "Check openrc file here: $OPENRC_PATH"
+#    check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
+#    #echo $OPENRC_PATH
+#    #echo $check_openrc_file
+#    [[ -z "$check_openrc_file" ]] && { echo "openrc file not found in $OPENRC_PATH"; exit 1; }
+#}
+
+# Check openrc file
+check_and_source_openrc_file () {
+  echo -e "${violet}Check openrc file...${normal}"
+  if bash $utils_dir/$check_openrc_script &> /dev/null; then
+    openrc_file=$(bash $utils_dir/$check_openrc_script)
+    echo -e "${green}$openrc_file file exist - success${normal}"
+    source $openrc_file
+  else
+    bash $utils_dir/$check_openrc_script
+    echo -e "${red}openrc file not found in $openrc_file${normal} - ERROR"
+    exit 1
+  fi
 }
 
 cat_conf () {
   echo "Cat all $service_name configs..."
-  bash $script_dir/command_on_nodes.sh -nt ctrl -c "echo \"cat $conf_dir/region-config_${REGION}.json\"; cat $conf_dir/region-config_${REGION}.json"
+  bash $script_dir/command_on_nodes.sh -nt ctrl -c "echo \"cat $conf_dir/$CONF_NAME\"; cat $conf_dir/$CONF_NAME"
 }
 
+#pull_conf () {
+#  echo "Pulling $CONF_NAME..."
+#  echo "Check and create folder $test_node_conf_dir in $script_dir folder"
+#  [ ! -d $script_dir/$test_node_conf_dir ] && { mkdir -p $script_dir/$test_node_conf_dir; }
+#
+##  echo "ctrl_pattern: $ctrl_pattern"
+#  echo "Try parse /etc/hosts to find ctrl node..."
+##  ctrl_node=$(cat /etc/hosts | grep -m 1 -E ${ctrl_pattern} | awk '{print $1}')
+#
+#  nova_state_list=$(openstack compute service list)
+#  ctrl_node=$(echo "$nova_state_list" | grep -m 1 -E "nova-scheduler" | awk '{print $6}')
+#  echo "Pull consul conf from $ctrl_node:$conf_dir/region-config_${REGION}.json"
+#  scp -o StrictHostKeyChecking=no $ctrl_node:$conf_dir/region-config_${REGION}.json $script_dir/$test_node_conf_dir
+#}
+
 pull_conf () {
-  echo "Check and create folder $test_node_conf_dir in $script_dir folder"
+
+  echo "Pulling $CONF_NAME..."
   [ ! -d $script_dir/$test_node_conf_dir ] && { mkdir -p $script_dir/$test_node_conf_dir; }
-#  echo "ctrl_pattern: $ctrl_pattern"
-  echo "Try parse /etc/hosts to find ctrl node..."
-#  ctrl_node=$(cat /etc/hosts | grep -m 1 -E ${ctrl_pattern} | awk '{print $1}')
-  nova_state_list=$(openstack compute service list)
-  ctrl_node=$(echo "$nova_state_list" | grep -m 1 -E "nova-scheduler" | awk '{print $6}')
-  echo "Pull consul conf from $ctrl_node:$conf_dir/region-config_${REGION}.json"
-  scp -o StrictHostKeyChecking=no $ctrl_node:$conf_dir/region-config_${REGION}.json $script_dir/$test_node_conf_dir
+
+
+  echo "Сopying $service_name conf from ${NODES[0]}:$conf_dir/$CONF_NAME"
+  scp -o StrictHostKeyChecking=no ${NODES[0]}:$conf_dir/$CONF_NAME $script_dir/$test_node_conf_dir
+  [ ! -f $script_dir/$test_node_conf_dir/${CONF_NAME}_backup ] && { cp $script_dir/$test_node_conf_dir/${CONF_NAME} $script_dir/$test_node_conf_dir/${CONF_NAME}_backup; }
+  echo -e "
+To edit the config:
+  vi $script_dir/$test_node_conf_dir/$CONF_NAME
+To apply the config:
+  bash ~/test_scripts_keystack/edit_ha_region_config.sh -push
+"
 }
 
 push_conf () {
@@ -142,6 +185,27 @@ push_conf () {
     echo "Push consul conf to $node:$conf_dir/$CONF_NAME"
     scp -o StrictHostKeyChecking=no $script_dir/$test_node_conf_dir/$CONF_NAME $node:$conf_dir/$CONF_NAME
   done
+}
+
+get_nodes_list () {
+  if [ -z "${NODES[*]}" ]; then
+    nodes=$(bash $utils_dir/$get_nodes_list_script -nt $nodes_type)
+  fi
+#  node=$(cat /etc/hosts | grep -m 1 -E ${nodes_pattern} | awk '{print $2}')
+  [ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]: \"\$node\": $node\n
+  "
+  for node in $nodes; do NODES+=("$node"); done
+  [ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]: \"\$NODES\": ${NODES[*]}
+  "
+  echo -e "
+  NODES: ${NODES[*]}
+  "
+  if [ -z "${NODES[*]}" ]; then
+    echo -e "${red}Failed to determine node list - ERROR${normal}"
+    exit 1
+  fi
 }
 
 change_alive_threshold () {
@@ -213,14 +277,21 @@ check_bmc_suffix () {
   echo "${suffix_string_raw_2%%,*}"|awk '{print $2}'
 }
 
+get_nodes_list
 
+check_and_source_openrc_file
+REGION=$OS_REGION_NAME
+[[ -z "${REGION}" ]] && { echo "Region name not found"; exit 1; }
+conf_name="region-config_${REGION}.json"
+CONF_NAME=$conf_name
+
+[ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
 [ "$CHECK_SUFFIX" = true ] && { check_bmc_suffix; exit 0; }
-[ "$PUSH" = true ] && { push_conf; conf_changed=true; }
 [ "$PULL" = true ] && { pull_conf; exit 0; }
+[ "$PUSH" = true ] && { push_conf; conf_changed=true; }
 [ -n "$ALIVE_THRSHOLD" ] && change_alive_threshold $ALIVE_THRSHOLD
 [ -n "$DEAD_THRSHOLD" ] && change_dead_threshold $DEAD_THRSHOLD
 [ -n "$IPMI_FENCING" ] && change_ipmi_fencing $IPMI_FENCING
 [ -n "$NOVA_FENCING" ] && change_nova_fencing $NOVA_FENCING
 cat_conf
 [ -n "$conf_changed" ] && { echo "Restart consul containers..."; bash $script_dir/command_on_nodes.sh -nt ctrl -c "docker restart consul"; }
-[ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }

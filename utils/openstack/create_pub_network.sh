@@ -18,6 +18,7 @@ parent_dir=$(dirname "$script_dir")
 utils_dir=$parent_dir
 check_openrc_script="check_openrc.sh"
 check_openstack_cli_script="check_openstack_cli.sh"
+yes_no_answer_script="yes_no_answer.sh"
 
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"

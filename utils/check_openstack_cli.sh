@@ -8,7 +8,7 @@ normal=$(tput sgr0)
 yellow=$(tput setaf 3)
 
 [[ -z $OSC_VERSION ]] && OSC_VERSION="6.2.0"
-[[ -z $DONT_ASK ]] && DONT_ASK="true"
+[[ -z $DONT_ASK ]] && DONT_ASK="false"
 
 osc_version_string="==$OSC_VERSION"
 
