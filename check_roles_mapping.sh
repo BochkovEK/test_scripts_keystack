@@ -32,6 +32,36 @@ yes_no_answer_script="yes_no_answer.sh"
 [[ -z $ROLE_MAPPING_FILE ]] && ROLE_MAPPING_FILE=""
 
 
+# Define parameters
+define_parameters () {
+  [ "$DEBUG" = true ] && echo "[DEBUG]: \"\$1\": $1"
+  [ "$count" = 1 ] && [[ -n $1 ]] && { CHECK=$1; echo "ROLE_MAPPING_FILE: $CHECK"; }
+#  [ "$count" = 1 ] && [[ -n $1 ]] && { CHECK=$1; echo "Command parameter found with value $CHECK"; }
+}
+
+count=1
+while [ -n "$1" ]
+do
+  case "$1" in
+    --help) echo -E "
+    The script check roles, users, groups
+    To start: bash check_openstack_roles.sh <path_to_role_mapping_file>
+    Example <path_to_role_mapping_file>:
+    <group_name> <role> <user_name1> <user_name2> ... <user_name_n>
+    cat ./role_mapping_example.txt
+    preevostack_infra_admin   admin   infra_admin
+    preevostack_member        member  member1      member2 member3
+"
+      exit 0
+      break ;;
+	  --) shift
+      break ;;
+    *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
+      esac
+      shift
+done
+
+
 error_output () {
 #  printf "%s\n" "${yellow}command not executed on $NODES_TYPE nodes${normal}"
   if [ -n "${warning_message}" ]; then
@@ -130,7 +160,7 @@ add_role_for_groups () {
         echo -e "${blue}role_name: $role_name${normal}"
         group_id=$(openstack group list --domain $DOMAIN|grep -E "\s$group_name\s"| awk '{print $2}')
         openstack role add $role_name --group $group_id --project $PROJ_ID
-        echo "Check role: $role_name in project: $PROJECT..."
+        echo "Check role: $role_name for group: $group_name in project: $PROJECT..."
         openstack role assignment list --group $group_id --project $PROJ_ID --names
         break
       fi
