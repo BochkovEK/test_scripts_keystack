@@ -74,9 +74,8 @@ else
   ROLE_MAPPING_FILE=$1
 fi
 
-
 #while IFS= read -r line; do echo ">>$line<<"; done < $ROLE_MAPPING_FILE
-while IFS= read -r; do lines+=("$ROLE_MAPPING"); done < $ROLE_MAPPING_FILE
+while IFS= read -r line; do ROLE_MAPPING+=("$line"); done < $ROLE_MAPPING_FILE
 
 for map in "${ROLE_MAPPING[@]}"; do
   echo $map
