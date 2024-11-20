@@ -25,6 +25,7 @@ yes_no_answer_script="yes_no_answer.sh"
 
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
+[[ -z $DOMAIN ]] && DOMAIN="test_domain"
 [[ -z $PROJECT ]] && PROJECT="test_project"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="true"
 [[ -z $ROLE_MAPPING_FILE ]] && ROLE_MAPPING_FILE=""
@@ -62,10 +63,65 @@ check_openstack_cli () {
   fi
 }
 
+create_test_project () {
+  echo "Check for exist project: \"$PROJECT\""
+  PROJ_ID=$(openstack project list| grep -E -m 1 "\s$PROJECT\s"| awk '{print $2}')
+  if [ -z "$PROJ_ID" ]; then
+    printf "%s\n" "${orange}Project \"$PROJECT\" does not exist${normal}"
+    if [ ! $DONT_ASK = "true" ]; then
+      export TS_YES_NO_QUESTION="Do you want to try to create $PROJECT [Yes]:"
+      yes_no_input=$(bash $utils_dir/$yes_no_answer_script)
+    else
+      yes_no_input="true"
+    fi
+    if [ "$yes_no_input" = "true" ]; then
+      PROJ_ID=$(openstack project create $PROJECT --domain $DOMAIN|grep -E "\sid\s"| awk '{print $4}')
+      openstack project show $PROJ_ID
+    fi
+  fi
+}
+
+check_users_in_group () {
+  for map in "${ROLE_MAPPING[@]}"; do
+    i=1
+    group_name=""
+#    role_name=""
+    user_id=""
+    group_id=""
+    for word in $map; do
+      user_id=""
+      if (( $i == 1 )); then
+        group_name=$word
+        echo "group_name: $group_name"
+        i=$((i + 1))
+      fi
+#      if (( $i == 2 )); then
+#        role_name=$word
+#        echo role_name: $role_name
+#        i=$((i + 1))
+#      fi
+      if [ $i -gt 2 ]; then
+        user_name=$word
+        echo "user_name: $user_name"
+        user_id=$(openstack user list --domain $DOMAIN|grep -E "\s$word\s"|awk '{print $2}')
+        group_id=$(openstack group list --domain $DOMAIN|grep -E "\s$group_name\s"| awk '{print $2}')
+        openstack group contains user $group_id $user_id
+        i=$((i + 1))
+      fi
+    done
+  done
+}
+
+add_role_for_groups () {
+  echo "start add_role_for_groups function"
+}
+
+check_group_roles_in_project () {
+  echo "start check_group_roles_in_project function"
+}
+
 # check start parameter
 if [ -z "${1}" ]; then
-  #] && echo -e "
-
   if [ -z $ROLE_MAPPING_FILE ]; then
     error_message="You mast define <path_to_role_mapping_file> as start parameter script"
     error_output
@@ -77,6 +133,22 @@ fi
 #while IFS= read -r line; do echo ">>$line<<"; done < $ROLE_MAPPING_FILE
 while IFS= read -r line; do ROLE_MAPPING+=("$line"); done < $ROLE_MAPPING_FILE
 
-for map in "${ROLE_MAPPING[@]}"; do
-  echo $map
-done
+if [ "$TS_DEBUG" = true ]; then
+  echo -e "
+  [TS_DEBUG]
+    ROLE_MAPPING_FILE: $ROLE_MAPPING_FILE
+    ROLE_MAPPING:
+"
+  for map in "${ROLE_MAPPING[@]}"; do
+    echo $map
+  done
+fi
+
+check_openstack_cli
+check_and_source_openrc_file
+create_test_project
+check_users_in_group
+if [ -n "$PROJ_ID" ]; then
+  add_role_for_groups
+  check_group_roles_in_project
+fi
