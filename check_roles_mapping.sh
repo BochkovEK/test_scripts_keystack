@@ -94,13 +94,11 @@ check_users_in_group () {
         group_name=$word
         echo "group_name: $group_name"
         i=$((i + 1))
-      fi
-      if (( $i == 2 )); then
+      elif (( $i == 2 )); then
 #        role_name=$word
 #        echo role_name: $role_name
         i=$((i + 1))
-      fi
-      if [ $i -gt 2 ]; then
+      elif [ $i -gt 2 ]; then
         user_name=$word
         echo "user_name: $user_name"
         user_id=$(openstack user list --domain $DOMAIN|grep -E "\s$word\s"|awk '{print $2}')
