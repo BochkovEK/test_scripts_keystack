@@ -67,7 +67,7 @@ create_test_project () {
   echo "Check for exist project: \"$PROJECT\""
   PROJ_ID=$(openstack project list| grep -E -m 1 "\s$PROJECT\s"| awk '{print $2}')
   if [ -z "$PROJ_ID" ]; then
-    printf "%s\n" "${orange}Project \"$PROJECT\" does not exist${normal}"
+    printf "%s\n" "${yellow}Project \"$PROJECT\" does not exist${normal}"
     if [ ! $DONT_ASK = "true" ]; then
       export TS_YES_NO_QUESTION="Do you want to try to create $PROJECT [Yes]:"
       yes_no_input=$(bash $utils_dir/$yes_no_answer_script)
