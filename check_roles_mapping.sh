@@ -15,6 +15,7 @@ violet=$(tput setaf 5)
 cyan=$(tput setaf 6)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
+blue=$(tput setaf 4)
 
 script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
@@ -64,7 +65,7 @@ check_openstack_cli () {
 }
 
 create_test_project () {
-  echo "Check for exist project: \"$PROJECT\""
+  echo "Check for exist project: \"$PROJECT\"..."
   PROJ_ID=$(openstack project list| grep -E -m 1 "\s$PROJECT\s"| awk '{print $2}')
   if [ -z "$PROJ_ID" ]; then
     printf "%s\n" "${yellow}Project \"$PROJECT\" does not exist${normal}"
@@ -82,6 +83,7 @@ create_test_project () {
 }
 
 check_users_in_group () {
+  echo "Check users in group..."
   for map in "${ROLE_MAPPING[@]}"; do
     i=1
     group_name=""
@@ -111,12 +113,34 @@ check_users_in_group () {
 }
 
 add_role_for_groups () {
-  echo "start add_role_for_groups function"
+  echo "Add role for groups in project: $PROJECT; domain: $DOMAIN..."
+  echo "PROJ_ID: $PROJ_ID"
+  for map in "${ROLE_MAPPING[@]}"; do
+    i=1
+    group_name=""
+    role_name=""
+    group_id=""
+    for word in $map; do
+      if (( $i == 1 )); then
+        group_name=$word
+        echo -e "${violet}group_name: $group_name${normal}"
+        i=$((i + 1))
+      elif (( $i == 2 )); then
+        role_name=$word
+        echo -e "${blue}role_name: $role_name${normal}"
+        group_id=$(openstack group list --domain $DOMAIN|grep -E "\s$group_name\s"| awk '{print $2}')
+        openstack role add $role_name --group $group_id --project $PROJ_ID
+        echo "Check role: $role_name in project: $PROJECT..."
+        openstack role assignment list --group $group_id --project $PROJ_ID --names
+        break
+      fi
+    done
+  done
 }
 
-check_group_roles_in_project () {
-  echo "start check_group_roles_in_project function"
-}
+#check_group_roles_in_project () {
+#  echo "start check_group_roles_in_project function"
+#}
 
 # check start parameter
 if [ -z "${1}" ]; then
@@ -148,5 +172,5 @@ create_test_project
 check_users_in_group
 if [ -n "$PROJ_ID" ]; then
   add_role_for_groups
-  check_group_roles_in_project
+#  check_group_roles_in_project
 fi
