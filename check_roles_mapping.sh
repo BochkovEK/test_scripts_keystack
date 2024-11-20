@@ -95,11 +95,11 @@ check_users_in_group () {
         echo "group_name: $group_name"
         i=$((i + 1))
       fi
-#      if (( $i == 2 )); then
+      if (( $i == 2 )); then
 #        role_name=$word
 #        echo role_name: $role_name
-#        i=$((i + 1))
-#      fi
+        i=$((i + 1))
+      fi
       if [ $i -gt 2 ]; then
         user_name=$word
         echo "user_name: $user_name"
