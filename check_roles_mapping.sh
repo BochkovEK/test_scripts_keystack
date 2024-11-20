@@ -11,8 +11,8 @@
 #Colors
 green=$(tput setaf 2)
 red=$(tput setaf 1)
-orange=$(tput setaf 3)
 violet=$(tput setaf 5)
+cyan=$(tput setaf 6)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
 
@@ -92,7 +92,7 @@ check_users_in_group () {
       user_id=""
       if (( $i == 1 )); then
         group_name=$word
-        echo "group_name: $group_name"
+        echo -e "${violet}group_name: $group_name${normal}"
         i=$((i + 1))
       elif (( $i == 2 )); then
 #        role_name=$word
@@ -100,7 +100,7 @@ check_users_in_group () {
         i=$((i + 1))
       elif [ $i -gt 2 ]; then
         user_name=$word
-        echo "user_name: $user_name"
+        echo -e "${cyan}user_name: $user_name${normal}"
         user_id=$(openstack user list --domain $DOMAIN|grep -E "\s$word\s"|awk '{print $2}')
         group_id=$(openstack group list --domain $DOMAIN|grep -E "\s$group_name\s"| awk '{print $2}')
         openstack group contains user $group_id $user_id
