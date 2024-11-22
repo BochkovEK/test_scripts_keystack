@@ -61,7 +61,6 @@ if [ ! -f $command_on_nodes_script_name ]; then
 fi
 
 read_conf () {
-
   bash $command_on_nodes_script_name -nt $1 -c "ls -f $2" | \
     sed --unbuffered \
       -e 's/\(.*\No such file or directory.*\)/\o033[31m\1 - ok\o033[39m/'
@@ -71,7 +70,7 @@ read_conf () {
 }
 
 Check_configs_on_controls () {
-  echo -E "${yellow}Check '[castellan_configsource]' in configs on control${normal}"
+  echo -E "${cyan}Check '[castellan_configsource]' in configs on control${normal}"
   export DONT_CHECK_CONN=true
   for config in "${control_config_list[@]}"; do
     echo -E "${violet}Check control config: $config${normal}"
@@ -85,7 +84,7 @@ Check_configs_on_controls () {
 }
 
 Check_configs_on_computes () {
-  echo -E "${yellow}Check '[castellan_configsource]' in configs on computes${normal}"
+  echo -E "${cyan}Check '[castellan_configsource]' in configs on computes${normal}"
   export DONT_CHECK_CONN=true
   for config in "${compute_config_list[@]}"; do
     echo -E "${violet}Check computes config: $config${normal}"
@@ -99,7 +98,7 @@ Check_configs_on_computes () {
 }
 
 Check_config_with_hashed_password () {
-  echo -E "${yellow}Check config with hashed password${normal}"
+  echo -E "${cyan}Check config with hashed password${normal}"
   export DONT_CHECK_CONN=true
   for config in "${hashed_password_config_list[@]}"; do
     echo -E "${violet}Check control config: $config${normal}"
@@ -109,7 +108,7 @@ Check_config_with_hashed_password () {
 }
 
 Check_hidden_passwords_in_prometheus_exporters () {
-  echo -E "${yellow}Check hidden passwords in prometheus exporters${normal}"
+  echo -E "${cyan}Check hidden passwords in prometheus exporters${normal}"
   export DONT_CHECK_CONN=true
   for config in "${prometheus_exporters_config_list[@]}"; do
     echo -E "${violet}Check control config: $config${normal}"
