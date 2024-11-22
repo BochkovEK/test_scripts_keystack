@@ -66,7 +66,8 @@ Check_configs_on_controls () {
     echo -E "${violet}Check control config: $config${normal}"
     bash $command_on_nodes_script_name -nt ctrl -c "cat $config | grep '\[castellan_configsource\]'| \
           sed --unbuffered \
-            -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - ok\o033[39m/'"
+            -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - ok\o033[39m/' \
+            -e 's/\(.*\No such file or directory.*\")/\o033[31m\1 - ok\o033[39m/'"
   done
 }
 
@@ -76,7 +77,8 @@ Check_configs_on_computes () {
     echo -E "${violet}Check computes config: $config${normal}"
     bash $command_on_nodes_script_name -nt comp -c "cat $config | grep '\[castellan_configsource\]'| \
           sed --unbuffered \
-            -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - ok\o033[39m/'"
+            -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - ok\o033[39m/' \
+            -e 's/\(.*\No such file or directory.*\")/\o033[31m\1 - ok\o033[39m/'"
   done
 }
 
