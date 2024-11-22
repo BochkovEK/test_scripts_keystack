@@ -64,7 +64,7 @@ read_conf () {
   bash $command_on_nodes_script_name -nt 1 -c "cat $2 | grep -E 'password|\[castellan_configsource\]'| \
     sed --unbuffered \
       -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - ok\o033[39m/' \
-      -e 's/\(.*\No such file or directory.*\")/\o033[31m\1 - ok\o033[39m/'"
+      -e 's/\(.*\No such file or directory.*\)/\o033[31m\1 - ok\o033[39m/'"
 }
 
 Check_configs_on_controls () {
