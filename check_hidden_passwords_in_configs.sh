@@ -60,14 +60,22 @@ if [ ! -f $command_on_nodes_script_name ]; then
   exit 0
 fi
 
+read_conf () {
+  bash $command_on_nodes_script_name -nt 1 -c "cat $2 | grep -E 'password|\[castellan_configsource\]'| \
+    sed --unbuffered \
+      -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - ok\o033[39m/' \
+      -e 's/\(.*\No such file or directory.*\")/\o033[31m\1 - ok\o033[39m/'"
+}
+
 Check_configs_on_controls () {
   echo -E "${yellow}Check '[castellan_configsource]' in configs on control${normal}"
   for config in "${control_config_list[@]}"; do
     echo -E "${violet}Check control config: $config${normal}"
-    bash $command_on_nodes_script_name -nt ctrl -c "cat $config | grep '\[castellan_configsource\]'| \
-          sed --unbuffered \
-            -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - ok\o033[39m/' \
-            -e 's/\(.*\No such file or directory.*\")/\o033[31m\1 - ok\o033[39m/'"
+    read_conf ctrl $config
+#    bash $command_on_nodes_script_name -nt ctrl -c "cat $config | grep -E 'password|\[castellan_configsource\]'| \
+#          sed --unbuffered \
+#            -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - ok\o033[39m/' \
+#            -e 's/\(.*\No such file or directory.*\")/\o033[31m\1 - ok\o033[39m/'"
   done
 }
 
@@ -75,10 +83,11 @@ Check_configs_on_computes () {
   echo -E "${yellow}Check '[castellan_configsource]' in configs on computes${normal}"
   for config in "${compute_config_list[@]}"; do
     echo -E "${violet}Check computes config: $config${normal}"
-    bash $command_on_nodes_script_name -nt comp -c "cat $config | grep '\[castellan_configsource\]'| \
-          sed --unbuffered \
-            -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - ok\o033[39m/' \
-            -e 's/\(.*\No such file or directory.*\")/\o033[31m\1 - ok\o033[39m/'"
+    read_conf comp $config
+#    bash $command_on_nodes_script_name -nt comp -c "cat $config | grep '\[castellan_configsource\]'| \
+#          sed --unbuffered \
+#            -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - ok\o033[39m/' \
+#            -e 's/\(.*\No such file or directory.*\")/\o033[31m\1 - ok\o033[39m/'"
   done
 }
 
