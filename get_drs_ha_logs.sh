@@ -143,7 +143,7 @@ get_nodes_list () {
 get_drs_logs () {
   mkdir -p $DRS_LOGS_DEST
   ABSOLUTE_DRS_LOGS_DEST=$(realpath $DRS_LOGS_DEST)
-  echo "distinction drs logs: $DRS_LOGS_DEST"
+  echo "destination drs logs: $DRS_LOGS_DEST"
 #  srv=$(cat /etc/hosts | grep -E ${NODES_TO_FIND} | awk '{print $2}')
 #  [[ -z "${srv}" ]] && {
 #    printf "%s\n" "${red}It was not possible to separate the names and addresses of control nodes from the hosts file - error!${normal}";
