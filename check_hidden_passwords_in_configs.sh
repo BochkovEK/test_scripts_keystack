@@ -100,10 +100,12 @@ Check_configs_on_computes () {
 
 Check_config_with_hashed_password () {
   echo -E "${yellow}Check config with hashed password${normal}"
+  export DONT_CHECK_CONN=true
   for config in "${hashed_password_config_list[@]}"; do
     echo -E "${violet}Check control config: $config${normal}"
     bash $command_on_nodes_script_name -nt ctrl -c "cat $config | grep 'password'"
   done
+  export DONT_CHECK_CONN=""
 }
 
 Check_hidden_passwords_in_prometheus_exporters () {
