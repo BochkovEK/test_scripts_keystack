@@ -30,7 +30,7 @@ yellow=$(tput setaf 3)
 [[ -z $NODES_TYPE ]] && NODES_TYPE=""
 [[ -z $PING ]] && PING="false"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
-[[ -z $DONT_CHECK_CONN ]] && DONT_CHECK_CONN="false"
+[[ -z $DONT_CHECK_CONN ]] && DONT_CHECK_CONN="false" || echo $DONT_CHECK_CONN
 #======================
 
 #node_type_func () {
