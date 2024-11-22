@@ -30,7 +30,7 @@ yellow=$(tput setaf 3)
 [[ -z $NODES_TYPE ]] && NODES_TYPE=""
 [[ -z $PING ]] && PING="false"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
-[[ -z $DONT_CHECK_CONN ]] && DONT_CHECK_CONN="false" || echo $DONT_CHECK_CONN
+[[ -z $DONT_CHECK_CONN ]] && DONT_CHECK_CONN="false"
 #======================
 
 #node_type_func () {
@@ -294,7 +294,7 @@ get_nodes_list () {
 
 get_nodes_list
 
-if [ "$DONT_CHECK_CONN" = true ]; then
+if [ "$DONT_CHECK_CONN" = false ]; then
   echo "Check connection to $NODES_TYPE"
   for node in "${NODES[@]}"; do
     check_ping $node
