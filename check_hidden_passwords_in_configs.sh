@@ -29,14 +29,13 @@ command_on_nodes_script_name="command_on_nodes.sh"
 
 control_config_list=(
   "/etc/kolla/keystone/keystone.conf"
+  "/etc/kolla/glance-api/glance-api.conf"
+  "/etc/kolla/cinder-volume/cinder.conf"
+  "/etc/kolla/neutron-server/neutron.conf"
+  "/etc/kolla/drs/drs.ini"
+  "/etc/kolla/placement-api/placement.conf"
+  "/etc/kolla/adminui-backend/adminui-backend-osloconf.conf"
 )
-#  "/etc/kolla/glance-api/glance-api.conf"
-#  "/etc/kolla/cinder-volume/cinder.conf"
-#  "/etc/kolla/neutron-server/neutron.conf"
-#  "/etc/kolla/drs/drs.ini"
-#  "/etc/kolla/placement-api/placement.conf"
-#  "/etc/kolla/adminui-backend/adminui-backend-osloconf.conf"
-#)
 
 compute_config_list=(
   "/etc/kolla/nova-compute/nova.conf"
@@ -116,7 +115,7 @@ Check_hidden_passwords_in_prometheus_exporters () {
   done
 }
 
-#Check_hidden_passwords_in_prometheus_exporters
+Check_hidden_passwords_in_prometheus_exporters
 Check_configs_on_controls
-#Check_configs_on_computes
-#Check_config_with_hashed_password
+Check_configs_on_computes
+Check_config_with_hashed_password
