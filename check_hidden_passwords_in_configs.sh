@@ -55,16 +55,16 @@ prometheus_exporters_config_list=(
 )
 
 # Check script exists
-if [ ! -f $command_on_nodes_script_name ]; then
+if [ ! -f $script_dir/$command_on_nodes_script_name ]; then
   printf "%s\n" "${red}Script: $command_on_nodes_script_name does not exists - error${normal}"
   exit 0
 fi
 
 read_conf () {
-  bash $command_on_nodes_script_name -nt $1 -c "ls -f $2" | \
+  bash $script_dir/$command_on_nodes_script_name -nt $1 -c "ls -f $2" | \
     sed --unbuffered \
       -e 's/\(.*\No such file or directory.*\)/\o033[31m\1 - ok\o033[39m/'
-  bash $command_on_nodes_script_name -nt $1 -c "cat $2 | grep -E 'password|\[castellan_configsource\]'| \
+  bash $script_dir/$command_on_nodes_script_name -nt $1 -c "cat $2 | grep -E 'password|\[castellan_configsource\]'| \
     sed --unbuffered \
       -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - ok\o033[39m/'"
 }
@@ -102,7 +102,7 @@ Check_config_with_hashed_password () {
   export DONT_CHECK_CONN=true
   for config in "${hashed_password_config_list[@]}"; do
     echo -E "${violet}Check control config: $config${normal}"
-    bash $command_on_nodes_script_name -nt ctrl -c "cat $config | grep 'password'"
+    bash $script_dir/$command_on_nodes_script_name -nt ctrl -c "cat $config | grep 'password'"
   done
   export DONT_CHECK_CONN=""
 }
@@ -112,7 +112,7 @@ Check_hidden_passwords_in_prometheus_exporters () {
   export DONT_CHECK_CONN=true
   for config in "${prometheus_exporters_config_list[@]}"; do
     echo -E "${violet}Check control config: $config${normal}"
-    bash $command_on_nodes_script_name -nt ctrl -c "cat $config"
+    bash $script_dir/$command_on_nodes_script_name -nt ctrl -c "cat $config"
     # | grep 'password'"
   done
   export DONT_CHECK_CONN=""
