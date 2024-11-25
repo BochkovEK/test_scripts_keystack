@@ -26,8 +26,9 @@ parent_dir=$(dirname "$script_dir")
 utils_dir=$parent_dir
 check_openrc_script="check_openrc.sh"
 check_openstack_cli_script="check_openstack_cli.sh"
-install_wget_script="install_wget.sh"
+#install_wget_script="install_wget.sh"
 yes_no_answer_script="yes_no_answer.sh"
+install_package_script="install_package.sh"
 
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
@@ -135,7 +136,7 @@ create_image () {
             error_message="Image $IMAGE does not created"
             error_output
           else
-            if ! bash $utils_dir/$install_wget_script; then
+            if ! bash $utils_dir/$install_package_script wget; then
               error_message="Image $IMAGE does not created"
               error_output
             else

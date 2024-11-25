@@ -336,49 +336,49 @@ check_hv () {
 
 # Check project
 check_project () {
-    echo "Check for exist project: \"$PROJECT\""
-    PROJ_ID=$(openstack project list| grep -E -m 1 "\s$PROJECT\s"| awk '{print $2}')
+  echo "Check for exist project: \"$PROJECT\""
+  PROJ_ID=$(openstack project list| grep -E -m 1 "\s$PROJECT\s"| awk '{print $2}')
 #    PROJ_ID=$(openstack project list| grep $PROJECT| awk '{print $2}')
-    if [ -z "$PROJ_ID" ]; then
-        printf "%s\n" "${orange}Project \"$PROJECT\" does not exist${normal}"
-        [[ ! $DONT_ASK = "true" ]] && {
-          echo "Сreate a Project with name: \"$PROJECT\"?";
-          read -p "Press enter to continue: ";
-          }
-        echo "Сreating project: \"$PROJECT\"..."
-        openstack project create $PROJECT
-    else
-        printf "%s\n" "${green}Project: \"$PROJECT\" exist${normal}"
-    fi
-    echo "Check for user: \"$TEST_USER\" exist"
-    USER_EXIST=$(openstack user list| grep -E " $TEST_USER "| awk '{print $4}')
-    if [ -z $USER_EXIST ]; then
-        printf "%s\n" "${orange}User: \"$TEST_USER\" does not exist${normal}"
-        [[ ! $DONT_ASK = "true" ]] && {
-          echo "Сreate a user with name: \"$TEST_USER\"?";
-          read -p "Press enter to continue: ";
-          }
-        openstack user create --password $OS_PASSWORD $TEST_USER
-    else
-        printf "%s\n" "${green}User: \"$TEST_USER\" exist${normal}"
-    fi
-    echo "Check for role: \"$ROLE\" in project: \"$PROJECT\""
-    ROLE_IN_PROJECT=$(openstack role assignment list --user $TEST_USER --project $PROJECT --names|grep -E "$ROLE(.)+$TEST_USER(.)+$PROJECT")
-    if [[ -z $ROLE_IN_PROJECT ]]; then
-        printf "%s\n" "${orange}Role: \"$ROLE\" does not exist in project: \"$PROJECT\"${normal}"
-        [[ ! $DONT_ASK = "true" ]] && {
-          echo "Сreate role: \"$ROLE\" in project: \"$PROJECT\"?";
-          read -p "Press enter to continue: ";
-          }
-        echo "Сreating role: \"$ROLE\" in project..."
-        openstack role add --project $PROJECT --user $TEST_USER $ROLE
-        #Add admin user to project to view it in horizon by admin user authorization
-        openstack role add --project $PROJECT --user admin admin
-    else
-        printf "%s\n" "${green}Role: \"$ROLE\" exist in project: \"$PROJECT\"${normal}"
-    fi
-    export OS_PROJECT_NAME=$PROJECT
-    export OS_USERNAME=$TEST_USER
+  if [ -z "$PROJ_ID" ]; then
+    printf "%s\n" "${orange}Project \"$PROJECT\" does not exist${normal}"
+    [[ ! $DONT_ASK = "true" ]] && {
+      echo "Сreate a Project with name: \"$PROJECT\"?";
+      read -p "Press enter to continue: ";
+      }
+    echo "Сreating project: \"$PROJECT\"..."
+    openstack project create $PROJECT
+  else
+    printf "%s\n" "${green}Project: \"$PROJECT\" exist${normal}"
+  fi
+  echo "Check for user: \"$TEST_USER\" exist"
+  USER_EXIST=$(openstack user list| grep -E " $TEST_USER "| awk '{print $4}')
+  if [ -z $USER_EXIST ]; then
+    printf "%s\n" "${orange}User: \"$TEST_USER\" does not exist${normal}"
+    [[ ! $DONT_ASK = "true" ]] && {
+      echo "Сreate a user with name: \"$TEST_USER\"?";
+      read -p "Press enter to continue: ";
+      }
+    openstack user create --password $OS_PASSWORD $TEST_USER
+  else
+    printf "%s\n" "${green}User: \"$TEST_USER\" exist${normal}"
+  fi
+  echo "Check for role: \"$ROLE\" in project: \"$PROJECT\""
+  ROLE_IN_PROJECT=$(openstack role assignment list --user $TEST_USER --project $PROJECT --names|grep -E "$ROLE(.)+$TEST_USER(.)+$PROJECT")
+  if [[ -z $ROLE_IN_PROJECT ]]; then
+    printf "%s\n" "${orange}Role: \"$ROLE\" does not exist in project: \"$PROJECT\"${normal}"
+    [[ ! $DONT_ASK = "true" ]] && {
+      echo "Сreate role: \"$ROLE\" in project: \"$PROJECT\"?";
+      read -p "Press enter to continue: ";
+      }
+    echo "Сreating role: \"$ROLE\" in project..."
+    openstack role add --project $PROJECT --user $TEST_USER $ROLE
+    #Add admin user to project to view it in horizon by admin user authorization
+    openstack role add --project $PROJECT --user admin admin
+  else
+      printf "%s\n" "${green}Role: \"$ROLE\" exist in project: \"$PROJECT\"${normal}"
+  fi
+  export OS_PROJECT_NAME=$PROJECT
+  export OS_USERNAME=$TEST_USER
 }
 
 # Check secur_group

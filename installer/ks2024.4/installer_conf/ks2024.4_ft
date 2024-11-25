@@ -37,50 +37,6 @@ export KS_LDAP_OPERATOR_GROUP_DN="CN=preevostack_support_admin,OU=Keystack,OU=Ap
 
 export KS_LDAP_ADMIN_GROUP_DN="CN=preevostack_infra_admin,OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
 #---------------------------------------
-##Enable auth LDAP for Netbox y/n [n]:
-#export KS_LDAP_NETBOX=""
-#
-##Enter the LDAP Server URI for Netbox:
-#export KS_LDAP_SERVER_URI_NETBOX=""
-#
-##Enter the LDAP BIND DN for Netbox:
-#export KS_LDAP_BIND_DN_NETBOX=""
-#
-##Enter the LDAP BIND Password for Netbox:
-#export KS_LDAP_BIND_PASSWORD_NETBOX=""
-#
-##Enter the LDAP USER SEARCH BASEDN for Netbox:
-#export KS_LDAP_USER_SEARCH_BASEDN_NETBOX=""
-#
-##Enter the LDAP GROUP SEARCH BASEDN for Netbox:
-#export KS_LDAP_GROUP_SEARCH_BASEDN_NETBOX=""
-#
-##Enter the LDAP GROUP for Read for Netbox:
-#export KS_LDAP_REQUIRE_GROUP_DN_NETBOX=""
-#
-##Enter the LDAP GROUP for Read-Write for Netbox:
-#export KS_LDAP_IS_ADMIN_DN_NETBOX=""
-#
-##Enter the LDAP GROUP for Administrator for Netbox:
-#export KS_LDAP_IS_SUPERUSER_DN_NETBOX=""
-#
-##Enable auth LDAP for Gitlab y/n [n]:
-#export KS_LDAP_GITLAB=""
-#
-##Enter the LDAP Server URI for Gitlab:
-#export KS_LDAP_SERVER_URI_GITLAB=""
-#
-##Enter the LDAP BIND DN for Gitlab:
-#export KS_LDAP_BIND_DN_GITLAB=""
-#
-##Enter the LDAP BIND Password for Gitlab:
-#export KS_LDAP_BIND_PASSWORD_GITLAB=""
-#
-##Enter the LDAP USER SEARCH BASEDN for Gitlab:
-#export KS_LDAP_USER_SEARCH_BASEDN_GITLAB=""
-#
-##Enter the LDAP REQUIRE GROUP DN for Gitlab:
-#export KS_LDAP_REQUIRE_GROUP_DN_GITLAB=""
 
 #Enter the LCM root domain for the KeyStack [demo.local]:
 export KS_INSTALL_DOMAIN="test.domain"
@@ -92,10 +48,10 @@ export KS_NEXUS_NAME="lcm-nexus"
 export KS_GITLAB_NAME="gitlab"
 
 #Enter the LCM Vault domain name for the KeyStack [vault]:
-export KS_VAULT_NAME=""
+export KS_VAULT_NAME="vault"
 
 #Enter the LCM Netbox domain name for the KeyStack [netbox]:
-export KS_NETBOX_NAME=""
+export KS_NETBOX_NAME="netbox"
 
 #Generate Self-signed certificates for KeyStack LCM services y/n [y]:
 export KS_SELF_SIG=""
