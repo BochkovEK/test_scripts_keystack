@@ -128,6 +128,8 @@ install_dnsmasq () {
 #        systemctl disable systemd-resolved
 #      fi
       sudo apt install -y dnsmasq
+      systemctl stop systemd-resolved
+      systemctl disable systemd-resolved
     fi
     is_sberlinux=$(cat /etc/os-release|grep sberlinux)
     if [ -n "$is_sberlinux" ]; then
