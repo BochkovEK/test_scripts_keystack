@@ -83,13 +83,13 @@ while [ -n "$1" ]; do
       echo "Found the -comp. Check configs on comp nodes ${compute_config_list[*]}"
       shift ;;
     -ctrl) CHECK_CTRL=true; CHECK_ALL="false"
-      echo "Found the -comp. Check configs on ctrl nodes ${control_config_list[*]}"
+      echo "Found the -ctrl. Check configs on ctrl nodes ${control_config_list[*]}"
       shift ;;
     -hashed) CHECK_HASHED=true; CHECK_ALL="false"
       echo "Found the -hashed. Check hashed passwords on configs ${hashed_password_config_list[*]}"
       shift ;;
     -prometheus) CHECK_PROMETH=true; CHECK_ALL="false"
-      echo "Found the -hashed. Check prometheus exporters configs ${prometheus_exporters_config_list[*]}"
+      echo "Found the -prometheus. Check prometheus exporters configs ${prometheus_exporters_config_list[*]}"
       shift ;;
     --) shift
       break ;;
