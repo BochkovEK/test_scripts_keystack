@@ -9,7 +9,7 @@ yellow=$(tput setaf 3)
 
 [[ -z $OSC_VERSION ]] && OSC_VERSION="6.2.0"
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
-[[ -z $DONT_INSTALL ]] && DONT_ASK="true"
+[[ -z $DONT_INSTALL ]] && DONT_INSTALL="true"
 
 
 osc_version_string="==$OSC_VERSION"
