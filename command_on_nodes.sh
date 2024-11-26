@@ -268,6 +268,11 @@ check_ping () {
 #fi
 
 get_nodes_list () {
+ [ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]:
+    function: get_nodes_list
+    \"\$NODES\": ${NODES[*]}
+  "
   if [ -z "${NODES[*]}" ]; then
     nodes=$(bash $utils_dir/$get_nodes_list_script -nt $NODES_TYPE)
   fi
