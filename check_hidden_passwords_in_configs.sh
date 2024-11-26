@@ -54,6 +54,50 @@ prometheus_exporters_config_list=(
   "/etc/kolla/prometheus-openstack-exporter/clouds.yml"
 )
 
+[[ -z $CHECK_COMP ]] && CHECK_COMP="false"
+[[ -z $CHECK_CTRL ]] && CHECK_CTRL="false"
+[[ -z $CHECK_HASHED ]] && CHECK_HASHED="false"
+[[ -z $CHECK_PROMETH ]] && CHECK_PROMETH="false"
+[[ -z $CHECK_ALL ]] && CHECK_ALL="true"
+#[[ -z $DEBUG ]] && DEBUG="false"
+
+# Define parameters
+define_parameters () {
+  [ "$DEBUG" = true ] && echo "[DEBUG]: \"\$1\": $1"
+#  [ "$count" = 1 ] && [[ -n $1 ]] && { CHECK=$1; echo "Command parameter found with value $CHECK"; }
+#  [ "$count" = 1 ] && [[ -n $1 ]] && { CHECK=$1; echo "Command parameter found with value $CHECK"; }
+}
+
+count=1
+while [ -n "$1" ]; do
+  case "$1" in
+    --help) echo -E "
+      -comp                       check configs on comp nodes ${compute_config_list[*]}
+      -ctrl                       check configs on ctrl nodes ${control_config_list[*]}
+      -hashed                     check hashed passwords on configs ${hashed_password_config_list[*]}
+      -prometheus                 check prometheus exporters configs ${prometheus_exporters_config_list[*]}
+"
+      exit 0
+      break ;;
+    -comp) CHECK_COMP=true; CHECK_ALL="false"
+      echo "Found the -comp. Check configs on comp nodes ${compute_config_list[*]}"
+      shift ;;
+    -ctrl) CHECK_CTRL=true; CHECK_ALL="false"
+      echo "Found the -comp. Check configs on ctrl nodes ${control_config_list[*]}"
+      shift ;;
+    -hashed) CHECK_HASHED=true; CHECK_ALL="false"
+      echo "Found the -hashed. Check hashed passwords on configs ${hashed_password_config_list[*]}"
+      shift ;;
+    -prometheus) CHECK_PROMETH=true; CHECK_ALL="false"
+      echo "Found the -hashed. Check prometheus exporters configs ${prometheus_exporters_config_list[*]}"
+      shift ;;
+    --) shift
+      break ;;
+    *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
+  esac
+  shift
+done
+
 # Check script exists
 if [ ! -f $script_dir/$command_on_nodes_script_name ]; then
   printf "%s\n" "${red}Script: $command_on_nodes_script_name does not exists - error${normal}"
@@ -118,7 +162,16 @@ Check_hidden_passwords_in_prometheus_exporters () {
   export DONT_CHECK_CONN=""
 }
 
-Check_hidden_passwords_in_prometheus_exporters
-Check_configs_on_controls
-Check_configs_on_computes
-Check_config_with_hashed_password
+
+if [ "$CHECK_COMP" = true ] || [ "$CHECK_ALL" = true ]; then
+  Check_configs_on_computes
+fi
+if [ "$CHECK_CTRL" = true ] || [ "$CHECK_ALL" = true ]; then
+  Check_configs_on_controls
+fi
+if [ "$CHECK_HASHED" = true ] || [ "$CHECK_ALL" = true ]; then
+  Check_config_with_hashed_password
+fi
+if [ "$CHECK_PROMETH" = true ] || [ "$CHECK_ALL" = true ]; then
+  Check_hidden_passwords_in_prometheus_exporters
+fi
