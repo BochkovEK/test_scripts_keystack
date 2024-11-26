@@ -105,8 +105,10 @@ node_type_func () {
 check_openstack_cli () {
 #  echo "check"
   export ASK_TO_INSTALL=false
-  if ! bash $utils_dir/$check_openstack_cli_script &> /dev/null; then
-    exit 1
+  if bash $utils_dir/$check_openstack_cli_script &> /dev/null; then
+    check_and_source_openrc_file
+    get_list_from_compute_service
+    exit 0
   fi
 }
 
@@ -181,9 +183,9 @@ parse_hosts () {
 }
 
 check_openstack_cli
-check_and_source_openrc_file
+#check_and_source_openrc_file
 parse_hosts
-get_list_from_compute_service
+#get_list_from_compute_service
 
 
 

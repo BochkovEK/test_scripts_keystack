@@ -9,6 +9,8 @@ yellow=$(tput setaf 3)
 
 [[ -z $OSC_VERSION ]] && OSC_VERSION="6.2.0"
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
+[[ -z $DONT_INSTALL ]] && DONT_ASK="true"
+
 
 osc_version_string="==$OSC_VERSION"
 
@@ -39,6 +41,7 @@ check_openstack_cli () {
         esac
       done
     else
+      if [ "$DONT_INSTALL" = "false" ]; then
       yes_no_input=true
     fi
     if [ "$yes_no_input" = "true" ]; then
@@ -75,6 +78,7 @@ check_openstack_cli () {
           ;;
       esac
     else
+      printf "%s\n" "${red}Openstack cli not installed - ERROR${normal}"
       exit 1
     fi
   else
