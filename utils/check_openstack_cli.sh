@@ -42,7 +42,8 @@ check_openstack_cli () {
       done
     else
       if [ "$DONT_INSTALL" = "false" ]; then
-      yes_no_input=true
+        yes_no_input=true
+      fi
     fi
     if [ "$yes_no_input" = "true" ]; then
       [[ -f /etc/os-release ]] && os=$({ . /etc/os-release; echo ${ID,,}; })
