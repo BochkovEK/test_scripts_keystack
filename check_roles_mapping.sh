@@ -35,7 +35,7 @@ yes_no_answer_script="yes_no_answer.sh"
 # Define parameters
 define_parameters () {
   [ "$DEBUG" = true ] && echo "[DEBUG]: \"\$1\": $1"
-  [ "$count" = 1 ] && [[ -n $1 ]] && { CHECK=$1; echo "ROLE_MAPPING_FILE: $CHECK"; }
+  [ "$count" = 1 ] && [[ -n $1 ]] && { ROLE_MAPPING_FILE=$1; echo "ROLE_MAPPING_FILE: $ROLE_MAPPING_FILE"; }
 #  [ "$count" = 1 ] && [[ -n $1 ]] && { CHECK=$1; echo "Command parameter found with value $CHECK"; }
 }
 
@@ -174,7 +174,7 @@ add_role_for_groups () {
 
 # check start parameter
 if [ -z "${1}" ]; then
-  if [ -z $ROLE_MAPPING_FILE ]; then
+  if [ -z "$ROLE_MAPPING_FILE" ]; then
     error_message="You mast define <path_to_role_mapping_file> as start parameter script"
     error_output
   fi
