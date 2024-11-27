@@ -45,16 +45,16 @@ while [ -n "$1" ]; do
 "
         exit 0
         break ;;
-    -nt|-type_of_nodes) NODES_TYPE=$2
-      [ "$TS_DEBUG" = true ] && echo -e "
-      Found the -type_of_nodes with parameter value $NODES_TYPE
-      "
-      shift ;;
     -debug) TS_DEBUG="true"
       [ "$TS_DEBUG" = true ] && echo -e "
       Found the -debug parameter
       "
       ;;
+    -nt|-type_of_nodes) NODES_TYPE=$2
+      [ "$TS_DEBUG" = true ] && echo -e "
+      Found the -type_of_nodes with parameter value $NODES_TYPE
+      "
+      shift ;;
     --) shift
       break ;;
     *)
@@ -104,9 +104,13 @@ node_type_func () {
 
 check_openstack_cli () {
 #  echo "check"
-  export ASK_TO_INSTALL=false
-  if ! bash $utils_dir/$check_openstack_cli_script &> /dev/null; then
-    exit 1
+  export DONT_ASK=true
+  export DONT_INSTALL=true
+  if bash $utils_dir/$check_openstack_cli_script &> /dev/null; then
+
+    check_and_source_openrc_file
+    get_list_from_compute_service
+    exit 0
   fi
 }
 
@@ -123,9 +127,17 @@ check_and_source_openrc_file () {
 }
 
 get_list_from_compute_service () {
-
+#    echo "get_list_from_compute_service..."
   if [ -z ${NODES[0]} ]; then
+     [ "$TS_DEBUG" = true ] && echo -e "
+        [DEBUG]
+          NODES[0]: ${NODES[0]}
+          "
     if [ "$NODES_TYPE" = comp ] || [ "$NODES_TYPE" = ctrl ]; then
+      [ "$TS_DEBUG" = true ] && echo -e "
+        [DEBUG]
+          NODES_TYPE: $NODES_TYPE
+          "
       nova_state_list=$(openstack compute service list)
       if [[ -z $nova_state_list ]];then
         [ "$TS_DEBUG" = true ] && echo -e "
@@ -180,10 +192,11 @@ parse_hosts () {
   echo "${NODES[*]}"
 }
 
+node_type_func $NODES_TYPE
 check_openstack_cli
-check_and_source_openrc_file
+#check_and_source_openrc_file
 parse_hosts
-get_list_from_compute_service
+#get_list_from_compute_service
 
 
 

@@ -222,7 +222,7 @@ Stress test parameters:
     $time_out_help_string
 "
 
-  read -p "Press enter to continue:"
+  read -p "Press enter to continue: "
 
   for IP in $VMs_IPs; do
     copy_and_stress $IP $MODE

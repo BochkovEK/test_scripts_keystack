@@ -80,16 +80,23 @@ get_var () {
   fi
   export DOMAIN=${DOMAIN:-"test.domain"}
 
-  echo -e "\n${yellow}Output ip a:${normal}"
-  echo "-----------------------"
-  ip a
-  echo -e "-----------------------\n"
+
 
   # get DNS_SERVER_IP
+  dns_mgmt_ip=$(ip a|grep mgmt|grep inet|grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/[0-9]{1,3}' \
+  |awk '{p=index($1,"/");print substr($1,0,p-1)}')
+
+  export DNS_SERVER_IP=$dns_mgmt_ip
+  echo -e "DNS_SERVER_IP: $DNS_SERVER_IP\n"
   while [ -z "${DNS_SERVER_IP}" ]; do
     if [[ -z "${DNS_SERVER_IP}" ]]; then
+      echo -e "\n${yellow}Output ip a:${normal}"
+      echo "-----------------------"
+      ip a
+      echo -e "-----------------------\n"
       read -rp "Enter DNS SERVER IP: " DNS_SERVER_IP
     fi
+    DNS_SERVER_IP=$(echo "${DNS_SERVER_IP%/*}")
     export DNS_SERVER_IP=${DNS_SERVER_IP}
   done
 
@@ -128,6 +135,8 @@ install_dnsmasq () {
 #        systemctl disable systemd-resolved
 #      fi
       sudo apt install -y dnsmasq
+      systemctl stop systemd-resolved
+      systemctl disable systemd-resolved
     fi
     is_sberlinux=$(cat /etc/os-release|grep sberlinux)
     if [ -n "$is_sberlinux" ]; then

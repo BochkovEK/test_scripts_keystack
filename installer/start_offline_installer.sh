@@ -87,9 +87,9 @@ get_init_vars () {
 
   # get CENTRAL_AUTH_SERVICE_IP
   if [[ -z "${CENTRAL_AUTH_SERVICE_IP}" ]]; then
-    read -rp "Enter central auth service ip or fqdn where is the catalog with certificates (\$HOME/certs) [ebochkov-keystack-add-vm-01]: " CENTRAL_AUTH_SERVICE_IP
+    read -rp "Enter central auth service ip or fqdn where is the catalog with certificates (\$HOME/certs) [ebochkov-keystack-add_vm-01]: " CENTRAL_AUTH_SERVICE_IP
   fi
-  export CENTRAL_AUTH_SERVICE_IP=${CENTRAL_AUTH_SERVICE_IP:-"ebochkov-keystack-add-vm-01"}
+  export CENTRAL_AUTH_SERVICE_IP=${CENTRAL_AUTH_SERVICE_IP:-"ebochkov-keystack-add_vm-01"}
   [[ -z "${CENTRAL_AUTH_SERVICE_IP}" ]] && { echo -e "${red}env CENTRAL_AUTH_SERVICE_IP not define - ERROR${normal}"; exit 1; }
 
 
@@ -349,6 +349,7 @@ if [ -d "$HOME/installer" ]; then
     mkdir -p ~/installer/certs
     check_ssh_to_central_auth=$(ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=5 $CENTRAL_AUTH_SERVICE_IP echo ok 2>&1)
     if [ "$check_ssh_to_central_auth" = ok ]; then
+      echo -e "${yellow}Copying certs from $CENTRAL_AUTH_SERVICE_IP:$CERTS_FOLDER to $HOME/installer/${normal}"
       scp -r $CENTRAL_AUTH_SERVICE_IP:$CERTS_FOLDER $HOME/installer/
     else
       echo -e "${red}No ssh access to $CENTRAL_AUTH_SERVICE_IP - ERROR${normal}"
