@@ -107,7 +107,7 @@ check_openstack_cli () {
   export DONT_ASK=true
   export DONT_INSTALL=true
   if bash $utils_dir/$check_openstack_cli_script &> /dev/null; then
-    echo "FOO.."
+
     check_and_source_openrc_file
     get_list_from_compute_service
     exit 0
@@ -127,7 +127,7 @@ check_and_source_openrc_file () {
 }
 
 get_list_from_compute_service () {
-
+    echo "FOO.."
   if [ -z ${NODES[0]} ]; then
     if [ "$NODES_TYPE" = comp ] || [ "$NODES_TYPE" = ctrl ]; then
       nova_state_list=$(openstack compute service list)
