@@ -45,16 +45,16 @@ while [ -n "$1" ]; do
 "
         exit 0
         break ;;
-    -nt|-type_of_nodes) NODES_TYPE=$2
-      [ "$TS_DEBUG" = true ] && echo -e "
-      Found the -type_of_nodes with parameter value $NODES_TYPE
-      "
-      shift ;;
     -debug) TS_DEBUG="true"
       [ "$TS_DEBUG" = true ] && echo -e "
       Found the -debug parameter
       "
       ;;
+    -nt|-type_of_nodes) NODES_TYPE=$2
+      [ "$TS_DEBUG" = true ] && echo -e "
+      Found the -type_of_nodes with parameter value $NODES_TYPE
+      "
+      shift ;;
     --) shift
       break ;;
     *)
@@ -129,6 +129,10 @@ check_and_source_openrc_file () {
 get_list_from_compute_service () {
 #    echo "get_list_from_compute_service..."
   if [ -z ${NODES[0]} ]; then
+     [ "$TS_DEBUG" = true ] && echo -e "
+        [DEBUG]
+          NODES[0]: ${NODES[0]}
+          "
     if [ "$NODES_TYPE" = comp ] || [ "$NODES_TYPE" = ctrl ]; then
       [ "$TS_DEBUG" = true ] && echo -e "
         [DEBUG]
@@ -188,6 +192,7 @@ parse_hosts () {
   echo "${NODES[*]}"
 }
 
+node_type_func $NODES_TYPE
 check_openstack_cli
 #check_and_source_openrc_file
 parse_hosts
