@@ -127,9 +127,13 @@ check_and_source_openrc_file () {
 }
 
 get_list_from_compute_service () {
-    echo "get_list_from_compute_service..."
+#    echo "get_list_from_compute_service..."
   if [ -z ${NODES[0]} ]; then
     if [ "$NODES_TYPE" = comp ] || [ "$NODES_TYPE" = ctrl ]; then
+      [ "$TS_DEBUG" = true ] && echo -e "
+        [DEBUG]
+          NODES_TYPE: $NODES_TYPE
+          "
       nova_state_list=$(openstack compute service list)
       if [[ -z $nova_state_list ]];then
         [ "$TS_DEBUG" = true ] && echo -e "
