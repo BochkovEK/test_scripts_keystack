@@ -157,7 +157,7 @@ add_role_for_groups () {
         i=$((i + 1))
       elif (( $i == 2 )); then
         role_name=$word
-        echo -e "${blue}role_name: $role_name${normal}"
+        echo -e "${cyan}role_name: $role_name${normal}"
         group_id=$(openstack group list --domain $DOMAIN|grep -E "\s$group_name\s"| awk '{print $2}')
         openstack role add $role_name --group $group_id --project $PROJ_ID
         echo "Check role: $role_name for group: $group_name in project: $PROJECT..."
