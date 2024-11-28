@@ -113,7 +113,7 @@ Check_nova_srvice_list () {
 # Check disabled computes in nova
 Check_disabled_computes_in_nova () {
   printf "%s\n" "${violet}Check disabled computes in nova...${normal}"
-  if [ "$ALL_NODES" = true ] ; then
+  if [ "$ALL_COMPUTES" = true ] ; then
     cmpt_disabled_nova_list=$(echo "$nova_state_list" | grep -E "(nova-compute.+disable)|(nova-compute.+down)" | awk '{print $6}')
   elif [ -n "$NODES" ]; then
     cmpt_disabled_nova_list=$NODES
