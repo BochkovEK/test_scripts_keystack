@@ -200,7 +200,7 @@ for image_name in "${public_images_list[@]}"; do
 done
 echo -E "${green}Network $pub_net_name created - ok!${normal}"
 
-[[ -f ~/.bashrc ]] && { echo "alias tf='terraform'" >> ~/.bashrc; }
+[[ -f ~/.bashrc ]] && { echo "alias tf='terraform'" >> ~/.bashrc; } || { alias tf='terraform'; }
 
 echo "
 You can create resources using terraform.
