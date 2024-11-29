@@ -21,12 +21,12 @@ while [ -n "$1" ]; do
   case "$1" in
     --help) echo -E "
       The script cleanup VMs and Volumes from openstack project (default: 'admin')
-      -dont_ask                         cleanup with no question
+      -dont_ask, -da                    cleanup with no question
       -project, p    <project_name\id>  project name
 "
       exit 0
       break ;;
-	  -dont_ask) DONT_ASK="ture"
+	  -dont_ask|-da) DONT_ASK="ture"
 	   echo "Found the -dont_ask option, with parameter value $DONT_ASK"
       ;;
     -p|-project) PROJECT="$2"
