@@ -7,7 +7,7 @@
 OPENRC=$HOME/openrc
 PROJECT="admin"
 
-[[ ! -z $1 ]] && PROJECT=$1
+#[[ ! -z $1 ]] && PROJECT=$1
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
 
 define_parameters () {
