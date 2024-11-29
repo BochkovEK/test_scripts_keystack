@@ -26,7 +26,7 @@ while [ -n "$1" ]; do
 "
       exit 0
       break ;;
-	  -dont_ask) DONT_ASK="$2"
+	  -dont_ask) DONT_ASK="ture"
 	   echo "Found the -dont_ask option, with parameter value $DONT_ASK"
       ;;
     -p|-project) PROJECT="$2"
