@@ -8,7 +8,36 @@ OPENRC=$HOME/openrc
 PROJECT="admin"
 
 [[ ! -z $1 ]] && PROJECT=$1
-#[[ -z $DONT_ASK ]] && DONT_ASK="false"
+[[ -z $DONT_ASK ]] && DONT_ASK="false"
+
+define_parameters () {
+  [ "$TS_DEBUG" = true ] && echo "[TS_DEBUG]: \"\$1\": $1"
+  [ "$count" = 1 ] && [[ -n $1 ]] && { PROJECT=$1; echo "Command parameter found with value $PROJECT"; }
+#  [ "$count" = 1 ] && [[ -n $1 ]] && { CHECK=$1; echo "Command parameter found with value $CHECK"; }
+}
+
+count=1
+while [ -n "$1" ]; do
+  case "$1" in
+    --help) echo -E "
+      The script cleanup VMs and Volumes from openstack project (default: 'admin')
+      -dont_ask                         cleanup with no question
+      -project, p    <project_name\id>  project name
+"
+      exit 0
+      break ;;
+	  -dont_ask) DONT_ASK="$2"
+	   echo "Found the -dont_ask option, with parameter value $DONT_ASK"
+      ;;
+    -p|-project) PROJECT="$2"
+	    echo "Found the -project <project_name> option, with parameter value $PROJECT"
+      shift ;;
+    --) shift
+      break ;;
+    *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
+  esac
+  shift
+done
 
 echo "Check VMs and volumes for project $PROJECT"
 
@@ -43,77 +72,60 @@ delete_volume () {
 }
 
 clean_vms () {
-    echo "Check VMs..."
-    #!!!!
-#    openstack volume set --state error ID
-#id_list=$(openstack volume list|grep fc_hdd-itkey|awk '{print $2}')
-#for id in $id_list; do openstack volume set --state error $id; done
-#for id in $id_list; do openstack volume delete $id; done
-#
-##shutoff
-#id_list=$(openstack server list|grep fc_hdd|awk '{print $2}')
-#for id in $id_list; do openstack server start $id; done
-##error
-#for id in $id_list; do openstack server set --state error $id; done
-    #!!!!
+  echo "Check VMs..."
 
 #    openstack server list
-    VMs_ID=$(openstack server list --project $PROJECT|grep -E 'ACTIVE|ERROR|SHUTOFF|BUILD' |awk '{print $2}')
-    VMs_names=$(openstack server list --project $PROJECT|grep -E 'ACTIVE|ERROR|SHUTOFF|BUILD' |awk '{print $4}')
-   # |grep ACTIVE |awk '{print $4}')
-    if [[ ! -z $VMs_ID ]]; then
-        echo "VMs list:"
-        for name in $VMs_names; do
-            echo "   $name"
-        done
-        echo -E "
-Delete all VMs?
-        "
-
-        read -p "Press enter to continue: "
-#        openstack server delete $VMs_ID
-        for id in $VMs_ID; do
-            delete_vm $id
-        done
-        echo "delete commands sent..."
-        openstack server list --project $PROJECT
-    else
-        echo "VMs not found"
+  VMs_ID=$(openstack server list --project $PROJECT|grep -E 'ACTIVE|ERROR|SHUTOFF|BUILD' |awk '{print $2}')
+  VMs_names=$(openstack server list --project $PROJECT|grep -E 'ACTIVE|ERROR|SHUTOFF|BUILD' |awk '{print $4}')
+ # |grep ACTIVE |awk '{print $4}')
+  if [[ ! -z $VMs_ID ]]; then
+    echo "VMs list:"
+    for name in $VMs_names; do
+        echo "   $name"
+    done
+    if [ "$DONT_ASK" = false ]; then
+      echo -E "
+  Delete all VMs?
+"
+      read -p "Press enter to continue: "
     fi
+      for id in $VMs_ID; do
+        delete_vm $id
+      done
+      echo "delete commands sent..."
+      openstack server list --project $PROJECT
+  else
+    echo "VMs not found"
+  fi
 }
 
 clean_volumes () {
-    echo "Check Volumes..."
-    volumes_ID=$(openstack volume list --project $PROJECT|grep -E 'available|in-use' |awk '{print $2}')
-    volumes_names=$(openstack volume list --project $PROJECT|grep -E 'available|in-use' |awk '{print $2}')
-    # echo $volumes_ID
-    if [[ ! -z $volumes_ID ]]; then
-        echo "Volumes list:"
-        for name in $volumes_names; do
-	    [ -z $name ] && name="None"
-            #echo "   Attached to $name"
-	    echo "$name"
-        done
+  echo "Check Volumes..."
+  volumes_ID=$(openstack volume list --project $PROJECT|grep -E 'available|in-use' |awk '{print $2}')
+  volumes_names=$(openstack volume list --project $PROJECT|grep -E 'available|in-use' |awk '{print $2}')
+  # echo $volumes_ID
+  if [[ ! -z $volumes_ID ]]; then
+    echo "Volumes list:"
+    for name in $volumes_names; do
+      [ -z $name ] && name="None"
+      echo "$name"
+    done
 
-        #volumes_ID_na=$(openstack volume list |grep 'available' |awk '{print $2}')
-        #for name in $volumes_ID_na; do
-        #    echo "   Volume $name not attached"
-        #done
 
-        echo -E "
+    if [ "$DONT_ASK" = false ]; then
+      echo -E "
 Delete all volumes?
-        "
-
-        read -p "Press enter to continue: "
-#        openstack volume delete $volumes_ID
-        for id in $volumes_ID; do
-          delete_volume $id
-        done
-        echo "delete commands sent..."
-        openstack volume list
-    else
-	echo "Volumes not found"
+"
+      read -p "Press enter to continue: "
     fi
+    for id in $volumes_ID; do
+      delete_volume $id
+    done
+    echo "delete commands sent..."
+    openstack volume list
+  else
+    echo "Volumes not found"
+  fi
 }
 
 check_and_source_openrc_file
