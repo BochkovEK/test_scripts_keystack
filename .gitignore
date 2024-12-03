@@ -8,3 +8,5 @@
 /.idea/vcs.xml
 /venv/
 /.idea/deployment.xml
+./test_text_file.txt
+./output.txt
