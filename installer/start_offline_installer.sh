@@ -272,7 +272,8 @@ echo -e "
 ${yellow}WARNING!${normal}
 Before continue, make sure you have:
   - DNS (dnsmasq)
-  - Self signed certs
+  - Self signed certs ($CERTS_FOLDER)
+  - LDAP cert ($CERTS_FOLDER)
   - Remote nexus with with the necessary repositories
 "
 read -p "Press enter to continue: "
