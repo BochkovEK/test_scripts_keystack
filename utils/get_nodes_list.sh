@@ -194,7 +194,7 @@ parse_hosts () {
     "
   fi
   echo "${NODES[*]}"
-  if [ -z ${NODES[*]} ]; then
+  if [ -z "${NODES[*]}" ]; then
     echo -e "${red}Failed to determine node $NODES_TYPE list${normal}"
     exit 1
   fi
