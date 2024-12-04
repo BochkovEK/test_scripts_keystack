@@ -27,6 +27,7 @@ yellow=$(tput setaf 3)
 [[ -z $CHECK_UNHEALTHY ]] && CHECK_UNHEALTHY="false"
 [[ -z $NODES_TYPE ]] && NODES_TYPE=""
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
+[[ -z $NODES_TYPE ]] && NODES_TYPE="all"
 #======================
 
 #note_type_func () {
