@@ -159,6 +159,10 @@ get_VMs_IPs () {
         hv="all VMs on hypervisor $HYPERVISOR_NAME"
         host_string="--host $hv"
       fi
+  [ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]: HYPERVISOR_NAME: $HYPERVISOR_NAME
+  [DEBUG]: PROJECT: $PROJECT
+"
 #
       export HYPERVISOR_NAME=$HYPERVISOR_NAME
       export PROJECT=$PROJECT

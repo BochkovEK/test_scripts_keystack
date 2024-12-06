@@ -9,6 +9,17 @@
 #    1) export IMAGE_SOURCE="https://cloud-images.ubuntu.com/releases/focal/release"
 #    2) bash ~/test_scripts_keystack/utils/openstack/create_image.sh ubuntu-20.04-server-cloudimg-amd64.img
 
+#images_list=(
+##  "ubuntu-20.04-server-cloudimg-amd64.img"
+##  "jammy-server-cloudimg-amd64.img"
+#  "cirros-0.6.2-x86_64-disk.img"
+##  "ubuntu-20.04-server-cloudimg-amd64.img"
+#  )
+#public_images_list=(
+##  "ubuntu-20.04-server-cloudimg-amd64.img"
+#  "https://cloud-images.ubuntu.com/releases/focal/release/ubuntu-20.04-server-cloudimg-amd64.img"
+#  )
+
 
 #Colors
 green=$(tput setaf 2)
