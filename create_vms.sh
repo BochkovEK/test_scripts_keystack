@@ -291,8 +291,7 @@ VMs will be created with the following parameters:
   else
     echo -E "        Key name:      $KEY_NAME"
   fi
-  echo -E " Key name:               $KEY_NAME
-        Project:                $PROJECT
+  echo -E "        Project:                $PROJECT
         User:                   $TEST_USER
         User role:              $ROLE
         Hypervisor name:        $HYPERVISOR_HOSTNAME
