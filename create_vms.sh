@@ -768,7 +768,6 @@ create_vms () {
   IMAGE: $IMAGE
   FLAVOR: $FLAVOR
   SECURITY_GR_ID: $SECURITY_GR_ID
-  KEY_NAME: $KEY_NAME
   key_string: $key_string
   host: $host
   API_VERSION: $API_VERSION
@@ -791,6 +790,7 @@ create_vms () {
     --boot-from-volume $VOLUME_SIZE \
     $ADD_KEY $MAX_KEY
 "
+#  KEY_NAME: $KEY_NAME
 
     openstack server create \
       $INSTANCE_NAME \
