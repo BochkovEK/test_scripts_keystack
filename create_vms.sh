@@ -277,31 +277,30 @@ check_wget () {
 }
 
 output_of_initial_parameters () {
-
+  if [ $NO_KEY = "true" ]; then
+    key_name_init_param="NO keypair"
+  else
+    key_name_init_param="$KEY_NAME"
+  fi
   echo -E "
 VMs will be created with the following parameters:
-    OPENRC file path:          $OPENRC_PATH
-    VM base name:              $VM_BASE_NAME
-    Number of VMs:             $VM_QTY
-    Image name:                $IMAGE
-    Flavor name:               $FLAVOR
-    Security group 1:          $SECURITY_GR: $SECURITY_GR_ID"
-  if [ $NO_KEY = "true" ]; then
-    echo -E "    no keypair:            $NO_KEY"
-  else
-    echo -E "    Key name:           $KEY_NAME"
-  fi
-  echo -E "    Project:                     $PROJECT
-    User:                         $TEST_USER
-    User role:                    $ROLE
-    Hypervisor name:              $HYPERVISOR_HOSTNAME
-    Network name:                 $NETWORK
-    Volume size:                  $VOLUME_SIZE
-    OS compute api version:       $API_VERSION
-    Addition key:                 $ADD_KEY
-    Creating VMs without a timeout:       $BATCH
-    Debug:                        $TS_DEBUG
-    Wait for creating             $WAIT_FOR_CREATED
+    OPENRC file path:                 $OPENRC_PATH
+    VM base name:                     $VM_BASE_NAME
+    Number of VMs:                    $VM_QTY
+    Image name:                       $IMAGE
+    Flavor name:                      $FLAVOR
+    Security group 1:                 $SECURITY_GR: $SECURITY_GR_ID
+    Key name:                         $key_name_init_param
+    User:                             $TEST_USER
+    User role:                        $ROLE
+    Hypervisor name:                  $HYPERVISOR_HOSTNAME
+    Network name:                     $NETWORK
+    Volume size:                      $VOLUME_SIZE
+    OS compute api version:           $API_VERSION
+    Addition key:                     $ADD_KEY
+    Creating VMs without a timeout:   $BATCH
+    Debug:                            $TS_DEBUG
+    Wait for creating                 $WAIT_FOR_CREATED
         "
 
     [[ ! $DONT_ASK = "true" ]] && { read -p "Press enter to continue: "; }
