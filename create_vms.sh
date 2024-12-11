@@ -425,27 +425,27 @@ check_and_add_secur_group () {
 
 # Check keypair
 check_and_add_keypair () {
-  echo "Check for exist keypair: \"$KEY_NAME\""
-  KEY_NAME_EXIST=$(openstack keypair list | grep -E "\s$KEY_NAME\s"| awk '{print $2}')
-  if [ -z "$KEY_NAME_EXIST" ]; then
-    printf "%s\n" "${orange}Keypair \"$KEY_NAME\" not found in project \"$PROJECT\"${normal}"
-    [[ ! $DONT_ASK = "true" ]] && {
-      echo "Сreate a key pair with a name: \"$KEY_NAME\"?";
-      read -p "Press enter to continue: ";
-      }
-
-    echo "Creating \"$KEY_NAME\" in project \"$PROJECT\"..."
-    touch $script_dir/$KEY_NAME.pem
-    openstack keypair create $KEY_NAME --public-key $script_dir/"$KEY_NAME".pub #> ./$KEY_NAME.pem
-    chmod 400 $script_dir/$KEY_NAME.pem
-    echo "Keypair \"$KEY_NAME\" was created in project \"$PROJECT\""
-  else
-    printf "%s\n" "${green}Keypair \"$KEY_NAME\" already exist in project \"$PROJECT\"${normal}"
-  fi
-  if [ $NO_KEY = "false" ]; then
-    key_string="--key-name $KEY_NAME"
-  else
+  if [ ! $NO_KEY = "false" ]; then
     key_string=""
+  else
+    echo "Check for exist keypair: \"$KEY_NAME\""
+    KEY_NAME_EXIST=$(openstack keypair list | grep -E "\s$KEY_NAME\s"| awk '{print $2}')
+    if [ -z "$KEY_NAME_EXIST" ]; then
+      printf "%s\n" "${orange}Keypair \"$KEY_NAME\" not found in project \"$PROJECT\"${normal}"
+      [[ ! $DONT_ASK = "true" ]] && {
+        echo "Сreate a key pair with a name: \"$KEY_NAME\"?";
+        read -p "Press enter to continue: ";
+        }
+
+      echo "Creating \"$KEY_NAME\" in project \"$PROJECT\"..."
+      touch $script_dir/$KEY_NAME.pem
+      openstack keypair create $KEY_NAME --public-key $script_dir/"$KEY_NAME".pub #> ./$KEY_NAME.pem
+      chmod 400 $script_dir/$KEY_NAME.pem
+      echo "Keypair \"$KEY_NAME\" was created in project \"$PROJECT\""
+    else
+      printf "%s\n" "${green}Keypair \"$KEY_NAME\" already exist in project \"$PROJECT\"${normal}"
+    fi
+    key_string="--key-name $KEY_NAME"
   fi
 }
 
