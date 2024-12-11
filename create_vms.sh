@@ -289,15 +289,15 @@ VMs will be created with the following parameters:
   if [ $NO_KEY = "true" ]; then
     echo -E "    no keypair:         $NO_KEY"
   else
-    echo -E "    Key name:      $KEY_NAME"
+    echo -E "    Key name:            $KEY_NAME"
   fi
-  echo -E "     Project:                $PROJECT
-    User:                   $TEST_USER
-    User role:              $ROLE
-    Hypervisor name:        $HYPERVISOR_HOSTNAME
-    Network name:           $NETWORK
-    Volume size:            $VOLUME_SIZE
-    OS compute api version: $API_VERSION
+  echo -E "    Project:                      $PROJECT
+    User:                         $TEST_USER
+    User role:                    $ROLE
+    Hypervisor name:              $HYPERVISOR_HOSTNAME
+    Network name:                 $NETWORK
+    Volume size:                  $VOLUME_SIZE
+    OS compute api version:       $API_VERSION
     Addition key:                 $ADD_KEY
     Creating VMs without a timeout:       $BATCH
     Debug:                        $TS_DEBUG
