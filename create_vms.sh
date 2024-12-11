@@ -287,11 +287,11 @@ VMs will be created with the following parameters:
     Flavor name:               $FLAVOR
     Security group 1:          $SECURITY_GR: $SECURITY_GR_ID"
   if [ $NO_KEY = "true" ]; then
-    echo -E "    no keypair:         $NO_KEY"
+    echo -E "    no keypair:            $NO_KEY"
   else
-    echo -E "    Key name:            $KEY_NAME"
+    echo -E "    Key name:           $KEY_NAME"
   fi
-  echo -E "    Project:                      $PROJECT
+  echo -E "    Project:                     $PROJECT
     User:                         $TEST_USER
     User role:                    $ROLE
     Hypervisor name:              $HYPERVISOR_HOSTNAME
