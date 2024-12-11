@@ -795,7 +795,7 @@ create_vms () {
       --image $IMAGE \
       --flavor $FLAVOR \
       --security-group $SECURITY_GR_ID \
-      --key-name $KEY_NAME \
+      $key_string \
       $host \
       --os-compute-api-version $API_VERSION \
       --network $NETWORK \
