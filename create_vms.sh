@@ -43,8 +43,8 @@ CIRROS_IMAGE_NAME="cirros-0.6.2-x86_64-disk"
 [[ -z $VM_QTY ]] && VM_QTY="1"
 [[ -z $IMAGE ]] && IMAGE=$UBUNTU_IMAGE_NAME
 [[ -z $FLAVOR ]] && FLAVOR="4c-4r"
-[[ -z $KEY_NAME ]] && KEY_NAME="key_test"
 [[ -z $NO_KEY ]] && NO_KEY="false"
+[[ -z $KEY_NAME ]] && KEY_NAME="key_test"
 [[ -z $HYPERVISOR_HOSTNAME ]] && HYPERVISOR_HOSTNAME=""
 [[ -z $PROJECT ]] && PROJECT="admin"
 [[ -z $API_VERSION ]] && API_VERSION="2.74"
@@ -277,15 +277,21 @@ check_wget () {
 }
 
 output_of_initial_parameters () {
-      echo -E "
+
+  echo -E "
 VMs will be created with the following parameters:
         OPENRC file path:       $OPENRC_PATH
         VM base name:           $VM_BASE_NAME
         Number of VMs:          $VM_QTY
         Image name:             $IMAGE
         Flavor name:            $FLAVOR
-        Security group 1:       $SECURITY_GR: $SECURITY_GR_ID
-        Key name:               $KEY_NAME
+        Security group 1:       $SECURITY_GR: $SECURITY_GR_ID"
+  if [ $NO_KEY = "true" ]; then
+    echo -E "        no keypair:      $NO_KEY"
+  else
+    echo -E "        Key name:      $KEY_NAME"
+  fi
+  echo -E " Key name:               $KEY_NAME
         Project:                $PROJECT
         User:                   $TEST_USER
         User role:              $ROLE
