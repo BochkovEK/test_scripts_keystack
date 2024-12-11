@@ -2,7 +2,7 @@
 
 # Script for get DRS logs
 
-#On home pc:
+# On client OS:
 # scp root@<lcm_ip>:~/test_scripts_keystack/drs-*.gz .
 
 # unpacking: tar -xvzf drs-logs-08-04-2024.tar.gz -C ./

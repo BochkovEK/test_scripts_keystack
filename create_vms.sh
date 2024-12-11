@@ -44,6 +44,7 @@ CIRROS_IMAGE_NAME="cirros-0.6.2-x86_64-disk"
 [[ -z $IMAGE ]] && IMAGE=$UBUNTU_IMAGE_NAME
 [[ -z $FLAVOR ]] && FLAVOR="4c-4r"
 [[ -z $KEY_NAME ]] && KEY_NAME="key_test"
+[[ -z $NO_KEY ]] && NO_KEY="false"
 [[ -z $HYPERVISOR_HOSTNAME ]] && HYPERVISOR_HOSTNAME=""
 [[ -z $PROJECT ]] && PROJECT="admin"
 [[ -z $API_VERSION ]] && API_VERSION="2.74"
@@ -71,6 +72,7 @@ while [ -n "$1" ]; do
                                 For this you need to define -i cirros\ubuntu
     -f,           -flavor       <flavor_name>
     -k,           -key          <key_name>
+    -nk           -no_key       disable key pair (without parameter)
     -hv,          -hypervisor   <hypervisor_name>
     -net,         -network      <network_name>
     -v,           -volume_size  <volume_size_in_GB>
@@ -109,6 +111,9 @@ while [ -n "$1" ]; do
       echo "Found the -key_name <key_name> option, with parameter value $key_name"
       KEY_NAME=$key_name
       shift;;
+    -nk|no_key) NO_KEY="true"
+      echo "Found the -no_name option, with parameter value $NO_KEY"
+      ;;
     -hv|-hypervisor) hyper_name="$2"
       echo "Found the -hyper_name <hypervisor_name> option, with parameter value $hyper_name"
       HYPERVISOR_HOSTNAME=$hyper_name
@@ -433,6 +438,11 @@ check_and_add_keypair () {
   else
     printf "%s\n" "${green}Keypair \"$KEY_NAME\" already exist in project \"$PROJECT\"${normal}"
   fi
+  if [ $NO_KEY = "false" ]; then
+    key_string="--key-name $KEY_NAME"
+  else
+    key_string=""
+  fi
 }
 
 # Check network
@@ -753,6 +763,7 @@ create_vms () {
   FLAVOR: $FLAVOR
   SECURITY_GR_ID: $SECURITY_GR_ID
   KEY_NAME: $KEY_NAME
+  key_string: $key_string
   host: $host
   API_VERSION: $API_VERSION
   NETWORK: $NETWORK
@@ -767,7 +778,7 @@ create_vms () {
     --image $IMAGE \
     --flavor $FLAVOR \
     --security-group $SECURITY_GR_ID \
-    --key-name $KEY_NAME \
+    $key_string \
     $host \
     --os-compute-api-version $API_VERSION \
     --network $NETWORK \
