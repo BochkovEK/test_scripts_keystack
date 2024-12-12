@@ -15,46 +15,41 @@ red=$(tput setaf 1)
 violet=$(tput setaf 5)
 normal=$(tput sgr0)
 
-#comp_pattern="\-comp\-..$"
-#ctrl_pattern="\-ctrl\-..$"
-#net_pattern="\-net\-..$"
-
 script_dir=$(dirname $0)
 utils_dir=$script_dir/utils
 get_nodes_list_script="get_nodes_list.sh"
 install_package_script="install_package.sh"
+drs_logs_dest_folder_name="drs_logs"
+drs_container_name="drs"
+consul_logs_dest_folder_name="consul_logs"
+consul_container_name="consul"
+scheduler_logs_dest_folder_name="scheduler_logs"
+scheduler_container_name="nova_scheduler"
+nova_compute_logs_dest_folder_name="nova_compute_logs"
+nova_compute_container_name="nova_compute"
 
 [[ -z $TAIL_NUM ]] && TAIL_NUM=100
-[[ -z $NODES_TYPE ]] && NODES_TYPE="ctrl"
+[[ -z $NODES_TYPE ]] && NODES_TYPE=""
 #[[ -z $NODES_TO_FIND ]] && NODES_TO_FIND="ctrl"
+# ---------
 [[ -z $DRS_LOGS_SRC ]] && DRS_LOGS_SRC=/var/log/kolla/drs/drs.log
-[[ -z $DRS_LOGS_DEST ]] && DRS_LOGS_DEST=$script_dir/drs_logs
-[[ -z $AUTOEVA_LOGS_SRC ]] && AUTOEVA_LOGS_SRC=/var/log/kolla/autoevacuate.log
-[[ -z $AUTOEVA_LOGS_DEST ]] && AUTOEVA_LOGS_DEST=$script_dir/consul_logs
+[[ -z $DRS_LOGS_DEST ]] && DRS_LOGS_DEST=$script_dir/$drs_logs_dest_folder_name
+[[ -z $DRS_CONF_SRC ]] && DRS_CONF_SRC=/etc/kolla/drs
+# ---------
+[[ -z $CONSUL_LOGS_SRC ]] && CONSUL_LOGS_SRC=/var/log/kolla/autoevacuate.log
+[[ -z $CONSUL_LOGS_DEST ]] && CONSUL_LOGS_DEST=$script_dir/$consul_logs_dest_folder_name
+[[ -z $CONSUL_CONF_SRC ]] && CONSUL_CONF_SRC=/etc/kolla/consul
+# ---------
+[[ -z $SCHEDULER_LOGS_SRC ]] && SCHEDULER_LOGS_SRC=/var/log/kolla/nova/nova-scheduler.log
+[[ -z $SCHEDULER_LOGS_DEST ]] && SCHEDULER_LOGS_DEST=$script_dir/$scheduler_logs_dest_folder_name
+[[ -z $SCHEDULER_CONF_SRC ]] && SCHEDULER_CONF_SRC=/etc/kolla/nova-scheduler
+# ---------
+[[ -z $NOVA_COMPUTE_LOGS_SRC ]] && NOVA_COMPUTE_LOGS_SRC=/var/log/kolla/nova/nova-compute.log
+[[ -z $NOVA_COMPUTE_LOGS_DEST ]] && NOVA_COMPUTE_LOGS_DEST=$script_dir/$nova_compute_logs_dest_folder_name
+[[ -z $NOVA_COMPUTE_CONF_SRC ]] && NOVA_COMPUTE_CONF_SRC=/etc/kolla/nova-compute
+# ---------
 [[ -z $LOGS_TYPE ]] && LOGS_TYPE='drs'
 
-#======================
-
-#note_type_func () {
-#  case "$1" in
-#        ctrl)
-#          NODES_TO_FIND=$ctrl_pattern
-#          echo "Сontainer will be checked on ctrl nodes"
-#          ;;
-#        comp)
-#          NODES_TO_FIND=$comp_pattern
-#          echo "Сontainer will be checked on comp nodes"
-#          ;;
-#        net)
-#          NODES_TO_FIND=$net_pattern
-#          echo "Сontainer will be checked on net nodes"
-#          ;;
-#        *)
-#          echo "type is not specified correctly. Сontainers will be checked on ctr, comp, net nodes"
-#          ;;
-#        esac
-#}
-#==============================
 
 while [ -n "$1" ]
 do
@@ -74,37 +69,11 @@ do
     shift
 done
 
-# Check_host_command
-#check_host_command () {
-#  Check_command host
-#  if [ -z $command_exist ]; then
-#    echo -e "\033[33mbind-utils not installed\033[0m"
-#    read -p "Press enter to install bind-utils: "
-#    is_sber_os=$(cat /etc/os-release| grep 'NAME="SberLinux"')
-#    if [ -n "${is_sber_os}" ]; then
-#      yum in -y bind-utils
-#    fi
-#  else
-#    printf "%s\n" "${green}'host' command is available - success${normal}"
-#  fi
-#}
-
 check_host_command () {
   if ! bash $utils_dir/$install_package_script host; then
     echo -e "${red}Failed to check 'host' command - ERROR${normal}"
     exit 1
   fi
-#  Check_command host
-#  if [ -z $command_exist ]; then
-#    echo -e "\033[33mbind-utils not installed\033[0m"
-#    read -p "Press enter to install bind-utils: "
-#    is_sber_os=$(cat /etc/os-release| grep 'NAME="SberLinux"')
-#    if [ -n "${is_sber_os}" ]; then
-#      yum in -y bind-utils
-#    fi
-#  else
-#    printf "%s\n" "${green}'host' command is available - success${normal}"
-#  fi
 }
 
 add_to_archive () {
@@ -140,85 +109,178 @@ get_nodes_list () {
   fi
 }
 
-get_drs_logs () {
-  mkdir -p $DRS_LOGS_DEST
-  ABSOLUTE_DRS_LOGS_DEST=$(realpath $DRS_LOGS_DEST)
-  echo "destination drs logs: $DRS_LOGS_DEST"
-#  srv=$(cat /etc/hosts | grep -E ${NODES_TO_FIND} | awk '{print $2}')
-#  [[ -z "${srv}" ]] && {
-#    printf "%s\n" "${red}It was not possible to separate the names and addresses of control nodes from the hosts file - error!${normal}";
-#    #echo "It was not possible to separate the names and addresses of control nodes from the hosts file";
-#    exit 1;
-#    }
+# args: service_name, src, dest, node_type, container_name
+# exp: get_logs consul, $CONSUL_CONF_SRC, $CONSUL_LOGS_DEST, ctrl, consul
+get_logs () {
+  NODES_TYPE=$4
+  echo "Get $1 logs from $NODES_TYPE..."
+  get_nodes_list
+  mkdir -p $2
+  echo "destination $1 logs: $3"
   for node in "${NODES[@]}"; do
-#	  host_name=$(cat /etc/hosts | grep -E ${node} | awk '{print $2}')
-#    [[ -z $host_name ]] && { host_name=$node; }
     host_name=$node
 #    echo $node
-    echo "Copy drs logs from $host_name..."
-    echo "DRS_LOGS_SRC: $DRS_LOGS_SRC"
+    echo "Copy $1 logs from $host_name..."
+    echo "Destination logs: $3"
     read -p "Press enter to continue: "
-    scp -o "StrictHostKeyChecking=no" $node:$DRS_LOGS_SRC $DRS_LOGS_DEST/drs_log_from_$host_name.log
-    echo "Copy drs logs tail: ${TAIL_NUM} from $host_name..."
+    scp -o "StrictHostKeyChecking=no" $node:$2 $3/${host_name}_${1}.log
+    echo "Copy $1 logs tail: ${TAIL_NUM} from $host_name..."
      read -p "Press enter to continue: "
-	  tail_strings=$(ssh -o "StrictHostKeyChecking=no" $node tail -n $TAIL_NUM $DRS_LOGS_SRC)
-	  echo $tail_strings > $DRS_LOGS_DEST/drs_log_from_${host_name}_tail_${TAIL_NUM}.txt
-	  echo "Copy docker logs drs from $host_name..."
+	  tail_strings=$(ssh -o "StrictHostKeyChecking=no" $node tail -n $TAIL_NUM $2)
+	  echo $tail_strings > $2/${host_name}_${1}_tail_${TAIL_NUM}.txt
+	  echo "Copy docker logs $1 from $host_name..."
 	   read -p "Press enter to continue: "
-	  ssh -o "StrictHostKeyChecking=no" $node "docker logs drs 2>&1 | tee /tmp/docker_logs_drs.txt" &> /dev/null
-#	  ssh -t -o "StrictHostKeyChecking=no" $node docker logs drs > /tmp/docker_logs_drs.txt #&> /dev/null)
-#	  echo $docker_logs_drs_strings > $DRS_LOGS_DEST/docker_logs_drs_from_${host_name}.txt
-    scp -o "StrictHostKeyChecking=no" $node:/tmp/docker_logs_drs.txt $DRS_LOGS_DEST/docker_logs_drs_from_${host_name}.txt
-	  echo "Copy docker inspect drs from $host_name..."
+	  ssh -o "StrictHostKeyChecking=no" $node "docker logs $5 2>&1 | tee /tmp/docker_logs_${1}.txt" &> /dev/null
+    scp -o "StrictHostKeyChecking=no" $node:/tmp/docker_logs_${1}.txt $3/docker_logs_${1}_from_${host_name}.txt
+	  echo "Copy docker inspect $1 from $host_name..."
 	   read -p "Press enter to continue: "
-	  docker_inspect_drs_strings=$(ssh -o "StrictHostKeyChecking=no" $node docker inspect drs)
-	  echo $docker_inspect_drs_strings > $DRS_LOGS_DEST/docker_inspect_drs_from_${host_name}.txt
-	  echo "Copy drs.ini from $host_name..."
-	   read -p "Press enter to continue: "
-    scp -o "StrictHostKeyChecking=no" $node:/etc/kolla/drs/drs.ini $DRS_LOGS_DEST/drs_ini_${host_name}.txt
-    echo "Save optimization list from $host_name..."
-    drs optimization list > $script_dir/drs_logs/optimization.list
-    echo "Save recommendation list from $host_name..."
-    drs recommendation list > $script_dir/drs_logs/recommendation.list
-    echo "Save migration list from $host_name..."
-    drs migration list > $script_dir/drs_logs/migration.list
+	  docker_inspect_strings=$(ssh -o "StrictHostKeyChecking=no" $node docker inspect $5)
+	  echo $docker_inspect_strings > $3/docker_inspect_${1}_from_${host_name}.txt
   done
-  add_to_archive $LOGS_TYPE $DRS_LOGS_DEST
-#  echo "Add logs to archive... $LOGS_TYPE-logs-"`date +"%d-%m-%Y"`""
-#  [ -e $script_dir/$archive_logs_name.tar.gz ] && rm $script_dir/$archive_logs_name.tar.gz
-#  archive_logs_name=$(echo $LOGS_TYPE-logs-"`date +"%d-%m-%Y"`")
-#  echo "tar -czvf $script_dir/$archive_logs_name.tar.gz $DRS_LOGS_DEST"
-#  tar -czvf $script_dir/$archive_logs_name.tar.gz $DRS_LOGS_DEST
+}
+
+#get_drs_logs () {
+#  NODES_TYPE="ctrl"
+#  get_nodes_list
+#  mkdir -p $DRS_LOGS_DEST
+##  ABSOLUTE_DRS_LOGS_DEST=$(realpath $DRS_LOGS_DEST)
+#  echo "destination drs logs: $DRS_LOGS_DEST"
+##  srv=$(cat /etc/hosts | grep -E ${NODES_TO_FIND} | awk '{print $2}')
+##  [[ -z "${srv}" ]] && {
+##    printf "%s\n" "${red}It was not possible to separate the names and addresses of control nodes from the hosts file - error!${normal}";
+##    #echo "It was not possible to separate the names and addresses of control nodes from the hosts file";
+##    exit 1;
+##    }
+#  for node in "${NODES[@]}"; do
+##	  host_name=$(cat /etc/hosts | grep -E ${node} | awk '{print $2}')
+##    [[ -z $host_name ]] && { host_name=$node; }
+#    host_name=$node
+##    echo $node
+#    echo "Copy drs logs from $host_name..."
+#    echo "DRS_LOGS_SRC: $DRS_LOGS_SRC"
+#    read -p "Press enter to continue: "
+#    scp -o "StrictHostKeyChecking=no" $node:$DRS_LOGS_SRC $DRS_LOGS_DEST/drs_log_from_$host_name.log
+#    echo "Copy drs logs tail: ${TAIL_NUM} from $host_name..."
+#     read -p "Press enter to continue: "
+#	  tail_strings=$(ssh -o "StrictHostKeyChecking=no" $node tail -n $TAIL_NUM $DRS_LOGS_SRC)
+#	  echo $tail_strings > $DRS_LOGS_DEST/drs_log_from_${host_name}_tail_${TAIL_NUM}.txt
+#	  echo "Copy docker logs drs from $host_name..."
+#	   read -p "Press enter to continue: "
+#	  ssh -o "StrictHostKeyChecking=no" $node "docker logs drs 2>&1 | tee /tmp/docker_logs_drs.txt" &> /dev/null
+##	  ssh -t -o "StrictHostKeyChecking=no" $node docker logs drs > /tmp/docker_logs_drs.txt #&> /dev/null)
+##	  echo $docker_logs_drs_strings > $DRS_LOGS_DEST/docker_logs_drs_from_${host_name}.txt
+#    scp -o "StrictHostKeyChecking=no" $node:/tmp/docker_logs_drs.txt $DRS_LOGS_DEST/docker_logs_drs_from_${host_name}.txt
+#	  echo "Copy docker inspect drs from $host_name..."
+#	   read -p "Press enter to continue: "
+#	  docker_inspect_drs_strings=$(ssh -o "StrictHostKeyChecking=no" $node docker inspect drs)
+#	  echo $docker_inspect_drs_strings > $DRS_LOGS_DEST/docker_inspect_drs_from_${host_name}.txt
+#	  echo "Copy drs.ini from $host_name..."
+#	   read -p "Press enter to continue: "
+#    scp -o "StrictHostKeyChecking=no" $node:/etc/kolla/drs/drs.ini $DRS_LOGS_DEST/drs_ini_${host_name}.txt
+#    echo "Save optimization list from $host_name..."
+#    drs optimization list > $script_dir/drs_logs/optimization.list
+#    echo "Save recommendation list from $host_name..."
+#    drs recommendation list > $script_dir/drs_logs/recommendation.list
+#    echo "Save migration list from $host_name..."
+#    drs migration list > $script_dir/drs_logs/migration.list
+#  done
+#  add_to_archive $LOGS_TYPE $DRS_LOGS_DEST
+#}
+
+# args: service_name, src, dest, node_type
+# exp: get_configs consul, $CONSUL_CONF_SRC, $CONSUL_LOGS_DEST, ctrl
+get_configs () {
+  NODES_TYPE=$4
+  echo "Get $1 configs from $NODES_TYPE..."
+  get_nodes_list
+  for node in "${NODES[@]}"; do
+    host_name=$node
+    echo "Copy $1 configs from $host_name..."
+    mkdir -p $3/${host_name}_configs
+    scp -rp -o "StrictHostKeyChecking=no" $node:$2/* $3/${host_name}_configs
+  done
+}
+
+#get_consul_configs () {
+#  NODES_TYPE="ctrl"
+#  echo "Get consul configs from $NODES_TYPE..."
+#  get_nodes_list
+#  for node in "${NODES[@]}"; do
+#    host_name=$node
+#    echo "Copy consul configs from $host_name..."
+#    mkdir -p $CONSUL_LOGS_DEST/${host_name}_configs
+#    scp -rp -o "StrictHostKeyChecking=no" $node:$CONSUL_CONF_SRC/* $CONSUL_LOGS_DEST/${host_name}_configs
+#  done
+#}
+
+#get_scheduler_cofigs () {
+#  NODES_TYPE="ctrl"
+#  echo "Get scheduler configs from $NODES_TYPE..."
+#  get_nodes_list
+#  for node in "${NODES[@]}"; do
+#    host_name=$node
+#    echo "Copy scheduler configs from $host_name..."
+#    mkdir -p $SCHEDULER_LOGS_DEST/${host_name}_configs
+#    scp -rp -o "StrictHostKeyChecking=no" $node:$SCHEDULER_CONF_SRC/* $SCHEDULER_LOGS_DEST/${host_name}_configs
+#  done
+#}
+
+#get_scheduler_logs
+
+#get_consul_logs () {
+#  NODES_TYPE="ctrl"
+#  echo "Get consul logs from $NODES_TYPE..."
+#  for node in "${NODES[@]}"; do
+##	  host_name=$(cat /etc/hosts | grep -E ${node} | awk '{print $2}')
+#    host_name=$node
+#    echo "Copy consul logs from $host_name..."
+#    scp -o "StrictHostKeyChecking=no" $node:$CONSUL_LOGS_SRC $CONSUL_LOGS_DEST/ha_log_from_$host_name.log
+#    echo "Copy ha logs tail: ${TAIL_NUM} from $host_name..."
+#	  tail_strings=$(ssh  -o "StrictHostKeyChecking=no" $node tail -$TAIL_NUM $CONSUL_LOGS_SRC)
+#	  echo $tail_strings > $CONSUL_LOGS_DEST/ha_log_from_${host_name}_tail_${TAIL_NUM}.txt
+#  done
+#}
+
+get_optimization_migration_drs () {
+  echo "Save optimization list..."
+  drs optimization list > $DRS_LOGS_DEST/optimization.list
+  echo "Save recommendation list..."
+  drs recommendation list > $DRS_LOGS_DEST/recommendation.list
+  echo "Save migration list..."
+  drs migration list > $DRS_LOGS_DEST/migration.list
+}
+
+get_drs_logs () {
+  mkdir -p $DRS_LOGS_DEST
+  get_configs drs $DRS_CONF_SRC $DRS_LOGS_DEST, ctrl
+  get_logs drs $DRS_LOGS_SRC $DRS_LOGS_DEST ctrl $drs_container_name
+  get_optimization_migration_drs
+  add_to_archive drs $DRS_LOGS_DEST
 }
 
 get_ha_logs () {
-  mkdir $AUTOEVA_LOGS_DEST
-#  srv=$(cat /etc/hosts | grep -E ${NODES_TO_FIND} | awk '{print $2}')
-  for node in "${NODES[@]}"; do
-#	  host_name=$(cat /etc/hosts | grep -E ${node} | awk '{print $2}')
-    host_name=$node
-    echo "Copy ha logs from $host_name..."
-    scp -o "StrictHostKeyChecking=no" $node:$AUTOEVA_LOGS_SRC $AUTOEVA_LOGS_DEST/ha_log_from_$host_name.log
-    echo "Copy ha logs tail: ${TAIL_NUM} from $host_name..."
-	  tail_strings=$(ssh  -o "StrictHostKeyChecking=no" $node tail -$TAIL_NUM $AUTOEVA_LOGS_SRC)
-	  echo $tail_strings > $AUTOEVA_LOGS_DEST/ha_log_from_${host_name}_tail_${TAIL_NUM}.txt
-  done
-  add_to_archive $LOGS_TYPE $AUTOEVA_LOGS_DEST
+  mkdir -p $CONSUL_LOGS_DEST
+  get_configs consul $CONSUL_CONF_SRC $CONSUL_LOGS_DEST, ctrl
+  get_logs consul $CONSUL_LOGS_SRC $CONSUL_LOGS_DEST ctrl $consul_container_name
+  get_configs scheduler $SCHEDULER_CONF_SRC $SCHEDULER_LOGS_DEST, ctrl
+  get_logs scheduler $SCHEDULER_LOGS_SRC $SCHEDULER_LOGS_DEST, ctrl $scheduler_container_name
+  get_configs nova_compute $NOVA_COMPUTE_CONF_SRC $NOVA_COMPUTE_LOGS_DEST, cmpt
+  get_logs nova_compute $NOVA_COMPUTE_LOGS_SRC $NOVA_COMPUTE_LOGS_DEST, cmpt $nova_compute_container_name
+  cp -r $SCHEDULER_LOGS_DEST $CONSUL_LOGS_DEST
+  cp -r $NOVA_COMPUTE_LOGS_DEST $CONSUL_LOGS_DEST
+  add_to_archive consul $CONSUL_LOGS_DEST
 }
 
 check_host_command
-get_nodes_list
+
 
 case $LOGS_TYPE in
-
   drs)
     get_drs_logs
     ;;
-
-  ha)
+  ha|consul)
     get_ha_logs
     ;;
-
   *)
     echo "Type of logs: $LOGS_TYPE specify not correctly"
     exit 1
