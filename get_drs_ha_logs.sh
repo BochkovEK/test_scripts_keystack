@@ -49,7 +49,8 @@ nova_compute_container_name="nova_compute"
 [[ -z $NOVA_COMPUTE_LOGS_DEST ]] && NOVA_COMPUTE_LOGS_DEST=$script_dir/$nova_compute_logs_dest_folder_name
 [[ -z $NOVA_COMPUTE_CONF_SRC ]] && NOVA_COMPUTE_CONF_SRC=/etc/kolla/nova-compute
 # ---------
-[[ -z $LOGS_TYPE ]] && LOGS_TYPE='drs'
+[[ -z $LOGS_TYPE ]] && LOGS_TYPE="drs"
+[[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 
 
 while [ -n "$1" ]
@@ -63,6 +64,9 @@ do
   -l|-logs) LOGS_TYPE="$2"
 	  echo "Found the -logs <logs_type>, with parameter value $LOGS_TYPE"
     shift ;;
+  -debug) TS_DEBUG="true"
+    echo "Found the -debug, with parameter value $TS_DEBUG"
+    ;;
   --) shift
     break ;;
   *) echo "$1 is not an option";;
@@ -120,21 +124,32 @@ get_logs () {
   echo "destination $1 logs: $3"
   for node in "${NODES[@]}"; do
     host_name=$node
-#    echo $node
+    if [ "$TS_DEBUG" = true ]; then
+      echo "node: $node"
+    fi
     echo "Copy $1 logs from $host_name..."
-    echo "Destination logs: $3"
-    read -p "Press enter to continue: "
+    if [ "$TS_DEBUG" = true ]; then
+      echo "Source logs: $2"
+      echo "Destination logs: $3"
+      read -p "Press enter to continue: "
+    fi
     scp -o "StrictHostKeyChecking=no" $node:$2 $3/${host_name}_${1}.log
-    echo "Copy $1 logs tail: ${TAIL_NUM} from $host_name..."
-     read -p "Press enter to continue: "
+    if [ "$TS_DEBUG" = true ]; then
+      echo "Copy $1 logs tail: ${TAIL_NUM} from $host_name..."
+      read -p "Press enter to continue: "
+	  fi
 	  tail_strings=$(ssh -o "StrictHostKeyChecking=no" $node tail -n $TAIL_NUM $2)
 	  echo $tail_strings > $2/${host_name}_${1}_tail_${TAIL_NUM}.txt
-	  echo "Copy docker logs $1 from $host_name..."
-	   read -p "Press enter to continue: "
+	  if [ "$TS_DEBUG" = true ]; then
+	    echo "Copy docker logs $1 from $host_name..."
+	    read -p "Press enter to continue: "
+	  fi
 	  ssh -o "StrictHostKeyChecking=no" $node "docker logs $5 2>&1 | tee /tmp/docker_logs_${1}.txt" &> /dev/null
     scp -o "StrictHostKeyChecking=no" $node:/tmp/docker_logs_${1}.txt $3/docker_logs_${1}_from_${host_name}.txt
-	  echo "Copy docker inspect $1 from $host_name..."
-	   read -p "Press enter to continue: "
+	  if [ "$TS_DEBUG" = true ]; then
+	    echo "Copy docker inspect $1 from $host_name..."
+	    read -p "Press enter to continue: "
+	  fi
 	  docker_inspect_strings=$(ssh -o "StrictHostKeyChecking=no" $node docker inspect $5)
 	  echo $docker_inspect_strings > $3/docker_inspect_${1}_from_${host_name}.txt
   done
