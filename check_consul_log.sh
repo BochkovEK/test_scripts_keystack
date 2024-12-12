@@ -147,7 +147,7 @@ while :
 do
   is_log_new="false"
 #  first_or_leader_contr_node="true"
-  if [ -z $log_new ]; then
+  if [ -z "$log_old" ]; then
     log_old="foo bar baz"
   else
     log_old=$log_new
