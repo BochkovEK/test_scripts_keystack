@@ -119,6 +119,7 @@ get_nodes_list () {
 get_logs () {
   NODES_TYPE=$4
   echo -e "${yellow}Get $1 logs from $NODES_TYPE...${normal}"
+  NODES=()
   get_nodes_list
   mkdir -p $2
   echo "destination $1 logs: $3"
@@ -208,6 +209,7 @@ get_logs () {
 get_configs () {
   NODES_TYPE=$4
   echo -e "${yellow}Get $1 configs from $NODES_TYPE...${normal}"
+  NODES=()
   get_nodes_list
   for node in "${NODES[@]}"; do
     host_name=$node
