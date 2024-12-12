@@ -17,7 +17,7 @@ utils_dir=$script_dir/utils
 check_openrc_script="check_openrc.sh"
 check_openstack_cli_script="check_openstack_cli.sh"
 
-[[ -z $LOG_LAST_LINES_NUMBER ]] && LOG_LAST_LINES_NUMBER=25
+[[ -z $LOG_LAST_LINES_NUMBER ]] && LOG_LAST_LINES_NUMBER=35
 [[ -z $OUTPUT_PERIOD ]] && OUTPUT_PERIOD=10
 [[ -z $NODE_NAME ]] && NODE_NAME=""
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
