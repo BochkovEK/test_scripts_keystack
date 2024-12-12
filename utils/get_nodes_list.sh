@@ -142,9 +142,10 @@ get_list_from_compute_service () {
       if [[ -z $nova_state_list ]];then
         [ "$TS_DEBUG" = true ] && echo -e "
         [DEBUG]
-        ${red}Failed to determine node $NODES_TYPE list${normal}
+        ${yellow}Failed to determine node $NODES_TYPE list${normal}
         "
-        exit 1
+#        return
+#        exit 1
       elif [ "$NODES_TYPE" = comp ]; then
         #compute
         nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
@@ -155,12 +156,15 @@ get_list_from_compute_service () {
       if [[ -z $nodes ]];then
         [ "$TS_DEBUG" = true ] && echo -e "
         [DEBUG]
-        ${red}Failed to determine node $NODES_TYPE list${normal}
+        ${yellow}Failed to determine node $NODES_TYPE list${normal}
         "
-        exit 1
+#        return
+#        exit 1
       else
         echo $nodes
       fi
+    elif [ "$NODES_TYPE" = all ]; then
+      parse_hosts
     fi
   else
     return
@@ -171,7 +175,7 @@ parse_hosts () {
   [ "$TS_DEBUG" = true ] && echo -e "
   Parse /etc/hosts to find pattern: $nodes_to_find
   "
-  node_type_func $NODES_TYPE
+#  node_type_func $NODES_TYPE
   [[ -z ${NODES[0]} ]] && { srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}'); for i in $srv; do NODES+=("$i"); done; }
   if [ "$TS_DEBUG" = true ]; then
     echo -e "
@@ -190,6 +194,10 @@ parse_hosts () {
     "
   fi
   echo "${NODES[*]}"
+  if [ -z "${NODES[*]}" ]; then
+    echo -e "${red}Failed to determine node $NODES_TYPE list${normal}"
+    exit 1
+  fi
 }
 
 node_type_func $NODES_TYPE

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # The script check roles, users, groups
-# To start: bash check_openstack_roles.sh <path_to_role_mapping_file>
+# To start: bash check_roles_mapping.sh <path_to_role_mapping_file>
 # Example <path_to_role_mapping_file>:
 # <group_name> <role> <user_name1> <user_name2> ... <user_name_n>
 # cat ./path_to_role_mapping_file.txt
@@ -45,7 +45,10 @@ do
   case "$1" in
     --help) echo -E "
     The script check roles, users, groups
-    To start: bash check_openstack_roles.sh <path_to_role_mapping_file>
+    To start:
+      1) Define global var DOMAIN: export DOMAIN=test_domain (default: test_domain)
+      2) Define global var PROJECT: export PROJECT=test_project (default: test_project)
+      3) bash check_openstack_roles.sh <path_to_role_mapping_file>
     Example <path_to_role_mapping_file>:
     <group_name> <role> <user_name1> <user_name2> ... <user_name_n>
     cat ./role_mapping_example.txt
@@ -188,7 +191,9 @@ while IFS= read -r line; do ROLE_MAPPING+=("$line"); done < $ROLE_MAPPING_FILE
 if [ "$TS_DEBUG" = true ]; then
   echo -e "
   [TS_DEBUG]
-    ROLE_MAPPING_FILE: $ROLE_MAPPING_FILE
+    ROLE_MAPPING_FILE:  $ROLE_MAPPING_FILE
+    DOMAIN:             $DOMAIN
+    PROJECT:            $PROJECT
     ROLE_MAPPING:
 "
   for map in "${ROLE_MAPPING[@]}"; do

@@ -12,8 +12,8 @@ violet=$(tput setaf 5)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
 
-CYAN='\033[0;36m'
-BLUE='\033[0;34m'
+#CYAN='\033[0;36m'
+#BLUE='\033[0;34m'
 ORANGE='\033[0;33m'
 NC='\033[0m' # No Color
 
@@ -31,13 +31,13 @@ edit_ha_region_config_script="edit_ha_region_config.sh"
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $REGION ]] && REGION="region-ps"
 [[ -z $CHECK_IPMI ]] && CHECK_IPMI="true"
-[[ -z $DEBUG ]] && DEBUG="false"
+[[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 
 #======================
 
 # Define parameters
 define_parameters () {
-  [ "$DEBUG" = true ] && echo "[DEBUG]: \"\$1\": $1"
+  [ "$TS_DEBUG" = true ] && echo "[TS_DEBUG]: \"\$1\": $1"
   [ "$count" = 1 ] && [[ -n $1 ]] && { CHECK=$1; echo "Command parameter found with value $CHECK"; }
 #  [ "$count" = 1 ] && [[ -n $1 ]] && { CHECK=$1; echo "Command parameter found with value $CHECK"; }
 }
@@ -71,8 +71,8 @@ do
   -dtr|-dont_try_to_rise) TRY_TO_RISE="false"
 	  echo "Found the -dont_try_to_rise, with parameter value $TRY_TO_RISE"
     ;;
-  -v|-debug) DEBUG="true"
-	  echo "Found the -debug, with parameter value $DEBUG"
+  -v|-debug) TS_DEBUG="true"
+	  echo "Found the -debug, with parameter value $TS_DEBUG"
     ;;
   -ipmi) CHECK_IPMI="true"
 	  echo "Found the -ipmi, with parameter value $CHECK_IPMI"
@@ -199,8 +199,8 @@ Check_connection_to_node () {
 }
 
 Switch_case_nodes_type () {
-  [ "$DEBUG" = true ] && echo -e "
-  [DEBUG]: Switch case nodes type...
+  [ "$TS_DEBUG" = true ] && echo -e "
+  [TS_DEBUG]: Switch case nodes type...
   "
   case $1 in
       controls)
@@ -214,8 +214,8 @@ Switch_case_nodes_type () {
         return
         ;;
   esac
-  [ "$DEBUG" = true ] && echo -e "
-    [DEBUG]: \"\$nodes\": $nodes\n
+  [ "$TS_DEBUG" = true ] && echo -e "
+    [TS_DEBUG]: \"\$nodes\": $nodes\n
   "
 }
 
@@ -312,8 +312,8 @@ Check_docker_container () {
     printf "%s\n" "${violet}Check $2 docker on $1 nodes...${normal}"
 #    nodes=$(Switch_case_nodes_type $1)
     Switch_case_nodes_type $1
-    [ "$DEBUG" = true ] && echo -e "
-  [DEBUG]: \"\$nodes\": $nodes\n
+    [ "$TS_DEBUG" = true ] && echo -e "
+  [TS_DEBUG]: \"\$nodes\": $nodes\n
   "
     for host in $nodes;do
         echo "consul on $host"
@@ -369,9 +369,9 @@ Check_consul_config () {
   echo
   echo -e "${violet}Check consul config...${normal}"
   [ -n "$OS_REGION_NAME" ] && REGION=$OS_REGION_NAME
-  [ "$DEBUG" = true ] && echo -e "
-  [DEBUG]: \"\$OS_REGION_NAME\": $OS_REGION_NAME\n
-  [DEBUG]: \"\$leader_ctrl_node\": $leader_ctrl_node\n
+  [ "$TS_DEBUG" = true ] && echo -e "
+  [TS_DEBUG]: \"\$OS_REGION_NAME\": $OS_REGION_NAME\n
+  [TS_DEBUG]: \"\$leader_ctrl_node\": $leader_ctrl_node\n
   "
   echo -e "${ORANGE}ssh -t -o StrictHostKeyChecking=no $leader_ctrl_node cat /etc/kolla/consul/region-config_${REGION}.json${NC}"
   ipmi_fencing_state=$(ssh -o StrictHostKeyChecking=no "$leader_ctrl_node" cat /etc/kolla/consul/region-config_"${REGION}".json| \
@@ -391,11 +391,11 @@ Get_ctrl_comp_nodes () {
   #comp_and_ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)|(nova-scheduler)" | awk '{print $6}')
   ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
   comp_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
-  [ "$DEBUG" = true ] && echo -e "
-  [DEBUG]: \"\$nova_state_list\": $nova_state_list
+  [ "$TS_DEBUG" = true ] && echo -e "
+  [TS_DEBUG]: \"\$nova_state_list\": $nova_state_list
   "
-#  [DEBUG]: \"\$ctrl_nodes\": $ctrl_nodes\n
-#  [DEBUG]: \"\$comp_nodes\": $comp_nodes
+#  [TS_DEBUG]: \"\$ctrl_nodes\": $ctrl_nodes\n
+#  [TS_DEBUG]: \"\$comp_nodes\": $comp_nodes
 #  "
   echo -e "
   ctrl_nodes:

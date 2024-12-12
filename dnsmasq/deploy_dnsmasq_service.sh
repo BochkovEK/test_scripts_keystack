@@ -134,7 +134,7 @@ install_dnsmasq () {
 #        systemctl stop systemd-resolved
 #        systemctl disable systemd-resolved
 #      fi
-      sudo apt install -y dnsmasq
+      apt install -y dnsmasq
       systemctl stop systemd-resolved
       systemctl disable systemd-resolved
     fi

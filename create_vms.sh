@@ -43,6 +43,7 @@ CIRROS_IMAGE_NAME="cirros-0.6.2-x86_64-disk"
 [[ -z $VM_QTY ]] && VM_QTY="1"
 [[ -z $IMAGE ]] && IMAGE=$UBUNTU_IMAGE_NAME
 [[ -z $FLAVOR ]] && FLAVOR="4c-4r"
+[[ -z $NO_KEY ]] && NO_KEY="false"
 [[ -z $KEY_NAME ]] && KEY_NAME="key_test"
 [[ -z $HYPERVISOR_HOSTNAME ]] && HYPERVISOR_HOSTNAME=""
 [[ -z $PROJECT ]] && PROJECT="admin"
@@ -71,6 +72,7 @@ while [ -n "$1" ]; do
                                 For this you need to define -i cirros\ubuntu
     -f,           -flavor       <flavor_name>
     -k,           -key          <key_name>
+    -nk           -no_key       disable key pair (without parameter)
     -hv,          -hypervisor   <hypervisor_name>
     -net,         -network      <network_name>
     -v,           -volume_size  <volume_size_in_GB>
@@ -109,6 +111,9 @@ while [ -n "$1" ]; do
       echo "Found the -key_name <key_name> option, with parameter value $key_name"
       KEY_NAME=$key_name
       shift;;
+    -nk|no_key) NO_KEY="true"
+      echo "Found the -no_name option, with parameter value $NO_KEY"
+      ;;
     -hv|-hypervisor) hyper_name="$2"
       echo "Found the -hyper_name <hypervisor_name> option, with parameter value $hyper_name"
       HYPERVISOR_HOSTNAME=$hyper_name
@@ -272,26 +277,30 @@ check_wget () {
 }
 
 output_of_initial_parameters () {
-      echo -E "
+  if [ $NO_KEY = "true" ]; then
+    key_name_init_param="NO keypair"
+  else
+    key_name_init_param="$KEY_NAME"
+  fi
+  echo -E "
 VMs will be created with the following parameters:
-        OPENRC file path:       $OPENRC_PATH
-        VM base name:           $VM_BASE_NAME
-        Number of VMs:          $VM_QTY
-        Image name:             $IMAGE
-        Flavor name:            $FLAVOR
-        Security group 1:       $SECURITY_GR: $SECURITY_GR_ID
-        Key name:               $KEY_NAME
-        Project:                $PROJECT
-        User:                   $TEST_USER
-        User role:              $ROLE
-        Hypervisor name:        $HYPERVISOR_HOSTNAME
-        Network name:           $NETWORK
-        Volume size:            $VOLUME_SIZE
-        OS compute api version: $API_VERSION
-        Addition key:           $ADD_KEY
-        Creating VMs without a timeout (bool): $BATCH
-        Debug:                  $TS_DEBUG
-        Wait for creating       $WAIT_FOR_CREATED
+    OPENRC file path:                 $OPENRC_PATH
+    VM base name:                     $VM_BASE_NAME
+    Number of VMs:                    $VM_QTY
+    Image name:                       $IMAGE
+    Flavor name:                      $FLAVOR
+    Security group 1:                 $SECURITY_GR: $SECURITY_GR_ID
+    Key name:                         $key_name_init_param
+    User:                             $TEST_USER
+    User role:                        $ROLE
+    Hypervisor name:                  $HYPERVISOR_HOSTNAME
+    Network name:                     $NETWORK
+    Volume size:                      $VOLUME_SIZE
+    OS compute api version:           $API_VERSION
+    Addition key:                     $ADD_KEY
+    Creating VMs without a timeout:   $BATCH
+    Debug:                            $TS_DEBUG
+    Wait for creating                 $WAIT_FOR_CREATED
         "
 
     [[ ! $DONT_ASK = "true" ]] && { read -p "Press enter to continue: "; }
@@ -416,22 +425,27 @@ check_and_add_secur_group () {
 
 # Check keypair
 check_and_add_keypair () {
-  echo "Check for exist keypair: \"$KEY_NAME\""
-  KEY_NAME_EXIST=$(openstack keypair list | grep -E "\s$KEY_NAME\s"| awk '{print $2}')
-  if [ -z "$KEY_NAME_EXIST" ]; then
-    printf "%s\n" "${orange}Keypair \"$KEY_NAME\" not found in project \"$PROJECT\"${normal}"
-    [[ ! $DONT_ASK = "true" ]] && {
-      echo "Сreate a key pair with a name: \"$KEY_NAME\"?";
-      read -p "Press enter to continue: ";
-      }
-
-    echo "Creating \"$KEY_NAME\" in project \"$PROJECT\"..."
-    touch $script_dir/$KEY_NAME.pem
-    openstack keypair create $KEY_NAME --public-key $script_dir/"$KEY_NAME".pub #> ./$KEY_NAME.pem
-    chmod 400 $script_dir/$KEY_NAME.pem
-    echo "Keypair \"$KEY_NAME\" was created in project \"$PROJECT\""
+  if [ ! $NO_KEY = "false" ]; then
+    key_string=""
   else
-    printf "%s\n" "${green}Keypair \"$KEY_NAME\" already exist in project \"$PROJECT\"${normal}"
+    echo "Check for exist keypair: \"$KEY_NAME\""
+    KEY_NAME_EXIST=$(openstack keypair list | grep -E "\s$KEY_NAME\s"| awk '{print $2}')
+    if [ -z "$KEY_NAME_EXIST" ]; then
+      printf "%s\n" "${orange}Keypair \"$KEY_NAME\" not found in project \"$PROJECT\"${normal}"
+      [[ ! $DONT_ASK = "true" ]] && {
+        echo "Сreate a key pair with a name: \"$KEY_NAME\"?";
+        read -p "Press enter to continue: ";
+        }
+
+      echo "Creating \"$KEY_NAME\" in project \"$PROJECT\"..."
+      touch $script_dir/$KEY_NAME.pem
+      openstack keypair create $KEY_NAME --public-key $script_dir/"$KEY_NAME".pub #> ./$KEY_NAME.pem
+      chmod 400 $script_dir/$KEY_NAME.pem
+      echo "Keypair \"$KEY_NAME\" was created in project \"$PROJECT\""
+    else
+      printf "%s\n" "${green}Keypair \"$KEY_NAME\" already exist in project \"$PROJECT\"${normal}"
+    fi
+    key_string="--key-name $KEY_NAME"
   fi
 }
 
@@ -752,7 +766,7 @@ create_vms () {
   IMAGE: $IMAGE
   FLAVOR: $FLAVOR
   SECURITY_GR_ID: $SECURITY_GR_ID
-  KEY_NAME: $KEY_NAME
+  key_string: $key_string
   host: $host
   API_VERSION: $API_VERSION
   NETWORK: $NETWORK
@@ -767,20 +781,21 @@ create_vms () {
     --image $IMAGE \
     --flavor $FLAVOR \
     --security-group $SECURITY_GR_ID \
-    --key-name $KEY_NAME \
+    $key_string \
     $host \
     --os-compute-api-version $API_VERSION \
     --network $NETWORK \
     --boot-from-volume $VOLUME_SIZE \
     $ADD_KEY $MAX_KEY
 "
+#  KEY_NAME: $KEY_NAME
 
     openstack server create \
       $INSTANCE_NAME \
       --image $IMAGE \
       --flavor $FLAVOR \
       --security-group $SECURITY_GR_ID \
-      --key-name $KEY_NAME \
+      $key_string \
       $host \
       --os-compute-api-version $API_VERSION \
       --network $NETWORK \

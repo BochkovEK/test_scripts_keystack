@@ -1,0 +1,27 @@
+#cloud-config
+users:
+  - name: user
+    shell: /bin/bash
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+chpasswd:
+  list: |
+    user:1111
+    ubuntu:1111
+  expire: False
+ssh_pwauth: True
+
+#cloud-config
+users:
+  - name: user
+    shell: /bin/bash
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+  - name: user_key
+    shell: /bin/bash
+    sudo: [ 'ALL=(ALL) NOPASSWD:ALL' ]
+    ssh_authorized_keys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC+hfe70miomf6AwSIfZ4IDZZZqm+uUJd4hqunlqzkxfeznw30kvwX8MOdFwM982EuaUeO373Wcj2dD2fg2Pfy2KoQtRw0hKAdV6xMj6ZXwJ1jd7ISSlPNZlf3oKdeZhYHoj7/1gdhMahZVbFWAfI1ndT99kNmXkElxHg462RftdfAaapfc7IuE7mTrSG/c8q0EBdRQ7QhE+6KWpRxcE4ybfcEgTYKIY6Kc9HVqx21mTxScaz6XfHs8k+/dtaW2XHdmhCsh8lmdExPSpTXQpieQHzqg0n1aK7/qstzNdW0KiH2fSXvMFMfRKibp7LEZkvP7Lqgre398ItCjgfbj8bN/ Generated-by-Nova
+chpasswd:
+  list: |
+     user:1111
+  expire: False
+ssh_pwauth: True
