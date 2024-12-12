@@ -271,8 +271,8 @@ get_ha_logs () {
   add_to_archive consul $CONSUL_LOGS_DEST
 }
 
-check_host_command
 
+#check_host_command
 
 case $LOGS_TYPE in
   drs)
