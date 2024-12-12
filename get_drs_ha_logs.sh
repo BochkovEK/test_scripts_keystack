@@ -10,10 +10,11 @@
 #cleanup on drs_logs folder: rm -f drs*.txt drs*.log migration.list optimization.list recommendation.list
 
 #Colors
-green=$(tput setaf 2)
+#green=$(tput setaf 2)
 red=$(tput setaf 1)
-violet=$(tput setaf 5)
+#violet=$(tput setaf 5)
 normal=$(tput sgr0)
+yellow=$(tput setaf 3)
 
 script_dir=$(dirname $0)
 utils_dir=$script_dir/utils
@@ -69,15 +70,15 @@ do
     shift
 done
 
-check_host_command () {
-  if ! bash $utils_dir/$install_package_script host; then
-    echo -e "${red}Failed to check 'host' command - ERROR${normal}"
-    exit 1
-  fi
-}
+#check_host_command () {
+#  if ! bash $utils_dir/$install_package_script host; then
+#    echo -e "${red}Failed to check 'host' command - ERROR${normal}"
+#    exit 1
+#  fi
+#}
 
 add_to_archive () {
-  echo "Add logs to archive... $1-logs-"`date +"%d-%m-%Y"`""
+  echo -e "${yellow}Add logs to archive... $1-logs-"`date +"%d-%m-%Y"`"${normal}"
   [ -e $script_dir/$archive_logs_name.tar.gz ] && rm $script_dir/$archive_logs_name.tar.gz
   archive_logs_name=$(echo $1-logs-"`date +"%d-%m-%Y"`")
   echo "tar -czvf $script_dir/$archive_logs_name.tar.gz $2"
@@ -113,7 +114,7 @@ get_nodes_list () {
 # exp: get_logs consul, $CONSUL_CONF_SRC, $CONSUL_LOGS_DEST, ctrl, consul
 get_logs () {
   NODES_TYPE=$4
-  echo "Get $1 logs from $NODES_TYPE..."
+  echo -e "${yellow}Get $1 logs from $NODES_TYPE...${normal}"
   get_nodes_list
   mkdir -p $2
   echo "destination $1 logs: $3"
@@ -191,7 +192,7 @@ get_logs () {
 # exp: get_configs consul, $CONSUL_CONF_SRC, $CONSUL_LOGS_DEST, ctrl
 get_configs () {
   NODES_TYPE=$4
-  echo "Get $1 configs from $NODES_TYPE..."
+  echo -e "${yellow}Get $1 configs from $NODES_TYPE...${normal}"
   get_nodes_list
   for node in "${NODES[@]}"; do
     host_name=$node
