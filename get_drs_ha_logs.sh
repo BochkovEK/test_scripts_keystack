@@ -115,7 +115,7 @@ get_nodes_list () {
 }
 
 # args: service_name, src, dest, node_type, container_name
-# exp: get_logs consul, $CONSUL_CONF_SRC, $CONSUL_LOGS_DEST, ctrl, consul
+# exp: get_logs consul $CONSUL_CONF_SRC $CONSUL_LOGS_DEST ctrl consul
 get_logs () {
   NODES_TYPE=$4
   echo -e "${yellow}Get $1 logs from $NODES_TYPE...${normal}"
@@ -205,7 +205,7 @@ get_logs () {
 #}
 
 # args: service_name, src, dest, node_type
-# exp: get_configs consul, $CONSUL_CONF_SRC, $CONSUL_LOGS_DEST, ctrl
+# exp: get_configs consul $CONSUL_CONF_SRC $CONSUL_LOGS_DEST ctrl
 get_configs () {
   NODES_TYPE=$4
   echo -e "${yellow}Get $1 configs from $NODES_TYPE...${normal}"
@@ -270,7 +270,7 @@ get_optimization_migration_drs () {
 
 get_drs_logs () {
   mkdir -p $DRS_LOGS_DEST
-  get_configs drs $DRS_CONF_SRC $DRS_LOGS_DEST, ctrl
+  get_configs drs $DRS_CONF_SRC $DRS_LOGS_DEST ctrl
   get_logs drs $DRS_LOGS_SRC $DRS_LOGS_DEST ctrl $drs_container_name
   get_optimization_migration_drs
   add_to_archive drs $DRS_LOGS_DEST
@@ -278,12 +278,12 @@ get_drs_logs () {
 
 get_ha_logs () {
   mkdir -p $CONSUL_LOGS_DEST
-  get_configs consul $CONSUL_CONF_SRC $CONSUL_LOGS_DEST, ctrl
+  get_configs consul $CONSUL_CONF_SRC $CONSUL_LOGS_DEST ctrl
   get_logs consul $CONSUL_LOGS_SRC $CONSUL_LOGS_DEST ctrl $consul_container_name
-  get_configs scheduler $SCHEDULER_CONF_SRC $SCHEDULER_LOGS_DEST, ctrl
-  get_logs scheduler $SCHEDULER_LOGS_SRC $SCHEDULER_LOGS_DEST, ctrl $scheduler_container_name
-  get_configs nova_compute $NOVA_COMPUTE_CONF_SRC $NOVA_COMPUTE_LOGS_DEST, cmpt
-  get_logs nova_compute $NOVA_COMPUTE_LOGS_SRC $NOVA_COMPUTE_LOGS_DEST, cmpt $nova_compute_container_name
+  get_configs scheduler $SCHEDULER_CONF_SRC $SCHEDULER_LOGS_DEST ctrl
+  get_logs scheduler $SCHEDULER_LOGS_SRC $SCHEDULER_LOGS_DEST ctrl $scheduler_container_name
+  get_configs nova_compute $NOVA_COMPUTE_CONF_SRC $NOVA_COMPUTE_LOGS_DEST cmpt
+  get_logs nova_compute $NOVA_COMPUTE_LOGS_SRC $NOVA_COMPUTE_LOGS_DEST cmpt $nova_compute_container_name
   cp -r $SCHEDULER_LOGS_DEST $CONSUL_LOGS_DEST
   cp -r $NOVA_COMPUTE_LOGS_DEST $CONSUL_LOGS_DEST
   add_to_archive consul $CONSUL_LOGS_DEST
