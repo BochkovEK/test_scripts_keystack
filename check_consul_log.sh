@@ -181,7 +181,7 @@ do
 
     if [ -n "${leader_ctrl_node}" ] && [ "${is_log_new}" = "false" ]; then
       echo -e "${yallow}consul log update not updated${normal}";
-      echo -e"\tpossible reasons:\n\t- The leader of the consul cluster has changed\n\t- the state commit cycle is not completed"
+      echo -e "\tpossible reasons:\n\t- The leader of the consul cluster has changed\n\t- the state commit cycle is not completed"
     else
       ssh -o StrictHostKeyChecking=no "$ctrl" tail -n $LOG_LAST_LINES_NUMBER /var/log/kolla/autoevacuate.log | \
         sed --unbuffered \
