@@ -52,7 +52,7 @@ nova_logs_folder_name="nova_logs"
 # ---------
 [[ -z $NOVA_LOGS_DEST ]] && NOVA_LOGS_DEST=$script_dir/$nova_logs_folder_name
 #----------
-[[ -z $LOGS_TYPE ]] && LOGS_TYPE="drs"
+[[ -z $LOGS_TYPE ]] && LOGS_TYPE=""
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 
 
