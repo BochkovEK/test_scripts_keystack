@@ -317,7 +317,7 @@ case $LOGS_TYPE in
     get_nova_logs
     ;;
   *)
-    echo "Type of logs: $LOGS_TYPE specify not correctly"
+    echo "Type of logs: $LOGS_TYPE specify not correctly, try --help"
     exit 1
     ;;
 esac
