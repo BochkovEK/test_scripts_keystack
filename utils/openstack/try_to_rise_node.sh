@@ -23,7 +23,7 @@ check_openstack_cli_script="check_openstack_cli.sh"
 [[ -z $COMP_NODE_NAME ]] && COMP_NODE_NAME="$1"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $CHECK_AFTER ]] && CHECK_AFTER="true"
-[[ -z $WAIT_TIME ]] && WAIT_TIME=3
+[[ -z $WAIT_TIME ]] && WAIT_TIME=5
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
 
 [[ -z "${COMP_NODE_NAME}" ]] && { echo "Compute node name required as parameter script"; exit 1; }
