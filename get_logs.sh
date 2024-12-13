@@ -19,7 +19,7 @@ yellow=$(tput setaf 3)
 script_dir=$(dirname $0)
 utils_dir=$script_dir/utils
 get_nodes_list_script="get_nodes_list.sh"
-install_package_script="install_package.sh"
+#install_package_script="install_package.sh"
 drs_logs_dest_folder_name="drs_logs"
 drs_container_name="drs"
 consul_logs_dest_folder_name="consul_logs"
@@ -60,7 +60,12 @@ while [ -n "$1" ]
 do
   case "$1" in
     --help) echo -E "
-      -l,     -logs              <logs_type> 'drs', 'ha', 'nova'
+      The script $(basename "$0") collects service logs in the $script_dir/<service_name>_logs directory and archives them.
+      To copy the archive on the client OS, run the command:
+        scp root@<lcm_ip>:~/test_scripts_keystack/<service_name>-*.gz .
+
+      -l,     -logs    <logs_type> 'drs', 'ha', 'nova'
+      -debug           Debug mode (without parameters)
       "
       exit 0
       break ;;
