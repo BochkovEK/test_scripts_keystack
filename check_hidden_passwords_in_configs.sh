@@ -35,6 +35,7 @@ control_config_list=(
   "/etc/kolla/drs/drs.ini"
   "/etc/kolla/placement-api/placement.conf"
   "/etc/kolla/adminui-backend/adminui-backend-osloconf.conf"
+  "/etc/kolla/adminui-backend/adminui-backend-regions.conf"
 )
 
 compute_config_list=(
