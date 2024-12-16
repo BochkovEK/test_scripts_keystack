@@ -23,6 +23,7 @@ red=$(tput setaf 1)
 violet=$(tput setaf 5)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
+blue=$(tput setaf 4)
 
 [[ -z $COMMAND ]] && COMMAND="ls -la"
 [[ -z $SENDENV ]] && SENDENV=""
@@ -148,7 +149,7 @@ start_commands_on_nodes () {
     exit 1
   fi
   for host in "${NODES[@]}"; do
-    echo -E "${yellow}Start command on ${host}${normal}"
+    echo -E "${blue}Start command on ${host}${normal}"
     ssh -o StrictHostKeyChecking=no -t $SENDENV "$host" ${COMMAND}
 #    ssh -o StrictHostKeyChecking=no -t $host << EOF
 #$COMMAND
