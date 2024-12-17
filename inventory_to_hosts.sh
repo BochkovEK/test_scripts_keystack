@@ -82,9 +82,9 @@ if [ -z "$INVENTORY_PATH" ]; then
     exit 1
   fi
 else
-  if [ ! -f $INVENTORY_PATH ]; then
+  if [ ! -f "$INVENTORY_PATH" ]; then
     echo -e "${yellow}Inventory file $INVENTORY_PATH not found - WARNING${normal}"
-    echo -e "Create it or specify -i key, or environment var $INVENTORY_PATH ${normal}"
+    echo -e "Create it or specify -i key, or environment var 'INVENTORY_PATH' ${normal}"
     echo -e "${red}The script cannot be executed - ERROR${normal}"
     exit 1
   fi
