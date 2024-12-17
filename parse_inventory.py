@@ -1,14 +1,16 @@
 import sys
 import os
+import re
 
 # the script work by inventory_to_hosts.sh
 
+node_pattern = "-lcm-|-comp-|-cmpt-|-ctrl-|-net-"
 kolla_internal_address = "kolla_internal_address"
 external_floating = "external_floating"
-internal_prefix = os.environ['INT_PREF']
-external_prefix = os.environ['EXT_PREF']
 ansible_host = "ansible_host"
 path_to_inventory = sys.argv[1]
+internal_prefix = os.environ['INT_PREF']
+external_prefix = os.environ['EXT_PREF']
 output_file = os.environ['OUTPUT_FILE']
 region = os.environ['REGION']
 domain = os.environ['DOMAIN']
@@ -48,8 +50,12 @@ def write_file(path_to_file, strings):
     file.write("# ------ ADD strings ------" + "\n")
     for line in strings:
         last_word = line.split()[-1]
-        short_name = f"{last_word.split('-')[-2]}-{last_word.split('-')[-1]}"
-        file.write(line + f" {short_name}" + "\n")
+        is_node_string = re.search(node_pattern, last_word)
+        if is_node_string:
+            short_name = f"{last_word.split('-')[-2]}-{last_word.split('-')[-1]}"
+            file.write(line + f" {short_name}" + "\n")
+        else:
+            file.write(line + "\n")
     # file.write("\n")
     file.close()
 
