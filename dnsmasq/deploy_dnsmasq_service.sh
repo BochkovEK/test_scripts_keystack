@@ -12,6 +12,7 @@
 #nc -vzu <IP> 53
 
 script_dir=$(dirname $0)
+script_name=$(basename "$0")
 nodes_to_find='\-ctrl\-..( |$)|\-comp\-..( |$)|\-net\-..( |$)|\-lcm\-..( |$)'
 add_string="# ------ ADD strings ------"
 dns_ip_mapping_file=dns_ip_mapping.txt
@@ -61,7 +62,9 @@ EOF
           The script parses the $dns_ip_mapping_file file for the presence of the following pattern:
            $nodes_to_find
            and edits /etc/resolv.conf on all of them
-        3) bash $script_dir/deploy_dnsmasq_service.sh
+        3)
+          a) bash $script_dir/$script_name
+          b) bash $script_dir/$script_name -host_exist (if file 'hosts' already edited)
 
         Note:
         Every time /etc/dnsmasq.conf and /etc/hosts are changed, restart the service 'systemctl restart dnsmasq'
