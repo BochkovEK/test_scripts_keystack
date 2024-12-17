@@ -13,6 +13,7 @@ output_file_name="hosts_add_strings"
 red=$(tput setaf 1)
 #violet=$(tput setaf 5)
 normal=$(tput sgr0)
+yellow=$(tput setaf 3)
 
 script_dir=$(dirname $0)
 
@@ -76,10 +77,16 @@ do
 done
 
 if [ -z "$INVENTORY_PATH" ]; then
-  if [ -z "$1" ]
-    then
-      echo -e "${red}The path to the inventory file must be passed as an argument - ERROR${normal}"
-      exit 1
+  if [ -z "$1" ]; then
+    echo -e "${red}The path to the inventory file must be passed as an argument - ERROR${normal}"
+    exit 1
+  fi
+else
+  if [ ! -f $INVENTORY_PATH ]; then
+    echo -e "${yellow}Inventory file $INVENTORY_PATH not found - WARNING${normal}"
+    echo -e "Create it or specify -i key, or environment var $INVENTORY_PATH ${normal}"
+    echo -e "${red}The script cannot be executed - ERROR${normal}"
+    exit 1
   fi
 fi
 
