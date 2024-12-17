@@ -15,7 +15,7 @@ script_dir=$(dirname $0)
 script_name=$(basename "$0")
 nodes_to_find='\-ctrl\-..( |$)|\-comp\-..( |$)|\-net\-..( |$)|\-lcm\-..( |$)'
 add_string="# ------ ADD strings ------"
-ldap_string="LDAP SERVER"
+ldap_string="# ------ LDAP SERVER ------"
 ldap_server="10.224.133.139 ldaps-lab.slavchenkov-keystack.vm.lab.itkey.com"
 dns_ip_mapping_file_name=dns_ip_mapping.txt
 #parses_file=$script_dir/dns_ip_mapping.txt
@@ -183,7 +183,7 @@ copy_dnsmasq_conf () {
   # Check and add ldap string
   ldap_string_exist=$(cat < $parses_file|grep "$ldap_string")
   if [ -z "$ldap_string_exist" ]; then
-    echo "# --- LDAP SERVER ---" >> $parses_file
+    echo $ldap_string >> $parses_file
     echo $ldap_server >> $parses_file
   fi
     echo "Hosts file: "
