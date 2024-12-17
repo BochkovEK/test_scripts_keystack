@@ -8,9 +8,10 @@ path_to_inventory = sys.argv[1]
 output_file = "hosts_add_strings"
 hosts_string = []
 
-print(os.environ['DOMAIN'])
-print(os.environ['REGION'])
-print(os.environ['OUTPUT_FILE'])
+# print(os.environ['DOMAIN'])
+# print(os.environ['REGION'])
+# print(os.environ['OUTPUT_FILE'])
+
 
 def parse_inventory(path):
     inventory = open(path, "r")
@@ -36,6 +37,7 @@ def write_file(path_to_file, strings):
         file.write(line + f" {short_name}" + "\n")
     # file.write("\n")
     file.close()
+
 
 
 parse_inventory(path_to_inventory)

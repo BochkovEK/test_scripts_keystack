@@ -15,6 +15,8 @@ script_dir=$(dirname $0)
 script_name=$(basename "$0")
 nodes_to_find='\-ctrl\-..( |$)|\-comp\-..( |$)|\-net\-..( |$)|\-lcm\-..( |$)'
 add_string="# ------ ADD strings ------"
+ldap_string="LDAP SERVER"
+ldap_server="10.224.133.139 ldaps-lab.slavchenkov-keystack.vm.lab.itkey.com"
 dns_ip_mapping_file=dns_ip_mapping.txt
 #parses_file=$script_dir/dns_ip_mapping.txt
 parses_file=/etc/hosts
@@ -167,9 +169,18 @@ copy_dnsmasq_conf () {
     fi
     echo "$add_string" >> $parses_file
     cat "$script_dir"/$dns_ip_mapping_file >> $parses_file
+#    echo "Hosts file: "
+#    cat $parses_file
+  fi
+  # Check and add ldap string
+  ldap_string_exist=$(cat < $parses_file|grep "$ldap_string")
+  if [ -z "$ldap_string_exist" ]; then
+    echo "# --- LDAP SERVER ---" >> $parses_file
+    echo $ldap_server >> $parses_file
+  fi
     echo "Hosts file: "
     cat $parses_file
-  fi
+
 #  exit 0
   sed -i --regexp-extended "s/nameserver(\s+|)[0-9]+.[0-9]+.[0-9]+.[0-9]+/nameserver $DNS_SERVER_IP/" \
       /etc/resolv.conf
