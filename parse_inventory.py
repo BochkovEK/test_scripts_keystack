@@ -1,10 +1,16 @@
 import sys
+import os
+
+# the script work by inventory_to_hosts.sh
 
 ansible_host = "ansible_host"
 path_to_inventory = sys.argv[1]
 output_file = "hosts_add_strings"
 hosts_string = []
 
+print(os.environ['DOMAIN'])
+print(os.environ['REGION'])
+print(os.environ['OUTPUT_FILE'])
 
 def parse_inventory(path):
     inventory = open(path, "r")
