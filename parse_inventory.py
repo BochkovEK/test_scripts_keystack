@@ -35,11 +35,11 @@ def parse_inventory(path):
                 print(string)
             if kolla_internal_address in word:
                 ip = word.split('=')[1]
-                string = f"{ip} {internal_prefix}{region}{domain}"
+                string = f"{ip} {internal_prefix}.{region}.{domain}"
                 print(string)
             if external_floating in word:
                 ip = word.split('=')[1]
-                string = f"{ip} {external_prefix}{region}{domain}"
+                string = f"{ip} {external_prefix}.{region}.{domain}"
                 print(string)
             if string and string not in hosts_string:
                 hosts_string.append(string)
