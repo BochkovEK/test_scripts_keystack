@@ -82,6 +82,7 @@ if [ -z "$INVENTORY_PATH" ]; then
     exit 1
   fi
 else
+  cat $INVENTORY_PATH
   if [ ! -f "$INVENTORY_PATH" ]; then
     echo $INVENTORY_PATH
     echo -e "${yellow}Inventory file $INVENTORY_PATH not found - WARNING${normal}"
