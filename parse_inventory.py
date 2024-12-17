@@ -5,6 +5,7 @@ import re
 # the script work by inventory_to_hosts.sh
 
 node_pattern = "-lcm-|-comp-|-cmpt-|-ctrl-|-net-"
+lcm_pattern = "lcm-01"
 kolla_internal_address = "kolla_internal_address"
 external_floating = "external_floating"
 ansible_host = "ansible_host"
@@ -52,8 +53,13 @@ def write_file(path_to_file, strings):
         last_word = line.split()[-1]
         is_node_string = re.search(node_pattern, last_word)
         if is_node_string:
-            short_name = f"{last_word.split('-')[-2]}-{last_word.split('-')[-1]}"
-            file.write(line + f" {short_name}" + "\n")
+            is_lcm_node = re.search(lcm_pattern, last_word)
+            if is_lcm_node:
+                short_name = f"{last_word.split('-')[-2]}-{last_word.split('-')[-1]}"
+                file.write(line + f" {short_name} lcm-nexus.{domain} netbox.{domain} gitlab.{domain} vault.{domain}\n")
+            else:
+                short_name = f"{last_word.split('-')[-2]}-{last_word.split('-')[-1]}"
+                file.write(line + f" {short_name}\n")
         else:
             file.write(line + "\n")
     # file.write("\n")
