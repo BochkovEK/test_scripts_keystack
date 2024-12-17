@@ -3,9 +3,15 @@ import os
 
 # the script work by inventory_to_hosts.sh
 
+kolla_internal_address = "kolla_internal_address"
+external_floating = "external_floating"
+internal_prefix = os.environ['INT_PREF']
+external_prefix = os.environ['EXT_PREF']
 ansible_host = "ansible_host"
 path_to_inventory = sys.argv[1]
-output_file = "hosts_add_strings"
+output_file = os.environ['OUTPUT_FILE']
+region = os.environ['REGION']
+domain = os.environ['DOMAIN']
 hosts_string = []
 
 # print(os.environ['DOMAIN'])
@@ -20,12 +26,21 @@ def parse_inventory(path):
         words = line.split()
         for word in words:
             print(word)
+            string = ""
             if ansible_host in word:
                 ip = word.split('=')[1]
                 string = f"{ip} {words[0]}"
                 print(string)
-                if string not in hosts_string:
-                    hosts_string.append(string)
+            if kolla_internal_address in word:
+                ip = word.split('=')[1]
+                string = f"{ip} {internal_prefix}{region}{domain}"
+                print(string)
+            if external_floating in word:
+                ip = word.split('=')[1]
+                string = f"{ip} {external_prefix}{region}{domain}"
+                print(string)
+            if string and string not in hosts_string:
+                hosts_string.append(string)
 
 
 def write_file(path_to_file, strings):
@@ -37,7 +52,6 @@ def write_file(path_to_file, strings):
         file.write(line + f" {short_name}" + "\n")
     # file.write("\n")
     file.close()
-
 
 
 parse_inventory(path_to_inventory)

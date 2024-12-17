@@ -5,6 +5,10 @@
 # bash ~/test_scripts_keystack/inventory_to_hosts.sh <path_to_inventory_file>
 # output "hosts_add_strings"
 
+internal_prefix="int"
+external_prefix="ext"
+region="ebochkov"
+domain="test.domain"
 parse_inventory_script="parse_inventory.py"
 inventory_file_name="dns_ip_mapping.txt"
 output_file_name="hosts_add_strings"
@@ -17,10 +21,12 @@ yellow=$(tput setaf 3)
 
 script_dir=$(dirname $0)
 
-[[ -z $DOMAIN ]] && DOMAIN="test.domain"
-[[ -z $REGION ]] && REGION="ebochkov"
+[[ -z $DOMAIN ]] && DOMAIN=$domain
+[[ -z $REGION ]] && REGION=$region
 [[ -z $INVENTORY_PATH ]] && INVENTORY_PATH=$script_dir/$inventory_file_name
 [[ -z $OUTPUT_FILE ]] && OUTPUT_FILE=$output_file_name
+[[ -z $INT_PREF ]] && INT_PREF=$internal_prefix
+[[ -z $EXT_PREF ]] && EXT_PREF=$external_prefix
 
 while [ -n "$1" ]
 do
@@ -39,6 +45,14 @@ do
           ;;
         -o|-output_file) OUTPUT_FILE=$2
           echo "Found the -output_file option, with parameter value $OUTPUT_FILE"
+          shift
+          ;;
+        -int_pref) INT_PREF=$2
+          echo "Found the -int_pref option, with parameter value $INT_PREF"
+          shift
+          ;;
+        -ext_pref) EXT_PREF=$2
+          echo "Found the -ext_pref option, with parameter value $EXT_PREF"
           shift
           ;;
         --help) echo -E "
@@ -66,6 +80,8 @@ do
         -r, -region       <region_name> example: ebochkov
         -i, -inventory    <path_to_inventory_file>  example ./inventory
         -o, -output_file  <output_file_name_in_test_scripts_keystack_folder>
+        -ext_pref         <external_prefix_for_internal_FQDN> example 'ext'
+        -int_pref         <internal_prefix_for_internal_FQDN> example 'int'
         "
           exit 0
           break ;;
@@ -84,7 +100,7 @@ if [ -z "$INVENTORY_PATH" ]; then
 else
   cat $INVENTORY_PATH
   if [ ! -f "$INVENTORY_PATH" ]; then
-    echo $INVENTORY_PATH
+#    echo $INVENTORY_PATH
     echo -e "${yellow}Inventory file $INVENTORY_PATH not found - WARNING${normal}"
     echo -e "Create it or specify -i key, or environment var 'INVENTORY_PATH' ${normal}"
     echo -e "${red}The script cannot be executed - ERROR${normal}"
@@ -97,6 +113,8 @@ python_script_execute () {
   export DOMAIN=$DOMAIN
   export REGION=$REGION
   export OUTPUT_FILE=$OUTPUT_FILE
+  export INT_PREF=$INT_PREF
+  export EXT_PREF=$EXT_PREF
   python3 $script_dir/$parse_inventory_script $INVENTORY_PATH
 }
 
