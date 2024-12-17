@@ -17,7 +17,7 @@ nodes_to_find='\-ctrl\-..( |$)|\-comp\-..( |$)|\-net\-..( |$)|\-lcm\-..( |$)'
 add_string="# ------ ADD strings ------"
 ldap_string="LDAP SERVER"
 ldap_server="10.224.133.139 ldaps-lab.slavchenkov-keystack.vm.lab.itkey.com"
-dns_ip_mapping_file=dns_ip_mapping.txt
+dns_ip_mapping_file_name=dns_ip_mapping.txt
 #parses_file=$script_dir/dns_ip_mapping.txt
 parses_file=/etc/hosts
 
@@ -33,6 +33,7 @@ yellow=$(tput setaf 3)
 [[ -z $DNS_SERVER_IP ]] && DNS_SERVER_IP=""
 [[ -z $CONF_NAME ]] && CONF_NAME="dnsmasq.conf"
 [[ -z $HOST_EXIST ]] && HOST_EXIST="false"
+[[ -z $DNS_IP_MAPPING_FILE ]] && DNS_IP_MAPPING_FILE=$script_dir/$dns_ip_mapping_file_name
 
 #The script parses dns_ip_mapping.txt to find IPs for \$nodes_to_find and
  #          add DNS IP to /etc/resolv.conf all of them
@@ -42,10 +43,14 @@ do
     case "$1" in
         -host_exist) HOST_EXIST="true"
           ;;
+        -dns_ip_mapping_file) DNS_IP_MAPPING_FILE=$2
+          echo "Found the -dns_ip_mapping_file option, with parameter value $DNS_IP_MAPPING_FILE"
+          shift
+          ;;
         --help) echo -E "
         The script install dnsmasq
         To deploy dnsmasq on DNS server:
-        1) Edit $dns_ip_mapping_file file like /etc/hosts to mapping <ip> <nameserver>
+        1) Edit $dns_ip_mapping_file_name file like /etc/hosts to mapping <ip> <nameserver>
 
 cat <<-EOF > ~/test_scripts_keystack/dnsmasq/dns_ip_mapping.txt
 10.224.129.227 int.ebochkov.test.domain
@@ -70,6 +75,9 @@ EOF
 
         Note:
         Every time /etc/dnsmasq.conf and /etc/hosts are changed, restart the service 'systemctl restart dnsmasq'
+
+        -host_exist                                       if 'hosts' file already edited (without parameter)
+        -dns_ip_mapping_file  <dns_ip_mapping_file_path>  path to dns ip mapping file like 'hosts'
         "
           exit 0
           break ;;
@@ -196,8 +204,12 @@ copy_dnsmasq_conf () {
 }
 
 if [ "$HOST_EXIST" = false ]; then
-  if [ ! -f $script_dir/$dns_ip_mapping_file ]; then
-    echo -e "${red}$script_dir/$dns_ip_mapping_file file not found - ERROR${normal}"
+  if [ ! -f $DNS_IP_MAPPING_FILE ]; then
+    echo -e "${yellow}$DNS_IP_MAPPING_FILE file not found - WARNING${normal}"
+    echo -e "Create it or specify -host_exist key (if hosts file already edited),
+      or specify -dns_ip_mapping_file key with file path,
+      or environment var 'DNS_IP_MAPPING_FILE' ${normal}"
+    echo -e "${red}The script cannot be executed - ERROR${normal}"
     exit 1
   fi
 fi
