@@ -3,6 +3,7 @@
 # The script read inventory file and convert it to hosts string
 # To start:
 # bash ~/test_scripts_keystack/inventory_to_hosts.sh <path_to_inventory_file>
+# output "hosts_add_strings"
 
 parse_inventory_script="parse_inventory.py"
 

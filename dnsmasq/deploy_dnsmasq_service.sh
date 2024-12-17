@@ -13,7 +13,7 @@
 
 script_dir=$(dirname $0)
 nodes_to_find='\-ctrl\-..( |$)|\-comp\-..( |$)|\-net\-..( |$)|\-lcm\-..( |$)'
-add_string="# ----- ADD from deploy_dnsmasq_service.sh -----"
+add_string="# ------ ADD strings ------"
 dns_ip_mapping_file=dns_ip_mapping.txt
 #parses_file=$script_dir/dns_ip_mapping.txt
 parses_file=/etc/hosts
@@ -29,6 +29,7 @@ yellow=$(tput setaf 3)
 [[ -z $DOMAIN ]] && DOMAIN=""
 [[ -z $DNS_SERVER_IP ]] && DNS_SERVER_IP=""
 [[ -z $CONF_NAME ]] && CONF_NAME="dnsmasq.conf"
+[[ -z $HOST_EXIST ]] && HOST_EXIST="false"
 
 #The script parses dns_ip_mapping.txt to find IPs for \$nodes_to_find and
  #          add DNS IP to /etc/resolv.conf all of them
@@ -36,6 +37,8 @@ yellow=$(tput setaf 3)
 while [ -n "$1" ]
 do
     case "$1" in
+        -host_exist) HOST_EXIST="true"
+          ;;
         --help) echo -E "
         The script install dnsmasq
         To deploy dnsmasq on DNS server:
@@ -150,16 +153,18 @@ install_dnsmasq () {
 copy_dnsmasq_conf () {
   cp "$script_dir"/$CONF_NAME /etc/$CONF_NAME
   # Checking the hosts file for the line # ----- ADD from deploy_dnsmasq_service.sh -----
-  strings_from_dnsmasq_deployer=$(cat < $parses_file|grep "$add_string")
-  if [ -z "$strings_from_dnsmasq_deployer" ]; then
-    cp $parses_file "$script_dir"/hosts_backup
-  else
-    cp "$script_dir"/hosts_backup $parses_file
+  if [ "$HOST_EXIST" = false ]; then
+    strings_from_dnsmasq_deployer=$(cat < $parses_file|grep "$add_string")
+    if [ -z "$strings_from_dnsmasq_deployer" ]; then
+      cp $parses_file "$script_dir"/hosts_backup
+    else
+      cp "$script_dir"/hosts_backup $parses_file
+    fi
+    echo "$add_string" >> $parses_file
+    cat "$script_dir"/$dns_ip_mapping_file >> $parses_file
+    echo "Hosts file: "
+    cat $parses_file
   fi
-  echo "$add_string" >> $parses_file
-  cat "$script_dir"/$dns_ip_mapping_file >> $parses_file
-  echo "Hosts file: "
-  cat $parses_file
 #  exit 0
   sed -i --regexp-extended "s/nameserver(\s+|)[0-9]+.[0-9]+.[0-9]+.[0-9]+/nameserver $DNS_SERVER_IP/" \
       /etc/resolv.conf
@@ -174,9 +179,11 @@ copy_dnsmasq_conf () {
   done
 }
 
-if [ ! -f $script_dir/$dns_ip_mapping_file ]; then
-  echo -e "${red}$script_dir/$dns_ip_mapping_file file not found - ERROR${normal}"
-  exit 1
+if [ "$HOST_EXIST" = false ]; then
+  if [ ! -f $script_dir/$dns_ip_mapping_file ]; then
+    echo -e "${red}$script_dir/$dns_ip_mapping_file file not found - ERROR${normal}"
+    exit 1
+  fi
 fi
 
 get_var
@@ -187,7 +194,9 @@ cat $script_dir/$CONF_NAME
 echo
 echo -e "\n${yellow}Cat $dns_ip_mapping_file...${normal}"
 echo
-cat $script_dir/$dns_ip_mapping_file
+if [ "$HOST_EXIST" = false ]; then
+  cat $script_dir/$dns_ip_mapping_file
+fi
 echo
 read -p "Press enter to continue: "
 install_dnsmasq
