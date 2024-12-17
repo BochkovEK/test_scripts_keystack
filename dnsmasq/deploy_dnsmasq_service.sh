@@ -206,9 +206,10 @@ copy_dnsmasq_conf () {
 if [ "$HOST_EXIST" = false ]; then
   if [ ! -f $DNS_IP_MAPPING_FILE ]; then
     echo -e "${yellow}$DNS_IP_MAPPING_FILE file not found - WARNING${normal}"
-    echo -e "Create it or specify -host_exist key (if hosts file already edited),
+    echo -e "Create it,
+      or specify -host_exist key (if hosts file already edited),
       or specify -dns_ip_mapping_file key with file path,
-      or environment var 'DNS_IP_MAPPING_FILE' ${normal}"
+      or environment var 'DNS_IP_MAPPING_FILE'${normal}"
     echo -e "${red}The script cannot be executed - ERROR${normal}"
     exit 1
   fi
