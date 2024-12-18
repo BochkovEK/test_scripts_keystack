@@ -143,7 +143,7 @@ batch_run_command() {
         if [ "$ssh_conn" = "ok" ]; then
           echo -e "${green}There is a SSH connection with $IP - success${normal}"
         else
-          echo $ssh_conn
+          echo "ssh_conn: $ssh_conn"
           echo -e "${red}No SSH connection with $IP - error!${normal}"
           at_least_one_vm_is_not_avail="true"
         fi
