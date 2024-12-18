@@ -19,15 +19,16 @@ yellow=$(tput setaf 3)
 script_dir=$(dirname $0)
 utils_dir=$script_dir/utils
 get_nodes_list_script="get_nodes_list.sh"
-install_package_script="install_package.sh"
+#install_package_script="install_package.sh"
 drs_logs_dest_folder_name="drs_logs"
 drs_container_name="drs"
 consul_logs_dest_folder_name="consul_logs"
 consul_container_name="consul"
-scheduler_logs_dest_folder_name="scheduler_logs"
+scheduler_logs_dest_folder_name="nova_scheduler_logs"
 scheduler_container_name="nova_scheduler"
 nova_compute_logs_dest_folder_name="nova_compute_logs"
 nova_compute_container_name="nova_compute"
+nova_logs_folder_name="nova_logs"
 
 [[ -z $TAIL_NUM ]] && TAIL_NUM=100
 [[ -z $NODES_TYPE ]] && NODES_TYPE=""
@@ -41,15 +42,17 @@ nova_compute_container_name="nova_compute"
 [[ -z $CONSUL_LOGS_DEST ]] && CONSUL_LOGS_DEST=$script_dir/$consul_logs_dest_folder_name
 [[ -z $CONSUL_CONF_SRC ]] && CONSUL_CONF_SRC=/etc/kolla/consul
 # ---------
-[[ -z $SCHEDULER_LOGS_SRC ]] && SCHEDULER_LOGS_SRC=/var/log/kolla/nova/nova-scheduler.log
-[[ -z $SCHEDULER_LOGS_DEST ]] && SCHEDULER_LOGS_DEST=$script_dir/$scheduler_logs_dest_folder_name
-[[ -z $SCHEDULER_CONF_SRC ]] && SCHEDULER_CONF_SRC=/etc/kolla/nova-scheduler
+[[ -z $NOVA_SCHEDULER_LOGS_SRC ]] && NOVA_SCHEDULER_LOGS_SRC=/var/log/kolla/nova/nova-scheduler.log
+[[ -z $NOVA_SCHEDULER_LOGS_DEST ]] && NOVA_SCHEDULER_LOGS_DEST=$script_dir/$scheduler_logs_dest_folder_name
+[[ -z $NOVA_SCHEDULER_CONF_SRC ]] && NOVA_SCHEDULER_CONF_SRC=/etc/kolla/nova-scheduler
 # ---------
 [[ -z $NOVA_COMPUTE_LOGS_SRC ]] && NOVA_COMPUTE_LOGS_SRC=/var/log/kolla/nova/nova-compute.log
 [[ -z $NOVA_COMPUTE_LOGS_DEST ]] && NOVA_COMPUTE_LOGS_DEST=$script_dir/$nova_compute_logs_dest_folder_name
 [[ -z $NOVA_COMPUTE_CONF_SRC ]] && NOVA_COMPUTE_CONF_SRC=/etc/kolla/nova-compute
 # ---------
-[[ -z $LOGS_TYPE ]] && LOGS_TYPE="drs"
+[[ -z $NOVA_LOGS_DEST ]] && NOVA_LOGS_DEST=$script_dir/$nova_logs_folder_name
+#----------
+[[ -z $LOGS_TYPE ]] && LOGS_TYPE=""
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 
 
@@ -57,7 +60,12 @@ while [ -n "$1" ]
 do
   case "$1" in
     --help) echo -E "
-      -l,     -logs              <logs_type> 'drs', 'ha'
+      The script $(basename "$0") collects service logs in the $script_dir/<service_name>_logs directory and archives them.
+      To copy the archive on the client OS, run the command:
+        scp root@<lcm_ip>:~/test_scripts_keystack/<service_name>-*.gz .
+
+      -l,     -logs    <logs_type> 'drs', 'ha', 'nova'
+      -debug           Debug mode (without parameters)
       "
       exit 0
       break ;;
@@ -238,8 +246,8 @@ get_configs () {
 #  for node in "${NODES[@]}"; do
 #    host_name=$node
 #    echo "Copy scheduler configs from $host_name..."
-#    mkdir -p $SCHEDULER_LOGS_DEST/${host_name}_configs
-#    scp -rp -o "StrictHostKeyChecking=no" $node:$SCHEDULER_CONF_SRC/* $SCHEDULER_LOGS_DEST/${host_name}_configs
+#    mkdir -p $NOVA_SCHEDULER_LOGS_DEST/${host_name}_configs
+#    scp -rp -o "StrictHostKeyChecking=no" $node:$NOVA_SCHEDULER_CONF_SRC/* $NOVA_SCHEDULER_LOGS_DEST/${host_name}_configs
 #  done
 #}
 
@@ -269,7 +277,7 @@ get_optimization_migration_drs () {
 }
 
 get_drs_logs () {
-  mkdir -p $DRS_LOGS_DEST
+#  mkdir -p $DRS_LOGS_DEST
   get_configs drs $DRS_CONF_SRC $DRS_LOGS_DEST ctrl
   get_logs drs $DRS_LOGS_SRC $DRS_LOGS_DEST ctrl $drs_container_name
   get_optimization_migration_drs
@@ -277,16 +285,27 @@ get_drs_logs () {
 }
 
 get_ha_logs () {
-  mkdir -p $CONSUL_LOGS_DEST
+#  mkdir -p $CONSUL_LOGS_DEST
   get_configs consul $CONSUL_CONF_SRC $CONSUL_LOGS_DEST ctrl
   get_logs consul $CONSUL_LOGS_SRC $CONSUL_LOGS_DEST ctrl $consul_container_name
-  get_configs scheduler $SCHEDULER_CONF_SRC $SCHEDULER_LOGS_DEST ctrl
-  get_logs scheduler $SCHEDULER_LOGS_SRC $SCHEDULER_LOGS_DEST ctrl $scheduler_container_name
+  get_configs nova_scheduler $NOVA_SCHEDULER_CONF_SRC $NOVA_SCHEDULER_LOGS_DEST ctrl
+  get_logs nova_scheduler $NOVA_SCHEDULER_LOGS_SRC $NOVA_SCHEDULER_LOGS_DEST ctrl $scheduler_container_name
   get_configs nova_compute $NOVA_COMPUTE_CONF_SRC $NOVA_COMPUTE_LOGS_DEST cmpt
   get_logs nova_compute $NOVA_COMPUTE_LOGS_SRC $NOVA_COMPUTE_LOGS_DEST cmpt $nova_compute_container_name
-  cp -r $SCHEDULER_LOGS_DEST $CONSUL_LOGS_DEST
+  cp -r $NOVA_SCHEDULER_LOGS_DEST $CONSUL_LOGS_DEST
   cp -r $NOVA_COMPUTE_LOGS_DEST $CONSUL_LOGS_DEST
   add_to_archive consul $CONSUL_LOGS_DEST
+}
+
+get_nova_logs () {
+  mkdir -p $NOVA_LOGS_DEST
+  get_configs nova_scheduler $NOVA_SCHEDULER_CONF_SRC $NOVA_SCHEDULER_LOGS_DEST ctrl
+  get_logs nova_scheduler $NOVA_SCHEDULER_LOGS_SRC $NOVA_SCHEDULER_LOGS_DEST ctrl $scheduler_container_name
+  get_configs nova_compute $NOVA_COMPUTE_CONF_SRC $NOVA_COMPUTE_LOGS_DEST cmpt
+  get_logs nova_compute $NOVA_COMPUTE_LOGS_SRC $NOVA_COMPUTE_LOGS_DEST cmpt $nova_compute_container_name
+  cp -r $NOVA_SCHEDULER_LOGS_DEST $NOVA_LOGS_DEST
+  cp -r $NOVA_COMPUTE_LOGS_DEST $NOVA_LOGS_DEST
+  add_to_archive nova $NOVA_LOGS_DEST
 }
 
 
@@ -299,8 +318,11 @@ case $LOGS_TYPE in
   ha|consul)
     get_ha_logs
     ;;
+  nova)
+    get_nova_logs
+    ;;
   *)
-    echo "Type of logs: $LOGS_TYPE specify not correctly"
+    echo "Type of logs: $LOGS_TYPE specify not correctly, try --help"
     exit 1
     ;;
 esac

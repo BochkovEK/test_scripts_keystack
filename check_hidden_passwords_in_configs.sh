@@ -9,6 +9,7 @@ violet=$(tput setaf 13)
 cyan=$(tput setaf 14)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
+blue=$(tput setaf 4)
 #magenta=$(tput setaf 5)
 
 # Regular Colors
@@ -35,6 +36,7 @@ control_config_list=(
   "/etc/kolla/drs/drs.ini"
   "/etc/kolla/placement-api/placement.conf"
   "/etc/kolla/adminui-backend/adminui-backend-osloconf.conf"
+  "/etc/kolla/adminui-backend/adminui-backend-regions.conf"
 )
 
 compute_config_list=(
@@ -111,7 +113,8 @@ read_conf () {
   if [ "$3" = castellan ]; then
     bash $script_dir/$command_on_nodes_script_name -nt $1 -c "cat $2 | grep -E 'db_uri|password|\[castellan_configsource\]'| \
       sed --unbuffered \
-        -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - ok\o033[39m/'"
+        -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - [ok: castellan group exists]\o033[39m/'\
+        -e 's/\(.*password.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'"
   fi
   if [ "$4" = cat ]; then
     bash $script_dir/$command_on_nodes_script_name -nt $1 -c "cat $2"

@@ -12,9 +12,12 @@
 #nc -vzu <IP> 53
 
 script_dir=$(dirname $0)
+script_name=$(basename "$0")
 nodes_to_find='\-ctrl\-..( |$)|\-comp\-..( |$)|\-net\-..( |$)|\-lcm\-..( |$)'
-add_string="# ----- ADD from deploy_dnsmasq_service.sh -----"
-dns_ip_mapping_file=dns_ip_mapping.txt
+add_string="# ------ ADD strings ------"
+ldap_string="# ------ LDAP SERVER ------"
+ldap_server="10.224.133.139 ldaps-lab.slavchenkov-keystack.vm.lab.itkey.com"
+dns_ip_mapping_file_name=dns_ip_mapping.txt
 #parses_file=$script_dir/dns_ip_mapping.txt
 parses_file=/etc/hosts
 
@@ -29,6 +32,8 @@ yellow=$(tput setaf 3)
 [[ -z $DOMAIN ]] && DOMAIN=""
 [[ -z $DNS_SERVER_IP ]] && DNS_SERVER_IP=""
 [[ -z $CONF_NAME ]] && CONF_NAME="dnsmasq.conf"
+[[ -z $HOST_EXIST ]] && HOST_EXIST="false"
+[[ -z $DNS_IP_MAPPING_FILE ]] && DNS_IP_MAPPING_FILE=$script_dir/$dns_ip_mapping_file_name
 
 #The script parses dns_ip_mapping.txt to find IPs for \$nodes_to_find and
  #          add DNS IP to /etc/resolv.conf all of them
@@ -36,10 +41,16 @@ yellow=$(tput setaf 3)
 while [ -n "$1" ]
 do
     case "$1" in
+        -host_exist) HOST_EXIST="true"
+          ;;
+        -dns_ip_mapping_file) DNS_IP_MAPPING_FILE=$2
+          echo "Found the -dns_ip_mapping_file option, with parameter value $DNS_IP_MAPPING_FILE"
+          shift
+          ;;
         --help) echo -E "
         The script install dnsmasq
         To deploy dnsmasq on DNS server:
-        1) Edit $dns_ip_mapping_file file like /etc/hosts to mapping <ip> <nameserver>
+        1) Edit $dns_ip_mapping_file_name file like /etc/hosts to mapping <ip> <nameserver>
 
 cat <<-EOF > ~/test_scripts_keystack/dnsmasq/dns_ip_mapping.txt
 10.224.129.227 int.ebochkov.test.domain
@@ -58,10 +69,15 @@ EOF
           The script parses the $dns_ip_mapping_file file for the presence of the following pattern:
            $nodes_to_find
            and edits /etc/resolv.conf on all of them
-        3) bash $script_dir/deploy_dnsmasq_service.sh
+        3)
+          a) bash $script_dir/$script_name
+          b) bash $script_dir/$script_name -host_exist (if file 'hosts' already edited)
 
         Note:
         Every time /etc/dnsmasq.conf and /etc/hosts are changed, restart the service 'systemctl restart dnsmasq'
+
+        -host_exist                                       if 'hosts' file already edited (without parameter)
+        -dns_ip_mapping_file  <dns_ip_mapping_file_path>  path to dns ip mapping file like 'hosts'
         "
           exit 0
           break ;;
@@ -134,9 +150,11 @@ install_dnsmasq () {
 #        systemctl stop systemd-resolved
 #        systemctl disable systemd-resolved
 #      fi
+      apt update
       apt install -y dnsmasq
       systemctl stop systemd-resolved
       systemctl disable systemd-resolved
+      systemctl restart dnsmasq
     fi
     is_sberlinux=$(cat /etc/os-release|grep sberlinux)
     if [ -n "$is_sberlinux" ]; then
@@ -150,16 +168,27 @@ install_dnsmasq () {
 copy_dnsmasq_conf () {
   cp "$script_dir"/$CONF_NAME /etc/$CONF_NAME
   # Checking the hosts file for the line # ----- ADD from deploy_dnsmasq_service.sh -----
-  strings_from_dnsmasq_deployer=$(cat < $parses_file|grep "$add_string")
-  if [ -z "$strings_from_dnsmasq_deployer" ]; then
-    cp $parses_file "$script_dir"/hosts_backup
-  else
-    cp "$script_dir"/hosts_backup $parses_file
+  if [ "$HOST_EXIST" = false ]; then
+    strings_from_dnsmasq_deployer=$(cat < $parses_file|grep "$add_string")
+    if [ -z "$strings_from_dnsmasq_deployer" ]; then
+      cp $parses_file "$script_dir"/hosts_backup
+    else
+      cp "$script_dir"/hosts_backup $parses_file
+    fi
+    echo "$add_string" >> $parses_file
+    cat "$script_dir"/$dns_ip_mapping_file >> $parses_file
+#    echo "Hosts file: "
+#    cat $parses_file
   fi
-  echo "$add_string" >> $parses_file
-  cat "$script_dir"/$dns_ip_mapping_file >> $parses_file
-  echo "Hosts file: "
-  cat $parses_file
+  # Check and add ldap string
+  ldap_string_exist=$(cat < $parses_file|grep "$ldap_string")
+  if [ -z "$ldap_string_exist" ]; then
+    echo $ldap_string >> $parses_file
+    echo $ldap_server >> $parses_file
+  fi
+    echo "Hosts file: "
+    cat $parses_file
+
 #  exit 0
   sed -i --regexp-extended "s/nameserver(\s+|)[0-9]+.[0-9]+.[0-9]+.[0-9]+/nameserver $DNS_SERVER_IP/" \
       /etc/resolv.conf
@@ -174,9 +203,16 @@ copy_dnsmasq_conf () {
   done
 }
 
-if [ ! -f $script_dir/$dns_ip_mapping_file ]; then
-  echo -e "${red}$script_dir/$dns_ip_mapping_file file not found - ERROR${normal}"
-  exit 1
+if [ "$HOST_EXIST" = false ]; then
+  if [ ! -f $DNS_IP_MAPPING_FILE ]; then
+    echo -e "${yellow}$DNS_IP_MAPPING_FILE file not found - WARNING${normal}"
+    echo -e "Create it,
+      or specify -host_exist key (if hosts file already edited),
+      or specify -dns_ip_mapping_file key with file path,
+      or environment var 'DNS_IP_MAPPING_FILE'${normal}"
+    echo -e "${red}The script cannot be executed - ERROR${normal}"
+    exit 1
+  fi
 fi
 
 get_var
@@ -187,7 +223,9 @@ cat $script_dir/$CONF_NAME
 echo
 echo -e "\n${yellow}Cat $dns_ip_mapping_file...${normal}"
 echo
-cat $script_dir/$dns_ip_mapping_file
+if [ "$HOST_EXIST" = false ]; then
+  cat $script_dir/$dns_ip_mapping_file
+fi
 echo
 read -p "Press enter to continue: "
 install_dnsmasq
