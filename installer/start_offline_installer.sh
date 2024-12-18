@@ -14,7 +14,8 @@ parent_dir=$(dirname "$script_dir")
 utils_dir=$parent_dir/utils
 installer_conf_folder="installer_conf"
 start_installer_envs="start_installer_envs"
-install_wget_script="install_wget.sh"
+#install_wget_script="install_wget.sh"
+install_package_script="install_package.sh"
 #systems=(
 #  "ubuntu"
 #  "sberlinux"
@@ -273,7 +274,7 @@ ${yellow}WARNING!${normal}
 Before continue, make sure you have:
   - DNS (dnsmasq)
   - Self signed certs ($CERTS_FOLDER)
-  - LDAP cert ($CERTS_FOLDER)
+  - LDAP cert ($CERTS_FOLDER\ldaps.pem)
   - Remote nexus with with the necessary repositories
 "
 read -p "Press enter to continue: "
@@ -304,7 +305,7 @@ source_envs
 get_init_vars
 
 
-bash $utils_dir/$install_wget_script
+bash $utils_dir/$install_package_script wget
 release_tar=$(echo "${RELEASE_URL##*/}")
 echo "release_tar: $release_tar"
 if [ ! -f ~/$release_tar ]; then
