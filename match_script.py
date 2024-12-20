@@ -10,16 +10,21 @@ debug = False
 match = []
 
 try:
-    if os.environ['TS_DEBUG'] == "true":
-        debug = True
+    os.environ['TS_DEBUG']
 except KeyError:
     pass
+else:
+    if os.environ['TS_DEBUG'] == "true":
+        debug = True
 
-if os.environ['TS_DEBUG'] == "true":
-    debug = True
+try:
+    os.environ['OUTPUT_MATCH_FILE']
+except KeyError:
+    pass
+else:
+    if os.environ['OUTPUT_MATCH_FILE']:
+        match_file_path = os.environ['OUTPUT_MATCH_FILE']
 
-if os.environ['OUTPUT_MATCH_FILE']:
-    match_file_path = os.environ['OUTPUT_MATCH_FILE']
 
 if sys.argv[3]:
     match_file_path = sys.argv[3]
