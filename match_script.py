@@ -16,9 +16,9 @@ with open(to_find_file_path) as to_find_file:
     to_find_lines = [line.rstrip() for line in to_find_file]
 
 for find in to_find_lines:
-    print(find)
+    # print(find)
     for text_line in text_lines:
-        print(text_line)
+        # print(text_line)
         if find in text_line:
             match.append(text_line)
 
