@@ -19,7 +19,7 @@ with open(where_find) as where_find_file:
 
 for find in find_lines:
     print(find)
-    for where_find_line in where_find_line:
+    for where_find_line in where_find_lines:
         print(where_find_line)
         if find in where_find_line:
             match.append(where_find_line)
