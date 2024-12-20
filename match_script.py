@@ -1,7 +1,9 @@
 import sys
 
-text_file_path = sys.argv[1]
-to_find_file_path = sys.argv[2]
+# small file
+what_find = sys.argv[1]
+# big file
+where_find = sys.argv[2]
 
 # text_file_path = "./text.txt"
 
@@ -9,18 +11,18 @@ to_find_file_path = sys.argv[2]
 match_file_path = "./match.txt"
 match = []
 
-with open(text_file_path) as text_file:
-    text_lines = [line.rstrip() for line in text_file]
+with open(what_find) as what_find_file:
+    find_lines = [line.rstrip() for line in what_find_file]
 
-with open(to_find_file_path) as to_find_file:
-    to_find_lines = [line.rstrip() for line in to_find_file]
+with open(where_find) as where_find_file:
+    where_find_lines = [line.rstrip() for line in where_find_file]
 
-for find in to_find_lines:
+for find in find_lines:
     print(find)
-    for text_line in text_lines:
-        print(text_line)
-        if find in text_line:
-            match.append(text_line)
+    for where_find_line in where_find_line:
+        print(where_find_line)
+        if find in where_find_line:
+            match.append(where_find_line)
             break
 
 # Set the mode in open() to "a" (append) instead of "w" (write):
