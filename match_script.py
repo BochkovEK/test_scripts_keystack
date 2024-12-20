@@ -18,9 +18,9 @@ with open(where_find) as where_find_file:
     where_find_lines = [line.rstrip() for line in where_find_file]
 
 for find in find_lines:
-    print(find)
+    # print(find)
     for where_find_line in where_find_lines:
-        print(where_find_line)
+        # print(where_find_line)
         if find in where_find_line:
             match.append(where_find_line)
             break
@@ -28,6 +28,6 @@ for find in find_lines:
 # Set the mode in open() to "a" (append) instead of "w" (write):
 for line in match:
     print(line)
-    # with open(match_file_path, "a") as f:
-    #     f.write(line+"\n")
+    with open(match_file_path, "a") as f:
+        f.write(line+"\n")
 
