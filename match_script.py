@@ -25,9 +25,13 @@ else:
     if os.environ['OUTPUT_MATCH_FILE']:
         match_file_path = os.environ['OUTPUT_MATCH_FILE']
 
-
-if sys.argv[3]:
-    match_file_path = sys.argv[3]
+try:
+    sys.argv[3]
+except IndexError:
+    pass
+else:
+    if sys.argv[3]:
+        match_file_path = sys.argv[3]
 
 with open(what_find) as what_find_file:
     find_lines = [line.rstrip() for line in what_find_file]
