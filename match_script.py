@@ -26,6 +26,6 @@ for find in to_find_lines:
 # Set the mode in open() to "a" (append) instead of "w" (write):
 for line in match:
     print(line)
-    with open(match_file_path, "a") as f:
-        f.write(line+"\n")
+    # with open(match_file_path, "a") as f:
+    #     f.write(line+"\n")
 
