@@ -9,6 +9,12 @@ match_file_path = "./match.txt"
 debug = False
 match = []
 
+try:
+    if os.environ['TS_DEBUG'] == "true":
+        debug = True
+except KeyError:
+    pass
+
 if os.environ['TS_DEBUG'] == "true":
     debug = True
 
