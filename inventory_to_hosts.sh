@@ -76,10 +76,10 @@ do
           10.224.130.13 ebochkov-keystack-comp-01 comp-01
           10.224.130.17 ebochkov-keystack-comp-02 comp-02
 
-        -d, -domain       <domain_name> example: test.domain
-        -r, -region       <region_name> example: ebochkov
-        -i, -inventory    <path_to_inventory_file>  example ./inventory
-        -o, -output_file  <output_file_name_in_test_scripts_keystack_folder>
+        -d, -domain       <domain_name> example: test.domain default: $domain
+        -r, -region       <region_name> example: ebochkov default: $region
+        -i, -inventory    <path_to_inventory_file>  example ./inventory default: $INVENTORY_PATH
+        -o, -output_file  <output_file_name_in_test_scripts_keystack_folder> default: $output_file_name
         -ext_pref         <external_prefix_for_internal_FQDN> example 'ext'
         -int_pref         <internal_prefix_for_internal_FQDN> example 'int'
         "
