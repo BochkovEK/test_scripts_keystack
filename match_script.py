@@ -64,15 +64,17 @@ if white_list:
                 match.append(where_find_line)
                 break
 else:  # black list
-    for find in find_lines:
-        if debug:
-            print(find)
-        for where_find_line in where_find_lines:
+    for where_find_line in where_find_lines:
+        print(where_find_line)
+        not_in_list = True
+        for find in find_lines:
             if debug:
-                print(where_find_line)
-            if find not in where_find_line:
-                match.append(where_find_line + ":")
+                print(find)
+            if find in where_find_line:
+                not_in_list = False
                 break
+        if not_in_list:
+            match.append(where_find_line + ":")
 
 
 # Set the mode in open() to "a" (append) instead of "w" (write):
