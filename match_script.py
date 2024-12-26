@@ -61,9 +61,9 @@ if white_list:
             if debug:
                 print(where_find_line)
             if find in where_find_line:
-                match.append(where_find_line + ":")
+                match.append(where_find_line)
                 break
-else:
+else:  # black list
     for find in find_lines:
         if debug:
             print(find)
@@ -71,7 +71,7 @@ else:
             if debug:
                 print(where_find_line)
             if find not in where_find_line:
-                match.append(where_find_line)
+                match.append(where_find_line + ":")
                 break
 
 
