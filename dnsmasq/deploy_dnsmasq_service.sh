@@ -78,6 +78,13 @@ EOF
 
         -host_exist                                       if 'hosts' file already edited (without parameter)
         -dns_ip_mapping_file  <dns_ip_mapping_file_path>  path to dns ip mapping file like 'hosts'
+
+        usefully command on DNS:
+          systemctl restart dnsmasq
+          systemctl status dnsmasq
+
+        edit DNS conf
+          vi /etc/dnsmasq.conf
         "
           exit 0
           break ;;
@@ -160,6 +167,8 @@ install_dnsmasq () {
     if [ -n "$is_sberlinux" ]; then
       echo "Installing dnsmasq on sberlinux"
       sudo yum in -y dnsmasq
+      firewall-cmd --add-port=53/udp
+      firewall-cmd --add-port=53/tcp
     fi
     systemctl enable dnsmasq --now
   fi
