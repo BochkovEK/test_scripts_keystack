@@ -1,6 +1,9 @@
 import sys
 import os
 
+# To start
+#   python3 ~/test_scripts_keystack/match_script.py ~/fail.list ~/all_tempest.list
+
 # small file
 what_find = sys.argv[1]
 # big file
@@ -58,7 +61,7 @@ if white_list:
             if debug:
                 print(where_find_line)
             if find in where_find_line:
-                match.append(where_find_line)
+                match.append(where_find_line + ":")
                 break
 else:
     for find in find_lines:
