@@ -14,14 +14,15 @@
 script_dir=$(dirname $0)
 script_name=$(basename "$0")
 test_scripts_keystack_dir=$(builtin cd $script_dir; pwd)
+echo $test_scripts_keystack_dir
 inventory_to_hosts_script="inventory_to_hosts.sh"
 #utils_dir=$test_scripts_keystack_dir/utils
 internal_prefix="int"
 external_prefix="ext"
 region_name="ebochkov"
 domain_name="test.domain"
-parse_inventory_script="parse_inventory.py"
-inventory_file_name="dns_ip_mapping.txt"
+#parse_inventory_script="parse_inventory.py"
+#inventory_file_name="dns_ip_mapping.txt"
 nodes_to_find='\-ctrl\-..( |$)|\-comp\-..( |$)|\-net\-..( |$)|\-lcm\-..( |$)'
 add_string="# ------ ADD strings ------"
 ldap_string="# ------ LDAP SERVER ------"
@@ -64,7 +65,7 @@ do
           echo "Found the -dns_ip_mapping_file option, with parameter value $DNS_IP_MAPPING_FILE"
           shift
           ;;
-        -inventory) INVENTORY=$2
+        -i|inventory) INVENTORY=$2
           echo "Found the -inventory option, with parameter value $INVENTORY"
           shift
           ;;
@@ -100,7 +101,7 @@ EOF
         -dont_ask, -da                                    silent deploy (without parameter)
         -host_exist                                       if 'hosts' file already edited (without parameter)
         -dns_ip_mapping_file  <dns_ip_mapping_file_path>  path to dns ip mapping file like 'hosts'
-        -inventory            <inventory_from_vms_stage>  path to inventory file for generate hosts string by inventory
+        -inventory, -i        <inventory_from_vms_stage>  path to inventory file for generate hosts string by inventory
 
         usefully command on DNS:
           systemctl restart dnsmasq
