@@ -11,7 +11,9 @@
 
 #nc -vzu <IP> 53
 
-script_dir=$(dirname $0)
+script=$(realpath "$0")
+script_dir=$(dirname "$script")
+#script_dir=$(dirname $0)
 echo $script_dir
 script_name=$(basename "$0")
 dir=$script_dir
