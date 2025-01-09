@@ -48,7 +48,7 @@ def parse_inventory(path):
 
 def write_file(path_to_file, strings):
     file = open(path_to_file, "w")
-    file.write("# ------ ADD strings ------" + "\n")
+    # file.write("# ------ ADD strings ------" + "\n")
     for line in strings:
         last_word = line.split()[-1]
         is_node_string = re.search(node_pattern, last_word)
