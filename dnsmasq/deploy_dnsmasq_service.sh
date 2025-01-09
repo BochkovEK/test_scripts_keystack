@@ -232,7 +232,7 @@ copy_dnsmasq_conf () {
       cp "$script_dir"/hosts_backup $parses_file
     fi
     echo "$add_string" >> $parses_file
-    cat "$script_dir"/$dns_ip_mapping_file >> $parses_file
+    cat $DNS_IP_MAPPING_FILE >> $parses_file
 #    echo "Hosts file: "
 #    cat $parses_file
   fi
