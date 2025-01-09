@@ -67,7 +67,7 @@ do
           echo "Found the -dns_ip_mapping_file option, with parameter value $DNS_IP_MAPPING_FILE"
           shift
           ;;
-        -i|inventory) INVENTORY=$2
+        -i|-inventory) INVENTORY=$2
           echo "Found the -inventory option, with parameter value $INVENTORY"
           shift
           ;;
