@@ -66,11 +66,16 @@ do
         -host_exist) HOST_EXIST="true"
           echo "Found the -host_exist option, with parameter value $HOST_EXIST"
           ;;
-        -dns_ip_mapping_file) DNS_IP_MAPPING_FILE=$2
+        -dns_ip_mapping_file)
           echo "Found the -dns_ip_mapping_file option, with parameter value $DNS_IP_MAPPING_FILE"
+          if [[ -z $INVENTORY ]]; then
+            DNS_IP_MAPPING_FILE=$2
+          fi
           shift
           ;;
-        -i|-inventory) INVENTORY=$2
+        -i|-inventory)
+          INVENTORY=$2
+          DNS_IP_MAPPING_FILE=$INVENTORY
           echo "Found the -inventory option, with parameter value $INVENTORY"
           shift
           ;;
