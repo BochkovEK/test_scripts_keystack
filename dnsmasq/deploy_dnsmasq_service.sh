@@ -51,7 +51,7 @@ yellow=$(tput setaf 3)
 [[ -z $CONF_NAME ]] && CONF_NAME="dnsmasq.conf"
 [[ -z $HOST_EXIST ]] && HOST_EXIST="false"
 [[ -z $DNS_IP_MAPPING_FILE ]] && DNS_IP_MAPPING_FILE=$test_scripts_keystack_dir/$dns_ip_mapping_file_name
-[[ -z $INVENTORY ]] && INVENTORY=""
+[[ -z $INVENTORY_PATH ]] && INVENTORY_PATH=""
 [[ -z $OUTPUT_FILE ]] && OUTPUT_FILE=$dns_ip_mapping_file_name
 
 #The script parses dns_ip_mapping.txt to find IPs for \$nodes_to_find and
@@ -66,17 +66,16 @@ do
         -host_exist) HOST_EXIST="true"
           echo "Found the -host_exist option, with parameter value $HOST_EXIST"
           ;;
-        -dns_ip_mapping_file)
+        -dns_ip_mapping_file) DNS_IP_MAPPING_FILE=$2
           echo "Found the -dns_ip_mapping_file option, with parameter value $DNS_IP_MAPPING_FILE"
-          if [[ -z $INVENTORY ]]; then
-            DNS_IP_MAPPING_FILE=$2
-          fi
+#          if [[ -z $INVENTORY_PATH ]]; then
+#            DNS_IP_MAPPING_FILE=$2
+#          fi
           shift
           ;;
-        -i|-inventory)
-          INVENTORY=$2
-          DNS_IP_MAPPING_FILE=$INVENTORY
-          echo "Found the -inventory option, with parameter value $INVENTORY"
+        -i|-inventory) INVENTORY_PATH=$2
+#          DNS_IP_MAPPING_FILE=$INVENTORY_PATH
+          echo "Found the -inventory option, with parameter value $INVENTORY_PATH"
           shift
           ;;
         --help) echo -E "
@@ -261,12 +260,13 @@ copy_dnsmasq_conf () {
 }
 
 if [ "$HOST_EXIST" = false ]; then
-  if [[ -n $INVENTORY ]]; then
-    if [ ! -f $INVENTORY ]; then
-      echo -e "${yellow}$INVENTORY file not found - WARNING${normal}"
+  if [[ -n $INVENTORY_PATH ]]; then
+    if [ ! -f $INVENTORY_PATH ]; then
+      echo -e "${yellow}$INVENTORY_PATH file not found - WARNING${normal}"
       echo -e "${red}The script cannot be executed - ERROR${normal}"
       exit 1
     else
+      export INVENTORY_PATH=$INVENTORY_PATH
       export OUTPUT_FILE=${OUTPUT_FILE:-$DNS_IP_MAPPING_FILE}
       export DOMAIN=${DOMAIN:-$domain_name}
       export REGION=${REGION:-$region_name}
