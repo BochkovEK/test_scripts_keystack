@@ -296,10 +296,10 @@ echo -e "\n${yellow}Cat conf...${normal}"
 echo
 cat $script_dir/$CONF_NAME
 echo
-echo -e "\n${yellow}Cat $dns_ip_mapping_file_name...${normal}"
+echo -e "\n${yellow}Cat $DNS_IP_MAPPING_FILE...${normal}"
 echo
 if [ "$HOST_EXIST" = false ]; then
-  cat $script_dir/$dns_ip_mapping_file_name
+  cat $DNS_IP_MAPPING_FILE
 fi
 echo
 read -p "Press enter to continue: "
