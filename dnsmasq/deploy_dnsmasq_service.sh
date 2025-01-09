@@ -52,7 +52,7 @@ yellow=$(tput setaf 3)
 [[ -z $HOST_EXIST ]] && HOST_EXIST="false"
 [[ -z $DNS_IP_MAPPING_FILE ]] && DNS_IP_MAPPING_FILE=$test_scripts_keystack_dir/$dns_ip_mapping_file_name
 [[ -z $INVENTORY_PATH ]] && INVENTORY_PATH=""
-[[ -z $OUTPUT_FILE ]] && OUTPUT_FILE=$dns_ip_mapping_file_name
+#[[ -z $OUTPUT_FILE ]] && OUTPUT_FILE=$dns_ip_mapping_file_name
 
 #The script parses dns_ip_mapping.txt to find IPs for \$nodes_to_find and
  #          add DNS IP to /etc/resolv.conf all of them
@@ -131,8 +131,8 @@ done
 get_var () {
   echo "Get vars..."
   if [ "$DONT_ASK" = false ]; then
-    if [[ -z "${OUTPUT_FILE}" ]]; then
-      read -rp "Enter output file name (buffer file for add hosts strings) [$DNS_IP_MAPPING_FILE]: " DNS_IP_MAPPING_FILE
+    if [[ -z "${DNS_IP_MAPPING_FILE}" ]]; then
+      read -rp "Enter dns ip mapping file [$DNS_IP_MAPPING_FILE]: " DNS_IP_MAPPING_FILE
     fi
     if [[ -z "${DOMAIN}" ]]; then
       read -rp "Enter domain name for KeyStack region [$domain_name]: " DOMAIN
