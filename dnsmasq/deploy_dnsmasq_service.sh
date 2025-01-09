@@ -14,12 +14,12 @@
 script=$(realpath "$0")
 script_dir=$(dirname "$script")
 #script_dir=$(dirname $0)
-echo $script_dir
+#echo $script_dir
 script_name=$(basename "$0")
 dir=$script_dir
 test_scripts_keystack_dir="$(dirname "$dir")"
 #test_scripts_keystack_dir=$(builtin cd $script_dir; pwd)
-echo $test_scripts_keystack_dir
+#echo $test_scripts_keystack_dir
 inventory_to_hosts_script="inventory_to_hosts.sh"
 #utils_dir=$test_scripts_keystack_dir/utils
 internal_prefix="int"
@@ -267,6 +267,7 @@ if [ "$HOST_EXIST" = false ]; then
       export REGION=${REGION:-$region_name}
       export INT_PREF=${INT_PREF:-$internal_prefix}
       export EXT_PREF=${EXT_PREF:-$external_prefix}
+      echo "Start $test_scripts_keystack_dir/$inventory_to_hosts_script ..."
       if ! bash $test_scripts_keystack_dir/$inventory_to_hosts_script; then
         echo -e "${red}Could not parse inventory - ERROR${normal}"
         exit 1
