@@ -13,7 +13,9 @@
 
 script_dir=$(dirname $0)
 script_name=$(basename "$0")
-test_scripts_keystack_dir=$(builtin cd $script_dir; pwd)
+dir=$script_dir
+test_scripts_keystack_dir="$(dirname "$dir")"
+#test_scripts_keystack_dir=$(builtin cd $script_dir; pwd)
 echo $test_scripts_keystack_dir
 inventory_to_hosts_script="inventory_to_hosts.sh"
 #utils_dir=$test_scripts_keystack_dir/utils
