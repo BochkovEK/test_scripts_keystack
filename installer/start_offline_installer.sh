@@ -274,7 +274,7 @@ ${yellow}WARNING!${normal}
 Before continue, make sure you have:
   - DNS (dnsmasq)
   - Self signed certs ($CERTS_FOLDER)
-  - LDAP cert ($CERTS_FOLDER\ldaps.pem)
+  - LDAP cert ($CERTS_FOLDER/ldaps.pem)
   - Remote nexus with with the necessary repositories
 "
 read -p "Press enter to continue: "
