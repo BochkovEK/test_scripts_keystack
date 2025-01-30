@@ -69,7 +69,7 @@ while [ -n "$1" ]; do
       echo "Found the -units option with parameter value $UNITS"
       shift;;
     -key) KEY_PATH="$2"
-      echo "Found the -key option, with parameter value key name: $KEY_PATH"
+      echo "Found the -key option, with parameter value : $KEY_PATH"
       shift;;
     -p|-project) PROJECT="$2"
       echo "Found the -project option, with parameter value $PROJECT"
