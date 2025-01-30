@@ -132,6 +132,14 @@ copy_and_stress() {
 
 check_vm () {
   if [ -f $script_dir/$check_vm_script ]; then
+  [ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]:
+    HYPERVISOR_NAME: $HYPERVISOR_NAME
+    PROJECT: $PROJECT
+    VMs_IPs: $VMs_IPs
+    VM_USER: $VM_USER
+    KEY_PATH: $KEY_PATH
+"
   export HYPERVISOR_NAME=$HYPERVISOR_NAME
   export PROJECT=$PROJECT
   export VMs_IPs=$VMs_IPs
@@ -149,7 +157,6 @@ fi
 }
 
 get_VMs_IPs () {
-
   if [ -z $VMs_IPs ]; then
     if [ -z $IP_LIST_FILE ]; then
       if [ -z $HYPERVISOR_NAME ]; then
@@ -160,8 +167,9 @@ get_VMs_IPs () {
         host_string="--host $hv"
       fi
   [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]: HYPERVISOR_NAME: $HYPERVISOR_NAME
-  [DEBUG]: PROJECT: $PROJECT
+  [DEBUG]:
+    HYPERVISOR_NAME: $HYPERVISOR_NAME
+    PROJECT: $PROJECT
 "
 #
       export HYPERVISOR_NAME=$HYPERVISOR_NAME
@@ -179,9 +187,10 @@ get_VMs_IPs () {
   fi
 
   [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]: hv: $hv
-  [DEBUG]: host_string: $host_string
-  [DEBUG]: VMs_IPs: $VMs_IPs
+  [DEBUG]:
+    hv: $hv
+    host_string: $host_string
+    VMs_IPs: $VMs_IPs
   "
 
   [[ -z $VMs_IPs ]] && { echo -e "${red}No instance found in the $PROJECT project - ERROR${normal}"; exit 1; }

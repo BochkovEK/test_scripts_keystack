@@ -40,7 +40,7 @@ while [ -n "$1" ]; do
       -hv           <hypervisor_name>
       -u, -user     <user_name_on_VM_OS>
       -c, command   <command_on_VM>
-      -k, -key      <key_pair_private_part_file>
+      -k, -key      <key_pair_private_part_file_path>
       -ping         only ping check
       -p, project   <project_name>
       -dont_ask     all actions will be performed automatically (without value)
@@ -132,6 +132,7 @@ batch_run_command() {
    "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]:
     VMs_IPs: $VMs_IPs
+    KEY_PATH: $KEY_PATH
 
   "
   for IP in $VMs_IPs; do
