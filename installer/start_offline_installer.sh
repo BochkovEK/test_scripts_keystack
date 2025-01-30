@@ -14,7 +14,8 @@ parent_dir=$(dirname "$script_dir")
 utils_dir=$parent_dir/utils
 installer_conf_folder="installer_conf"
 start_installer_envs="start_installer_envs"
-install_wget_script="install_wget.sh"
+#install_wget_script="install_wget.sh"
+install_package_script="install_package.sh"
 #systems=(
 #  "ubuntu"
 #  "sberlinux"
@@ -176,26 +177,6 @@ select_config_file () {
   read -p "Press enter to continue: "
 }
 
-#select_os () {
-#  echo
-#  PS3='Select OS: '
-#  select os in "${systems[@]}"; do
-#      if [[ $REPLY == "0" ]]; then
-#          echo 'Bye!' >&2
-#          exit 0
-#      elif [[ -z $os ]]; then
-#          echo 'Invalid choice, try again' >&2
-#      else
-#        REPLY=$(( $REPLY - 1 ))
-#        system=${systems[$REPLY]}
-#        echo -e "\nOS selected: "
-#        echo -e "$system\n"
-#        export SYSTEM=$system
-#        break
-#      fi
-#  done
-#}
-
 select_os () {
   # check os release
   os=unknown
@@ -219,53 +200,13 @@ select_os () {
   fi
 }
 
-#
-#
-#  is_ubuntu=$(cat /etc/os-release|grep ubuntu)
-#  if [ -n "$is_ubuntu" ]; then
-#    SYSTEM="ubuntu"
-#  fi
-#  is_sberlinux=$(cat /etc/os-release|grep sberlinux)
-#  if [ -n "$is_sberlinux" ]; then
-#    echo "Installing docker on sberlinux"
-#    if bash $script_dir/docker_sberlinux_installation.sh; then
-#      return
-#    fi
-#  fi
-#else
-#  return
-#fi
-#echo -e "${red}Failed to install docker - ERROR${normal}"
-#exit 1
-#}
-
-#check_and_install_docker () {
-#  #Install docker if need
-#  if ! command -v docker &> /dev/null; then
-#    is_ubuntu=$(cat /etc/os-release|grep ubuntu)
-#    if [ -n "$is_ubuntu" ]; then
-#      echo "Installing docker on ubuntu"
-#      if bash $script_dir/docker_ubuntu_installation.sh; then
-#        return
-#      fi
-#    fi
-#    is_sberlinux=$(cat /etc/os-release|grep sberlinux)
-#    if [ -n "$is_sberlinux" ]; then
-#      echo "Installing docker on sberlinux"
-#      if bash $script_dir/docker_sberlinux_installation.sh; then
-#        return
-#      fi
-#    fi
-#  else
-#    return
-#  fi
-#  echo -e "${red}Failed to install docker - ERROR${normal}"
-#  exit 1
-#}
-
 validate_url () {
   if [[ `wget -S --spider $1  2>&1 | grep 'HTTP/1.1 200 OK'` ]]; then echo "true"; fi
 }
+
+#check_ssh_connection () {
+#
+#}
 
 # WARNING
 echo -e "
@@ -273,7 +214,7 @@ ${yellow}WARNING!${normal}
 Before continue, make sure you have:
   - DNS (dnsmasq)
   - Self signed certs ($CERTS_FOLDER)
-  - LDAP cert ($CERTS_FOLDER)
+  - LDAP cert ($CERTS_FOLDER/ldaps.pem)
   - Remote nexus with with the necessary repositories
 "
 read -p "Press enter to continue: "
@@ -304,7 +245,7 @@ source_envs
 get_init_vars
 
 
-bash $utils_dir/$install_wget_script
+bash $utils_dir/$install_package_script wget
 release_tar=$(echo "${RELEASE_URL##*/}")
 echo "release_tar: $release_tar"
 if [ ! -f ~/$release_tar ]; then
@@ -348,14 +289,21 @@ if [ -d "$HOME/installer" ]; then
   [[ ! -d "$HOME/installer/certs" ]] && { mkdir -p ~/installer/certs; }
   if [ -z "$( ls -A ~/installer/certs )" ]; then
     mkdir -p ~/installer/certs
-    check_ssh_to_central_auth=$(ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=5 $CENTRAL_AUTH_SERVICE_IP echo ok 2>&1)
-    if [ "$check_ssh_to_central_auth" = ok ]; then
-      echo -e "${yellow}Copying certs from $CENTRAL_AUTH_SERVICE_IP:$CERTS_FOLDER to $HOME/installer/${normal}"
-      scp -r $CENTRAL_AUTH_SERVICE_IP:$CERTS_FOLDER $HOME/installer/
-    else
+
+    for i in {1...5}; do
+      check_ssh_to_central_auth=$(ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=5 $CENTRAL_AUTH_SERVICE_IP echo ok 2>&1)
+      if [ "$check_ssh_to_central_auth" = ok ]; then
+        echo -e "${yellow}Copying certs from $CENTRAL_AUTH_SERVICE_IP:$CERTS_FOLDER to $HOME/installer/${normal}"
+        scp -r $CENTRAL_AUTH_SERVICE_IP:$CERTS_FOLDER $HOME/installer/
+        return
+      fi
+    done
+
+    if [ ! "$check_ssh_to_central_auth" = ok ]; then
       echo -e "${red}No ssh access to $CENTRAL_AUTH_SERVICE_IP - ERROR${normal}"
       exit 1
     fi
+
   fi
   cd $INIT_INSTALLER_FOLDER
   echo "list of certs in $INIT_INSTALLER_FOLDER/certs folder"

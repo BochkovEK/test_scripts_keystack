@@ -18,7 +18,7 @@ openstack_utils=$utils_dir/openstack
 #check_openrc_script="check_openrc.sh"
 get_active_vms_ips_list_script="get_active_vms_ips_list.sh"
 
-[[ -z $KEY_NAME ]] && KEY_NAME="key_test.pem"
+[[ -z $KEY_PATH ]] && KEY_PATH="$script_dir/key_test.pem"
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $HYPERVISOR_NAME ]] && HYPERVISOR_NAME=""
 [[ -z $ONLY_PING ]] && ONLY_PING="false"
@@ -40,7 +40,7 @@ while [ -n "$1" ]; do
       -hv           <hypervisor_name>
       -u, -user     <user_name_on_VM_OS>
       -c, command   <command_on_VM>
-      -k, -key      <key_pair_private_part_file>
+      -k, -key      <key_pair_private_part_file_path>
       -ping         only ping check
       -p, project   <project_name>
       -dont_ask     all actions will be performed automatically (without value)
@@ -59,8 +59,8 @@ while [ -n "$1" ]; do
     -c|-command) COMMAND_STR="$2"
       echo "Found the -command option, with parameter value $COMMAND_STR"
       shift ;;
-    -k|-key) KEY_NAME="$2"
-	    echo "Found the -key option, with parameter value $KEY_NAME"
+    -k|-key) KEY_PATH="$2"
+	    echo "Found the -key option, with parameter value $KEY_PATH"
       shift ;;
     -p|-project) PROJECT="$2"
       echo "Found the -project option, with parameter value $PROJECT"
@@ -92,7 +92,7 @@ batch_run_command() {
 #    echo -E "
 #Start check VMs with parameters:
 #  Hypervisor:   $HYPERVISOR_NAME
-#  Key:          $KEY_NAME
+#  Key:          $KEY_PATH
 #  User name:    $VM_USER
 #  Command:      $COMMAND_STR
 #  Only ping:    $ONLY_PING
@@ -130,7 +130,10 @@ batch_run_command() {
   fi
   at_least_one_vm_is_not_avail="false"
    "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]: VMs_IPs: $VMs_IPs
+  [DEBUG]:
+    VMs_IPs: $VMs_IPs
+    KEY_PATH: $KEY_PATH
+
   "
   for IP in $VMs_IPs; do
 #    FIRST_IP=$(echo "${raw_string_ip%%,*}")
@@ -139,16 +142,16 @@ batch_run_command() {
     if ping -c 2 $IP &> /dev/null; then
       echo -e "${green}There is a connection with $IP - success${normal}"
       if [ "$ONLY_PING" = "false" ]; then
-        ssh_conn=$(ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=5 -q -i $script_dir/$KEY_NAME $VM_USER@$IP echo ok 2>&1)
+        ssh_conn=$(ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=5 -q -i $KEY_PATH $VM_USER@$IP echo ok 2>&1)
         if [ "$ssh_conn" = "ok" ]; then
           echo -e "${green}There is a SSH connection with $IP - success${normal}"
         else
-          echo $ssh_conn
+          echo "ssh_conn: $ssh_conn"
           echo -e "${red}No SSH connection with $IP - error!${normal}"
           at_least_one_vm_is_not_avail="true"
         fi
         if [ "$ONLY_CHECK" = "false" ]; then
-          ssh -t -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$IP "$COMMAND_STR"
+          ssh -t -o StrictHostKeyChecking=no -i $KEY_PATH $VM_USER@$IP "$COMMAND_STR"
         fi
       fi
     else

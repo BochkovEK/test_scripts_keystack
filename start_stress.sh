@@ -19,7 +19,7 @@ check_openstack_cli_script="check_openstack_cli.sh"
 #check_openrc_script="check_openrc.sh"
 
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
-[[ -z $KEY_NAME ]] && KEY_NAME="key_test.pem"
+[[ -z $KEY_PATH ]] && KEY_PATH="$script_dir/key_test.pem"
 [[ -z $HYPERVISOR_NAME ]] && HYPERVISOR_NAME=""
 [[ -z $CPUS ]] && CPUS="2"
 [[ -z $RAM ]] && RAM="4"
@@ -36,8 +36,6 @@ check_openstack_cli_script="check_openstack_cli.sh"
 while [ -n "$1" ]; do
   case "$1" in
     --help) echo -E "
-    !!! WARNING: Before running the script, make sure the VM is available:
-       bash ~/test_scripts_keystack/check_vm.sh --help
     !!! WARNING: Cirros OS doesn't work with binary ./stress
 
       -hv               <hypervisor_name> (WARNING: doesn't work with version openstack cli 6.2.0)
@@ -70,8 +68,8 @@ while [ -n "$1" ]; do
     -units) UNITS="$2"
       echo "Found the -units option with parameter value $UNITS"
       shift;;
-    -key) KEY_NAME="$2"
-      echo "Found the -key option, with parameter value key name: $KEY_NAME"
+    -key) KEY_PATH="$2"
+      echo "Found the -key option, with parameter value : $KEY_PATH"
       shift;;
     -p|-project) PROJECT="$2"
       echo "Found the -project option, with parameter value $PROJECT"
@@ -107,7 +105,7 @@ copy_and_stress() {
 #  sleep 1
 #  if ping -c 2 $VM_IP &> /dev/null; then
 #    printf "%40s\n" "${green}There is a connection with $VM_IP - success${normal}"
-#    ssh -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$VM_IP "echo 2>&1"
+#    ssh -o StrictHostKeyChecking=no -i $script_dir/$KEY_PATH $VM_USER@$VM_IP "echo 2>&1"
 #    test $? -eq 0 && printf "%40s\n" "${green}There is a SSH connection with $VM_IP - success${normal}" || \
 #    { printf "%40s\n" "${red}No SSH connection with $VM_IP - error!${normal}"; exit 1; }
 #  else
@@ -117,26 +115,36 @@ copy_and_stress() {
 #  fi
 
   echo "Copy stress to $VM_IP..."
-  scp -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $script_dir/stress $VM_USER@$VM_IP:~
-  ssh -t -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$VM_IP "chmod +x ~/stress"
+  scp -o StrictHostKeyChecking=no -i $KEY_PATH $script_dir/stress $VM_USER@$VM_IP:~
+  ssh -t -o StrictHostKeyChecking=no -i $KEY_PATH $VM_USER@$VM_IP "chmod +x ~/stress"
 
   case $TYPE_TEST in
     cpu)
       echo "Starting cpu stress on $VM_IP..."
-      ssh -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$VM_IP "nohup ./stress -c $CPUS $time_out_string > /dev/null 2>&1 &"
+      ssh -o StrictHostKeyChecking=no -i $KEY_PATH $VM_USER@$VM_IP "nohup ./stress -c $CPUS $time_out_string > /dev/null 2>&1 &"
       ;;
     ram)
       echo "Starting ram stress on $VM_IP..."
-      ssh -o StrictHostKeyChecking=no -i $script_dir/$KEY_NAME $VM_USER@$VM_IP "nohup ./stress --vm 1 --vm-bytes '$RAM'$UNITS $time_out_string > /dev/null 2>&1 &"
+      ssh -o StrictHostKeyChecking=no -i $KEY_PATH $VM_USER@$VM_IP "nohup ./stress --vm 1 --vm-bytes '$RAM'$UNITS $time_out_string > /dev/null 2>&1 &"
       ;;
   esac
 }
 
 check_vm () {
   if [ -f $script_dir/$check_vm_script ]; then
+  [ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]:
+    HYPERVISOR_NAME: $HYPERVISOR_NAME
+    PROJECT: $PROJECT
+    VMs_IPs: $VMs_IPs
+    VM_USER: $VM_USER
+    KEY_PATH: $KEY_PATH
+"
   export HYPERVISOR_NAME=$HYPERVISOR_NAME
   export PROJECT=$PROJECT
   export VMs_IPs=$VMs_IPs
+  export VM_USER=$VM_USER
+  export KEY_PATH=$KEY_PATH
   export ONLY_CHECK=true
   [ "$TS_DEBUG" = true ] && { debug_string="-v"; }
   if ! bash $script_dir/$check_vm_script $debug_string; then
@@ -149,7 +157,6 @@ fi
 }
 
 get_VMs_IPs () {
-
   if [ -z $VMs_IPs ]; then
     if [ -z $IP_LIST_FILE ]; then
       if [ -z $HYPERVISOR_NAME ]; then
@@ -160,8 +167,9 @@ get_VMs_IPs () {
         host_string="--host $hv"
       fi
   [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]: HYPERVISOR_NAME: $HYPERVISOR_NAME
-  [DEBUG]: PROJECT: $PROJECT
+  [DEBUG]:
+    HYPERVISOR_NAME: $HYPERVISOR_NAME
+    PROJECT: $PROJECT
 "
 #
       export HYPERVISOR_NAME=$HYPERVISOR_NAME
@@ -179,9 +187,10 @@ get_VMs_IPs () {
   fi
 
   [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]: hv: $hv
-  [DEBUG]: host_string: $host_string
-  [DEBUG]: VMs_IPs: $VMs_IPs
+  [DEBUG]:
+    hv: $hv
+    host_string: $host_string
+    VMs_IPs: $VMs_IPs
   "
 
   [[ -z $VMs_IPs ]] && { echo -e "${red}No instance found in the $PROJECT project - ERROR${normal}"; exit 1; }
@@ -217,7 +226,7 @@ batch_run_stress () {
   echo -E "
 Stress test parameters:
     Start stress test on:     $hv
-    Key:                      $KEY_NAME
+    Key:                      $KEY_PATH
     User on VM (SSH):         $VM_USER
     Stress test type:         $TYPE_TEST
     VMs IPs list file:        $IP_LIST_FILE

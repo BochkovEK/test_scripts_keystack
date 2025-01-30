@@ -11,13 +11,29 @@
 
 #nc -vzu <IP> 53
 
-script_dir=$(dirname $0)
+script=$(realpath "$0")
+script_dir=$(dirname "$script")
+#script_dir=$(dirname $0)
+#echo $script_dir
 script_name=$(basename "$0")
+dir=$script_dir
+test_scripts_keystack_dir="$(dirname "$dir")"
+#test_scripts_keystack_dir=$(builtin cd $script_dir; pwd)
+#echo $test_scripts_keystack_dir
+inventory_to_hosts_script="inventory_to_hosts.sh"
+#utils_dir=$test_scripts_keystack_dir/utils
+internal_prefix="int"
+external_prefix="ext"
+region_name="ebochkov"
+domain_name="test.domain"
+#parse_inventory_script="parse_inventory.py"
+#inventory_file_name="dns_ip_mapping.txt"
 nodes_to_find='\-ctrl\-..( |$)|\-comp\-..( |$)|\-net\-..( |$)|\-lcm\-..( |$)'
 add_string="# ------ ADD strings ------"
 ldap_string="# ------ LDAP SERVER ------"
 ldap_server="10.224.133.139 ldaps-lab.slavchenkov-keystack.vm.lab.itkey.com"
 dns_ip_mapping_file_name=dns_ip_mapping.txt
+#output_file_name="hosts_add_strings"
 #parses_file=$script_dir/dns_ip_mapping.txt
 parses_file=/etc/hosts
 
@@ -29,11 +45,14 @@ violet=$(tput setaf 5)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
 
+[[ -z $DONT_ASK ]] && DONT_ASK="false"
 [[ -z $DOMAIN ]] && DOMAIN=""
 [[ -z $DNS_SERVER_IP ]] && DNS_SERVER_IP=""
 [[ -z $CONF_NAME ]] && CONF_NAME="dnsmasq.conf"
 [[ -z $HOST_EXIST ]] && HOST_EXIST="false"
-[[ -z $DNS_IP_MAPPING_FILE ]] && DNS_IP_MAPPING_FILE=$script_dir/$dns_ip_mapping_file_name
+[[ -z $DNS_IP_MAPPING_FILE ]] && DNS_IP_MAPPING_FILE=$test_scripts_keystack_dir/$dns_ip_mapping_file_name
+[[ -z $INVENTORY_PATH ]] && INVENTORY_PATH=""
+#[[ -z $OUTPUT_FILE ]] && OUTPUT_FILE=$dns_ip_mapping_file_name
 
 #The script parses dns_ip_mapping.txt to find IPs for \$nodes_to_find and
  #          add DNS IP to /etc/resolv.conf all of them
@@ -41,10 +60,22 @@ yellow=$(tput setaf 3)
 while [ -n "$1" ]
 do
     case "$1" in
+        -da|-dont_ask) DONT_ASK="true"
+          echo "Found the -dont_ask option, with parameter value $DONT_ASK"
+          ;;
         -host_exist) HOST_EXIST="true"
+          echo "Found the -host_exist option, with parameter value $HOST_EXIST"
           ;;
         -dns_ip_mapping_file) DNS_IP_MAPPING_FILE=$2
           echo "Found the -dns_ip_mapping_file option, with parameter value $DNS_IP_MAPPING_FILE"
+#          if [[ -z $INVENTORY_PATH ]]; then
+#            DNS_IP_MAPPING_FILE=$2
+#          fi
+          shift
+          ;;
+        -i|-inventory) INVENTORY_PATH=$2
+#          DNS_IP_MAPPING_FILE=$INVENTORY_PATH
+          echo "Found the -inventory option, with parameter value $INVENTORY_PATH"
           shift
           ;;
         --help) echo -E "
@@ -66,7 +97,7 @@ cat <<-EOF > ~/test_scripts_keystack/dnsmasq/dns_ip_mapping.txt
 EOF
 
         2) permissionless access to all stand nodes is required
-          The script parses the $dns_ip_mapping_file file for the presence of the following pattern:
+          The script parses the $dns_ip_mapping_file_name file for the presence of the following pattern:
            $nodes_to_find
            and edits /etc/resolv.conf on all of them
         3)
@@ -76,8 +107,17 @@ EOF
         Note:
         Every time /etc/dnsmasq.conf and /etc/hosts are changed, restart the service 'systemctl restart dnsmasq'
 
+        -dont_ask, -da                                    silent deploy (without parameter)
         -host_exist                                       if 'hosts' file already edited (without parameter)
         -dns_ip_mapping_file  <dns_ip_mapping_file_path>  path to dns ip mapping file like 'hosts'
+        -inventory, -i        <inventory_from_vms_stage>  path to inventory file for generate hosts string by inventory
+
+        usefully command on DNS:
+          systemctl restart dnsmasq
+          systemctl status dnsmasq
+
+        edit DNS conf
+          vi /etc/dnsmasq.conf
         "
           exit 0
           break ;;
@@ -90,13 +130,23 @@ done
 
 get_var () {
   echo "Get vars..."
-  # get DOAMIN
-  if [[ -z "${DOAMIN}" ]]; then
-    read -rp "Enter domain name [test.domain]: " DOMAIN
+  if [ "$DONT_ASK" = false ]; then
+    if [[ -z "${DNS_IP_MAPPING_FILE}" ]]; then
+      read -rp "Enter dns ip mapping file [$DNS_IP_MAPPING_FILE]: " DNS_IP_MAPPING_FILE
+    fi
+    if [[ -z "${DOMAIN}" ]]; then
+      read -rp "Enter domain name for KeyStack region [$domain_name]: " DOMAIN
+    fi
+    if [[ -z "${REGION}" ]]; then
+      read -rp "Enter region name KeyStack cloud [$region_name]: " REGION
+    fi
+    if [[ -z "${INT_PREF}" ]]; then
+      read -rp "Enter internal prefix for FQDN [$internal_prefix]: " INT_PREF
+    fi
+    if [[ -z "${EXT_PREF}" ]]; then
+      read -rp "Enter external prefix for FQDN [$external_prefix]: " EXT_PREF
+    fi
   fi
-  export DOMAIN=${DOMAIN:-"test.domain"}
-
-
 
   # get DNS_SERVER_IP
   dns_mgmt_ip=$(ip a|grep mgmt|grep inet|grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/[0-9]{1,3}' \
@@ -118,7 +168,11 @@ get_var () {
 
   echo -e "\n${yellow}vars:${normal}"
   echo DOMAIN: $DOMAIN
+  echo REGION: $REGION
+  echo INT_PREF: $INT_PREF
+  echo EXT_PREF: $EXT_PREF
   echo DNS_SERVER_IP: $DNS_SERVER_IP
+  echo DNS_IP_MAPPING_FILE: $DNS_IP_MAPPING_FILE
   echo
 }
 
@@ -160,6 +214,8 @@ install_dnsmasq () {
     if [ -n "$is_sberlinux" ]; then
       echo "Installing dnsmasq on sberlinux"
       sudo yum in -y dnsmasq
+      firewall-cmd --add-port=53/udp
+      firewall-cmd --add-port=53/tcp
     fi
     systemctl enable dnsmasq --now
   fi
@@ -176,7 +232,7 @@ copy_dnsmasq_conf () {
       cp "$script_dir"/hosts_backup $parses_file
     fi
     echo "$add_string" >> $parses_file
-    cat "$script_dir"/$dns_ip_mapping_file >> $parses_file
+    cat $DNS_IP_MAPPING_FILE >> $parses_file
 #    echo "Hosts file: "
 #    cat $parses_file
   fi
@@ -204,6 +260,25 @@ copy_dnsmasq_conf () {
 }
 
 if [ "$HOST_EXIST" = false ]; then
+  if [[ -n $INVENTORY_PATH ]]; then
+    if [ ! -f $INVENTORY_PATH ]; then
+      echo -e "${yellow}$INVENTORY_PATH file not found - WARNING${normal}"
+      echo -e "${red}The script cannot be executed - ERROR${normal}"
+      exit 1
+    else
+      export INVENTORY_PATH=$INVENTORY_PATH
+      export OUTPUT_FILE=${OUTPUT_FILE:-$DNS_IP_MAPPING_FILE}
+      export DOMAIN=${DOMAIN:-$domain_name}
+      export REGION=${REGION:-$region_name}
+      export INT_PREF=${INT_PREF:-$internal_prefix}
+      export EXT_PREF=${EXT_PREF:-$external_prefix}
+      echo "Start $test_scripts_keystack_dir/$inventory_to_hosts_script ..."
+      if ! bash $test_scripts_keystack_dir/$inventory_to_hosts_script; then
+        echo -e "${red}Could not parse inventory - ERROR${normal}"
+        exit 1
+      fi
+    fi
+  fi
   if [ ! -f $DNS_IP_MAPPING_FILE ]; then
     echo -e "${yellow}$DNS_IP_MAPPING_FILE file not found - WARNING${normal}"
     echo -e "Create it,
@@ -221,13 +296,12 @@ echo -e "\n${yellow}Cat conf...${normal}"
 echo
 cat $script_dir/$CONF_NAME
 echo
-echo -e "\n${yellow}Cat $dns_ip_mapping_file...${normal}"
+echo -e "\n${yellow}Cat $DNS_IP_MAPPING_FILE...${normal}"
 echo
 if [ "$HOST_EXIST" = false ]; then
-  cat $script_dir/$dns_ip_mapping_file
+  cat $DNS_IP_MAPPING_FILE
 fi
 echo
 read -p "Press enter to continue: "
 install_dnsmasq
 copy_dnsmasq_conf
-

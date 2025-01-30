@@ -81,7 +81,7 @@ while [ -n "$1" ]; do
     -t                          <time_out_between_VM_create>
     -dont_check_osc             disable check openstack cli (without parameter)
     -dont_check                 disable resource availability checks (without value)
-    -dont_ask                   all actions will be performed automatically (without value)
+    -da,          -dont_ask     all actions will be performed automatically (without value)
     -add                        <add command key>
                                 Examples:
                                   -add \"--availability-zone \$az_name\"
@@ -144,7 +144,7 @@ while [ -n "$1" ]; do
     -dont_check) DONT_CHECK="true"
       echo "Found the -dont_check. Resource availability checks are disabled"
       ;;
-    -dont_ask) DONT_ASK=true
+    -da|-dont_ask) DONT_ASK=true
       echo "Found the -dont_ask. All actions will be performed automatically"
       ;;
     -b|-batch) batch=true
@@ -602,7 +602,8 @@ check_image () {
   elif [ -z "$IMAGE_NAME_EXIST" ] && [ -n "$is_cirros" ]; then
     printf "%s\n" "${orange}Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
     if [ -z "$(image_exists_in_openstack $CIRROS_IMAGE_NAME)" ]; then
-      create_image $CIRROS_IMAGE_NAME
+#      create_image $CIRROS_IMAGE_NAME
+      create_image $IMAGE
     else
       echo "But image: $CIRROS_IMAGE_NAME exists in project: $PROJECT"
       [[ ! $DONT_ASK = "true" ]] && read -p "Press enter to use this image and continue: "
