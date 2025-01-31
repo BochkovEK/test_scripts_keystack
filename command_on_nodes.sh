@@ -198,8 +198,10 @@ check_ping () {
 #    NODES+=("$1")
     sleep 1
   else
-    connection_problem="true"
     printf "%40s\n" "${red}No connection with $1${normal}"
+    connection_problem="true"
+    delete=$1
+    NODES=( "${NODES[@]/$delete}" )
 #    problems_nodes+=("$1")
   fi
 
