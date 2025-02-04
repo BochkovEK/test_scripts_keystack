@@ -111,6 +111,13 @@ done
 #    [[ -z "$check_openrc_file" ]] && { echo "openrc file not found in $OPENRC_PATH"; exit 1; }
 #}
 
+#debug echo
+debug_echo () {
+  echo -e "
+  [DEBUG]:
+    $1"
+}
+
 # Check openrc file
 check_and_source_openrc_file () {
   echo -e "${violet}Check openrc file...${normal}"
