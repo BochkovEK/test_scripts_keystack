@@ -175,9 +175,9 @@ push_conf () {
   ctrl_nodes=$(echo "$nova_state_list" | grep -E "nova-scheduler" | awk '{print $6}')
 #  ctrl_nodes=$(cat /etc/hosts | grep -E ${ctrl_pattern} | awk '{print $1}')
   [ "$DEBUG" = true ] && { for string in $ctrl_nodes; do debug_echo $string; done; }
-  if ! bash $utils_dir/$install_package_script host; then
-    exit 1
-  fi
+#  if ! bash $utils_dir/$install_package_script host; then
+#    exit 1
+#  fi
 
 #  "bind_address": "10.224.132.178",
 
