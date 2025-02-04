@@ -69,7 +69,7 @@ while [ -n "$1" ]; do
       -nt,  -type_of_nodes  <type_of_nodes> 'ctrl', 'comp', 'net'
       -nn,  -node_name      <node_name\ip> example: -nn \"ebochkov-keystack-comp-01 ebochkov-keystack-comp-02\"
       -p,   -ping           ping before execution command
-      -debug               debug mode
+      -debug                debug mode
       Remove all containers on all nodes:
         bash command_on_nodes.sh -c 'docker stop $(docker ps -a -q)'
         bash command_on_nodes.sh -c 'docker system prune -af'
