@@ -287,11 +287,11 @@ VMs will be created with the following parameters:
     OPENRC file path:                 $OPENRC_PATH
     VM base name:                     $VM_BASE_NAME
     Number of VMs:                    $VM_QTY
-    Project:                          $PROJECT
     Image name:                       $IMAGE
     Flavor name:                      $FLAVOR
     Security group 1:                 $SECURITY_GR: $SECURITY_GR_ID
     Key name:                         $key_name_init_param
+    Project:                          $PROJECT
     User:                             $TEST_USER
     User role:                        $ROLE
     Hypervisor name:                  $HYPERVISOR_HOSTNAME
