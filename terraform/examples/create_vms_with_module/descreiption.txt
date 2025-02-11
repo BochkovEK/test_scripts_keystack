@@ -1,0 +1,56 @@
+Create VMs by json like this:
+------------
+# VMs
+VMs = {
+  TEST_DRS = {
+#    image_name      = "ubuntu-20.04-server-cloudimg-amd64.img"
+    image_name      = "cirros-0.6.2-x86_64-disk.img"
+    az_hint         = "foo_az:ebochkov-ks-sber-comp-02"
+    flavor          = {
+        vcpus = 2
+        ram   = 2048
+    }
+    vm_qty          = 3
+  }
+    TEST_DRS_2 = {
+    image_name      = "ubuntu-20.04-server-cloudimg-amd64.img"
+    flavor          = {
+        vcpus = 2
+        ram   = 2048
+    }
+    keypair_name = "key_test"
+    vm_qty          = 3
+  }
+}
+
+# AZs
+AZs = {
+ foo = {
+    az_name = "foo_az"
+    hosts_list = [
+      "ebochkov-keystack-comp-01",
+      "ebochkov-keystack-comp-02",
+    ]
+  }
+}
+
+server_groups = {}
+------------
+
+------------
+------------
+
+variable list:
+- image_name
+- flavor
+    flavor          = {
+        vcpus = 2
+        ram   = 3072
+    }
+- flavor_name
+- keypair_name
+- security_groups
+- az_hint
+- network_name
+- boot_volume_size, var.default_boot_volume_size)
+- disks
