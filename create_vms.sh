@@ -347,6 +347,11 @@ check_hv () {
 # Check project
 check_project () {
   echo "Check for exist project: \"$PROJECT\""
+  ADMIN_PROJECT_ID=$(openstack project list| grep -E -m 1 "\sadmin\s"| awk '{print $2}')
+  if [ -z $ADMIN_PROJECT_ID ]; then
+    echo -e "${red}Impossible to determine the project id admin${normal}"
+    exit 1
+  fi
   PROJ_ID=$(openstack project list| grep -E -m 1 "\s$PROJECT\s"| awk '{print $2}')
 #    PROJ_ID=$(openstack project list| grep $PROJECT| awk '{print $2}')
   if [ -z "$PROJ_ID" ]; then
@@ -387,13 +392,15 @@ check_project () {
   else
       printf "%s\n" "${green}Role: \"$ROLE\" exist in project: \"$PROJECT\"${normal}"
   fi
-    [ "$TS_DEBUG" = true ] && echo -e "
+  [ "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]
   PROJ_ID: $PROJ_ID
   PROJECT: $PROJECT
   "
   unset OS_PROJECT_NAME
+  unset OS_PROJECT_ID
   export OS_PROJECT_NAME=$PROJECT
+  export OS_PROJECT_ID=$PROJ_ID
   export OS_USERNAME=$TEST_USER
 }
 
@@ -852,4 +859,5 @@ check_and_source_openrc_file
   create_vms
 #fi
 export OS_PROJECT_NAME='admin'
+export OS_PROJECT_ID=$ADMIN_PROJECT_ID
 
