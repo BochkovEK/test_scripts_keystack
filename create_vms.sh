@@ -662,10 +662,12 @@ check_and_add_flavor () {
       read -p "Press enter to continue: ";
       }
 
-    echo "Creating flavor \"$FLAVOR\" in project \"$PROJECT\" with $CPU_QTY cpus and $RAM_MB Mb...";
-    openstack flavor create --private --project $PROJECT --vcpus $CPU_QTY --ram $RAM_MB --disk 0 ${FLAVOR}_${PROJECT}
+#    echo "Creating flavor \"$FLAVOR\" in project \"$PROJECT\" with $CPU_QTY cpus and $RAM_MB Mb...";
+    echo "Creating flavor \"$FLAVOR\" with $CPU_QTY cpus and $RAM_MB Mb...";
+    openstack flavor create --public --vcpus $CPU_QTY --ram $RAM_MB --disk 0 ${FLAVOR}_${PROJECT}
   else
-    printf "%s\n" "${green}Flavor \"$FLAVOR\" already exist in project: \"$PROJECT\"${normal}"
+#    printf "%s\n" "${green}Flavor \"$FLAVOR\" already exist in project: \"$PROJECT\"${normal}"
+    printf "%s\n" "${green}Flavor \"$FLAVOR\" already exist${normal}"
     #openstack security group show $SECURITY_GR_ID
   fi
 }
