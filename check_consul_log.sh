@@ -145,45 +145,47 @@ echo -e "Output period check: $OUTPUT_PERIOD sec"
 
 while :
 do
-  is_log_new="false"
+#  is_log_new="false"
 #  first_or_leader_contr_node="true"
-  if [ -z "$log_old" ]; then
-    log_old="foo bar baz"
-  else
-    log_old=$log_new
-  fi
+#  if [ -z "$log_old" ]; then
+#    log_old="foo bar baz"
+#  else
+#    log_old=$log_new
+#  fi
   for ctrl in $NODE_NAME; do
     echo -e "${cyan}Check logs on $ctrl...${normal}"
     if [ -n "${leader_ctrl_node}" ]; then
 #      first_or_leader_contr_node="false"
-      log_new=$(ssh -o StrictHostKeyChecking=no "$ctrl" tail -n $LOG_LAST_LINES_NUMBER /var/log/kolla/autoevacuate.log)
-      for i in {1..3};do
-        a=1
-        b=1
-        for word_1 in $log_new; do
-          if (( $a == $i )); then
-            for word_2 in $log_old; do
-              if (( $b == $a )); then
-                if [ ! "$word_1" = "$word_2" ]; then
-                  is_log_new="true"
-                fi
-                break
-              fi
-              b=$(( $b + 1 ))
-            done
-            #echo $word_1
-            break
-          fi
-          a=$(( $a + 1 ))
-        done
-      done
-    fi
 
-    if [ -n "${leader_ctrl_node}" ] && [ "${is_log_new}" = "false" ]; then
-      echo -e "${yallow}consul log update not updated${normal}";
-      echo -e "\tpossible reasons:\n\t- the leader of the consul cluster has changed\n\t- the state commit cycle is not completed"
-    else
-      ssh -o StrictHostKeyChecking=no "$ctrl" tail -n $LOG_LAST_LINES_NUMBER /var/log/kolla/autoevacuate.log | \
+#      log_new=$(ssh -o StrictHostKeyChecking=no "$ctrl" tail -n $LOG_LAST_LINES_NUMBER /var/log/kolla/autoevacuate.log)
+#      for i in {1..3};do
+#        a=1
+#        b=1
+#        for word_1 in $log_new; do
+#          if (( $a == $i )); then
+#            for word_2 in $log_old; do
+#              if (( $b == $a )); then
+#                if [ ! "$word_1" = "$word_2" ]; then
+#                  is_log_new="true"
+#                fi
+#                break
+#              fi
+#              b=$(( $b + 1 ))
+#            done
+#            #echo $word_1
+#            break
+#          fi
+#          a=$(( $a + 1 ))
+#        done
+#      done
+#    fi
+#
+#    if [ -n "${leader_ctrl_node}" ] && [ "${is_log_new}" = "false" ]; then
+#      echo -e "${yallow}consul log update not updated${normal}";
+#      echo -e "\tpossible reasons:\n\t- the leader of the consul cluster has changed\n\t- the state commit cycle is not completed"
+#    else
+#      ssh -o StrictHostKeyChecking=no "$ctrl" tail -n $LOG_LAST_LINES_NUMBER /var/log/kolla/autoevacuate.log | \
+      ssh -o StrictHostKeyChecking=no "$ctrl" tail -f /var/log/kolla/autoevacuate.log | \
         sed --unbuffered \
         -e 's/\(.*Force off.*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*Server.*\)/\o033[33m\1\o033[39m/' \
