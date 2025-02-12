@@ -387,6 +387,12 @@ check_project () {
   else
       printf "%s\n" "${green}Role: \"$ROLE\" exist in project: \"$PROJECT\"${normal}"
   fi
+    [ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]
+  PROJ_ID: $PROJ_ID
+  PROJECT: $PROJECT
+  "
+  unset OS_PROJECT_NAME
   export OS_PROJECT_NAME=$PROJECT
   export OS_USERNAME=$TEST_USER
 }
@@ -770,6 +776,8 @@ create_vms () {
   SECURITY_GR_ID: $SECURITY_GR_ID
   key_string: $key_string
   host: $host
+  PROJECT: $PROJECT
+  PROJ_ID: $PROJ_ID
   API_VERSION: $API_VERSION
   NETWORK: $NETWORK
   VOLUME_SIZE: $VOLUME_SIZE
