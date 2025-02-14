@@ -1,7 +1,6 @@
 [VMs with volumes by index]
-May by exist in create_vms_with_module
-
-??? Create volume by cycle in volume count?
+This example includes only one main.tf config and does not accept any variables.
+For flexible resource creation, it is recommended to use ~test_scripts_keystack/terraform/examples/create_vms_with_module/
 
 This set of configs for terraform creates:
     - VM
