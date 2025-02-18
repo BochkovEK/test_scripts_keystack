@@ -138,15 +138,6 @@ check_cloud_config () {
   fi
 }
 
-
-install_terraform
-export OPENRC_PATH=$OPENRC_PATH
-if ! bash $utils_dir/check_openrc.sh; then
-  exit 1
-else
-  source $OPENRC_PATH
-fi
-
 # Сheck openstack cli
 Check_openstack_cli () {
   if [[ $CHECK_OPENSTACK = "true" ]]; then
@@ -156,6 +147,18 @@ Check_openstack_cli () {
     fi
   fi
 }
+
+
+install_terraform
+export OPENRC_PATH=$OPENRC_PATH
+if ! bash $utils_dir/check_openrc.sh; then
+  exit 1
+else
+  source $OPENRC_PATH
+fi
+
+
+check_openstack_cli
 
 [ "$TS_DEBUG" = true ] && echo -e "
   [TS_DEBUG]
@@ -176,15 +179,12 @@ Check_openstack_cli () {
 
 check_cloud_config
 
-check_openstack_cli
-
 # Create images
 for image_name in "${images_list[@]}"; do
   if ! bash $utils_dir/openstack/create_image.sh $image_name; then
     exit 1
   fi
 done
-
 
 # Create images from public repo
 for image_name in "${public_images_list[@]}"; do
