@@ -113,6 +113,11 @@ get_nodes_list () {
 #  "
   #check error
   for word in "${NODES[@]}"; do
+    [ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]:
+    word in NODES: $word
+  "
+    echo $word
     if [ "$word" = ERROR! ]; then
       echo -e "${yellow}Node names could not be determined. Try running the script: bash ~/test_scripts_keystack/utils/get_nodes_list.sh -nt all@${normal}"
       echo -e "${red}Node names could not be determined${normal}"
