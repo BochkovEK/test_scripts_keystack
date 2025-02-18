@@ -173,7 +173,11 @@ Check_openstack_cli () {
   OS_AUTH_PLUGIN:           $OS_AUTH_PLUGIN
   OS_DRS_ENDPOINT_OVERRIDE: $OS_DRS_ENDPOINT_OVERRIDE
 "
+
 check_cloud_config
+
+check_openstack_cli
+
 # Create images
 for image_name in "${images_list[@]}"; do
   if ! bash $utils_dir/openstack/create_image.sh $image_name; then
@@ -181,7 +185,6 @@ for image_name in "${images_list[@]}"; do
   fi
 done
 
-check_openstack_cli
 
 # Create images from public repo
 for image_name in "${public_images_list[@]}"; do
