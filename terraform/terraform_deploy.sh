@@ -36,12 +36,14 @@ script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
 utils_dir=$parent_dir/utils
+check_openstack_cli_script="check_openstack_cli.sh"
 examples_dir=$script_dir/examples
 #create_vms_with_module_dir=$script_dir/examples/create_vms_with_module
 
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
 [[ -z $NETWORK ]] && NETWORK=$pub_net_name
 [[ -z $TS_DEBUG ]] && TS_DEBUG="true"
+[[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
 
 
@@ -145,6 +147,16 @@ else
   source $OPENRC_PATH
 fi
 
+# Сheck openstack cli
+Check_openstack_cli () {
+  if [[ $CHECK_OPENSTACK = "true" ]]; then
+    if ! bash $utils_dir/$check_openstack_cli_script; then
+#      echo -e "${red}Failed to check openstack cli - ERROR${normal}"
+      exit 1
+    fi
+  fi
+}
+
 [ "$TS_DEBUG" = true ] && echo -e "
   [TS_DEBUG]
   OS_PROJECT_DOMAIN_NAME:   $OS_PROJECT_DOMAIN_NAME
@@ -168,6 +180,8 @@ for image_name in "${images_list[@]}"; do
     exit 1
   fi
 done
+
+check_openstack_cli
 
 # Create images from public repo
 for image_name in "${public_images_list[@]}"; do
