@@ -109,7 +109,8 @@ fi
 read_conf () {
   bash $script_dir/$command_on_nodes_script_name -nt $1 -c "ls -f $2" |
     sed --unbuffered \
-    -e 's/\(.*No such file or directory.*\)/\o033[31m\1 \o033[39m/'
+      -e 's/\(.*No such file or directory.*\)/\o033[31m\1\o033[39m/'
+#    -e 's/\(.*No such file or directory.*\)/\o033[31m\1 \o033[39m/'
 #     - [ok: castellan group exists]\o033[39m/'
 #      -e 's/\(.*No such file or directory.*\)/\o033[31m\1 - [ok: config not requirement]\o033[39m/'
       #ok\o033[39m/'
