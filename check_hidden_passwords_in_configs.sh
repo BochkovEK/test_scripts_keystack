@@ -111,7 +111,7 @@ read_conf () {
     sed --unbuffered \
       -e 's/\(.*\No such file or directory.*\)/\o033[31m\1 - ok\o033[39m/'
   if [ "$3" = castellan ]; then
-    bash $script_dir/$command_on_nodes_script_name -nt $1 -c "cat $2 | grep -E 'db_uri|password|\[castellan_configsource\]'| \
+    bash $script_dir/$command_on_nodes_script_name -nt $1 -c "cat $2 | grep -E 'db_uri|password|_pass|\[castellan_configsource\]'| \
       sed --unbuffered \
         -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - [ok: castellan group exists]\o033[39m/'\
         -e 's/\(.*password.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
