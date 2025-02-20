@@ -291,6 +291,7 @@ VMs will be created with the following parameters:
     Flavor name:                      $FLAVOR
     Security group 1:                 $SECURITY_GR: $SECURITY_GR_ID
     Key name:                         $key_name_init_param
+    Project:                          $PROJECT
     User:                             $TEST_USER
     User role:                        $ROLE
     Hypervisor name:                  $HYPERVISOR_HOSTNAME
@@ -346,6 +347,11 @@ check_hv () {
 # Check project
 check_project () {
   echo "Check for exist project: \"$PROJECT\""
+  ADMIN_PROJECT_ID=$(openstack project list| grep -E -m 1 "\sadmin\s"| awk '{print $2}')
+  if [ -z $ADMIN_PROJECT_ID ]; then
+    echo -e "${red}Impossible to determine the project id admin${normal}"
+    exit 1
+  fi
   PROJ_ID=$(openstack project list| grep -E -m 1 "\s$PROJECT\s"| awk '{print $2}')
 #    PROJ_ID=$(openstack project list| grep $PROJECT| awk '{print $2}')
   if [ -z "$PROJ_ID" ]; then
@@ -386,7 +392,15 @@ check_project () {
   else
       printf "%s\n" "${green}Role: \"$ROLE\" exist in project: \"$PROJECT\"${normal}"
   fi
+  [ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]
+  PROJ_ID: $PROJ_ID
+  PROJECT: $PROJECT
+  "
+  unset OS_PROJECT_NAME
+  unset OS_PROJECT_ID
   export OS_PROJECT_NAME=$PROJECT
+  export OS_PROJECT_ID=$PROJ_ID
   export OS_USERNAME=$TEST_USER
 }
 
@@ -648,10 +662,12 @@ check_and_add_flavor () {
       read -p "Press enter to continue: ";
       }
 
-    echo "Creating flavor \"$FLAVOR\" in project \"$PROJECT\" with $CPU_QTY cpus and $RAM_MB Mb...";
-    openstack flavor create --private --project $PROJECT --vcpus $CPU_QTY --ram $RAM_MB --disk 0 ${FLAVOR}_${PROJECT}
+#    echo "Creating flavor \"$FLAVOR\" in project \"$PROJECT\" with $CPU_QTY cpus and $RAM_MB Mb...";
+    echo "Creating flavor \"$FLAVOR\" with $CPU_QTY cpus and $RAM_MB Mb...";
+    openstack flavor create --public --vcpus $CPU_QTY --ram $RAM_MB --disk 0 ${FLAVOR}_${PROJECT}
   else
-    printf "%s\n" "${green}Flavor \"$FLAVOR\" already exist in project: \"$PROJECT\"${normal}"
+#    printf "%s\n" "${green}Flavor \"$FLAVOR\" already exist in project: \"$PROJECT\"${normal}"
+    printf "%s\n" "${green}Flavor \"$FLAVOR\" already exist${normal}"
     #openstack security group show $SECURITY_GR_ID
   fi
 }
@@ -769,6 +785,8 @@ create_vms () {
   SECURITY_GR_ID: $SECURITY_GR_ID
   key_string: $key_string
   host: $host
+  PROJECT: $PROJECT
+  PROJ_ID: $PROJ_ID
   API_VERSION: $API_VERSION
   NETWORK: $NETWORK
   VOLUME_SIZE: $VOLUME_SIZE
@@ -843,4 +861,5 @@ check_and_source_openrc_file
   create_vms
 #fi
 export OS_PROJECT_NAME='admin'
+export OS_PROJECT_ID=$ADMIN_PROJECT_ID
 

@@ -111,6 +111,13 @@ done
 #    [[ -z "$check_openrc_file" ]] && { echo "openrc file not found in $OPENRC_PATH"; exit 1; }
 #}
 
+#debug echo
+debug_echo () {
+  echo -e "
+  [DEBUG]:
+    $1"
+}
+
 # Check openrc file
 check_and_source_openrc_file () {
   echo -e "${violet}Check openrc file...${normal}"
@@ -168,22 +175,28 @@ push_conf () {
   ctrl_nodes=$(echo "$nova_state_list" | grep -E "nova-scheduler" | awk '{print $6}')
 #  ctrl_nodes=$(cat /etc/hosts | grep -E ${ctrl_pattern} | awk '{print $1}')
   [ "$DEBUG" = true ] && { for string in $ctrl_nodes; do debug_echo $string; done; }
-  if ! bash $utils_dir/$install_package_script host; then
-    exit 1
-  fi
+#  if ! bash $utils_dir/$install_package_script host; then
+#    exit 1
+#  fi
 
 #  "bind_address": "10.224.132.178",
 
   for node in $ctrl_nodes; do
-    ip=$(host $node|grep -m 1 $node|awk '{print $4}')
-    [ "$DEBUG" = true ] && { debug_echo $ip; }
-    echo "\"bind_address\": \"$ip\" on $CONF_NAME"
-    sed -i --regexp-extended "s/\"bind_address\"(\s+|):\s+\"[0-9]+.[0-9]+.[0-9]+.[0-9]+\"\,/\"bind_address\": \"$ip\",/" \
-      $script_dir/$test_node_conf_dir/$CONF_NAME
-    sed -i --regexp-extended "s/\"bind_address\"(\s+|):\s+\".+\"\,/\"bind_address\": \"$ip\",/" \
-      $script_dir/$test_node_conf_dir/$CONF_NAME
-    echo "Push consul conf to $node:$conf_dir/$CONF_NAME"
-    scp -o StrictHostKeyChecking=no $script_dir/$test_node_conf_dir/$CONF_NAME $node:$conf_dir/$CONF_NAME
+#    ip=$(host $node|grep -m 1 $node|awk '{print $4}')
+    ip=$(ping $node -c 1|grep -m 1 -ohE "10\.224\.[0-9]{1,3}\.[0-9]{1,3}")
+    check_ip=$(echo $ip|grep -m 1 -ohE "10\.224\.[0-9]{1,3}\.[0-9]{1,3}")
+    if [ -n "$check_ip" ]; then
+      [ "$DEBUG" = true ] && { debug_echo $ip; echo "\"bind_address\": \"$ip\" on $CONF_NAME"; }
+      sed -i --regexp-extended "s/\"bind_address\"(\s+|):\s+\"[0-9]+.[0-9]+.[0-9]+.[0-9]+\"\,/\"bind_address\": \"$ip\",/" \
+        $script_dir/$test_node_conf_dir/$CONF_NAME
+      sed -i --regexp-extended "s/\"bind_address\"(\s+|):\s+\".+\"\,/\"bind_address\": \"$ip\",/" \
+        $script_dir/$test_node_conf_dir/$CONF_NAME
+      echo "Push consul conf to $node:$conf_dir/$CONF_NAME"
+      scp -o StrictHostKeyChecking=no $script_dir/$test_node_conf_dir/$CONF_NAME $node:$conf_dir/$CONF_NAME
+    else
+      echo -e "${red}ip could not be define from hostname: $node - ERROR${normal}"
+      exit 1
+    fi
   done
 }
 

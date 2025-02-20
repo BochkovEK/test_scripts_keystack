@@ -36,12 +36,14 @@ script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
 utils_dir=$parent_dir/utils
+check_openstack_cli_script="check_openstack_cli.sh"
 examples_dir=$script_dir/examples
 #create_vms_with_module_dir=$script_dir/examples/create_vms_with_module
 
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
 [[ -z $NETWORK ]] && NETWORK=$pub_net_name
 [[ -z $TS_DEBUG ]] && TS_DEBUG="true"
+[[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
 
 
@@ -136,6 +138,16 @@ check_cloud_config () {
   fi
 }
 
+# Сheck openstack cli
+check_openstack_cli () {
+  if [[ $CHECK_OPENSTACK = "true" ]]; then
+    if ! bash $utils_dir/$check_openstack_cli_script; then
+#      echo -e "${red}Failed to check openstack cli - ERROR${normal}"
+      exit 1
+    fi
+  fi
+}
+
 
 install_terraform
 export OPENRC_PATH=$OPENRC_PATH
@@ -144,6 +156,9 @@ if ! bash $utils_dir/check_openrc.sh; then
 else
   source $OPENRC_PATH
 fi
+
+
+check_openstack_cli
 
 [ "$TS_DEBUG" = true ] && echo -e "
   [TS_DEBUG]
@@ -161,7 +176,9 @@ fi
   OS_AUTH_PLUGIN:           $OS_AUTH_PLUGIN
   OS_DRS_ENDPOINT_OVERRIDE: $OS_DRS_ENDPOINT_OVERRIDE
 "
+
 check_cloud_config
+
 # Create images
 for image_name in "${images_list[@]}"; do
   if ! bash $utils_dir/openstack/create_image.sh $image_name; then

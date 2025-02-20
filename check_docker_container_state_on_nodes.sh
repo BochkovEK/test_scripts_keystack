@@ -108,11 +108,21 @@ get_nodes_list () {
   [ "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]: \"\$NODES\": ${NODES[*]}
   "
-#  echo -e "
-#  NODES: ${NODES[*]}
-#  "
+  #check error
+  for word in "${NODES[@]}"; do
+    [ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]:
+    word in NODES: $word
+  "
+    error_in_NODES=$(echo $word|grep "ERROR")
+    if [ -n "$error_in_NODES" ]; then
+      echo -e "${yellow}Node names could not be determined. Try running the script: bash ~/test_scripts_keystack/utils/get_nodes_list.sh -nt all${normal}"
+      echo -e "${red}Node names could not be determined - ERROR!${normal}"
+      exit 1
+    fi
+  done
   if [ -z "${NODES[*]}" ]; then
-    echo -e "${red}Failed to determine node list - ERROR${normal}"
+    echo -e "${red}Failed to determine node list - ERROR!${normal}"
     exit 1
   fi
 }
@@ -143,7 +153,11 @@ grep_string="| grep -E \"$UNHEALTHY\\s+$CONTAINER_NAME\""
   "
 
 for host in "${NODES[@]}"; do
-  echo "Check container $CONTAINER_NAME on ${host}"
+  if [ -z $CONTAINER_NAME ]; then
+    echo "Check container on ${host}"
+  else
+    echo "Check container (CONTAINER_NAME: $CONTAINER_NAME) on ${host}"
+  fi
   if ping -c 2 $host &> /dev/null; then
     printf "%40s\n" "There is a connection with $host - ok!"
 
