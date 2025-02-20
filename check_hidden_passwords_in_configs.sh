@@ -115,7 +115,7 @@ read_conf () {
       sed --unbuffered \
         -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - [ok: castellan group exists]\o033[39m/'\
         -e 's/\(.*password.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
-        -e 's/\(.*pass_.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'"
+        -e 's/\(.*_pass.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'"
 #        -e 's/\(.*password:.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
   fi
   if [ "$4" = cat ]; then
@@ -168,7 +168,8 @@ Check_hidden_passwords_in_prometheus_exporters () {
   export DONT_CHECK_CONN=true
   for config in "${prometheus_exporters_config_list[@]}"; do
     echo -E "${violet}Check control config: $config${normal}"
-    read_conf ctrl $config foo cat
+#    read_conf ctrl $config foo cat
+    read_conf ctrl $config castellan
 #    bash $script_dir/$command_on_nodes_script_name -nt ctrl -c "cat $config"
     # | grep 'password'"
   done
