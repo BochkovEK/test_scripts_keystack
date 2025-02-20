@@ -115,7 +115,7 @@ read_conf () {
       sed --unbuffered \
         -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - [ok: castellan group exists]\o033[39m/'\
         -e 's/\(.*password.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
-        -e 's/\(.*_pass.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'; echo -e '\E[32;46m'"
+        -e 's/\(.*_pass.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'; echo -e '\033[0;37m'"
 #        -e 's/\(.*password:.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
   fi
   if [ "$4" = cat ]; then
