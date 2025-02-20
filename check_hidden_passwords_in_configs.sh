@@ -117,6 +117,7 @@ read_conf () {
         -e 's/\(.*password.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
         -e 's/\(.*_pass.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'"
 #        -e 's/\(.*password:.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
+    echo -e "${normal}"
   fi
   if [ "$4" = cat ]; then
     bash $script_dir/$command_on_nodes_script_name -nt $1 -c "cat $2"
