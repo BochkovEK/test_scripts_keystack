@@ -174,7 +174,7 @@ pull_conf () {
 To edit the config:
   vi $script_dir/$test_node_conf_dir/$CONF_NAME
 To apply the config:
-  bash ~/test_scripts_keystack/edit_ha_region_config.sh -push
+  bash ~/$script_dir/$script_name -push
 "
 }
 
