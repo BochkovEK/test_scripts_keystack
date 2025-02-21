@@ -200,7 +200,7 @@ push_conf () {
         $script_dir/$test_node_conf_dir/$CONF_NAME
       sed -i --regexp-extended "s/\"bind_address\"(\s+|):\s+\".+\"\,/\"bind_address\": \"$ip\",/" \
         $script_dir/$test_node_conf_dir/$CONF_NAME
-      sed -i --regexp-extended "s/\"consul_hosts\"(\s+|)=\s+\"[0-9]+.[0-9]+.[0-9]+.[0-9]+\"\,/consul_hosts = $ip/" \
+      sed -i --regexp-extended "s/consul_hosts(\s+|)=\s+\"[0-9]+.[0-9]+.[0-9]+.[0-9]+/consul_hosts = $ip/" \
         $script_dir/$test_node_conf_dir/$CONF_NAME
       echo "Push consul conf to $node:$conf_dir/$CONF_NAME"
       scp -o StrictHostKeyChecking=no $script_dir/$test_node_conf_dir/$CONF_NAME $node:$conf_dir/$CONF_NAME
