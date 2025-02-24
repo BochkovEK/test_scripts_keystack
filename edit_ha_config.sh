@@ -180,17 +180,19 @@ To apply the config:
 
 push_conf () {
 #  [ -z $CONF_NAME ] && { CONF_NAME=region-config_${REGION}.json; }
-  nova_state_list=$(openstack compute service list)
-  ctrl_nodes=$(echo "$nova_state_list" | grep -E "nova-scheduler" | awk '{print $6}')
+#  nova_state_list=$(openstack compute service list)
+#  ctrl_nodes=$(echo "$nova_state_list" | grep -E "nova-scheduler" | awk '{print $6}')
 #  ctrl_nodes=$(cat /etc/hosts | grep -E ${ctrl_pattern} | awk '{print $1}')
-  [ "$DEBUG" = true ] && { for string in $ctrl_nodes; do debug_echo $string; done; }
+#  [ "$DEBUG" = true ] && { for string in $ctrl_nodes; do debug_echo $string; done; }
 #  if ! bash $utils_dir/$install_package_script host; then
 #    exit 1
 #  fi
 
 #  "bind_address": "10.224.132.178",
+  [ "$DEBUG" = true ] && { for string in "${NODES[@]}"; do debug_echo $string; done; }
 
-  for node in $ctrl_nodes; do
+#  for node in $ctrl_nodes; do
+  for node in "${NODES[@]}"; do
 #    ip=$(host $node|grep -m 1 $node|awk '{print $4}')
     ip=$(ping $node -c 1|grep -m 1 -ohE "10\.224\.[0-9]{1,3}\.[0-9]{1,3}")
     check_ip=$(echo $ip|grep -m 1 -ohE "10\.224\.[0-9]{1,3}\.[0-9]{1,3}")
