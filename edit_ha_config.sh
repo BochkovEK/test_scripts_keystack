@@ -298,9 +298,13 @@ check_bmc_suffix () {
   [ ! -f $script_dir/$test_node_conf_dir/$CONF_NAME ] && { echo "Config exists in: $script_dir/$test_node_conf_dir/$CONF_NAME"; pull_conf; }
   [ "$DEBUG" = true ] && { echo -e "[DEBUG]\n"; ls -la $script_dir; }
   [ ! -f $script_dir/$test_node_conf_dir/$CONF_NAME ] && { echo "Config not found"; exit 1; }
-  suffix_string_raw_1=$(cat $script_dir/$test_node_conf_dir/$CONF_NAME|grep 'suffix')
-  suffix_string_raw_2=${suffix_string_raw_1//\"/}
-  echo "${suffix_string_raw_2%%,*}"|awk '{print $2}'
+  suffix_string_raw=$(cat $script_dir/$test_node_conf_dir/$CONF_NAME|grep 'suffix')
+  if [ "$LEGACY_CONF" = true ]; then
+    suffix_string_raw_2=${suffix_string_raw//\"/}
+    echo "${suffix_string_raw_2%%,*}"|awk '{print $2}'
+  else
+    echo $suffix_string_raw|awk '{print $3}'
+  fi
 }
 
 get_nodes_list
