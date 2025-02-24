@@ -317,12 +317,12 @@ if [ "$LEGACY_CONF" = true ]; then
   CONF_NAME=$conf_name
 fi
 
+[ "$CHECK_SUFFIX" = true ] && { check_bmc_suffix; exit 0; }
 [ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
 [ "$PULL" = true ] && { pull_conf; exit 0; }
 [ "$PUSH" = true ] && { push_conf; conf_changed=true; }
 cat_conf
 [ -n "$conf_changed" ] && { echo "Restart consul containers..."; bash $script_dir/command_on_nodes.sh -nt ctrl -c "docker restart consul"; }
-[ "$CHECK_SUFFIX" = true ] && { check_bmc_suffix; exit 0; }
 #[ -n "$NOVA_FENCING" ] && change_nova_fencing $NOVA_FENCING
 #[ -n "$IPMI_FENCING" ] && change_ipmi_fencing $IPMI_FENCING
 #[ -n "$DEAD_THRSHOLD" ] && change_dead_threshold $DEAD_THRSHOLD
