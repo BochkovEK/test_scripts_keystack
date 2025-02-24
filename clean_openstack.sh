@@ -111,16 +111,21 @@ clean_vms () {
 
 clean_volumes () {
   echo "Check Volumes..."
-  volumes_ID=$(openstack volume list --project $PROJECT|grep -E 'available|in-use' |awk '{print $2}')
-  volumes_names=$(openstack volume list --project $PROJECT|grep -E 'available|in-use' |awk '{print $2}')
+  openstack volume list --project $PROJECT|grep -E 'available|in-use' | tee /tmp/$tmp_output
+  ls -f /tmp/$tmp_output
+  if [ ! $? -eq 0 ]; then
+    echo "File /tmp/$tmp_output not found"
+    exit 1
+  fi
+  volumes_ID=$(cat /tmp/$tmp_output|awk '{print $2}')
+#  volumes_names=$(openstack volume list --project $PROJECT|grep -E 'available|in-use' |awk '{print $2}')
   # echo $volumes_ID
   if [[ ! -z $volumes_ID ]]; then
-    echo "Volumes list:"
-    for name in $volumes_names; do
-      [ -z $name ] && name="None"
-      echo "$name"
-    done
-
+#    echo "Volumes list:"
+#    for name in $volumes_names; do
+#      [ -z $name ] && name="None"
+#      echo "$name"
+#    done
 
     if [ "$DONT_ASK" = false ]; then
       echo -E "
