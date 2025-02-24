@@ -119,6 +119,7 @@ check_log_on_all_ctrl () {
         -e 's/\(.*down.*\)/\o033[33m\1\o033[39m/' \
         -e 's/\(.*failed: True.*\)/\o033[33m\1\o033[39m/' \
         -e 's/\(.*WARNING.*\)/\o033[33m\1\o033[39m/' \
+        -e 's/\(.*status_code: 400.*\)/\o033[33m\1\o033[39m/' \
         -e 's/\(.*Starting fence.*\)/\o033[33m\1\o033[39m/'
   done
 }
