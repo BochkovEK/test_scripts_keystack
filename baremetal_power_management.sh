@@ -46,7 +46,7 @@ do
     The power management script
       -ip                   <ipmi_ip>       IPMI IP
       -hv, -host_name,      <host_name>     Host name for power management (ipmi)
-      -p,  -power_state     <power_state>   check, on, off, restart
+      -p,  -power_state     <power_state>   check, on, off, restart, shutdown
       -v,  -debug  enabled debug output (without parameter)
 
       Example to start script:
@@ -159,6 +159,13 @@ start_python_power_management_script () {
         ;;
       restart)
         python_script_execute restart
+        ;;
+      shutdown)
+        actual_power_state=$(python_script_execute check| tail -n1)
+        echo "Actual ipmi satus: $actual_power_state"
+        if [ "$actual_power_state" = "PowerState.ON" ]; then
+          python_script_execute shutdown
+        fi
         ;;
       *)
         echo "Unknown power state parameter: $POWER_STATE"
