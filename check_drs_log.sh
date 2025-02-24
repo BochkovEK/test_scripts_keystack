@@ -27,7 +27,7 @@ NC='\033[0m' # No Color
 [[ -z $LOG_LAST_LINES_NUMBER ]] && LOG_LAST_LINES_NUMBER=100
 [[ -z $OUTPUT_PERIOD ]] && OUTPUT_PERIOD=10
 [[ -z $NODE_NAME ]] && NODE_NAME=""
-[[ -z $TS_DEBUG_STRING_ONLY ]] && DEBUG_STRING_ONLY="false"
+[[ -z $DEBUG_STRING_ONLY ]] && DEBUG_STRING_ONLY="false"
 [[ -z $ALL_NODES ]] && ALL_NODES="false"
 #==============================
 
@@ -65,7 +65,7 @@ while [ -n "$1" ]; do
       echo "Found the -debug option, with parameter value $TS_DEBUG"
       ;;
     -dso|-debug_string_only) DEBUG_STRING_ONLY="true"
-      echo "Found the -debug_string_only option, with parameter value $TS_DEBUG_STRING_ONLY"
+      echo "Found the -debug_string_only option, with parameter value $DEBUG_STRING_ONLY"
       ;;
     -all) ALL_NODES="true"
       echo "Found the -all option, with parameter value $ALL_NODES"
@@ -79,7 +79,7 @@ done
 
 read_logs () {
   echo -e "${CYAN}Drs $LOG_LAST_LINES_NUMBER lines logs from $1${NC}"
-  if [ "$TS_DEBUG_STRING_ONLY" = true ]; then
+  if [ "$DEBUG_STRING_ONLY" = true ]; then
     echo -e "${ORANGE}DEBUG strings only${NC}"
     ssh -o StrictHostKeyChecking=no $1 tail -${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME|grep "DEBUG"
   else
