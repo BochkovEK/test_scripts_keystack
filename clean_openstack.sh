@@ -6,6 +6,7 @@
 
 OPENRC=$HOME/openrc
 PROJECT="admin"
+tmp_output="region_resource_list_before_clean"
 
 #[[ ! -z $1 ]] && PROJECT=$1
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
@@ -75,14 +76,23 @@ clean_vms () {
   echo "Check VMs..."
 
 #    openstack server list
-  VMs_ID=$(openstack server list --project $PROJECT|grep -E 'ACTIVE|ERROR|SHUTOFF|BUILD' |awk '{print $2}')
-  VMs_names=$(openstack server list --project $PROJECT|grep -E 'ACTIVE|ERROR|SHUTOFF|BUILD' |awk '{print $4}')
+  openstack server list --project $PROJECT -c Name -c id -c status -c power_state -c availability_zone -c host \
+  |grep -E 'ACTIVE|ERROR|SHUTOFF|BUILD' | tee /tmp/$tmp_output
+  ls -f /tmp/$tmp_output
+  if [ ! $? -eq 0 ]; then
+    echo "File /tmp/$tmp_output not found"
+    exit 1
+  fi
+  VMs_ID=$(cat /tmp/$tmp_output|awk '{print $2}')
+#  openstack server list --project $PROJECT -c Name -c id -c status
+#  VMs_ID=$(openstack server list --project $PROJECT|grep -E 'ACTIVE|ERROR|SHUTOFF|BUILD' |awk '{print $2}')
+#  VMs_names=$(openstack server list --project $PROJECT|grep -E 'ACTIVE|ERROR|SHUTOFF|BUILD' |awk '{print $4}')
  # |grep ACTIVE |awk '{print $4}')
   if [[ ! -z $VMs_ID ]]; then
-    echo "VMs list:"
-    for name in $VMs_names; do
-        echo "   $name"
-    done
+#    echo "VMs list:"
+#    for name in $VMs_names; do
+#        echo "   $name"
+#    done
     if [ "$DONT_ASK" = false ]; then
       echo -E "
   Delete all VMs?
