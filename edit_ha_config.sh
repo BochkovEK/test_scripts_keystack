@@ -26,7 +26,7 @@ yellow=$(tput setaf 3)
 #[[ -z $DEAD_THRSHOLD ]] && DEAD_THRSHOLD=""
 #[[ -z $IPMI_FENCING ]] && IPMI_FENCING=""
 #[[ -z $NOVA_FENCING ]] && NOVA_FENCING=""
-#[[ -z $CHECK_SUFFIX ]] && CHECK_SUFFIX="false"
+[[ -z $CHECK_SUFFIX ]] && CHECK_SUFFIX="false"
 [[ -z $DEBUG ]] && DEBUG="false"
 [[ -z $ONLY_CONF_CHECK ]] && ONLY_CONF_CHECK="false"
 [[ -z $PUSH ]] && PUSH="false"
@@ -39,8 +39,8 @@ yellow=$(tput setaf 3)
 
 # Define parameters
 define_parameters () {
-  pass
-#  [ "$count" = 1 ] && [ "$1" = suffix ] && { CHECK_SUFFIX=true; echo "Check suffix parameter found"; }
+#  pass
+  [ "$count" = 1 ] && [ "$1" = suffix ] && { CHECK_SUFFIX=true; echo "Check suffix parameter found"; }
 #  [ "$count" = 1 ] && [ "$1" = check ] && { ONLY_CONF_CHECK=true; echo "Only conf check parameter found"; }
 }
 
@@ -286,22 +286,22 @@ get_nodes_list () {
 #  conf_changed="true"
 #}
 
-#check_bmc_suffix () {
-#  pull_conf
-#  [ "$DEBUG" = true ] && echo -e "
-#  [DEBUG]
-#  script_dir: $script_dir
-#  REGION: $REGION
-#  ${service_name}_conf_dir: $conf_dir
-#  "
-#
-#  [ ! -f $script_dir/$test_node_conf_dir/region-config_${REGION}.json ] && { echo "Config exists in: $script_dir/$test_node_conf_dir/region-config_${REGION}.json"; pull_conf; }
-#  [ "$DEBUG" = true ] && { echo -e "[DEBUG]\n"; ls -la $script_dir; }
-#  [ ! -f $script_dir/$test_node_conf_dir/region-config_${REGION}.json ] && { echo "Config not found"; exit 1; }
-#  suffix_string_raw_1=$(cat $script_dir/$test_node_conf_dir/region-config_${REGION}.json|grep 'suffix')
-#  suffix_string_raw_2=${suffix_string_raw_1//\"/}
-#  echo "${suffix_string_raw_2%%,*}"|awk '{print $2}'
-#}
+check_bmc_suffix () {
+  pull_conf
+  [ "$DEBUG" = true ] && echo -e "
+  [DEBUG]
+  script_dir: $script_dir
+  REGION: $REGION
+  ${service_name}_conf_dir: $conf_dir
+  "
+
+  [ ! -f $script_dir/$test_node_conf_dir/$CONF_NAME ] && { echo "Config exists in: $script_dir/$test_node_conf_dir/$CONF_NAME"; pull_conf; }
+  [ "$DEBUG" = true ] && { echo -e "[DEBUG]\n"; ls -la $script_dir; }
+  [ ! -f $script_dir/$test_node_conf_dir/$CONF_NAME ] && { echo "Config not found"; exit 1; }
+  suffix_string_raw_1=$(cat $script_dir/$test_node_conf_dir/$CONF_NAME|grep 'suffix')
+  suffix_string_raw_2=${suffix_string_raw_1//\"/}
+  echo "${suffix_string_raw_2%%,*}"|awk '{print $2}'
+}
 
 get_nodes_list
 
@@ -318,8 +318,8 @@ fi
 [ "$PUSH" = true ] && { push_conf; conf_changed=true; }
 cat_conf
 [ -n "$conf_changed" ] && { echo "Restart consul containers..."; bash $script_dir/command_on_nodes.sh -nt ctrl -c "docker restart consul"; }
+[ "$CHECK_SUFFIX" = true ] && { check_bmc_suffix; exit 0; }
 #[ -n "$NOVA_FENCING" ] && change_nova_fencing $NOVA_FENCING
-#[ "$CHECK_SUFFIX" = true ] && { check_bmc_suffix; exit 0; }
 #[ -n "$IPMI_FENCING" ] && change_ipmi_fencing $IPMI_FENCING
 #[ -n "$DEAD_THRSHOLD" ] && change_dead_threshold $DEAD_THRSHOLD
 #[ -n "$ALIVE_THRSHOLD" ] && change_alive_threshold $ALIVE_THRSHOLD

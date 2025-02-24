@@ -3,6 +3,8 @@
 #  bash baremetal_power_management.sh ebochkov-ks-sber-comp-05 check
 #  bash baremetal_power_management.sh ebochkov-ks-sber-comp-05 on
 
+edit_ha_config_script=edit_ha_config.sh
+
 #Colors
 green=$(tput setaf 2)
 red=$(tput setaf 1)
@@ -24,7 +26,7 @@ script_dir=$(dirname $0)
 [[ -z $PASSWORD ]] && PASSWORD=""
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $DEBUG ]] && DEBUG="false"
-[[ -z $EDIT_HA_REGION_CONFIG ]] && EDIT_HA_REGION_CONFIG="edit_ha_region_config.sh"
+[[ -z $EDIT_HA_REGION_CONFIG ]] && EDIT_HA_REGION_CONFIG=$edit_ha_config_script
 #[[ -z $POSTFIX ]] && POSTFIX="rmi"
 #=============================================
 
