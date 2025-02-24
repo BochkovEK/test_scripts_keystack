@@ -27,7 +27,7 @@ yellow=$(tput setaf 3)
 #[[ -z $IPMI_FENCING ]] && IPMI_FENCING=""
 #[[ -z $NOVA_FENCING ]] && NOVA_FENCING=""
 [[ -z $CHECK_SUFFIX ]] && CHECK_SUFFIX="false"
-[[ -z $DEBUG ]] && DEBUG="false"
+[[ -z $TS_DEBUG ]] && DEBUG="false"
 [[ -z $ONLY_CONF_CHECK ]] && ONLY_CONF_CHECK="false"
 [[ -z $PUSH ]] && PUSH="false"
 [[ -z $PULL ]] && PULL="false"
@@ -89,7 +89,7 @@ do
 #          echo "Found the -nova_fencing <true\false> option, with parameter value $NOVA_FENCING"
 #          shift ;;
     -v|-debug) DEBUG="true"
-      echo "Found the -debug, parameter set $DEBUG"
+      echo "Found the -debug, parameter set $TS_DEBUG"
       ;;
     -pull) PULL="true"
       echo "Found the -pull, parameter set $PULL"
@@ -144,7 +144,7 @@ check_and_source_openrc_file () {
 
 cat_conf () {
   echo "Cat all $service_name configs..."
-  bash $script_dir/command_on_nodes.sh -nt ctrl -c "echo \"cat $conf_dir/$CONF_NAME\"; cat $conf_dir/$CONF_NAME"
+  bash $script_dir/command_on_nodes.sh -nt $nodes_type -c "echo \"cat $conf_dir/$CONF_NAME\"; cat $conf_dir/$CONF_NAME"
 }
 
 #pull_conf () {
@@ -183,13 +183,13 @@ push_conf () {
 #  nova_state_list=$(openstack compute service list)
 #  ctrl_nodes=$(echo "$nova_state_list" | grep -E "nova-scheduler" | awk '{print $6}')
 #  ctrl_nodes=$(cat /etc/hosts | grep -E ${ctrl_pattern} | awk '{print $1}')
-#  [ "$DEBUG" = true ] && { for string in $ctrl_nodes; do debug_echo $string; done; }
+#  [ "$TS_DEBUG" = true ] && { for string in $ctrl_nodes; do debug_echo $string; done; }
 #  if ! bash $utils_dir/$install_package_script host; then
 #    exit 1
 #  fi
 
 #  "bind_address": "10.224.132.178",
-  [ "$DEBUG" = true ] && { for string in "${NODES[@]}"; do debug_echo $string; done; }
+  [ "$TS_DEBUG" = true ] && { for string in "${NODES[@]}"; do debug_echo $string; done; }
 
 #  for node in $ctrl_nodes; do
   for node in "${NODES[@]}"; do
@@ -197,7 +197,7 @@ push_conf () {
     ip=$(ping $node -c 1|grep -m 1 -ohE "10\.224\.[0-9]{1,3}\.[0-9]{1,3}")
     check_ip=$(echo $ip|grep -m 1 -ohE "10\.224\.[0-9]{1,3}\.[0-9]{1,3}")
     if [ -n "$check_ip" ]; then
-      [ "$DEBUG" = true ] && { debug_echo $ip; echo "\"bind_address\": \"$ip\" on $CONF_NAME"; }
+      [ "$TS_DEBUG" = true ] && { debug_echo $ip; echo "\"bind_address\": \"$ip\" on $CONF_NAME"; }
       sed -i --regexp-extended "s/\"bind_address\"(\s+|):\s+\"[0-9]+.[0-9]+.[0-9]+.[0-9]+\"\,/\"bind_address\": \"$ip\",/" \
         $script_dir/$test_node_conf_dir/$CONF_NAME
       sed -i --regexp-extended "s/\"bind_address\"(\s+|):\s+\".+\"\,/\"bind_address\": \"$ip\",/" \
@@ -288,7 +288,7 @@ get_nodes_list () {
 
 check_bmc_suffix () {
   pull_conf
-  [ "$DEBUG" = true ] && echo -e "
+  [ "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]
   script_dir: $script_dir
   REGION: $REGION
@@ -296,7 +296,7 @@ check_bmc_suffix () {
   "
 
   [ ! -f $script_dir/$test_node_conf_dir/$CONF_NAME ] && { echo "Config exists in: $script_dir/$test_node_conf_dir/$CONF_NAME"; pull_conf; }
-  [ "$DEBUG" = true ] && { echo -e "[DEBUG]\n"; ls -la $script_dir; }
+  [ "$TS_DEBUG" = true ] && { echo -e "[DEBUG]\n"; ls -la $script_dir; }
   [ ! -f $script_dir/$test_node_conf_dir/$CONF_NAME ] && { echo "Config not found"; exit 1; }
   suffix_string_raw=$(cat $script_dir/$test_node_conf_dir/$CONF_NAME|grep 'suffix')
   if [ "$LEGACY_CONF" = true ]; then
