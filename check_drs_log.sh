@@ -23,7 +23,7 @@ NC='\033[0m' # No Color
 
 [[ -z $TS_DEBUG ]] && DEBUG="false"
 [[ -z $DRS_LOG_FOLDER ]] && DRS_LOG_FOLDER='/var/log/kolla/drs'
-[[ -z $DRS_LOG_FILE ]] && DRS_LOG_FILE='drs.log'
+[[ -z $DRS_LOG_FILE_NAME ]] && DRS_LOG_FILE_NAME='drs.log'
 [[ -z $LOG_LAST_LINES_NUMBER ]] && LOG_LAST_LINES_NUMBER=100
 [[ -z $OUTPUT_PERIOD ]] && OUTPUT_PERIOD=10
 [[ -z $NODE_NAME ]] && NODE_NAME=""
@@ -41,7 +41,7 @@ count=1
 while [ -n "$1" ]; do
     case "$1" in
         --help) echo -E "
-        The script output drs logs from $DRS_LOG_FOLDER/$DRS_LOG_FILE on control nodes
+        The script output drs logs from $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME on control nodes
 
         -ln,  -line_numbers       <log_last_lines_number>
         -n,   -node_name          <node_name>
@@ -61,7 +61,7 @@ while [ -n "$1" ]; do
     -o|-output_period) OUTPUT_PERIOD="$2"
       echo "Found the -output_period option, with parameter value $OUTPUT_PERIOD"
       shift ;;
-    -v|-debug) DEBUG="true"
+    -v|-debug) TS_DEBUG="true"
       echo "Found the -debug option, with parameter value $TS_DEBUG"
       ;;
     -dso|-debug_string_only) DEBUG_STRING_ONLY="true"
@@ -81,13 +81,13 @@ read_logs () {
   echo -e "${CYAN}Drs $LOG_LAST_LINES_NUMBER lines logs from $1${NC}"
   if [ "$TS_DEBUG_STRING_ONLY" = true ]; then
     echo -e "${ORANGE}DEBUG strings only${NC}"
-    ssh -o StrictHostKeyChecking=no $1 tail -${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE|grep "DEBUG"
+    ssh -o StrictHostKeyChecking=no $1 tail -${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME|grep "DEBUG"
   else
-    ssh -o StrictHostKeyChecking=no $1 tail -${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE
+    ssh -o StrictHostKeyChecking=no $1 tail -${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME
   fi
   echo -e "${BLUE}`date`${NC}"
   echo -e "For read all log on $1:"
-  echo -e "${ORANGE}ssh -t -o StrictHostKeyChecking=no $1 less $DRS_LOG_FOLDER/$DRS_LOG_FILE${NC}"
+  echo -e "${ORANGE}ssh -t -o StrictHostKeyChecking=no $1 less $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME${NC}"
 }
 
 periodic_read_logs () {
@@ -105,7 +105,7 @@ read_logs_from_all_ctrl () {
 }
 
 find_leader () {
-  ssh -o StrictHostKeyChecking=no $1 tail -${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE|grep -E 'leadership updated|becomes a leader'
+  ssh -o StrictHostKeyChecking=no $1 tail -${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME|grep -E 'leadership updated|becomes a leader'
 }
 
 get_nodes_list () {
