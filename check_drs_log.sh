@@ -82,9 +82,9 @@ read_logs () {
   echo -e "${CYAN}Drs $LOG_LAST_LINES_NUMBER lines logs from $1${NC}"
   if [ "$DEBUG_STRING_ONLY" = true ]; then
     echo -e "${ORANGE}DEBUG strings only${NC}"
-    ssh -o StrictHostKeyChecking=no $1 tail -f -${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME|grep "DEBUG"
+    ssh -o StrictHostKeyChecking=no $1 tail -f -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME|grep "DEBUG"
   else
-    ssh -o StrictHostKeyChecking=no $1 tail -f -${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME
+    ssh -o StrictHostKeyChecking=no $1 tail -f -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME
   fi
   echo -e "${BLUE}`date`${NC}"
   echo -e "For read all log on $1:"
