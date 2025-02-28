@@ -5,6 +5,8 @@ utils_dir="$script_dir/utils"
 nodes_type="ctrl"
 #check_openrc_script="check_openrc.sh"
 get_nodes_list_script="get_nodes_list.sh"
+DRS_LOG_FILE_NAME
+drs_log_file_name="drs-api-error.log"
 
 #Colors
 green=$(tput setaf 2)
@@ -23,7 +25,7 @@ NC='\033[0m' # No Color
 
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $DRS_LOG_FOLDER ]] && DRS_LOG_FOLDER='/var/log/kolla/drs'
-[[ -z $DRS_LOG_FILE_NAME ]] && DRS_LOG_FILE_NAME='drs.log'
+[[ -z $DRS_LOG_FILE_NAME ]] && DRS_LOG_FILE_NAME=$drs_log_file_name
 [[ -z $LOG_LAST_LINES_NUMBER ]] && LOG_LAST_LINES_NUMBER=100
 [[ -z $OUTPUT_PERIOD ]] && OUTPUT_PERIOD=10
 [[ -z $NODE_NAME ]] && NODE_NAME=""
