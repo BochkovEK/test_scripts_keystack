@@ -81,22 +81,22 @@ read_logs () {
   echo -e "${CYAN}Drs $LOG_LAST_LINES_NUMBER lines logs from $1${NC}"
   if [ "$DEBUG_STRING_ONLY" = true ]; then
     echo -e "${ORANGE}DEBUG strings only${NC}"
-    ssh -o StrictHostKeyChecking=no $1 tail -${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME|grep "DEBUG"
+    ssh -o StrictHostKeyChecking=no $1 tail -f -${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME|grep "DEBUG"
   else
-    ssh -o StrictHostKeyChecking=no $1 tail -${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME
+    ssh -o StrictHostKeyChecking=no $1 tail -f -${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME
   fi
   echo -e "${BLUE}`date`${NC}"
   echo -e "For read all log on $1:"
   echo -e "${ORANGE}ssh -t -o StrictHostKeyChecking=no $1 less $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME${NC}"
 }
 
-periodic_read_logs () {
-  while true; do
-    echo -e "Output period check: $OUTPUT_PERIOD sec"
-    read_logs $1
-    sleep $OUTPUT_PERIOD
-  done
-}
+#periodic_read_logs () {
+#  while true; do
+#    echo -e "Output period check: $OUTPUT_PERIOD sec"
+#    read_logs $1
+#    sleep $OUTPUT_PERIOD
+#  done
+#}
 
 read_logs_from_all_ctrl () {
   for host in $srv;do
@@ -186,7 +186,8 @@ else
     read_logs_from_all_ctrl
   else
     echo -e "${ORANGE}Leader node is: $leader_drs_ctrl${NC}"
-    periodic_read_logs $leader_drs_ctrl
+    read_logs $leader_drs_ctrl
+#    periodic_read_logs $leader_drs_ctrl
   fi
 fi
 

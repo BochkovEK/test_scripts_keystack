@@ -25,7 +25,7 @@ script_dir=$(dirname $0)
 [[ -z $USER_NAME ]] && USER_NAME=""
 [[ -z $PASSWORD ]] && PASSWORD=""
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
-[[ -z $DEBUG ]] && DEBUG="false"
+[[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $EDIT_HA_REGION_CONFIG ]] && EDIT_HA_REGION_CONFIG=$edit_ha_config_script
 #[[ -z $POSTFIX ]] && POSTFIX="rmi"
 #=============================================
@@ -69,8 +69,8 @@ do
   -pswd|-password) PASSWORD="$2"
     echo "Found the -password <host_name> option, with parameter value $PASSWORD"
     shift ;;
-  -v|-debug) DEBUG="true"
-	  echo "Found the -debug, with parameter value $DEBUG"
+  -v|-debug) TS_DEBUG="true"
+	  echo "Found the -debug, with parameter value $TS_DEBUG"
     ;;
   -p|-power_state) POWER_STATE="$2"
 	  echo "Found the -power_state, with parameter value $POWER_STATE"
@@ -105,7 +105,7 @@ check_module_exist () {
   for module in "${required_modules[@]}"; do
     module_exists=$(pip list| grep $module)
 
-    [ "$DEBUG" = true ] && echo -e "
+    [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG]: module: $module
     [DEBUG]: module_exists: $module_exists
   "
