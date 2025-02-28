@@ -5,7 +5,6 @@ utils_dir="$script_dir/utils"
 nodes_type="ctrl"
 #check_openrc_script="check_openrc.sh"
 get_nodes_list_script="get_nodes_list.sh"
-DRS_LOG_FILE_NAME
 drs_log_file_name="drs-api-error.log"
 
 #Colors
