@@ -3,6 +3,8 @@
 #  bash baremetal_power_management.sh ebochkov-ks-sber-comp-05 check
 #  bash baremetal_power_management.sh ebochkov-ks-sber-comp-05 on
 
+edit_ha_config_script=edit_ha_config.sh
+
 #Colors
 green=$(tput setaf 2)
 red=$(tput setaf 1)
@@ -23,8 +25,8 @@ script_dir=$(dirname $0)
 [[ -z $USER_NAME ]] && USER_NAME=""
 [[ -z $PASSWORD ]] && PASSWORD=""
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
-[[ -z $DEBUG ]] && DEBUG="false"
-[[ -z $EDIT_HA_REGION_CONFIG ]] && EDIT_HA_REGION_CONFIG="edit_ha_region_config.sh"
+[[ -z $TS_DEBUG ]] && TS_DEBUG="false"
+[[ -z $EDIT_HA_REGION_CONFIG ]] && EDIT_HA_REGION_CONFIG=$edit_ha_config_script
 #[[ -z $POSTFIX ]] && POSTFIX="rmi"
 #=============================================
 
@@ -44,7 +46,7 @@ do
     The power management script
       -ip                   <ipmi_ip>       IPMI IP
       -hv, -host_name,      <host_name>     Host name for power management (ipmi)
-      -p,  -power_state     <power_state>   check, on, off, restart
+      -p,  -power_state     <power_state>   check, on, off, restart, shutdown
       -v,  -debug  enabled debug output (without parameter)
 
       Example to start script:
@@ -67,8 +69,8 @@ do
   -pswd|-password) PASSWORD="$2"
     echo "Found the -password <host_name> option, with parameter value $PASSWORD"
     shift ;;
-  -v|-debug) DEBUG="true"
-	  echo "Found the -debug, with parameter value $DEBUG"
+  -v|-debug) TS_DEBUG="true"
+	  echo "Found the -debug, with parameter value $TS_DEBUG"
     ;;
   -p|-power_state) POWER_STATE="$2"
 	  echo "Found the -power_state, with parameter value $POWER_STATE"
@@ -103,7 +105,7 @@ check_module_exist () {
   for module in "${required_modules[@]}"; do
     module_exists=$(pip list| grep $module)
 
-    [ "$DEBUG" = true ] && echo -e "
+    [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG]: module: $module
     [DEBUG]: module_exists: $module_exists
   "
@@ -157,6 +159,13 @@ start_python_power_management_script () {
         ;;
       restart)
         python_script_execute restart
+        ;;
+      shutdown)
+        actual_power_state=$(python_script_execute check| tail -n1)
+        echo "Actual ipmi satus: $actual_power_state"
+        if [ "$actual_power_state" = "PowerState.ON" ]; then
+          python_script_execute shutdown
+        fi
         ;;
       *)
         echo "Unknown power state parameter: $POWER_STATE"
