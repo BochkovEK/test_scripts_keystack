@@ -128,8 +128,8 @@ start_python_power_management_script () {
     if [ -n "$IPMI_IP" ]; then
       BMC_HOST_NAME=$IPMI_IP
     else
-      echo "Check bmc suffix by script $EDIT_HA_REGION_CONFIG..."
       if [ -z $BMC_SUFFIX ]; then
+        echo "Check bmc suffix by script $EDIT_HA_REGION_CONFIG..."
         bmc_suffix=$(bash $script_dir/$EDIT_HA_REGION_CONFIG suffix| tail -n1)
         [[ -z $bmc_suffix ]] && { printf "%40s\n" "${red}variable bmc_suffix id empty${normal}"; exit 0; }
       fi
