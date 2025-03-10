@@ -45,7 +45,7 @@ install_package_script="install_package.sh"
 
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
-[[ -z $IMAGE_SOURCE ]] && IMAGE_SOURCE="https://repo.itkey.com/repository/images"
+[[ -z $IMAGE_SOURCE ]] && IMAGE_SOURCE="https://repo.itkey.com/repository/images/"
 [[ -z $IMAGE ]] && IMAGE=$1
 [[ -z $IMAGE_DIR ]] && IMAGE_DIR="$HOME/images"
 # --min-disk $min_disk
@@ -153,7 +153,7 @@ create_image () {
               error_message="Image $IMAGE does not created"
               error_output
             else
-              wget $IMAGE_SOURCE/$IMAGE -P $IMAGE_DIR/
+              wget $IMAGE_SOURCE$IMAGE -P $IMAGE_DIR/
             fi
           fi
         fi
