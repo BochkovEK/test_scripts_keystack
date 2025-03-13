@@ -6,7 +6,7 @@
 green=$(tput setaf 2)
 red=$(tput setaf 1)
 violet=$(tput setaf 13)
-cyan=$(tput setab 14)
+cyan=$(tput setaf 1 tput setab 14)
 #cyan='\033[46m'
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
