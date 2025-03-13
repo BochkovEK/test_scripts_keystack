@@ -124,7 +124,7 @@ if [ ! -f $script_dir/$command_on_nodes_script_name ]; then
 fi
 
 read_conf () {
-  echo "check file $2 exists on $1"
+  echo "Check file $2 exists on $1"
   bash $script_dir/$command_on_nodes_script_name -nt $1 -c "ls -f $2" |
     sed --unbuffered \
       -e 's/\(.*No such file or directory.*\)/\o033[31m\1\o033[39m/'
