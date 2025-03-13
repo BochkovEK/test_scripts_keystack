@@ -59,7 +59,7 @@ control_config_list=(
 
 compute_config_list=(
   "/etc/kolla/nova-compute/nova.conf"
-  "/etc/kolla/nova-libvirt/nova.conf"
+  #??? "/etc/kolla/nova-libvirt/nova.conf"
   "/etc/kolla/nova-ssh/nova.conf"
 )
 
