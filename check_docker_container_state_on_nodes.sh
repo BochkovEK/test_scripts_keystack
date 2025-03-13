@@ -145,7 +145,7 @@ get_nodes_list
   }
 
 #grep_string="| grep -E \"$UNHEALTHY\\s+$CONTAINER_NAME\"|starting"
-grep_string="| grep -E \"$CONTAINER_NAME|starting\""
+grep_string="| grep -E $CONTAINER_NAME"
 
 [ "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]
@@ -168,7 +168,7 @@ for host in "${NODES[@]}"; do
         -e 's/\(.*restarting.*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*(healthy).*\)/\o033[92m\1\o033[39m/' \
         -e 's/\(.*Up.*\)/\o033[92m\1\o033[39m/' \
-        -e 's/\(.*starting.*\)/\o033[33m\1\o033[33m/'\
+        -e 's/\(.*starting).*\)/\o033[33m\1\o033[33m/'\
         -e 's/\(.*Less than.*\)/\o033[33m\1\o033[39m/'
   else
     printf "%40s\n" "${red}No connection with $host - error!${normal}"
