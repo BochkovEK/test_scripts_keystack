@@ -171,7 +171,7 @@ for host in "${NODES[@]}"; do
         -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*Less than.*\)/\o033[33m\1\o033[39m/' \
         -e 's/\(.*restarting.*\)/\o033[31m\1\o033[39m/' \
-        -e 's/\(.*second.*\)/\o033[31m\1\o033[39m/'
+        -e 's/\(.*second.*\)/\o033[33m\1\o033[39m/'
 
 #        -e 's/\(.*Up.*\)/\o033[92m\1\o033[39m/' \
   else
