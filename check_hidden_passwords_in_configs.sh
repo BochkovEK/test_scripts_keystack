@@ -141,7 +141,7 @@ read_conf () {
       sed --unbuffered \
         -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - [ok: castellan group exists]\o033[39m/'\
         -e 's/\(.*password_hash.*\)/\o033[32m ...pass..._hash... - [ok: pass hash exists]\o033[39m/'\
-        -e 's/\(.*password_hash.*\)/\o033[32m ...vault_secret... - [ok: vault settings exists]\o033[39m/'\
+        -e 's/\(.*vault_secret.*\)/\o033[32m ...vault_secret... - [ok: vault settings exists]\o033[39m/'\
         -e 's/\(.*with secret.*\)/\o033[32m ...with secret... - [ok: vault settings exists]\o033[39m/'\
         -e 's/\(.*password.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
         -e 's/\(.*_pass\".*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'; echo -e '\033[0;37m'"
