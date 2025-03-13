@@ -166,11 +166,13 @@ for host in "${NODES[@]}"; do
     ssh -o StrictHostKeyChecking=no $host docker ps \
       |sed --unbuffered \
         -e 's/\(.*(healthy).*\)/\o033[92m\1\o033[39m/' \
-        -e 's/\(.*(hours).*\)/\o033[92m\1\o033[39m/' \
+        -e 's/\(.*hours.*\)/\o033[92m\1\o033[39m/' \
         -e 's/\(.*starting).*\)/\o033[33m\1\o033[39m/'\
         -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*Less than.*\)/\o033[33m\1\o033[39m/' \
-        -e 's/\(.*restarting.*\)/\o033[31m\1\o033[39m/'
+        -e 's/\(.*restarting.*\)/\o033[31m\1\o033[39m/' \
+        -e 's/\(.*second.*\)/\o033[31m\1\o033[39m/'
+
 #        -e 's/\(.*Up.*\)/\o033[92m\1\o033[39m/' \
   else
     printf "%40s\n" "${red}No connection with $host - error!${normal}"
