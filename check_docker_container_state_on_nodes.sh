@@ -144,8 +144,8 @@ get_nodes_list
   echo "UNHEALTHY: $UNHEALTHY";
   }
 
-#grep_string="| grep -E \"$UNHEALTHY\\s+$CONTAINER_NAME\"|starting"
-grep_string="| grep -E $CONTAINER_NAME"
+grep_string="| grep -E \"$UNHEALTHY\\s+$CONTAINER_NAME\""
+#grep_string="| grep -E $CONTAINER_NAME"
 
 [ "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]
