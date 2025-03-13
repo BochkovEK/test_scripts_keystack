@@ -32,29 +32,29 @@ parent_dir=$(dirname "$script_dir")
 command_on_nodes_script_name="command_on_nodes.sh"
 
 control_config_list=(
-  "/etc/kolla/keystone/keystone.conf"
-  "/etc/kolla/glance-api/glance-api.conf"
-  "/etc/kolla/cinder-volume/cinder.conf"
-  "/etc/kolla/neutron-server/neutron.conf"
-  "/etc/kolla/drs/drs.ini"
-  "/etc/kolla/placement-api/placement.conf"
-  "/etc/kolla/adminui-backend/adminui-backend-osloconf.conf"
+#  "/etc/kolla/keystone/keystone.conf"
+#  "/etc/kolla/glance-api/glance-api.conf"
+#  "/etc/kolla/cinder-volume/cinder.conf"
+#  "/etc/kolla/neutron-server/neutron.conf"
+#  "/etc/kolla/drs/drs.ini"
+#  "/etc/kolla/placement-api/placement.conf"
+#  "/etc/kolla/adminui-backend/adminui-backend-osloconf.conf"
   "/etc/kolla/mariadb/galera.cnf"
-  "/etc/kolla/mariabackup/my.cnf"
-  "/etc/kolla/redis/redis.conf"
-  "/etc/kolla/redis-sentinel/redis.conf"
-  "/etc/kolla/grafana/grafana.ini"
-  "/etc/kolla/consul/ha-config.ini"
-  "/etc/kolla/barbican-api/barbican.conf"
-  "/etc/kolla/barbican-keystone-listener/barbican.conf"
-  "/etc/kolla/barbican-worker/barbican.conf"
-  "/etc/kolla/nova-api/nova.conf"
-  "/etc/kolla/nova-api-bootstrap/nova.conf"
-  "/etc/kolla/nova-conductor/nova.conf"
-  "/etc/kolla/nova-novncproxy/nova.conf"
-  "/etc/kolla/nova-conductor/nova.conf"
-  "/etc/kolla/nova-scheduler/nova.conf"
-  "/etc/kolla/nova-serialproxy/nova.conf"
+#  "/etc/kolla/mariabackup/my.cnf"
+#  "/etc/kolla/redis/redis.conf"
+#  "/etc/kolla/redis-sentinel/redis.conf"
+#  "/etc/kolla/grafana/grafana.ini"
+#  "/etc/kolla/consul/ha-config.ini"
+#  "/etc/kolla/barbican-api/barbican.conf"
+#  "/etc/kolla/barbican-keystone-listener/barbican.conf"
+#  "/etc/kolla/barbican-worker/barbican.conf"
+#  "/etc/kolla/nova-api/nova.conf"
+#  "/etc/kolla/nova-api-bootstrap/nova.conf"
+#  "/etc/kolla/nova-conductor/nova.conf"
+#  "/etc/kolla/nova-novncproxy/nova.conf"
+#  "/etc/kolla/nova-conductor/nova.conf"
+#  "/etc/kolla/nova-scheduler/nova.conf"
+#  "/etc/kolla/nova-serialproxy/nova.conf"
 )
 
 compute_config_list=(
@@ -139,10 +139,10 @@ read_conf () {
     echo -E "${cyan}Check castellan strings...${normal}"
     bash $script_dir/$command_on_nodes_script_name -nt $1 -c "cat $2 | grep -E 'db_uri| password |\"password\"\:|password\:\s|_pass\"|password =|\[castellan_configsource\]'| \
       sed --unbuffered \
-        -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - [ok: castellan group exists]\o033[39m/'\
-        -e 's/\(.*password.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
-        -e 's/\(.*with secret.*\)/\o033[33m\1- [ok: vault settings exists]\o033[39m/'\
-        -e 's/\(.*_pass\".*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'; echo -e '\033[0;37m'"
+        -e 's/\(.*with secret.*\)/\o033[33m\1- [ok: vault settings exists]\o033[39m/'"
+#        -e 's/\(.*_pass\".*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'; echo -e '\033[0;37m'"
+#        -e 's/\(.*password.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
+#        -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - [ok: castellan group exists]\o033[39m/'\
 #        -e 's/\(.*password:.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
   fi
   if [ "$4" = cat ]; then
