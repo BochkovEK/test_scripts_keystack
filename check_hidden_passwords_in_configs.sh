@@ -6,7 +6,8 @@
 green=$(tput setaf 2)
 red=$(tput setaf 1)
 violet=$(tput setaf 13)
-cyan=$(tput setaf 14)
+#cyan=$(tput setaf 14)
+cyan='\033[46m'
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
 blue=$(tput setaf 4)
@@ -124,7 +125,7 @@ if [ ! -f $script_dir/$command_on_nodes_script_name ]; then
 fi
 
 read_conf () {
-  echo "Check file $2 exists on $1"
+  echo -E "${cyan}Check file $2 exists on $1${normal}"
   bash $script_dir/$command_on_nodes_script_name -nt $1 -c "ls -f $2" |
     sed --unbuffered \
       -e 's/\(.*No such file or directory.*\)/\o033[31m\1\o033[39m/'
@@ -133,6 +134,7 @@ read_conf () {
 #      -e 's/\(.*No such file or directory.*\)/\o033[31m\1 - [ok: config not requirement]\o033[39m/'
       #ok\o033[39m/'
   if [ "$3" = castellan ]; then
+    echo -E "${cyan}Check castellan strings...${normal}"
     bash $script_dir/$command_on_nodes_script_name -nt $1 -c "cat $2 | grep -E 'db_uri| password |\"password\"\:|password\:\s|_pass\"|password =|\[castellan_configsource\]'| \
       sed --unbuffered \
         -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - [ok: castellan group exists]\o033[39m/'\
