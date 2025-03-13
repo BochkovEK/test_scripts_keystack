@@ -139,11 +139,11 @@ read_conf () {
     echo -E "${cyan}Check castellan strings...${normal}"
     bash $script_dir/$command_on_nodes_script_name -nt $1 -c "cat $2 | grep -E 'db_uri|with secret| password |\"password\"\:|password\:\s|_pass\"|password =|\[castellan_configsource\]'| \
       sed --unbuffered \
-        -e 's/\(.*password.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'"
-#        -e 's/\(.*_pass\".*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'; echo -e '\033[0;37m'"
-#        -e 's/\(.*with secret.*\)/\o033[33m\1 - [ok: vault settings exists]\o033[39m/'"
-#        -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - [ok: castellan group exists]\o033[39m/'\
-#        -e 's/\(.*password:.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
+        -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - [ok: castellan group exists]\o033[39m/'\
+        -e 's/\(.*with secret.*\)/\o033[33m\1 - [ok: vault settings exists]\o033[39m/'\
+        -e 's/\(.*password.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
+        -e 's/\(.*_pass\".*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'; echo -e '\033[0;37m'\
+#        -e 's/\(.*password:.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'"
   fi
   if [ "$4" = cat ]; then
     bash $script_dir/$command_on_nodes_script_name -nt $1 -c "cat $2"
