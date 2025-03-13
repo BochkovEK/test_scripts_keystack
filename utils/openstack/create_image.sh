@@ -6,8 +6,11 @@
 #      curl -X 'GET' 'https://repo.itkey.com/service/rest/v1/search?repository=images&name=*' -H 'accept: application/json'| jq '.items[]|.name'
 #   2) bash create_image.sh <image name from repo.itkey.com 'images' repo>
 # OR
-#    1) export IMAGE_SOURCE="https://cloud-images.ubuntu.com/releases/focal/release"
+#    1) export IMAGE_SOURCE="https://cloud-images.ubuntu.com/releases/focal/release/"
 #    2) bash ~/test_scripts_keystack/utils/openstack/create_image.sh ubuntu-20.04-server-cloudimg-amd64.img
+#     or
+#    1) http://cloud-images-archive.ubuntu.com/releases/noble/release-20240523.1/
+#    2) bash ~/test_scripts_keystack/utils/openstack/create_image.sh ubuntu-24.04-server-cloudimg-amd64.img
 #     or
 #    2) bash ~/test_scripts_keystack/utils/openstack/create_image.sh cirros-0.6.2-x86_64-disk.img
 
