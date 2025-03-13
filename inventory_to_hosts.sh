@@ -139,7 +139,7 @@ python_script_execute () {
 
 add_to_hosts () {
   add_strings_already_exists=$(cat /etc/hosts | grep "$ADD_STRINGS")
-  if [ -z $add_strings_already_exists ]; then
+  if [ -z "$add_strings_already_exists" ]; then
     echo $ADD_STRINGS >> /etc/hosts
     cat $script_dir/$OUTPUT_FILE_NAME >> /etc/hosts
   fi
