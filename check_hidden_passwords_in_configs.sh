@@ -36,11 +36,28 @@ control_config_list=(
   "/etc/kolla/drs/drs.ini"
   "/etc/kolla/placement-api/placement.conf"
   "/etc/kolla/adminui-backend/adminui-backend-osloconf.conf"
-  "/etc/kolla/adminui-backend/adminui-backend-regions.conf"
+  "/etc/kolla/mariadb/galera.cnf"
+  "/etc/kolla/mariabackup/my.cnf"
+  "/etc/kolla/redis/redis.conf"
+  "/etc/kolla/redis-sentinel/redis.conf"
+  "/etc/kolla/grafana/grafana.ini"
+  "/etc/kolla/consul/ha-config.ini"
+  "/etc/kolla/barbican-api/barbican.conf"
+  "/etc/kolla/barbican-keystone-listener/barbican.conf"
+  "/etc/kolla/barbican-worker/barbican.conf"
+  "/etc/kolla/nova-api/nova.conf"
+  "/etc/kolla/nova-api-bootstrap/nova.conf"
+  "/etc/kolla/nova-conductor/nova.conf"
+  "/etc/kolla/nova-novncproxy/nova.conf"
+  "/etc/kolla/nova-conductor/nova.conf"
+  "/etc/kolla/nova-scheduler/nova.conf"
+  "/etc/kolla/nova-serialproxy/nova.conf"
 )
 
 compute_config_list=(
   "/etc/kolla/nova-compute/nova.conf"
+  "/etc/kolla/nova-libvirt/nova.conf"
+  "/etc/kolla/nova-ssh/nova.conf"
 )
 
 hashed_password_config_list=(
