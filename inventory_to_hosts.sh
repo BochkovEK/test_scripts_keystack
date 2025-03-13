@@ -126,6 +126,14 @@ python_script_execute () {
   export REGION=$REGION
   export INT_PREF=$INT_PREF
   export EXT_PREF=$EXT_PREF
+  echo "
+  [DEBUG]:
+  OUTPUT_FILE: $script_dir/$OUTPUT_FILE_NAME
+  DOMAIN: $DOMAIN
+  REGION: $REGION
+  INT_PREF: $INT_PREF
+  EXT_PREF: $EXT_PREF
+  "
   python3 $script_dir/$parse_inventory_script $INVENTORY_PATH
 }
 
