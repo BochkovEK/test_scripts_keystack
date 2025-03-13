@@ -10,7 +10,7 @@ external_prefix="ext"
 region_name="ebochkov"
 domain_name="test.domain"
 parse_inventory_script="parse_inventory.py"
-inventory_file_name="dns_ip_mapping.txt"
+inventory_file_name="inventory"
 output_file_name="hosts_add_strings"
 add_strings="# ------ ADD strings ------"
 
