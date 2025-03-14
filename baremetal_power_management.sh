@@ -27,6 +27,7 @@ script_dir=$(dirname $0)
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $EDIT_HA_REGION_CONFIG ]] && EDIT_HA_REGION_CONFIG=$edit_ha_config_script
+[[ -z $BMC_SUFFIX ]] && BMC_SUFFIX=""
 #[[ -z $POSTFIX ]] && POSTFIX="rmi"
 #=============================================
 
@@ -74,6 +75,9 @@ do
     ;;
   -p|-power_state) POWER_STATE="$2"
 	  echo "Found the -power_state, with parameter value $POWER_STATE"
+    shift ;;
+  -b|-bmc_suffix) BMC_SUFFIX="$2"
+    echo "Found the -bmc_suffix, with parameter value $BMC_SUFFIX"
     shift ;;
   --) shift
       break ;;
@@ -124,9 +128,12 @@ start_python_power_management_script () {
     if [ -n "$IPMI_IP" ]; then
       BMC_HOST_NAME=$IPMI_IP
     else
-      echo "Check bmc suffix by script $EDIT_HA_REGION_CONFIG..."
-      bmc_suffix=$(bash $script_dir/$EDIT_HA_REGION_CONFIG suffix| tail -n1)
-      [[ -z $bmc_suffix ]] && { printf "%40s\n" "${red}variable bmc_suffix id empty${normal}"; exit 0; }
+      if [ -z $BMC_SUFFIX ]; then
+        echo "Check bmc suffix by script $EDIT_HA_REGION_CONFIG..."
+        bmc_suffix=$(bash $script_dir/$EDIT_HA_REGION_CONFIG suffix| tail -n1)
+        [[ -z $bmc_suffix ]] && { printf "%40s\n" "${red}variable bmc_suffix id empty${normal}"; exit 0; }
+      fi
+      bmc_suffix=$BMC_SUFFIX
       echo "bmc_suffix: $bmc_suffix"
       BMC_HOST_NAME=$HOST_NAME$bmc_suffix
       echo "BMC_HOST_NAME: $BMC_HOST_NAME"

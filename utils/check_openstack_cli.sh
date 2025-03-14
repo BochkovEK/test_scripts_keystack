@@ -7,7 +7,7 @@ violet=$(tput setaf 5)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
 
-[[ -z $OSC_VERSION ]] && OSC_VERSION="6.2.0"
+[[ -z $OSC_VERSION ]] && OSC_VERSION="6.6.1"
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
 [[ -z $DONT_INSTALL ]] && DONT_INSTALL="true"
 

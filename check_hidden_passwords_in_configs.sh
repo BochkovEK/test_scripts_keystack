@@ -6,7 +6,10 @@
 green=$(tput setaf 2)
 red=$(tput setaf 1)
 violet=$(tput setaf 13)
+violet_b=$(tput setaf 0; tput setab 13)
+cyan_b=$(tput setaf 1; tput setab 14)
 cyan=$(tput setaf 14)
+#cyan='\033[46m'
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
 blue=$(tput setaf 4)
@@ -36,11 +39,28 @@ control_config_list=(
   "/etc/kolla/drs/drs.ini"
   "/etc/kolla/placement-api/placement.conf"
   "/etc/kolla/adminui-backend/adminui-backend-osloconf.conf"
-  "/etc/kolla/adminui-backend/adminui-backend-regions.conf"
+  "/etc/kolla/mariadb/galera.cnf"
+  "/etc/kolla/mariabackup/my.cnf"
+  "/etc/kolla/redis/redis.conf"
+  "/etc/kolla/redis-sentinel/redis.conf"
+  "/etc/kolla/grafana/grafana.ini"
+  "/etc/kolla/consul/ha-config.ini"
+  "/etc/kolla/barbican-api/barbican.conf"
+  "/etc/kolla/barbican-keystone-listener/barbican.conf"
+  "/etc/kolla/barbican-worker/barbican.conf"
+  "/etc/kolla/nova-api/nova.conf"
+  "/etc/kolla/nova-api-bootstrap/nova.conf"
+  "/etc/kolla/nova-conductor/nova.conf"
+  "/etc/kolla/nova-novncproxy/nova.conf"
+  "/etc/kolla/nova-conductor/nova.conf"
+  "/etc/kolla/nova-scheduler/nova.conf"
+  "/etc/kolla/nova-serialproxy/nova.conf"
 )
 
 compute_config_list=(
   "/etc/kolla/nova-compute/nova.conf"
+  #??? "/etc/kolla/nova-libvirt/nova.conf"
+  #??? "/etc/kolla/nova-ssh/nova.conf"
 )
 
 hashed_password_config_list=(
@@ -61,6 +81,7 @@ prometheus_exporters_config_list=(
 [[ -z $CHECK_HASHED ]] && CHECK_HASHED="false"
 [[ -z $CHECK_PROMETH ]] && CHECK_PROMETH="false"
 [[ -z $CHECK_ALL ]] && CHECK_ALL="true"
+[[ -z $CONFIG_PATH ]] && CONFIG_PATH=""
 #[[ -z $DEBUG ]] && DEBUG="false"
 
 # Define parameters
@@ -74,26 +95,31 @@ count=1
 while [ -n "$1" ]; do
   case "$1" in
     --help) echo -E "
-      -comp                       check configs on comp nodes ${compute_config_list[*]}
-      -ctrl                       check configs on ctrl nodes ${control_config_list[*]}
-      -hashed                     check hashed passwords on configs ${hashed_password_config_list[*]}
-      -prometheus                 check prometheus exporters configs ${prometheus_exporters_config_list[*]}
+      -comp                         check configs on comp nodes ${compute_config_list[*]}
+      -ctrl                         check configs on ctrl nodes ${control_config_list[*]}
+      -hashed                       check hashed passwords on configs ${hashed_password_config_list[*]}
+      -prometheus                   check prometheus exporters configs ${prometheus_exporters_config_list[*]}
+      -c, -config <config_path>     check specify config
 "
       exit 0
       break ;;
     -comp) CHECK_COMP=true; CHECK_ALL="false"
       echo "Found the -comp. Check configs on comp nodes ${compute_config_list[*]}"
-      shift ;;
+      ;;
     -ctrl) CHECK_CTRL=true; CHECK_ALL="false"
       echo "Found the -ctrl. Check configs on ctrl nodes ${control_config_list[*]}"
-      shift ;;
+      ;;
     -hashed) CHECK_HASHED=true; CHECK_ALL="false"
       echo "Found the -hashed. Check hashed passwords on configs ${hashed_password_config_list[*]}"
-      shift ;;
+      ;;
     -prometheus) CHECK_PROMETH=true; CHECK_ALL="false"
       echo "Found the -prometheus. Check prometheus exporters configs ${prometheus_exporters_config_list[*]}"
+      ;;
+    -c|-config) CONFIG_PATH=$2
+      echo "Found the -config. Check specify config $CONFIG_PATH"
       shift ;;
-    --) shift
+    --)
+      shift
       break ;;
     *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
   esac
@@ -107,6 +133,7 @@ if [ ! -f $script_dir/$command_on_nodes_script_name ]; then
 fi
 
 read_conf () {
+  echo -E "${cyan}Check file $2 exists on $1${normal}"
   bash $script_dir/$command_on_nodes_script_name -nt $1 -c "ls -f $2" |
     sed --unbuffered \
       -e 's/\(.*No such file or directory.*\)/\o033[31m\1\o033[39m/'
@@ -115,12 +142,16 @@ read_conf () {
 #      -e 's/\(.*No such file or directory.*\)/\o033[31m\1 - [ok: config not requirement]\o033[39m/'
       #ok\o033[39m/'
   if [ "$3" = castellan ]; then
-    bash $script_dir/$command_on_nodes_script_name -nt $1 -c "cat $2 | grep -E 'db_uri| password |\"password\"\:|password\:\s|_pass\"|password =|\[castellan_configsource\]'| \
+    echo -E "${cyan}Check castellan strings...${normal}"
+    bash $script_dir/$command_on_nodes_script_name -nt $1 -c "cat $2 | grep -E 'db_uri|vault_secret|password_hash|with secret| password |\"password\"\:|password\:\s|_pass\"|password =|\[castellan_configsource\]'| \
       sed --unbuffered \
         -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - [ok: castellan group exists]\o033[39m/'\
+        -e 's/\(.*password_hash.*\)/\o033[32m ...pass..._hash... - [ok: pass hash exists]\o033[39m/'\
+        -e 's/\(.*vault_secret.*\)/\o033[32m ...vault_secret... - [ok: vault settings exists]\o033[39m/'\
+        -e 's/\(.*with secret.*\)/\o033[32m ...with secret... - [ok: vault settings exists]\o033[39m/'\
         -e 's/\(.*password.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
         -e 's/\(.*_pass\".*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'; echo -e '\033[0;37m'"
-#        -e 's/\(.*password:.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
+#        -e 's/\(.*password:.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'"
   fi
   if [ "$4" = cat ]; then
     bash $script_dir/$command_on_nodes_script_name -nt $1 -c "cat $2"
@@ -129,10 +160,10 @@ read_conf () {
 }
 
 Check_configs_on_controls () {
-  echo -E "${cyan}Check '[castellan_configsource]' in configs on control${normal}"
+  echo -E "${cyan_b}Check '[castellan_configsource]' in configs on control${normal}"
   export DONT_CHECK_CONN=true
   for config in "${control_config_list[@]}"; do
-    echo -E "${violet}Check control config: $config${normal}"
+    echo -E "${violet_b}Check control config: $config${normal}"
     read_conf ctrl $config castellan
 #    bash $command_on_nodes_script_name -nt ctrl -c "cat $config | grep -E 'password|\[castellan_configsource\]'| \
 #          sed --unbuffered \
@@ -143,10 +174,10 @@ Check_configs_on_controls () {
 }
 
 Check_configs_on_computes () {
-  echo -E "${cyan}Check '[castellan_configsource]' in configs on computes${normal}"
+  echo -E "${cyan_b}Check '[castellan_configsource]' in configs on computes${normal}"
   export DONT_CHECK_CONN=true
   for config in "${compute_config_list[@]}"; do
-    echo -E "${violet}Check computes config: $config${normal}"
+    echo -E "${violet_b}Check computes config: $config${normal}"
     read_conf comp $config castellan
 #    bash $command_on_nodes_script_name -nt comp -c "cat $config | grep '\[castellan_configsource\]'| \
 #          sed --unbuffered \
@@ -157,10 +188,10 @@ Check_configs_on_computes () {
 }
 
 Check_config_with_hashed_password () {
-  echo -E "${cyan}Check config with hashed password${normal}"
+  echo -E "${cyan_b}Check config with hashed password${normal}"
   export DONT_CHECK_CONN=true
   for config in "${hashed_password_config_list[@]}"; do
-    echo -E "${violet}Check control config: $config${normal}"
+    echo -E "${violet_b}Check control config: $config${normal}"
     read_conf ctrl $config castellan
 #    bash $script_dir/$command_on_nodes_script_name -nt ctrl -c "cat $config | grep 'password'"
   done
@@ -168,10 +199,10 @@ Check_config_with_hashed_password () {
 }
 
 Check_hidden_passwords_in_prometheus_exporters () {
-  echo -E "${cyan}Check hidden passwords in prometheus exporters${normal}"
+  echo -E "${cyan_b}Check hidden passwords in prometheus exporters${normal}"
   export DONT_CHECK_CONN=true
   for config in "${prometheus_exporters_config_list[@]}"; do
-    echo -E "${violet}Check control config: $config${normal}"
+    echo -E "${violet_b}Check control config: $config${normal}"
 #    read_conf ctrl $config foo cat
     read_conf ctrl $config castellan
 #    bash $script_dir/$command_on_nodes_script_name -nt ctrl -c "cat $config"
@@ -180,7 +211,26 @@ Check_hidden_passwords_in_prometheus_exporters () {
   export DONT_CHECK_CONN=""
 }
 
+Check_specify_config () {
+  echo -E "${cyan_b}Check specify config $CONFIG_PATH${normal}"
+  export DONT_CHECK_CONN=true
+  if [ "$CHECK_CTRL" = true ]; then
+    read_conf ctrl $CONFIG_PATH castellan
+  fi
+  if [ "$CHECK_COMP" = true ]; then
+    read_conf comp $CONFIG_PATH castellan
+  fi
+  if [ "$CHECK_ALL" = true ]; then
+    read_conf ctrl $CONFIG_PATH castellan
+    read_conf comp $CONFIG_PATH castellan
+  fi
+  export DONT_CHECK_CONN=""
+}
 
+if [ -n "$CONFIG_PATH" ]; then
+  Check_specify_config
+  exit 0
+fi
 if [ "$CHECK_COMP" = true ] || [ "$CHECK_ALL" = true ]; then
   Check_configs_on_computes
 fi

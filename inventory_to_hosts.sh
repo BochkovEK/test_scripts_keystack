@@ -10,8 +10,9 @@ external_prefix="ext"
 region_name="ebochkov"
 domain_name="test.domain"
 parse_inventory_script="parse_inventory.py"
-inventory_file_name="dns_ip_mapping.txt"
+inventory_file_name="inventory"
 output_file_name="hosts_add_strings"
+add_strings="# ------ ADD strings ------"
 
 #Color
 red=$(tput setaf 1)
@@ -24,11 +25,12 @@ script_dir=$(dirname $0)
 #[[ -z $DONT_ASK ]] && DONT_ASK="false"
 #[[ -z $EDIT_HOSTS_FILE ]] && EDIT_HOSTS_FILE="false"
 [[ -z $INVENTORY_PATH ]] && INVENTORY_PATH=$script_dir/$inventory_file_name
-[[ -z $OUTPUT_FILE ]] && OUTPUT_FILE=$output_file_name
+[[ -z $OUTPUT_FILE_NAME ]] && OUTPUT_FILE_NAME=$output_file_name
 [[ -z $DOMAIN ]] && DOMAIN=$domain_name
 [[ -z $REGION ]] && REGION=$region_name
 [[ -z $INT_PREF ]] && INT_PREF=$internal_prefix
 [[ -z $EXT_PREF ]] && EXT_PREF=$external_prefix
+[[ -z $ADD_STRINGS ]] && ADD_STRINGS=$add_strings
 
 while [ -n "$1" ]
 do
@@ -119,12 +121,34 @@ fi
 
 python_script_execute () {
   echo "Start parse $INVENTORY_PATH to hosts strings"
-  export OUTPUT_FILE=$OUTPUT_FILE
+  export OUTPUT_FILE=$script_dir/$OUTPUT_FILE_NAME
   export DOMAIN=$DOMAIN
   export REGION=$REGION
   export INT_PREF=$INT_PREF
   export EXT_PREF=$EXT_PREF
+  echo "
+  [DEBUG]:
+  OUTPUT_FILE: $script_dir/$OUTPUT_FILE_NAME
+  DOMAIN: $DOMAIN
+  REGION: $REGION
+  INT_PREF: $INT_PREF
+  EXT_PREF: $EXT_PREF
+  "
   python3 $script_dir/$parse_inventory_script $INVENTORY_PATH
 }
 
+add_to_hosts () {
+  add_strings_already_exists=$(cat /etc/hosts | grep "$ADD_STRINGS")
+  echo "
+  [DEBUG]:
+  add_strings_already_exists: $add_strings_already_exists
+  \$script_dir/\$OUTPUT_FILE_NAME: $script_dir/$OUTPUT_FILE_NAME
+  "
+  if [ -z "$add_strings_already_exists" ]; then
+    echo $ADD_STRINGS >> /etc/hosts
+    cat $script_dir/$OUTPUT_FILE_NAME >> /etc/hosts
+  fi
+}
+
 python_script_execute
+add_to_hosts

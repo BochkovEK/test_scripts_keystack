@@ -6,8 +6,11 @@
 #      curl -X 'GET' 'https://repo.itkey.com/service/rest/v1/search?repository=images&name=*' -H 'accept: application/json'| jq '.items[]|.name'
 #   2) bash create_image.sh <image name from repo.itkey.com 'images' repo>
 # OR
-#    1) export IMAGE_SOURCE="https://cloud-images.ubuntu.com/releases/focal/release"
+#    1) export IMAGE_SOURCE="https://cloud-images.ubuntu.com/releases/focal/release/"
 #    2) bash ~/test_scripts_keystack/utils/openstack/create_image.sh ubuntu-20.04-server-cloudimg-amd64.img
+#     or
+#    1) http://cloud-images-archive.ubuntu.com/releases/noble/release-20240523.1/
+#    2) bash ~/test_scripts_keystack/utils/openstack/create_image.sh ubuntu-24.04-server-cloudimg-amd64.img
 #     or
 #    2) bash ~/test_scripts_keystack/utils/openstack/create_image.sh cirros-0.6.2-x86_64-disk.img
 
@@ -45,7 +48,7 @@ install_package_script="install_package.sh"
 
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
-[[ -z $IMAGE_SOURCE ]] && IMAGE_SOURCE="https://repo.itkey.com/repository/images"
+[[ -z $IMAGE_SOURCE ]] && IMAGE_SOURCE="https://repo.itkey.com/repository/images/"
 [[ -z $IMAGE ]] && IMAGE=$1
 [[ -z $IMAGE_DIR ]] && IMAGE_DIR="$HOME/images"
 # --min-disk $min_disk
@@ -153,7 +156,7 @@ create_image () {
               error_message="Image $IMAGE does not created"
               error_output
             else
-              wget $IMAGE_SOURCE/$IMAGE -P $IMAGE_DIR/
+              wget $IMAGE_SOURCE$IMAGE -P $IMAGE_DIR/
             fi
           fi
         fi
