@@ -30,27 +30,6 @@ yellow=$(tput setaf 3)
 [[ -z $NODES_TYPE ]] && NODES_TYPE="all"
 #======================
 
-#note_type_func () {
-#  case "$1" in
-#        ctrl)
-#          nodes_to_find=$ctrl_pattern
-#          echo "Сontainer will be checked on ctrl nodes"
-#          ;;
-#        comp)
-#          nodes_to_find=$comp_pattern
-#          echo "Сontainer will be checked on comp nodes"
-#          ;;
-#        net)
-#          nodes_to_find=$net_pattern
-#          echo "Сontainer will be checked on net nodes"
-#          ;;
-#        *)
-#          echo "type is not specified correctly. Сontainers will be checked on ctr, comp, net nodes"
-#          ;;
-#        esac
-#}
-
-#======================
 
 # Define parameters
 define_parameters () {
@@ -129,15 +108,6 @@ get_nodes_list () {
 
 get_nodes_list
 
-#[[ -z ${NODES[0]} ]] && { srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}'); for i in $srv; do NODES+=("$i"); done; }
-
-#echo "Nodes for container checking:"
-#echo "${NODES[*]}"
-#
-#if [ ${#NODES[@]} -eq 0 ]; then
-#  error_message="Node list type of $nodes_to_find is empty"
-#  error_output
-#fi
 
 [[ "$CHECK_UNHEALTHY" = true  ]] && {
   UNHEALTHY="\(unhealthy\)";
@@ -167,6 +137,7 @@ for host in "${NODES[@]}"; do
       |sed --unbuffered \
         -e 's/\(.*second.*\)/\o033[33m\1\o033[39m/' \
         -e 's/\(.*(healthy).*\)/\o033[92m\1\o033[39m/' \
+        -e 's/\(.*weeks.*\)/\o033[33m\1\o033[39m/' \
         -e 's/\(.*hours.*\)/\o033[92m\1\o033[39m/' \
         -e 's/\(.*starting).*\)/\o033[33m\1\o033[39m/'\
         -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
