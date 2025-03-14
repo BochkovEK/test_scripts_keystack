@@ -192,7 +192,7 @@ for image_name in "${public_images_list[@]}"; do
   image_source=$(echo "${image_name%/*}")
 #  echo $image_source $image_name_cut
 #  exit 1
-  export IMAGE_SOURCE=$image_source
+  export IMAGE_SOURCE=$image_source/
   if ! bash $utils_dir/openstack/create_image.sh $image_name_cut; then
     exit 1
   fi
