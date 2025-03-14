@@ -81,6 +81,7 @@ prometheus_exporters_config_list=(
 [[ -z $CHECK_HASHED ]] && CHECK_HASHED="false"
 [[ -z $CHECK_PROMETH ]] && CHECK_PROMETH="false"
 [[ -z $CHECK_ALL ]] && CHECK_ALL="true"
+[[ -z $CONFIG_PATH ]] && CONFIG_PATH=""
 #[[ -z $DEBUG ]] && DEBUG="false"
 
 # Define parameters
@@ -205,6 +206,22 @@ Check_hidden_passwords_in_prometheus_exporters () {
   export DONT_CHECK_CONN=""
 }
 
+Check_specify_config () {
+  echo -E "${cyan_b}Check specify config $CONFIG_PATH${normal}"
+  export DONT_CHECK_CONN=true
+  if [ "$CHECK_CTRL" = true ]; then
+    read_conf ctrl $CONFIG_PATH castellan
+  fi
+  if [ "$CHECK_COMP" = true ]; then
+    read_conf comp $CONFIG_PATH castellan
+  fi
+  if [ "$CHECK_ALL" = true ]; then
+    read_conf ctrl $CONFIG_PATH castellan
+    read_conf comp $CONFIG_PATH castellan
+  fi
+  export DONT_CHECK_CONN=""
+}
+
 
 if [ "$CHECK_COMP" = true ] || [ "$CHECK_ALL" = true ]; then
   Check_configs_on_computes
@@ -217,4 +234,7 @@ if [ "$CHECK_HASHED" = true ] || [ "$CHECK_ALL" = true ]; then
 fi
 if [ "$CHECK_PROMETH" = true ] || [ "$CHECK_ALL" = true ]; then
   Check_hidden_passwords_in_prometheus_exporters
+fi
+if [ "$CHECK_SPECIFY_CONFIG" = true ] || [ "$CHECK_ALL" = true ]; then
+  Check_specify_config
 fi
