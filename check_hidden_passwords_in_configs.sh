@@ -227,7 +227,10 @@ Check_specify_config () {
   export DONT_CHECK_CONN=""
 }
 
-
+if [ -n "$CONFIG_PATH" ]; then
+  Check_specify_config
+  exit 0
+fi
 if [ "$CHECK_COMP" = true ] || [ "$CHECK_ALL" = true ]; then
   Check_configs_on_computes
 fi
@@ -239,7 +242,4 @@ if [ "$CHECK_HASHED" = true ] || [ "$CHECK_ALL" = true ]; then
 fi
 if [ "$CHECK_PROMETH" = true ] || [ "$CHECK_ALL" = true ]; then
   Check_hidden_passwords_in_prometheus_exporters
-fi
-if [ -n "$CONFIG_PATH" ]; then
-  Check_specify_config
 fi
