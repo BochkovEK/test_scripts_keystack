@@ -95,26 +95,31 @@ count=1
 while [ -n "$1" ]; do
   case "$1" in
     --help) echo -E "
-      -comp                       check configs on comp nodes ${compute_config_list[*]}
-      -ctrl                       check configs on ctrl nodes ${control_config_list[*]}
-      -hashed                     check hashed passwords on configs ${hashed_password_config_list[*]}
-      -prometheus                 check prometheus exporters configs ${prometheus_exporters_config_list[*]}
+      -comp                         check configs on comp nodes ${compute_config_list[*]}
+      -ctrl                         check configs on ctrl nodes ${control_config_list[*]}
+      -hashed                       check hashed passwords on configs ${hashed_password_config_list[*]}
+      -prometheus                   check prometheus exporters configs ${prometheus_exporters_config_list[*]}
+      -c, -config <config_path>     check specify config
 "
       exit 0
       break ;;
     -comp) CHECK_COMP=true; CHECK_ALL="false"
       echo "Found the -comp. Check configs on comp nodes ${compute_config_list[*]}"
-      shift ;;
+      ;;
     -ctrl) CHECK_CTRL=true; CHECK_ALL="false"
       echo "Found the -ctrl. Check configs on ctrl nodes ${control_config_list[*]}"
-      shift ;;
+      ;;
     -hashed) CHECK_HASHED=true; CHECK_ALL="false"
       echo "Found the -hashed. Check hashed passwords on configs ${hashed_password_config_list[*]}"
-      shift ;;
+      ;;
     -prometheus) CHECK_PROMETH=true; CHECK_ALL="false"
       echo "Found the -prometheus. Check prometheus exporters configs ${prometheus_exporters_config_list[*]}"
+      ;;
+    -c|-config) CONFIG_PATH=$2
+      echo "Found the -config. Check specify config $CONFIG_PATH"
       shift ;;
-    --) shift
+    --)
+      shift
       break ;;
     *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
   esac
@@ -235,6 +240,6 @@ fi
 if [ "$CHECK_PROMETH" = true ] || [ "$CHECK_ALL" = true ]; then
   Check_hidden_passwords_in_prometheus_exporters
 fi
-if [ "$CHECK_SPECIFY_CONFIG" = true ] || [ "$CHECK_ALL" = true ]; then
+if [ -n "$CONFIG_PATH" ]; then
   Check_specify_config
 fi
