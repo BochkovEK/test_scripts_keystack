@@ -137,6 +137,8 @@ for host in "${NODES[@]}"; do
       |sed --unbuffered \
         -e 's/\(.*second.*\)/\o033[33m\1\o033[39m/' \
         -e 's/\(.*(healthy).*\)/\o033[92m\1\o033[39m/' \
+        -e 's/\(.*About an hour.*\)/\o033[92m\1\o033[39m/' \
+        -e 's/\(.*minutes.*\)/\o033[92m\1\o033[39m/' \
         -e 's/\(.*weeks.*\)/\o033[92m\1\o033[39m/' \
         -e 's/\(.*hours.*\)/\o033[92m\1\o033[39m/' \
         -e 's/\(.*starting).*\)/\o033[33m\1\o033[39m/'\
