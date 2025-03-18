@@ -381,7 +381,9 @@ Check_consul_config () {
   echo "$ipmi_fencing_state" | \
             sed --unbuffered \
                 -e 's/\(.*true.*\)/\o033[92m\1\o033[39m/' \
+                -e 's/\(.*True.*\)/\o033[92m\1\o033[39m/' \
                 -e 's/\(.*false.*\)/\o033[31m\1\o033[39m/' \
+                -e 's/\(.*False.*\)/\o033[31m\1\o033[39m/' \
                 -e 's/\(.*alive_compute_threshold.*\)/\o033[33m\1\o033[39m/' \
                 -e 's/\(.*dead_compute_threshold.*\)/\o033[33m\1\o033[39m/'
 }
