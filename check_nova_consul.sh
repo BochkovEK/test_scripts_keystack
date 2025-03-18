@@ -373,8 +373,9 @@ Check_consul_config () {
   [TS_DEBUG]: \"\$OS_REGION_NAME\": $OS_REGION_NAME\n
   [TS_DEBUG]: \"\$leader_ctrl_node\": $leader_ctrl_node\n
   "
-  echo -e "${ORANGE}ssh -t -o StrictHostKeyChecking=no $leader_ctrl_node cat /etc/kolla/consul/region-config_${REGION}.json${NC}"
-  ipmi_fencing_state=$(ssh -o StrictHostKeyChecking=no "$leader_ctrl_node" cat /etc/kolla/consul/region-config_"${REGION}".json| \
+  consul_config_path=$(bash $script_dir/$edit_ha_region_config_script config_path)
+  echo -e "${ORANGE}ssh -t -o StrictHostKeyChecking=no $consul_config_path{NC}"
+  ipmi_fencing_state=$(ssh -o StrictHostKeyChecking=no "$leader_ctrl_node" cat $consul_config_path| \
   grep -E '"bmc": \w|"ipmi": \w|alive_compute_threshold|dead_compute_threshold|"ceph": \w|"nova": \w|"power_fence_mode"')
   echo "Fencing list:"
   echo "$ipmi_fencing_state" | \
