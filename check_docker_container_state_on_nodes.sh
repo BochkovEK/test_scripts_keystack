@@ -142,7 +142,7 @@ for host in "${NODES[@]}"; do
         -e 's/\(.*weeks.*\)/\o033[92m\1\o033[39m/' \
         -e 's/\(.*hours.*\)/\o033[92m\1\o033[39m/' \
         -e 's/\(.*starting).*\)/\o033[33m\1\o033[39m/'\
-        -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
+        -e 's/\(.*unhealthy.*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*Less than.*\)/\o033[33m\1\o033[39m/' \
         -e 's/\(.*restarting.*\)/\o033[31m\1\o033[39m/'
 
