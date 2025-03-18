@@ -135,9 +135,12 @@ start_python_power_management_script () {
         echo "Check bmc suffix by script $EDIT_HA_REGION_CONFIG..."
         bmc_suffix=$(bash $script_dir/$EDIT_HA_REGION_CONFIG suffix| tail -n1)
         [[ -z $bmc_suffix ]] && { printf "%40s\n" "${red}variable bmc_suffix id empty${normal}"; exit 1; }
+#        bmc_suffix=$BMC_SUFFIX
+      else
+        bmc_suffix=$BMC_SUFFIX
       fi
-      echo "bmc_suffix: $bmc_suffix"
-      bmc_suffix=$BMC_SUFFIX
+#      echo "bmc_suffix: $bmc_suffix"
+#      bmc_suffix=$BMC_SUFFIX
       echo "bmc_suffix: $bmc_suffix"
       BMC_HOST_NAME=$HOST_NAME$bmc_suffix
       echo "BMC_HOST_NAME: $BMC_HOST_NAME"
