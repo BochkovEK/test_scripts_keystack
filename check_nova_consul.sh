@@ -24,7 +24,7 @@ check_openrc_script="check_openrc.sh"
 check_openstack_cli_script="check_openstack_cli.sh"
 install_package_script="install_package.sh"
 
-edit_ha_region_config_script="edit_ha_region_config.sh"
+edit_ha_region_config_script="edit_ha_config.sh"
 
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
 [[ -z $TRY_TO_RISE ]] && TRY_TO_RISE="true"
