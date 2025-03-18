@@ -226,9 +226,9 @@ Check_connection_to_nodes () {
     Switch_case_nodes_type $1
 
     for host in $nodes; do
-        host $host
-        sleep 1
+#        host $host
         Check_connection_to_node $host
+#        sleep 1
     done
 }
 
