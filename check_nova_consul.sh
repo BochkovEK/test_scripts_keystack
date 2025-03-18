@@ -374,7 +374,7 @@ Check_consul_config () {
   [TS_DEBUG]: \"\$leader_ctrl_node\": $leader_ctrl_node\n
   "
   consul_config_path=$(bash $script_dir/$edit_ha_region_config_script config_path | tail -n1)
-  echo -e "${ORANGE}ssh -t -o StrictHostKeyChecking=no $consul_config_path{NC}"
+  echo -e "${ORANGE}ssh -t -o StrictHostKeyChecking=no $leader_ctrl_node $consul_config_path${NC}"
   ipmi_fencing_state=$(ssh -o StrictHostKeyChecking=no "$leader_ctrl_node" cat $consul_config_path| \
   grep -E '"bmc": \w|"ipmi": \w|alive_compute_threshold|dead_compute_threshold|"ceph": \w|"nova": \w|"power_fence_mode"')
   echo "Fencing list:"
