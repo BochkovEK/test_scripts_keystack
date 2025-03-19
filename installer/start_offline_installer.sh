@@ -234,7 +234,7 @@ fi
 if [[ -z "${KEYSTACK_RC_VERSION}" ]]; then
   read -rp "If necessary, specify the release candidate (exp: rc7) version or press Enter : " KEYSTACK_RC_VERSION
 fi
-export KEYSTACK_RC_VERSION=${KEYSTACK_RC_VERSION:-""}
+#export KEYSTACK_RC_VERSION=${KEYSTACK_RC_VERSION:-""}
 
 if [ -n "$KEYSTACK_RC_VERSION" ]; then
   export KEYSTACK_RC_VERSION="$KEYSTACK_RC_VERSION-"
