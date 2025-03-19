@@ -36,7 +36,7 @@ yellow=$(tput setaf 3)
 # Constants
 TIMEOUT_BEFORE_NEXT_CREATION=10
 UBUNTU_IMAGE_NAME="ubuntu-20.04-server-cloudimg-amd64"
-CIRROS_IMAGE_NAME="cirros-0.6.2-x86_64-disk"
+CIRROS_IMAGE_NAME="cirros-0.6.3-x86_64-disk"
 
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
