@@ -35,8 +35,8 @@ yellow=$(tput setaf 3)
 
 # Constants
 TIMEOUT_BEFORE_NEXT_CREATION=10
-UBUNTU_IMAGE_NAME="ubuntu-20.04-server-cloudimg-amd64"
-CIRROS_IMAGE_NAME="cirros-0.6.3-x86_64-disk"
+UBUNTU_IMAGE_NAME="ubuntu-20.04-server-cloudimg-amd64.img"
+CIRROS_IMAGE_NAME="cirros-0.6.3-x86_64-disk.img"
 
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
@@ -558,9 +558,9 @@ create_image () {
     read -p "Press enter to continue: "; }
   check_wget
   echo "Creating image \"$1\" in project \"$PROJECT\"..."
-  [ -f $script_dir/"$1".img ] && echo "File $script_dir/$1.img exist." \
-  || { echo "File $script_dir/$1.img does not exist. Try to download it..."; \
-  wget https://repo.itkey.com/repository/images/"$1".img -O $script_dir/"$1".img; }
+  [ -f $script_dir/"$1" ] && echo "File $script_dir/$1 exist." \
+  || { echo "File $script_dir/$1 does not exist. Try to download it..."; \
+  wget https://repo.itkey.com/repository/images/"$1" -O $script_dir/"$1"; }
   image_exists_in_openstack
   if [ "$1" = "$CIRROS_IMAGE_NAME" ]; then
     min_disk=1
@@ -572,7 +572,7 @@ create_image () {
     --min-disk $min_disk \
     --container-format bare \
     --public \
-    --file $script_dir/"$1".img
+    --file $script_dir/"$1"
 
   IMAGE=$1
 }
