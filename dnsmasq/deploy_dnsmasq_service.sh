@@ -137,15 +137,22 @@ get_var () {
     if [[ -z "${DOMAIN}" ]]; then
       read -rp "Enter domain name for KeyStack region [$domain_name]: " DOMAIN
     fi
+    export DOMAIN=${DOMAIN:-$domain_name}
+
     if [[ -z "${REGION}" ]]; then
       read -rp "Enter region name KeyStack cloud [$region_name]: " REGION
     fi
+    export REGION=${REGION:-$region_name}
+
     if [[ -z "${INT_PREF}" ]]; then
       read -rp "Enter internal prefix for FQDN [$internal_prefix]: " INT_PREF
     fi
+    export INT_PREF=${INT_PREF:-$internal_prefix}
+
     if [[ -z "${EXT_PREF}" ]]; then
       read -rp "Enter external prefix for FQDN [$external_prefix]: " EXT_PREF
     fi
+    export EXT_PREF=${EXT_PREF:-$external_prefix}
   fi
 
   # get DNS_SERVER_IP
