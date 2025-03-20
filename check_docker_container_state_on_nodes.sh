@@ -128,7 +128,7 @@ for host in "${NODES[@]}"; do
     echo "Check container on ${host}"
   else
     echo "Check container (CONTAINER_NAME: $CONTAINER_NAME) on ${host}"
-    grep_string="|grep $CONTAINER_NAME|"
+    grep_string="|grep $CONTAINER_NAME"
   fi
   if ping -c 2 $host &> /dev/null; then
     printf "%40s\n" "There is a connection with $host - ok!"
