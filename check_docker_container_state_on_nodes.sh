@@ -128,12 +128,13 @@ for host in "${NODES[@]}"; do
     echo "Check container on ${host}"
   else
     echo "Check container (CONTAINER_NAME: $CONTAINER_NAME) on ${host}"
+    grep_string="|grep $CONTAINER_NAME|"
   fi
   if ping -c 2 $host &> /dev/null; then
     printf "%40s\n" "There is a connection with $host - ok!"
 
 #    ssh -o StrictHostKeyChecking=no $host docker ps $grep_string \
-    ssh -o StrictHostKeyChecking=no $host docker ps \
+    ssh -o StrictHostKeyChecking=no $host docker ps $grep_string\
       |sed --unbuffered \
         -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*second.*\)/\o033[33m\1\o033[39m/' \
