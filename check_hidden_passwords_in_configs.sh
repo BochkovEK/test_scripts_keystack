@@ -100,7 +100,7 @@ while [ -n "$1" ]; do
       -hashed                       check hashed passwords on configs ${hashed_password_config_list[*]}
       -prometheus                   check prometheus exporters configs ${prometheus_exporters_config_list[*]}
       -cl, -config_list             check configs list
-      -c, -config <config_path>     check specify config
+      -c, -config <config_path>     check specify config (exp: -c /etc/kolla/adminui-backend/adminui-backend-osloconf.conf)
 "
       exit 0
       break ;;
