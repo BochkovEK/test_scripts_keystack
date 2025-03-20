@@ -99,6 +99,7 @@ while [ -n "$1" ]; do
       -ctrl                         check configs on ctrl nodes ${control_config_list[*]}
       -hashed                       check hashed passwords on configs ${hashed_password_config_list[*]}
       -prometheus                   check prometheus exporters configs ${prometheus_exporters_config_list[*]}
+      -cl, -config_list             check configs list
       -c, -config <config_path>     check specify config
 "
       exit 0
@@ -118,6 +119,9 @@ while [ -n "$1" ]; do
     -c|-config) CONFIG_PATH=$2
       echo "Found the -config. Check specify config $CONFIG_PATH"
       shift ;;
+    -cl|-config_list) CONFIG_LIST=true
+      echo "Found the -config_list. Check configs list"
+      ;;
     --)
       shift
       break ;;
@@ -227,8 +231,27 @@ Check_specify_config () {
   export DONT_CHECK_CONN=""
 }
 
+Config_list () {
+  echo "control config list:"
+  for config in "${control_config_list[@]}"; do
+    echo $config
+  done
+  echo "control config list:"
+  for config in "${compute_config_list[@]}"; do
+    echo $config
+  done
+  echo "control config list:"
+  for config in "${prometheus_exporters_config_list[@]}"; do
+    echo $config
+  done
+}
+
 if [ -n "$CONFIG_PATH" ]; then
   Check_specify_config
+  exit 0
+fi
+if [ "$CONFIG_LIST" = true ]; then
+  Config_list
   exit 0
 fi
 if [ "$CHECK_COMP" = true ] || [ "$CHECK_ALL" = true ]; then
