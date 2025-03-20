@@ -232,15 +232,15 @@ Check_specify_config () {
 }
 
 Config_list () {
-  echo "control config list:"
+  echo -E "${yellow}control config list:${normal}"
   for config in "${control_config_list[@]}"; do
     echo $config
   done
-  echo "control config list:"
+  echo -E "${yellow}control config list:${normal}"
   for config in "${compute_config_list[@]}"; do
     echo $config
   done
-  echo "control config list:"
+  echo -E "${yellow}control config list:${normal}"
   for config in "${prometheus_exporters_config_list[@]}"; do
     echo $config
   done
