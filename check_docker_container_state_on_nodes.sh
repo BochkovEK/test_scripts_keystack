@@ -134,7 +134,7 @@ for host in "${NODES[@]}"; do
     printf "%40s\n" "There is a connection with $host - ok!"
 
 #    ssh -o StrictHostKeyChecking=no $host docker ps $grep_string \
-    ssh -o StrictHostKeyChecking=no $host docker ps $grep_string\
+    ssh -o StrictHostKeyChecking=no $host docker ps $grep_string \
       |sed --unbuffered \
         -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*second.*\)/\o033[33m\1\o033[39m/' \
