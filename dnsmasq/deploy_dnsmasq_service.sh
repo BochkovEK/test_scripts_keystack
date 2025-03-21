@@ -189,6 +189,7 @@ get_var () {
 
 sed_var_in_conf () {
   echo -e "\n${yellow}Sed vars in conf...${normal}"
+  cp $script_dir/$CONF_NAME $script_dir/"$CONF_NAME"_edited
   sed -i --regexp-extended "s/DOMAIN/$DOMAIN/" \
       $script_dir/$CONF_NAME
   sed -i --regexp-extended "s/DNS_SERVER_IP/$DNS_SERVER_IP/" \
@@ -233,7 +234,7 @@ install_dnsmasq () {
 }
 
 copy_dnsmasq_conf () {
-  cp "$script_dir"/$CONF_NAME /etc/$CONF_NAME
+  cp "$script_dir"/"$CONF_NAME"_edited /etc/$CONF_NAME
   # Checking the hosts file for the line # ----- ADD from deploy_dnsmasq_service.sh -----
   if [ "$HOST_EXIST" = false ]; then
     strings_from_dnsmasq_deployer=$(cat < $parses_file|grep "$add_string")
