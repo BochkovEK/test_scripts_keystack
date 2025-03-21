@@ -28,10 +28,10 @@ region_name="ebochkov"
 domain_name="test.domain"
 #parse_inventory_script="parse_inventory.py"
 #inventory_file_name="dns_ip_mapping.txt"
-ctrl_pattern='\-ctrl\-..( |$)'
-comp_pattern='\-comp\-..( |$)'
-net_pattern='\-net\-..( |$)'
-lcm_pattern='\-lcm\-..( |$)'
+ctrl_pattern='\-ctrl\-..(\s+|$)'
+comp_pattern='\-comp\-..(\s+|$)'
+net_pattern='\-net\-..(\s+|$)'
+lcm_pattern='\-lcm\-..(\s+|$)'
 #nodes_to_find="$ctrl_pattern|$lcm_pattern|$comp_pattern|$net_pattern"
 add_string="# ------ ADD strings ------"
 ldap_string="# ------ LDAP SERVER ------"
@@ -196,13 +196,6 @@ sed_var_in_conf () {
       $script_dir/$CONF_NAME
   echo
 }
-
-#cat_conf () {
-#  echo "Cat conf..."
-#  echo
-#  cat $script_dir/$CONF_NAME
-#  echo ""
-#}
 
 install_dnsmasq () {
   #Install docker if need
