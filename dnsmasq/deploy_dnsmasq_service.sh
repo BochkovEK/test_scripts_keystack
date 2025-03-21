@@ -4,8 +4,14 @@
 # for mapping "ip - name" add string to dns_ip_mapping.txt file like /etc/hosts
 
 #Error starting userland proxy: listen udp4 0.0.0.0:53: bind: address already in use
-#sudo systemctl stop systemd-resolved
-#sudo systemctl disable systemd-resolved
+# sudo systemctl stop systemd-resolved
+# sudo systemctl disable systemd-resolved
+
+#Error Failed to restart dnsmasq.service: Unit dnsmasq.service is masked.
+# sudo systemctl unmask dnsmasq.service
+# sudo systemctl stop systemd-resolved
+# sudo systemctl disable systemd-resolved
+# sudo systemctl restart dnsmasq.service
 
 #Every time /etc/dnsmasq.conf and /etc/hosts are changed, restart the service 'systemctl restart dnsmasq'
 
