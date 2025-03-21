@@ -28,7 +28,11 @@ region_name="ebochkov"
 domain_name="test.domain"
 #parse_inventory_script="parse_inventory.py"
 #inventory_file_name="dns_ip_mapping.txt"
-nodes_to_find='\-ctrl\-..( |$)|\-comp\-..( |$)|\-net\-..( |$)|\-lcm\-..( |$)'
+ctrl_pattern='\-ctrl\-..( |$)'
+comp_pattern='\-comp\-..( |$)'
+net_pattern='\-net\-..( |$)'
+lcm_pattern='\-lcm\-..( |$)'
+#nodes_to_find="$ctrl_pattern|$lcm_pattern|$comp_pattern|$net_pattern"
 add_string="# ------ ADD strings ------"
 ldap_string="# ------ LDAP SERVER ------"
 ldap_server="10.224.133.139 ldaps-lab.slavchenkov-keystack.vm.lab.itkey.com"
@@ -244,19 +248,41 @@ copy_dnsmasq_conf () {
 #    cat $parses_file
   fi
   # Check and add ldap string
-  ldap_string_exist=$(cat < $parses_file|grep "$ldap_string")
-  if [ -z "$ldap_string_exist" ]; then
+  ldap_string_exist=true
+  for word in $ldap_server; do
+  find_string=$(cat < $parses_file|grep "$word")
+    if [ -n "$find_string" ]; then
+      break
+      #echo $ldap_string >> $parses_file
+      #echo $ldap_server >> $parses_file
+    else
+      ldap_string_exist=false
+    fi
+  done
+  if [ "$ldap_string_exist" = false ]; then
     echo $ldap_string >> $parses_file
     echo $ldap_server >> $parses_file
   fi
-    echo "Hosts file: "
-    cat $parses_file
+  echo "Hosts file: "
+  cat $parses_file
 
 #  exit 0
   sed -i --regexp-extended "s/nameserver(\s+|)[0-9]+.[0-9]+.[0-9]+.[0-9]+/nameserver $DNS_SERVER_IP/" \
       /etc/resolv.conf
 #  echo "nameserver $DNS_SERVER_IP" >> /etc/resolv.conf
   systemctl restart dnsmasq
+  #check current node
+  current_node=$(hostname)
+  for node_pattern in $ctrl_pattern $comp_pattern $net_pattern $lcm_pattern; do
+    is_current_node_in_nodes_pattern=$(echo $current_node|grep -E $node_pattern)
+    if [ -z "$is_current_node_in_nodes_pattern" ]; then
+      if [ -z "$nodes_to_find" ]; then
+        nodes_to_find="$nodes_to_find$node_pattern"
+      else
+        nodes_to_find="$nodes_to_find|$node_pattern"
+      fi
+    fi
+  done
   srv=$(cat $parses_file | grep -E "$nodes_to_find" | awk '{print $1}')
   for host in $srv;do
     echo "Remove resolv.conf from $(cat $parses_file | grep -E ${host} | awk '{print $2}'):"
