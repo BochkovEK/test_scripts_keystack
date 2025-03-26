@@ -21,6 +21,10 @@ VMs = {
     }
     keypair_name = "key_test"
     vm_qty          = 3
+    metadata = {
+        foo         = "baz"
+        test_meta   = "Created by Terraform VM_module"
+    }
   }
 }
 
@@ -97,3 +101,4 @@ variable list:
 - network_name
 - boot_volume_size, var.default_boot_volume_size)
 - disks
+- metadata
