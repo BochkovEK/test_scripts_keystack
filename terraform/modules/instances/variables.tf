@@ -67,6 +67,13 @@ variable "default_server_group" {
   default     = {}
 }
 
+variable "default_metadata" {
+  description = "Default metadata"
+  default     = {
+    test_meta = "Created by Terraform VM_module"
+  }
+}
+
 #variable "default_server_group_id" {
 #  description = "Default server group id"
 #  default     = ""
