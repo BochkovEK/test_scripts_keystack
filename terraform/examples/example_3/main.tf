@@ -29,7 +29,7 @@ resource "openstack_compute_instance_v2" "vm" {
     source_type = "blank"
     destination_type = "volume"
     boot_index = 1
-    volume_size = var.volume_size
+    volume_size = var.boot_volume_size
     delete_on_termination = true
  }
 }
