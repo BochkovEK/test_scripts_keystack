@@ -13,6 +13,7 @@ resource "openstack_compute_instance_v2" "vm" {
   security_groups             = each.value.security_groups == null ? [openstack_compute_secgroup_v2.secgroup.name] : each.value.security_groups
   availability_zone_hints     = each.value.az_hint
   metadata                    = each.value.metadata
+  user_data                   = each.value.user_data
 #  scheduler_hints {
 #    group = each.value.server_group == null ? "" : openstack_compute_servergroup_v2.server_groups[each.key].id
 #     group = each.value.server_group == null ? "" : module.server_group[each.value.server_group][0].server_group_id

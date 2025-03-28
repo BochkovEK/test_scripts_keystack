@@ -94,3 +94,9 @@ variable "VMs" {
 #  description = "AZs list source"
 #  default = {}
 #}
+
+# user_data = "#cloud-config\nhostname: instance_1.example.com\nfqdn: instance_1.example.com"
+variable "default_user_data" {
+  description = "Default user data"
+  default = ""
+}

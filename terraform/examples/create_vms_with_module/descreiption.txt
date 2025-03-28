@@ -84,8 +84,7 @@ AZs = {
     ]
   }
 }
-------------
-------------
+#==================
 
 variable list:
 - image_name
@@ -98,7 +97,17 @@ variable list:
 - keypair_name
 - security_groups
 - az_hint
+    az_hint = "<az_name>:<hyper_name>"
 - network_name
-- boot_volume_size, var.default_boot_volume_size)
+- boot_volume_size
 - disks
+    disks           = [
+      {
+        boot_index = 1,
+        size = 1
+      },
+    ]
 - metadata
+    metadata = {}
+- user_data
+    user_data = "#cloud-config\nhostname: instance_1.example.com\nfqdn: instance_1.example.com"
