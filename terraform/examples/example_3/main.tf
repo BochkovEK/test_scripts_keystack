@@ -20,7 +20,7 @@ resource "openstack_compute_instance_v2" "vm" {
   block_device {
     uuid                  = data.openstack_images_image_v2.image_id.id
     source_type           = "image"
-    volume_size           = var.volume_size
+    volume_size           = var.boot_volume_size
     boot_index            = 0
     destination_type      = "volume"
     delete_on_termination = true
