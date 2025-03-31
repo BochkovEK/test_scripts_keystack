@@ -73,8 +73,8 @@ do
         -da|-dont_ask) DONT_ASK="true"
           echo "Found the -dont_ask option, with parameter value $DONT_ASK"
           ;;
-        -host_exist) HOST_EXIST="true"
-          echo "Found the -host_exist option, with parameter value $HOST_EXIST"
+        -hosts_exist) HOST_EXIST="true"
+          echo "Found the -hosts_exist option, with parameter value $HOST_EXIST"
           ;;
         -dns_ip_mapping_file) DNS_IP_MAPPING_FILE=$2
           echo "Found the -dns_ip_mapping_file option, with parameter value $DNS_IP_MAPPING_FILE"
@@ -112,13 +112,13 @@ EOF
            and edits /etc/resolv.conf on all of them
         3)
           a) bash $script_dir/$script_name
-          b) bash $script_dir/$script_name -host_exist (if file 'hosts' already edited)
+          b) bash $script_dir/$script_name -hosts_exist (if file 'hosts' already edited)
 
         Note:
         Every time /etc/dnsmasq.conf and /etc/hosts are changed, restart the service 'systemctl restart dnsmasq'
 
         -dont_ask, -da                                    silent deploy (without parameter)
-        -host_exist                                       if 'hosts' file already edited (without parameter)
+        -hosts_exist                                       if 'hosts' file already edited (without parameter)
         -dns_ip_mapping_file  <dns_ip_mapping_file_path>  path to dns ip mapping file like 'hosts'
         -inventory, -i        <inventory_from_vms_stage>  path to inventory file for generate hosts string by inventory
 
@@ -315,7 +315,8 @@ if [ "$HOST_EXIST" = false ]; then
   if [ ! -f $DNS_IP_MAPPING_FILE ]; then
     echo -e "${yellow}$DNS_IP_MAPPING_FILE file not found - WARNING${normal}"
     echo -e "Create it,
-      or specify -host_exist key (if hosts file already edited),
+      or specify -hosts_exist
+       key (if hosts file already edited),
       or specify -dns_ip_mapping_file key with file path,
       or environment var 'DNS_IP_MAPPING_FILE'${normal}"
     echo -e "${red}The script cannot be executed - ERROR${normal}"
