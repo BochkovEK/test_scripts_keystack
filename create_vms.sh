@@ -314,7 +314,7 @@ check_hv () {
     echo "Hypervisor is not defined. VMs will be created on different hypervisors"
     host=""
   else
-    host="--hypervisor-hostname $HYPERVISOR_HOSTNAME"
+    host="--hypervisor-hostname $HYPERVISOR_HOSTNAME --os-compute-api-version $API_VERSION"
     echo "Check Hypervisor: $HYPERVISOR_HOSTNAME..."
     echo "Ping $HYPERVISOR_HOSTNAME..."
     if ping -c 1 $HYPERVISOR_HOSTNAME &> /dev/null; then
@@ -802,7 +802,6 @@ create_vms () {
     --security-group $SECURITY_GR_ID \
     $key_string \
     $host \
-    --os-compute-api-version $API_VERSION \
     --network $NETWORK \
     --boot-from-volume $VOLUME_SIZE \
     $ADD_KEY $MAX_KEY
@@ -816,7 +815,6 @@ create_vms () {
       --security-group $SECURITY_GR_ID \
       $key_string \
       $host \
-      --os-compute-api-version $API_VERSION \
       --network $NETWORK \
       --boot-from-volume $VOLUME_SIZE \
       $ADD_KEY $MAX_KEY

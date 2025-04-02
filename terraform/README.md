@@ -39,7 +39,7 @@
 
             if CIDR 10.224.130.0/27
             allocation_start="10.224.130.10"
-            allocation_end="10.224.128.30"
+            allocation_end="10.224.130.30"
     3. Create network and subnet:
      
            openstack network create --external --share --provider-network-type flat --provider-physical-network physnet1 pub_net;
