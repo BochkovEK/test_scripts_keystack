@@ -198,7 +198,6 @@ for host in "${NODES[@]}"; do
 
 #        -e 's/\(.*Up.*\)/\o033[92m\1\o033[39m/' \
     echo -e "Check required container on ${host}"
-    check_required_container
     is_ctrl=$(echo $host|grep ctrl)
     if [ -n "$is_ctrl" ]; then
       required_containers_list=( "${ctrl_required_container_list[@]}" )
