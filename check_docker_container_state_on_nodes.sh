@@ -22,6 +22,30 @@ violet=$(tput setaf 5)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
 
+ctrl_required_container_list=(
+  "keystone"
+  "keystone_ssh"
+  "rabbitmq"
+  "memcached"
+  "mariadb"
+  "redis"
+  "haproxy"
+  "horizon"
+  "nova_serialproxy"
+  "nova_novncproxy"
+  "nova_conductor"
+  "nova_api"
+  "nova_scheduler"
+  "placement_api"
+  "cinder_volume"
+  "cinder_scheduler"
+  "cinder_api"
+  "adminui_frontend"
+  "adminui_backend"
+  "drs"
+  "consul"
+)
+
 [[ -z $CONTAINER_NAME ]] && CONTAINER_NAME=""
 [[ -z $NODES ]] && NODES=()
 [[ -z $CHECK_UNHEALTHY ]] && CHECK_UNHEALTHY="false"
@@ -149,6 +173,32 @@ for host in "${NODES[@]}"; do
         -e 's/\(.*restarting.*\)/\o033[31m\1\o033[39m/'
 
 #        -e 's/\(.*Up.*\)/\o033[92m\1\o033[39m/' \
+    is_ctrl=$(echo $host|grep ctrl)
+    if [ -n "$is_ctrl" ]; then
+      container_name_on_lcm=$(docker ps --format "{{.Names}}" --filter status=running)
+      for container_requaired in "${ctrl_required_container_list[@]}"; do
+        container_exist="false"
+        for container in $container_name_on_lcm; do
+          if [ "$container" = "$container_requaired" ]; then
+          container_exist="true"
+          fi
+        done
+        if [ "$container_exist" = "true" ]; then
+          container_exist="true"
+          echo -e "${green}Container $container exists - ok${normal}\n"
+#          print_ok "$container_requaired"
+        else
+          echo -e "${red}Container $container not exists - ERROR${normal}\n"
+        fi
+      done
+    fi
+
+
+
+#      for cont in "${ctrl_required_container_list[@]}"; do
+
+#      done
+#    fi
   else
     printf "%40s\n" "${red}No connection with $host - error!${normal}"
     echo -e "${red}The node may be turned off.${normal}\n"
