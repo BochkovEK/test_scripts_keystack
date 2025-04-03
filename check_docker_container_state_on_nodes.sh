@@ -19,6 +19,7 @@ get_nodes_list_script="get_nodes_list.sh"
 green=$(tput setaf 2)
 red=$(tput setaf 1)
 violet=$(tput setaf 5)
+magenta=$(tput setaf 200)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
 
@@ -149,7 +150,7 @@ get_nodes_list
 
 for host in "${NODES[@]}"; do
   if [ -z $CONTAINER_NAME ]; then
-    echo -e "${violet}Check container on ${host}${normal}"
+    echo -e "${magenta}Check container on ${host}${normal}"
   else
     echo "Check container (CONTAINER_NAME: $CONTAINER_NAME) on ${host}"
     grep_string="|grep $CONTAINER_NAME"
