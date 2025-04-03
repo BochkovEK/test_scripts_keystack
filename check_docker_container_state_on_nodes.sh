@@ -185,10 +185,10 @@ for host in "${NODES[@]}"; do
         done
         if [ "$container_exist" = "true" ]; then
           container_exist="true"
-          echo -e "${green}Container $container exists - ok${normal}\n"
+          echo -e "${green}Container $container_requaired exists - ok${normal}"
 #          print_ok "$container_requaired"
         else
-          echo -e "${red}Container $container not exists - ERROR${normal}\n"
+          echo -e "${red}Container $container_requaired not exists - ERROR${normal}"
         fi
       done
     fi
