@@ -175,7 +175,7 @@ for host in "${NODES[@]}"; do
 #        -e 's/\(.*Up.*\)/\o033[92m\1\o033[39m/' \
     is_ctrl=$(echo $host|grep ctrl)
     if [ -n "$is_ctrl" ]; then
-      container_name_on_lcm=$(docker ps --format "{{.Names}}" --filter status=running)
+      container_name_on_lcm=$(ssh -o StrictHostKeyChecking=no $host 'docker ps --format "{{.Names}}" --filter status=running')
       for container_requaired in "${ctrl_required_container_list[@]}"; do
         container_exist="false"
         for container in $container_name_on_lcm; do
