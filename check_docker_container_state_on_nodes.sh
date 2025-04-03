@@ -149,7 +149,7 @@ get_nodes_list
 
 for host in "${NODES[@]}"; do
   if [ -z $CONTAINER_NAME ]; then
-    echo "Check container on ${host}"
+    echo -e "${violet}Check container on ${host}${normal}"
   else
     echo "Check container (CONTAINER_NAME: $CONTAINER_NAME) on ${host}"
     grep_string="|grep $CONTAINER_NAME"
@@ -173,6 +173,7 @@ for host in "${NODES[@]}"; do
         -e 's/\(.*restarting.*\)/\o033[31m\1\o033[39m/'
 
 #        -e 's/\(.*Up.*\)/\o033[92m\1\o033[39m/' \
+    echo -e "Check required container on ${host}"
     is_ctrl=$(echo $host|grep ctrl)
     if [ -n "$is_ctrl" ]; then
       container_name_on_lcm=$(ssh -o StrictHostKeyChecking=no $host 'docker ps --format "{{.Names}}" --filter status=running')
@@ -185,8 +186,7 @@ for host in "${NODES[@]}"; do
         done
         if [ "$container_exist" = "true" ]; then
           container_exist="true"
-          echo -e "${green}Container $container_requaired exists - ok${normal}"
-#          print_ok "$container_requaired"
+#          echo -e "${green}Container $container_requaired exists - ok${normal}"
         else
           echo -e "${red}Container $container_requaired not exists - ERROR${normal}"
         fi
