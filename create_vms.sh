@@ -617,7 +617,7 @@ check_image () {
     printf "%s\n" "${orange}Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
     if [ -z "$(image_exists_in_openstack $CIRROS_IMAGE_NAME)" ]; then
 #      create_image $CIRROS_IMAGE_NAME
-      create_image $IMAGE
+      create_image $CIRROS_IMAGE_NAME
     else
       echo "But image: $CIRROS_IMAGE_NAME exists in project: $PROJECT"
       [[ ! $DONT_ASK = "true" ]] && read -p "Press enter to use this image and continue: "
