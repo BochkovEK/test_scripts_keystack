@@ -47,6 +47,12 @@ ctrl_required_container_list=(
   "consul"
 )
 
+comp_required_container_list=(
+  "nova_compute"
+)
+
+required_container_list=()
+
 [[ -z $CONTAINER_NAME ]] && CONTAINER_NAME=""
 [[ -z $NODES ]] && NODES=()
 [[ -z $CHECK_UNHEALTHY ]] && CHECK_UNHEALTHY="false"
@@ -94,10 +100,27 @@ do
       shift
 done
 
-error_output () {
-  printf "%s\n" "${yellow}Docker container not checked on $NODES_TYPE nodes${normal}"
-  printf "%s\n" "${red}$error_message - error${normal}"
-  exit 1
+#error_output () {
+#  printf "%s\n" "${yellow}Docker container not checked on $NODES_TYPE nodes${normal}"
+#  printf "%s\n" "${red}$error_message - error${normal}"
+#  exit 1
+#}
+
+check_required_container () {
+  container_name_on_lcm=$(ssh -o StrictHostKeyChecking=no $host 'docker ps --format "{{.Names}}" --filter status=running')
+  for container_requaired in "${required_containers_list[@]}"; do
+    container_exist="false"
+    for container in $container_name_on_lcm; do
+      if [ "$container" = "$container_requaired" ]; then
+        container_exist="true"
+      fi
+  done
+  if [ "$container_exist" = "true" ]; then
+    container_exist="true"
+  else
+    echo -e "${red}Container $container_requaired not exists - ERROR${normal}"
+  fi
+  done
 }
 
 get_nodes_list () {
@@ -175,31 +198,17 @@ for host in "${NODES[@]}"; do
 
 #        -e 's/\(.*Up.*\)/\o033[92m\1\o033[39m/' \
     echo -e "Check required container on ${host}"
+    check_required_container
     is_ctrl=$(echo $host|grep ctrl)
     if [ -n "$is_ctrl" ]; then
-      container_name_on_lcm=$(ssh -o StrictHostKeyChecking=no $host 'docker ps --format "{{.Names}}" --filter status=running')
-      for container_requaired in "${ctrl_required_container_list[@]}"; do
-        container_exist="false"
-        for container in $container_name_on_lcm; do
-          if [ "$container" = "$container_requaired" ]; then
-          container_exist="true"
-          fi
-        done
-        if [ "$container_exist" = "true" ]; then
-          container_exist="true"
-#          echo -e "${green}Container $container_requaired exists - ok${normal}"
-        else
-          echo -e "${red}Container $container_requaired not exists - ERROR${normal}"
-        fi
-      done
+      required_containers_list=${ctrl_required_container_list[*]}
+      check_required_container
     fi
-
-
-
-#      for cont in "${ctrl_required_container_list[@]}"; do
-
-#      done
-#    fi
+    is_comp=$(echo $host|grep -E "comp|cmpt")
+    if [ -n "$is_comp" ]; then
+      required_containers_list=${comp_required_container_list[*]}
+      check_required_container
+    fi
   else
     printf "%40s\n" "${red}No connection with $host - error!${normal}"
     echo -e "${red}The node may be turned off.${normal}\n"
