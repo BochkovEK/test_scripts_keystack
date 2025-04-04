@@ -22,6 +22,7 @@ violet=$(tput setaf 5)
 magenta=$(tput setaf 200)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
+cyan=$(tput setaf 6)
 
 ctrl_required_container_list=(
   "keystone"
@@ -173,7 +174,7 @@ get_nodes_list
 
 for host in "${NODES[@]}"; do
   if [ -z $CONTAINER_NAME ]; then
-    echo -e "${magenta}Check container on ${host}${normal}"
+    echo -e "${cyan}Check container on ${host}${normal}"
   else
     echo "Check container (CONTAINER_NAME: $CONTAINER_NAME) on ${host}"
     grep_string="|grep $CONTAINER_NAME"
