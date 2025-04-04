@@ -49,7 +49,21 @@ ctrl_required_container_list=(
 )
 
 comp_required_container_list=(
+  "iscsid"
+  "consul"
+  "neutron_openvswitch_agent"
+  "openvswitch_vswitchd"
+  "openvswitch_db"
   "nova_compute"
+  "nova_libvirt"
+  "nova_ssh"
+  "prometheus_hypervisor_exporter"
+  "prometheus_ovs_exporter"
+  "prometheus_libvirt_exporter"
+  "prometheus_blackbox_exporter"
+  "prometheus_node_exporter"
+  "cron"
+  "fluentd"
 )
 
 required_container_list=()
