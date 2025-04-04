@@ -121,7 +121,20 @@ done
 #  exit 1
 #}
 
+#check_connection () {
+#  for host in "${NODES[@]}"; do
+#    echo "host: $host"
+#    sleep 1
+#    if ping -c 2 $host &> /dev/null; then
+#        printf "%40s\n" "${green}There is a connection with $host - success${normal}"
+#    else
+#        printf "%40s\n" "${red}No connection with $IP - error!${normal}"
+#    fi
+#  done
+#}
+
 check_required_container () {
+
   container_name_on_lcm=$(ssh -o StrictHostKeyChecking=no $host 'docker ps --format "{{.Names}}" --filter status=running')
   for container_requaired in "${required_containers_list[@]}"; do
     container_exist="false"
@@ -129,12 +142,12 @@ check_required_container () {
       if [ "$container" = "$container_requaired" ]; then
         container_exist="true"
       fi
-  done
-  if [ "$container_exist" = "true" ]; then
-    container_exist="true"
-  else
-    echo -e "${red}Container $container_requaired not exists - ERROR${normal}"
-  fi
+    done
+    if [ "$container_exist" = "true" ]; then
+      container_exist="true"
+    else
+      echo -e "${red}Container $container_requaired not exists - ERROR${normal}"
+    fi
   done
 }
 
@@ -193,7 +206,11 @@ for host in "${NODES[@]}"; do
     echo "Check container (CONTAINER_NAME: $CONTAINER_NAME) on ${host}"
     grep_string="|grep $CONTAINER_NAME"
   fi
-  if ping -c 2 $host &> /dev/null; then
+  status=$(ssh -o BatchMode=yes -o ConnectTimeout=5 $host echo ok 2>&1)
+
+  if [[ $status == ok ]] ; then
+
+#  if ping -c 2 $host &> /dev/null; then
     printf "%40s\n" "There is a connection with $host - ok!"
 
 #    ssh -o StrictHostKeyChecking=no $host docker ps $grep_string \
@@ -213,6 +230,7 @@ for host in "${NODES[@]}"; do
 
 #        -e 's/\(.*Up.*\)/\o033[92m\1\o033[39m/' \
     echo -e "Check required container on ${host}"
+
     is_ctrl=$(echo $host|grep ctrl)
     if [ -n "$is_ctrl" ]; then
       required_containers_list=( "${ctrl_required_container_list[@]}" )
@@ -223,6 +241,8 @@ for host in "${NODES[@]}"; do
       required_containers_list=( "${comp_required_container_list[@]}" )
       check_required_container
     fi
+  elif [[ $status == "Permission denied"* ]] ; then
+    echo $status
   else
     printf "%40s\n" "${red}No connection with $host - error!${normal}"
     echo -e "${red}The node may be turned off.${normal}\n"
