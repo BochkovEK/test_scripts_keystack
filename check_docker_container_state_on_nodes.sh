@@ -242,7 +242,7 @@ for host in "${NODES[@]}"; do
       check_required_container
     fi
   elif [[ $status == "Permission denied"* ]] ; then
-    echo $status
+    printf "%40s\n" "${red}$status - error!${normal}"
   else
     printf "%40s\n" "${red}No connection with $host - error!${normal}"
     echo -e "${red}The node may be turned off.${normal}\n"
