@@ -198,7 +198,7 @@ echo "$script_name script started..."
   ---
   PROJECT:                  $PROJECT
   NETWORK:                  $NETWORK
-  GET_SETTINGS:            $GET_SETTINGS
+  GET_SETTINGS:             $GET_SETTINGS
 "
 
 get_settings
