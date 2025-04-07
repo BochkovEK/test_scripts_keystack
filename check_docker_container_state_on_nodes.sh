@@ -74,6 +74,7 @@ required_container_list=()
 [[ -z $NODES_TYPE ]] && NODES_TYPE=""
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $NODES_TYPE ]] && NODES_TYPE="all"
+[[ -z $NODE_NAME ]] && NODE_NAME=""
 #======================
 
 
@@ -90,6 +91,7 @@ do
       <container_name> as parameter
       -c, 	-container_name		<container_name>
       -nt, 	-type_of_nodes		<type_of_nodes> 'ctrl', 'comp', 'net'
+      -nn,  -node_name        <node_name>
       -check_unhealthy        check only unhealthy containers (without parameter)
       -debug                  enable debug output (without parameter)
 "
@@ -100,6 +102,10 @@ do
       shift ;;
     -nt|-type_of_nodes) NODES_TYPE=$2
       echo "Found the -type_of_nodes  with parameter value $NODES_TYPE"
+#      note_type_func "$2"
+      shift ;;
+    -nn|-node_name) NODE_NAME=$2
+      echo "Found the -node_name  with parameter value $NODE_NAME"
 #      note_type_func "$2"
       shift ;;
     -check_unhealthy) CHECK_UNHEALTHY="true"
@@ -182,7 +188,11 @@ get_nodes_list () {
   fi
 }
 
-get_nodes_list
+if [ -z "$NODE_NAME" ]; then
+  get_nodes_list
+else
+  NODES=("$NODE_NAME")
+fi
 
 
 [[ "$CHECK_UNHEALTHY" = true  ]] && {
