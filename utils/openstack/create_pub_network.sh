@@ -194,10 +194,11 @@ echo "$script_name script started..."
   ---
   PROJECT:                  $PROJECT
   NETWORK:                  $NETWORK
+  GET_SETTINGS:            $GET_SETTINGS
 "
 
-check_openstack_cli
-check_and_source_openrc_file
 get_settings
 if [ "$GET_SETTINGS" = "true" ]; then exit 0; fi
+check_openstack_cli
+check_and_source_openrc_file
 create_pub_network
