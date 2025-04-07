@@ -113,10 +113,10 @@ check_openstack_cli () {
   export DONT_ASK=true
   export DONT_INSTALL=true
   if bash $utils_dir/$check_openstack_cli_script &> /dev/null; then
-
+#    pass
     check_and_source_openrc_file
-    get_list_from_compute_service
-    exit 0
+#    get_list_from_compute_service
+#    exit 0
   fi
 }
 
@@ -129,51 +129,6 @@ check_and_source_openrc_file () {
   else
     bash $utils_dir/$check_openrc_script
     exit 1
-  fi
-}
-
-get_list_from_compute_service () {
-#    echo "get_list_from_compute_service..."
-  if [ -z ${NODES[0]} ]; then
-     [ "$TS_DEBUG" = true ] && echo -e "
-        [DEBUG]
-          NODES[0]: ${NODES[0]}
-          "
-    if [ "$NODES_TYPE" = comp ] || [ "$NODES_TYPE" = ctrl ]; then
-      [ "$TS_DEBUG" = true ] && echo -e "
-        [DEBUG]
-          NODES_TYPE: $NODES_TYPE
-          "
-      nova_state_list=$(openstack compute service list)
-      if [[ -z $nova_state_list ]];then
-        [ "$TS_DEBUG" = true ] && echo -e "
-        [DEBUG]
-        ${yellow}Failed to determine node $NODES_TYPE list${normal}
-        "
-#        return
-#        exit 1
-      elif [ "$NODES_TYPE" = comp ]; then
-        #compute
-        nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
-      else
-        #control
-        nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
-      fi
-      if [[ -z $nodes ]];then
-        [ "$TS_DEBUG" = true ] && echo -e "
-        [DEBUG]
-        ${yellow}Failed to determine node $NODES_TYPE list${normal}
-        "
-#        return
-#        exit 1
-      else
-        echo $nodes
-      fi
-    elif [ "$NODES_TYPE" = all ]; then
-      parse_hosts
-    fi
-  else
-    return
   fi
 }
 
@@ -206,8 +161,57 @@ parse_hosts () {
   fi
 }
 
+get_list_from_compute_service () {
+#    echo "get_list_from_compute_service..."
+  if [ -z ${NODES[0]} ]; then
+     [ "$TS_DEBUG" = true ] && echo -e "
+        [DEBUG]
+          NODES[0]: ${NODES[0]}
+          "
+    if [ "$NODES_TYPE" = comp ] || [ "$NODES_TYPE" = ctrl ]; then
+      [ "$TS_DEBUG" = true ] && echo -e "
+        [DEBUG]
+          NODES_TYPE: $NODES_TYPE
+          "
+      nova_state_list=$(openstack compute service list)
+      if [ -z "$nova_state_list" ];then
+        [ "$TS_DEBUG" = true ] && echo -e "
+        [DEBUG]
+        ${yellow}Failed to determine node $NODES_TYPE list${normal}
+        "
+#        return
+#        exit 1
+      elif [ "$NODES_TYPE" = comp ]; then
+        #compute
+        nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
+      else
+        #control
+        nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
+      fi
+      if [[ -z $nodes ]];then
+        [ "$TS_DEBUG" = true ] && echo -e "
+        [DEBUG]
+        ${yellow}Failed to determine node $NODES_TYPE list${normal}
+        "
+#        return
+#        exit 1
+        parse_hosts
+      else
+        echo $nodes
+      fi
+    elif [ "$NODES_TYPE" = all ]; then
+      parse_hosts
+    fi
+  else
+    return
+  fi
+}
+
+
 node_type_func $NODES_TYPE
 check_openstack_cli
+#check_and_source_openrc_file
+get_list_from_compute_service
 #check_and_source_openrc_file
 parse_hosts
 #get_list_from_compute_service
