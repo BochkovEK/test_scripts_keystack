@@ -216,7 +216,7 @@ for host in "${NODES[@]}"; do
     echo "Check container (CONTAINER_NAME: $CONTAINER_NAME) on ${host}"
     grep_string="|grep $CONTAINER_NAME"
   fi
-  status=$(ssh -o BatchMode=yes -o ConnectTimeout=5 $host echo ok 2>&1)
+  status=$(ssh -o "StrictHostKeyChecking=no" -o BatchMode=yes -o ConnectTimeout=5 $host echo ok 2>&1)
 
   if [[ $status == ok ]] ; then
 
