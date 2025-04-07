@@ -28,6 +28,7 @@ yes_no_answer_script="yes_no_answer.sh"
 #[[ -z $TS_YES_NO_QUESTION ]] && TS_YES_NO_QUESTION=""
 #[[ -z $TS_YES_NO_INPUT ]] && TS_YES_NO_INPUT=""
 [[ -z $TS_DEBUG ]] && TS_DEBUG="true"
+[[ -z $GET_SETTINGS ]] && GET_SETTINGS="false"
 
 
 error_output () {
@@ -78,7 +79,7 @@ check_openstack_cli () {
 }
 
 # Check network
-create_pub_network () {
+get_settings () {
   echo "Check for exist network: \"$NETWORK\""
   NETWORK_NAME_EXIST=$(openstack network list| grep "$NETWORK"| awk '{print $2}')
   if [ -z "$NETWORK_NAME_EXIST" ]; then
@@ -133,19 +134,6 @@ create_pub_network () {
                 end_pub_net_ip="${left_side}254"
                 ;;
             esac
-            openstack network create \
-              --external \
-              --share \
-              --provider-network-type flat \
-              --provider-physical-network physnet1 \
-              $NETWORK
-            openstack subnet create \
-              --subnet-range $CIDR \
-              --network pub_net \
-              --dhcp \
-              --gateway $GATEWAY \
-              --allocation-pool start=$start_pub_net_ip,end=$end_pub_net_ip \
-              $NETWORK
           else
             warning_message="Script can't create network for $mask_pub_net mask"
             error_message="Network $NETWORK does not created"
@@ -170,6 +158,21 @@ create_pub_network () {
   fi
 }
 
+create_pub_network () {
+  openstack network create \
+    --external \
+    --share \
+    --provider-network-type flat \
+    --provider-physical-network physnet1 \
+    $NETWORK
+  openstack subnet create \
+    --subnet-range $CIDR \
+    --network pub_net \
+    --dhcp \
+    --gateway $GATEWAY \
+    --allocation-pool start=$start_pub_net_ip,end=$end_pub_net_ip \
+    $NETWORK
+}
 
 echo "$script_name script started..."
 
@@ -195,4 +198,6 @@ echo "$script_name script started..."
 
 check_openstack_cli
 check_and_source_openrc_file
+get_settings
+if [ "$GET_SETTINGS" = "true" ]; then exit 0; fi
 create_pub_network
