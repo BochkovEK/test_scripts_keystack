@@ -80,6 +80,62 @@ check_openstack_cli () {
 
 # Check network
 get_settings () {
+
+  CIDR=$(ip r|grep "dev external proto kernel scope"| awk '{print $1}');
+  last_digit=$(echo $CIDR | sed --regexp-extended 's/([0-9]+\.[0-9]+\.[0-9]+\.)|(\/[0-9]+)//g');
+  left_side=$(echo $CIDR | sed --regexp-extended 's/([0-9]+\/[0-9]+)//g');
+  GATEWAY=$left_side$(expr $last_digit + 1);
+#  echo "CIDR: $CIDR, GATEWAY: $GATEWAY"
+  if [ -n "$CIDR" ] && [ -n "$GATEWAY" ]; then
+    mask_pub_net=$(echo "${CIDR##*/}")
+    if [ "$mask_pub_net" = "27" ]; then
+      case "$last_digit" in
+        0)
+          start_pub_net_ip="${left_side}10"
+          end_pub_net_ip="${left_side}30"
+          ;;
+        32)
+          start_pub_net_ip="${left_side}40"
+          end_pub_net_ip="${left_side}62"
+          ;;
+        64)
+          start_pub_net_ip="${left_side}70"
+          end_pub_net_ip="${left_side}94"
+          ;;
+        96)
+          start_pub_net_ip="${left_side}100"
+          end_pub_net_ip="${left_side}126"
+          ;;
+        128)
+          start_pub_net_ip="${left_side}140"
+          end_pub_net_ip="${left_side}158"
+          ;;
+        160)
+          start_pub_net_ip="${left_side}170"
+          end_pub_net_ip="${left_side}190"
+          ;;
+        192)
+          start_pub_net_ip="${left_side}200"
+          end_pub_net_ip="${left_side}222"
+          ;;
+        224)
+          start_pub_net_ip="${left_side}230"
+          end_pub_net_ip="${left_side}254"
+          ;;
+      esac
+    else
+      warning_message="The script can only create a 'pub_net' with '27' mask"
+      error_message="Network $NETWORK does not created"
+      error_output
+    fi
+  else
+    warning_message="Script can't define CIDR or GATEWAY on this node. Try use the script on lcm or jump node"
+    error_message="Network $NETWORK does not created"
+    error_output
+  fi
+}
+
+create_pub_network () {
   echo "Check for exist network: \"$NETWORK\""
   NETWORK_NAME_EXIST=$(openstack network list| grep "$NETWORK"| awk '{print $2}')
   if [ -z "$NETWORK_NAME_EXIST" ]; then
@@ -92,58 +148,19 @@ get_settings () {
         yes_no_input="true"
       fi
       if [ "$yes_no_input" = "true" ]; then
-        CIDR=$(ip r|grep "dev external proto kernel scope"| awk '{print $1}');
-        last_digit=$(echo $CIDR | sed --regexp-extended 's/([0-9]+\.[0-9]+\.[0-9]+\.)|(\/[0-9]+)//g');
-        left_side=$(echo $CIDR | sed --regexp-extended 's/([0-9]+\/[0-9]+)//g');
-        GATEWAY=$left_side$(expr $last_digit + 1);
-        echo "CIDR: $CIDR, GATEWAY: $GATEWAY"
-        if [ -n "$CIDR" ] && [ -n "$GATEWAY" ]; then
-          mask_pub_net=$(echo "${CIDR##*/}")
-          if [ "$mask_pub_net" = "27" ]; then
-            case "$last_digit" in
-              0)
-                start_pub_net_ip="${left_side}10"
-                end_pub_net_ip="${left_side}30"
-                ;;
-              32)
-                start_pub_net_ip="${left_side}40"
-                end_pub_net_ip="${left_side}62"
-                ;;
-              64)
-                start_pub_net_ip="${left_side}70"
-                end_pub_net_ip="${left_side}94"
-                ;;
-              96)
-                start_pub_net_ip="${left_side}100"
-                end_pub_net_ip="${left_side}126"
-                ;;
-              128)
-                start_pub_net_ip="${left_side}140"
-                end_pub_net_ip="${left_side}158"
-                ;;
-              160)
-                start_pub_net_ip="${left_side}170"
-                end_pub_net_ip="${left_side}190"
-                ;;
-              192)
-                start_pub_net_ip="${left_side}200"
-                end_pub_net_ip="${left_side}222"
-                ;;
-              224)
-                start_pub_net_ip="${left_side}230"
-                end_pub_net_ip="${left_side}254"
-                ;;
-            esac
-          else
-            warning_message="Script can't create network for $mask_pub_net mask"
-            error_message="Network $NETWORK does not created"
-            error_output
-          fi
-        else
-          warning_message="Script can't define CIDR or GATEWAY on this node. Try use the script on lcm or jump node"
-          error_message="Network $NETWORK does not created"
-          error_output
-        fi
+        openstack network create \
+          --external \
+          --share \
+          --provider-network-type flat \
+          --provider-physical-network physnet1 \
+          $NETWORK
+        openstack subnet create \
+          --subnet-range $CIDR \
+          --network pub_net \
+          --dhcp \
+          --gateway $GATEWAY \
+          --allocation-pool start=$start_pub_net_ip,end=$end_pub_net_ip \
+          $NETWORK
       else
         error_message="Network $NETWORK does not created"
         error_output
@@ -156,22 +173,6 @@ get_settings () {
   else
     echo -e "${green}Network \"$NETWORK\" already exist in project \"$PROJECT\"${normal}"
   fi
-}
-
-create_pub_network () {
-  openstack network create \
-    --external \
-    --share \
-    --provider-network-type flat \
-    --provider-physical-network physnet1 \
-    $NETWORK
-  openstack subnet create \
-    --subnet-range $CIDR \
-    --network pub_net \
-    --dhcp \
-    --gateway $GATEWAY \
-    --allocation-pool start=$start_pub_net_ip,end=$end_pub_net_ip \
-    $NETWORK
 }
 
 echo "$script_name script started..."
@@ -198,7 +199,15 @@ echo "$script_name script started..."
 "
 
 get_settings
-if [ "$GET_SETTINGS" = "true" ]; then exit 0; fi
+if [ "$GET_SETTINGS" = "true" ]; then
+  echo "
+    CIDR:               $CIDR
+    GATEWAY:            $GATEWAY
+    start_pub_net_ip:   $start_pub_net_ip
+    end_pub_net_ip:     $end_pub_net_ip
+  "
+  exit 0
+fi
 check_openstack_cli
 check_and_source_openrc_file
 create_pub_network
