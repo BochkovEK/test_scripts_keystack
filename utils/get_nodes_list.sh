@@ -75,29 +75,35 @@ node_type_func () {
           NODES_TYPE=ctrl
           nodes_to_find=$ctrl_pattern
           [ "$TS_DEBUG" = true ] && echo -e "
-          ${yellow}Execute command on ctrl nodes${normal}
+          NODES_TYPE: $NODES_TYPE
+          nodes_to_find: $nodes_to_find
           "
+#          ${yellow}Execute command on ctrl nodes${normal}
           ;;
         comp|cmpt)
           NODES_TYPE=comp
           nodes_to_find=$comp_pattern
           [ "$TS_DEBUG" = true ] && echo -e "
-          ${yellow}Execute command on comp nodes${normal}
+          NODES_TYPE: $NODES_TYPE
+          nodes_to_find: $nodes_to_find
           "
           ;;
         net)
           NODES_TYPE=net
           nodes_to_find=$net_pattern
           [ "$TS_DEBUG" = true ] && echo -e "
-          ${yellow}Execute command on net nodes${normal}
+          NODES_TYPE: $NODES_TYPE
+          nodes_to_find: $nodes_to_find
           "
           ;;
         *)
           NODES_TYPE=all
           nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
           [ "$TS_DEBUG" = true ] && echo -e "
-          ${yellow}Nodes type is not specified correctly. Execute command on ctr, comp, net nodes${normal}
+          NODES_TYPE: $NODES_TYPE
+          nodes_to_find: $nodes_to_find
           "
+#          ${yellow}Nodes type is not specified correctly. Execute command on ctr, comp, net nodes${normal}
           ;;
         esac
 }
