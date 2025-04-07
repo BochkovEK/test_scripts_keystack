@@ -213,7 +213,7 @@ check_openstack_cli
 #check_and_source_openrc_file
 get_list_from_compute_service
 #check_and_source_openrc_file
-parse_hosts
+#parse_hosts
 #get_list_from_compute_service
 
 
