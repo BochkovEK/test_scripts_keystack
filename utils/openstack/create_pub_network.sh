@@ -1,6 +1,9 @@
 #!/bin/bash
 
 # The script create pub_net from LCM or jump host only
+# To get pub_net settings:
+# export GET_SETTINGS=true
+# bash ~/test_scripts_keystack/utils/openstack/create_pub_network.sh
 
 #Colors
 green=$(tput setaf 2)
