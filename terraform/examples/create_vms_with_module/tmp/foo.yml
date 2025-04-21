@@ -1,4 +1,5 @@
 #cloud-config
+# https://dadroit.com/yaml-to-string/
 package_upgrade: true
 packages:
   - gcc
