@@ -46,4 +46,4 @@ write_files:
     }
   path: /home/ubuntu/fopen.c
 runcmd:
-  - gcc /home/ubuntu/fopen.c -o fopen
+  - gcc /home/ubuntu/fopen.c -o /home/ubuntu/fopen
