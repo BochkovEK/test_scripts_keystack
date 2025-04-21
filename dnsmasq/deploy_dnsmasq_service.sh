@@ -17,6 +17,8 @@
 #firewall-cmd --add-port=53/udp
 #firewall-cmd --add-port=53/tcp
 
+#For ubuntu
+
 #Every time /etc/dnsmasq.conf and /etc/hosts are changed, restart the service 'systemctl restart dnsmasq'
 # To check
 # systemctl status dnsmasq

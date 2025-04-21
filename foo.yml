@@ -1,0 +1,49 @@
+#cloud-config
+package_upgrade: true
+packages:
+  - gcc
+  - iperf
+  - iperf3
+write_files:
+- content: |
+    #include <stdio.h>
+    #include <time.h>
+    #include <unistd.h>
+    int main(void) {
+      char date[128];
+      char hostname[1024];
+      hostname[1023] = '\0';
+      gethostname(hostname, 1023);
+      time_t now;
+      FILE *log;
+      unsigned long fopen_error = 0;
+      unsigned long fopen_ok = 0;
+      unsigned long fclose_error = 0;
+      unsigned long fclose_ok = 0;
+      double time_spent = 0;
+      for (;;) {
+        sleep(1);
+        clock_t tic = clock();
+        time(&now);
+        strftime(date, sizeof(date), "%Y-%m-%d %H:%M:%S", localtime(&now));
+        log = fopen("data.log", "a");
+        if (log == NULL) {
+          ++fopen_error;
+        } else {
+          ++fopen_ok;
+          clock_t toc = clock();
+          time_spent = (double) (toc - tic);
+          fprintf(log, "%s %s fopen_ok %9lu fopen_error %9lu fclose_ok %9lu fclose_error %9lu fopen_time_spent %f\n", hostname, date, fopen_ok, fopen_error, fclose_ok, fclose_error, time_spent);
+          if (fclose(log) !=0) {
+                  ++fclose_error;
+          } else {
+                  ++fclose_ok;
+          }
+        }
+        printf("%s %s fopen_ok %9lu fopen_error %9lu fclose_ok %9lu fclose_error %9lu fopen_time_spent %f\n", hostname, date, fopen_ok, fopen_error, fclose_ok, fclose_error, time_spent);
+      }
+      return 0;
+    }
+  path: /home/ubuntu/fopen.c
+runcmd:
+  - gcc /home/ubuntu/fopen.c -o fopen
