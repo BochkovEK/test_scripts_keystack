@@ -1,5 +1,5 @@
-Create VMs by json like this:
-------------
+#Create VMs by json like this:
+#------------
 # exemple 1
 # VMs
 VMs = {
@@ -40,7 +40,7 @@ AZs = {
 }
 
 server_groups = {}
-------------
+#------------
 # exemple 2
 # VMs
 VMs = {
@@ -84,6 +84,41 @@ AZs = {
     ]
   }
 }
+#------------
+# exemple 3
+# VMs
+VMs = {
+  TEST_VM = {
+    image_name      = "cirros-0.6.2-x86_64-disk.img"
+    flavor          = {
+        vcpus = 2
+        ram   = 2048
+    }
+    vm_qty          = 1
+    disks = [
+    {},
+    {
+        boot_index = 1
+        size = 2
+        delete_on_termination = true
+      },
+    {
+        boot_index = 2
+        size = 7
+        delete_on_termination = false
+      },
+    ]
+  }
+
+  }
+}
+
+# AZs
+AZs = {
+}
+
+# Server groups
+server_groups = {}
 #==================
 
 variable list:
@@ -103,8 +138,9 @@ variable list:
 - disks
     disks           = [
       {
-        boot_index = 1,
-        size = 1
+        boot_index = <boot_index>
+        size = <size>
+        delete_on_termination = true
       },
     ]
 - metadata

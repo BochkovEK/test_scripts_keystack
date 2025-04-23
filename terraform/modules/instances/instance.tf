@@ -1,5 +1,3 @@
-
-
 resource "openstack_compute_instance_v2" "vm" {
   for_each     = { for k, v in local.instances : v.name => v
 #  if try(v.image_name, null) != null
@@ -37,7 +35,7 @@ resource "openstack_compute_instance_v2" "vm" {
     source_type           = "image"
     boot_index            = 0
     destination_type      = "volume"
-    delete_on_termination = false
+    delete_on_termination = each.value.boot_volume_delete_on_termination
   }
 #  dynamic "block_device" {
 ##    for iter in range(1, instance.vm_qty+1) : {
@@ -59,8 +57,11 @@ resource "openstack_compute_instance_v2" "vm" {
 #      }
 dynamic block_device {
     for_each = [for volume in each.value.disks: {
-            boot_index = volume.boot_index
-            size = volume.size
+#      for_each = {}
+#      for key, value in var.volume : key
+        boot_index = try(volume.boot_index, -1)
+        size = try(volume.size, var.default_volume_size)
+        delete_on_termination = try(volume.delete_on_termination, var.default_delete_on_termination)
     }]
     content {
 #        uuid = "volume-${each.value.base_name}-${block_device.value.boot_index}"
@@ -68,7 +69,7 @@ dynamic block_device {
         volume_size           = block_device.value.size
         boot_index            = block_device.value.boot_index
         destination_type      = "volume"
-        delete_on_termination = true
+        delete_on_termination = block_device.value.delete_on_termination
     }
  }
 

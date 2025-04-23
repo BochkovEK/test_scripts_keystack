@@ -24,7 +24,7 @@ variable "default_disks" {
   default     = []
 }
 
-variable "default_boot_volume_size" {
+variable "default_volume_size" {
   description = "Default volume size"
   type        = number
   default     = 5
@@ -36,6 +36,11 @@ variable "default_network_name" {
   default     = "pub_net"
 }
 
+variable "default_delete_on_termination" {
+  description = "Default delete on termination"
+  type        = string
+  default     = "true"
+}
 #variable "default_security_groups" {
 #  description = "Default security_groups"
 #  type        = list(string)
