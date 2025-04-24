@@ -109,8 +109,6 @@ VMs = {
       },
     ]
   }
-
-  }
 }
 
 # AZs
@@ -140,7 +138,7 @@ variable list:
       {
         boot_index = <boot_index>
         size = <size>
-        delete_on_termination = true
+        delete_on_termination = <true\false>
       },
     ]
 - metadata
