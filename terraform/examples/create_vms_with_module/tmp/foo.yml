@@ -48,8 +48,7 @@ write_files:
     apt update
     apt install iperf3 gcc
     gcc /home/ubuntu/fopen.c -o /home/ubuntu/fopen
-
   path: /opt/setup_script.sh
 
-  runcmd:
+runcmd:
       - /opt/setup_script.sh
