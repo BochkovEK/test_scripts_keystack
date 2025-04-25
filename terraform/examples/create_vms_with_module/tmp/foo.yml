@@ -1,8 +1,5 @@
 #cloud-config
 # https://dadroit.com/yaml-to-string/
-#write_files:
-
-
 
 write_files:
 - content: |
@@ -58,8 +55,8 @@ write_files:
                     - 8.8.4.4
   path: /etc/netplan/50-cloud-init.yaml
   permissions: '0644'
-bootcmd:
-    - netplan apply
+#bootcmd:
+#    - netplan apply
 package_upgrade: true
 packages:
   - gcc
