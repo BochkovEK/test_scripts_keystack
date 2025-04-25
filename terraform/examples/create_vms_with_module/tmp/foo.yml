@@ -42,25 +42,14 @@ write_files:
       return 0;
     }
   path: /home/ubuntu/fopen.c
-#- content: |
-#      network:
-#        version: 2
-#        ethernets:
-#            enp3s0:
-#                dhcp4: true
-#                set-name: enp3s0
-#                nameservers:
-#                    addresses:
-#                    - 8.8.8.8
-#                    - 8.8.4.4
-#  path: /etc/netplan/50-cloud-init.yaml
-#  permissions: '0644'
-bootcmd:
-  - echo "server=8.8.8.8" >> /etc/resolv.conf
-package_upgrade: true
-packages:
-  - gcc
-  - iperf
-  - iperf3
-runcmd:
-  - gcc /home/ubuntu/fopen.c -o /home/ubuntu/fopen
+- content: |
+    #!/bin/bash
+    echo "nameserver 8.8.8.8" >> /etc/resolv.conf
+    apt update
+    apt install iperf3 gcc
+    gcc /home/ubuntu/fopen.c -o /home/ubuntu/fopen
+
+  path: /opt/setup_script.sh
+
+  runcmd:
+      - /opt/setup_script.sh
