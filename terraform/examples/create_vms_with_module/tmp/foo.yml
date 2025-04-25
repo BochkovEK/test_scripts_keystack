@@ -1,10 +1,9 @@
 #cloud-config
 # https://dadroit.com/yaml-to-string/
-package_upgrade: true
-packages:
-  - gcc
-  - iperf
-  - iperf3
+#write_files:
+
+
+
 write_files:
 - content: |
     #include <stdio.h>
@@ -46,5 +45,25 @@ write_files:
       return 0;
     }
   path: /home/ubuntu/fopen.c
+- content: |
+      network:
+        version: 2
+        ethernets:
+            enp3s0:
+                dhcp4: true
+                set-name: enp3s0
+                nameservers:
+                    addresses:
+                    - 8.8.8.8
+                    - 8.8.4.4
+  path: /etc/netplan/50-cloud-init.yaml
+  permissions: '0644'
+bootcmd:
+    - netplan apply
+package_upgrade: true
+packages:
+  - gcc
+  - iperf
+  - iperf3
 runcmd:
-  - gcc /home/ubuntu/fopen.c -o /home/ubuntu/fopen
+    - gcc /home/ubuntu/fopen.c -o /home/ubuntu/fopen
