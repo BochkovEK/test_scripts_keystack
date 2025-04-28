@@ -257,6 +257,7 @@ fi
 
 #pull config from env file
 if [ -n "$ENV_CONFIG_LIST" ]; then
+  unset control_config_list
   declare -a control_config_list
   while IFS='=' read -r key value; do
     if [[ $key == TS_CONTROL_CONFIG_LIST_* ]]; then
@@ -264,6 +265,7 @@ if [ -n "$ENV_CONFIG_LIST" ]; then
      control_config_list[$index]=$value
     fi
   done < $ENV_CONFIG_LIST
+  unset compute_config_list
   declare -a compute_config_list
   while IFS='=' read -r key value; do
     if [[ $key == TS_COMPUTE_CONFIG_LIST_* ]]; then
@@ -271,6 +273,7 @@ if [ -n "$ENV_CONFIG_LIST" ]; then
      compute_config_list[$index]=$value
     fi
   done < $ENV_CONFIG_LIST
+  unset hashed_password_config_list
   declare -a hashed_password_config_list
   while IFS='=' read -r key value; do
     if [[ $key == TS_HASHED_PASSWORD_CONFIG_LIST_* ]]; then
@@ -278,6 +281,7 @@ if [ -n "$ENV_CONFIG_LIST" ]; then
      hashed_password_config_list[$index]=$value
     fi
   done < $ENV_CONFIG_LIST
+  unset prometheus_exporters_config_list
   declare -a prometheus_exporters_config_list
   while IFS='=' read -r key value; do
     if [[ $key == TS_PROMETHEUS_EXPORTERS_CONFIG_LIST_* ]]; then
