@@ -29,7 +29,7 @@ script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
 
-command_on_nodes_script_name="command_on_nodes.sh"
+command_on_nodes_script_name="../command_on_nodes.sh"
 
 control_config_list=(
   "/etc/kolla/keystone/keystone.conf"
