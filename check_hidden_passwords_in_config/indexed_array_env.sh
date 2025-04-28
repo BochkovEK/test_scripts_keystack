@@ -41,15 +41,15 @@ for i in "${!TS_CONTROL_CONFIG_LIST[@]}"; do
 done
 
 for i in "${!TS_COMPUTE_CONFIG_LIST[@]}"; do
-  echo "TS_COMPUTE_CONFIG_LIST$i=${TS_COMPUTE_CONFIG_LIST[$i]}" >> $output_env_file
+  echo "TS_COMPUTE_CONFIG_LIST_$i=${TS_COMPUTE_CONFIG_LIST[$i]}" >> $output_env_file
 done
 
 for i in "${!TS_HASHED_PASSWORD_CONFIG_LIST[@]}"; do
-  echo "TS_HASHED_PASSWORD_CONFIG_LIST$i=${TS_HASHED_PASSWORD_CONFIG_LIST[$i]}" >> $output_env_file
+  echo "TS_HASHED_PASSWORD_CONFIG_LIST_$i=${TS_HASHED_PASSWORD_CONFIG_LIST[$i]}" >> $output_env_file
 done
 
 for i in "${!TS_PROMETHEUS_EXPORTERS_CONFIG_LIST[@]}"; do
-  echo "TS_PROMETHEUS_EXPORTERS_CONFIG_LIST$i=${TS_PROMETHEUS_EXPORTERS_CONFIG_LIST[$i]}" >> $output_env_file
+  echo "TS_PROMETHEUS_EXPORTERS_CONFIG_LIST_$i=${TS_PROMETHEUS_EXPORTERS_CONFIG_LIST[$i]}" >> $output_env_file
 done
 
 

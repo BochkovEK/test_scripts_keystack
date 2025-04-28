@@ -250,7 +250,7 @@ Config_list () {
   for config in "${hashed_password_config_list[@]}"; do
     echo $config
   done
-  echo -E "${yellow} prometheus exporters config listc:${normal}"
+  echo -E "${yellow}prometheus exporters config listc:${normal}"
   for config in "${prometheus_exporters_config_list[@]}"; do
     echo $config
   done
