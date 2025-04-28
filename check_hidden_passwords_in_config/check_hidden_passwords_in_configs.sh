@@ -76,12 +76,14 @@ prometheus_exporters_config_list=(
   "/etc/kolla/prometheus-openstack-exporter/clouds.yml"
 )
 
+#[[ -z $TS_CONTROL_CONFIG_LIST ]] && TS_CONTROL_CONFIG_LIST=$control_config_list
 [[ -z $CHECK_COMP ]] && CHECK_COMP="false"
 [[ -z $CHECK_CTRL ]] && CHECK_CTRL="false"
 [[ -z $CHECK_HASHED ]] && CHECK_HASHED="false"
 [[ -z $CHECK_PROMETH ]] && CHECK_PROMETH="false"
 [[ -z $CHECK_ALL ]] && CHECK_ALL="true"
 [[ -z $CONFIG_PATH ]] && CONFIG_PATH=""
+[[ -z $ENV_CONFIG_LIST ]] && ENV_CONFIG_LIST=""
 #[[ -z $DEBUG ]] && DEBUG="false"
 
 # Define parameters
@@ -101,6 +103,7 @@ while [ -n "$1" ]; do
       -prometheus                   check prometheus exporters configs ${prometheus_exporters_config_list[*]}
       -cl, -config_list             check configs list
       -c, -config <config_path>     check specify config (exp: -c /etc/kolla/adminui-backend/adminui-backend-osloconf.conf)
+      -e, -env_config_list          use config list from env file (for different KS release; exp: -e .config_list_for_ks2024.3)
 "
       exit 0
       break ;;
@@ -246,14 +249,49 @@ Config_list () {
   done
 }
 
+
 if [ -n "$CONFIG_PATH" ]; then
   Check_specify_config
   exit 0
 fi
+
+#pull config from env file
+if [ -n "$ENV_CONFIG_LIST" ]; then
+  declare -a control_config_list
+  while IFS='=' read -r key value; do
+    if [[ $key == TS_CONTROL_CONFIG_LIST_* ]]; then
+     index=${key#TS_CONTROL_CONFIG_LIST_}
+     control_config_list[$index]=$value
+    fi
+  done < $ENV_CONFIG_LIST
+  declare -a compute_config_list
+  while IFS='=' read -r key value; do
+    if [[ $key == TS_COMPUTE_CONFIG_LIST_* ]]; then
+     index=${key#TS_COMPUTE_CONFIG_LIST_}
+     compute_config_list[$index]=$value
+    fi
+  done < $ENV_CONFIG_LIST
+  declare -a hashed_password_config_list
+  while IFS='=' read -r key value; do
+    if [[ $key == TS_HASHED_PASSWORD_CONFIG_LIST_* ]]; then
+     index=${key#TS_HASHED_PASSWORD_CONFIG_LIST_}
+     hashed_password_config_list[$index]=$value
+    fi
+  done < $ENV_CONFIG_LIST
+  declare -a prometheus_exporters_config_list
+  while IFS='=' read -r key value; do
+    if [[ $key == TS_PROMETHEUS_EXPORTERS_CONFIG_LIST_* ]]; then
+     index=${key#TS_PROMETHEUS_EXPORTERS_CONFIG_LIST_}
+     prometheus_exporters_config_list[$index]=$value
+    fi
+  done < $ENV_CONFIG_LIST
+fi
+
 if [ "$CONFIG_LIST" = true ]; then
   Config_list
   exit 0
 fi
+
 if [ "$CHECK_COMP" = true ] || [ "$CHECK_ALL" = true ]; then
   Check_configs_on_computes
 fi
