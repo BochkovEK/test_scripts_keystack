@@ -122,6 +122,9 @@ while [ -n "$1" ]; do
     -c|-config) CONFIG_PATH=$2
       echo "Found the -config. Check specify config $CONFIG_PATH"
       shift ;;
+    -e|-env_config_list) ENV_CONFIG_LIST=$2
+      echo "Found the -env_config_list. Use env confilg list file $ENV_CONFIG_LIST"
+      shift ;;
     -cl|-config_list) CONFIG_LIST=true
       echo "Found the -config_list. Check configs list"
       ;;
