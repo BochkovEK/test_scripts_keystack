@@ -242,11 +242,15 @@ Config_list () {
   for config in "${control_config_list[@]}"; do
     echo $config
   done
-  echo -E "${yellow}control config list:${normal}"
+  echo -E "${yellow}compute config list:${normal}"
   for config in "${compute_config_list[@]}"; do
     echo $config
   done
-  echo -E "${yellow}control config list:${normal}"
+  echo -E "${yellow}hashed password config list:${normal}"
+  for config in "${hashed_password_config_list[@]}"; do
+    echo $config
+  done
+  echo -E "${yellow} prometheus exporters config listc:${normal}"
   for config in "${prometheus_exporters_config_list[@]}"; do
     echo $config
   done
