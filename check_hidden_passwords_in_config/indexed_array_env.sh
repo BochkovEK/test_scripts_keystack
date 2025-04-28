@@ -1,6 +1,6 @@
 #!/bin/bash
 
-output_env_file=".config_list_for_2024.3"
+output_env_file=".config_list_for_ks2024.3"
 
 # Create array
 TS_CONTROL_CONFIG_LIST=(
