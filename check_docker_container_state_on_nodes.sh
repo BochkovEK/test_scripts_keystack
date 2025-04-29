@@ -46,6 +46,15 @@ ctrl_required_container_list=(
   "adminui_backend"
   "drs"
   "consul"
+  "prometheus_consul_exporter"
+  "prometheus_blackbox_exporter"
+  "prometheus_elasticsearch_exporter"
+  "prometheus_openstack_exporter"
+  "prometheus_alertmanager"
+  "prometheus_memcached_exporter"
+  "prometheus_mysqld_exporter"
+  "prometheus_node_exporter"
+  "prometheus_server"
 )
 
 comp_required_container_list=(
@@ -60,11 +69,16 @@ comp_required_container_list=(
   "prometheus_hypervisor_exporter"
   "prometheus_ovs_exporter"
   "prometheus_libvirt_exporter"
-  "prometheus_blackbox_exporter"
   "prometheus_node_exporter"
   "cron"
   "fluentd"
 )
+# inventory
+#   [monitoring:children]
+#   control
+#   [prometheus-blackbox-exporter:children]
+#   monitoring
+# "prometheus_blackbox_exporter" not required on comp
 
 required_container_list=()
 
