@@ -16,6 +16,8 @@ installer_conf_folder="installer_conf"
 start_installer_envs="start_installer_envs"
 #install_wget_script="install_wget.sh"
 install_package_script="install_package.sh"
+add_vm="qa-stable-ubuntu-add_vm-01"
+#local_certs_folder="$HOME/certs"
 #systems=(
 #  "ubuntu"
 #  "sberlinux"
@@ -90,7 +92,7 @@ get_init_vars () {
   if [[ -z "${CENTRAL_AUTH_SERVICE_IP}" ]]; then
     read -rp "Enter central auth service ip or fqdn where is the catalog with certificates (\$HOME/certs) [ebochkov-keystack-add_vm-01]: " CENTRAL_AUTH_SERVICE_IP
   fi
-  export CENTRAL_AUTH_SERVICE_IP=${CENTRAL_AUTH_SERVICE_IP:-"ebochkov-keystack-add_vm-01"}
+  export CENTRAL_AUTH_SERVICE_IP=${CENTRAL_AUTH_SERVICE_IP:-"$add_vm"}
   [[ -z "${CENTRAL_AUTH_SERVICE_IP}" ]] && { echo -e "${red}env CENTRAL_AUTH_SERVICE_IP not define - ERROR${normal}"; exit 1; }
 
 
@@ -295,7 +297,11 @@ if [ -d "$HOME/installer" ]; then
       check_ssh_to_central_auth=$(ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=5 $CENTRAL_AUTH_SERVICE_IP echo ok 2>&1)
       if [ "$check_ssh_to_central_auth" = ok ]; then
         echo -e "${yellow}Copying certs from $CENTRAL_AUTH_SERVICE_IP:$CERTS_FOLDER to $HOME/installer/${normal}"
-        scp -r $CENTRAL_AUTH_SERVICE_IP:$CERTS_FOLDER $HOME/installer/
+        if ! scp -r $CENTRAL_AUTH_SERVICE_IP:$CERTS_FOLDER $HOME/installer/; then
+#          echo "Ошибка копирования! Код выхода: $?"
+          cp -r $CERTS_FOLDER/ $HOME/installer/
+        fi
+#        scp -r $CENTRAL_AUTH_SERVICE_IP:$CERTS_FOLDER $HOME/installer/
         break
       fi
       sleep 1
