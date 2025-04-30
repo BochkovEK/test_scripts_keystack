@@ -47,7 +47,7 @@ source_envs () {
   if [ -f $installer_envs ]; then
     source $installer_envs
   else
-    echo -e "${yellow}Env file $installer_envs not exists"
+    echo -e "${yellow}Env file $installer_envs not exists${normal}"
   fi
 }
 
