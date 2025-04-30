@@ -50,8 +50,11 @@ get_VMs_IPs () {
   #awk '{print $8}')
   [ "$TS_DEBUG" = true ] && echo -e "
 
-  [DEBUG]: command to define vms ip list
-    VMs_IPs=\$(openstack server list $host_string $project_string |grep ACTIVE | grep -ohE \"$ip_pub_net_grep_string\")
+  [DEBUG]:
+    command to define vms ip list
+      VMs_IPs=\$(openstack server list $host_string $project_string |grep ACTIVE | grep -ohE \"$ip_pub_net_grep_string\")
+    command to check connection:
+      for ip in $VMs_IPs;do ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=5 -q -i ~/test_scripts_keystack/key_test.pem ubuntu@\$ip echo ok; done
   [DEBUG]: VMs_IPs: $VMs_IPs
   "
   # in openstack cli version 6.2 the --host key gives an empty output
