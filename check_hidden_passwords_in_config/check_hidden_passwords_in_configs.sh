@@ -160,7 +160,9 @@ read_conf () {
         -e 's/\(.*vault_secret.*\)/\o033[32m ...vault_secret... - [ok: vault settings exists]\o033[39m/'\
         -e 's/\(.*with secret.*\)/\o033[32m ...with secret... - [ok: vault settings exists]\o033[39m/'\
         -e 's/\(.*password.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
-        -e 's/\(.*auth-pass|requirepass|masterauth.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
+        -e 's/\(.*auth-pass.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
+        -e 's/\(.*requirepass.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
+        -e 's/\(.*masterauth.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
         -e 's/\(.*_pass\".*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'; echo -e '\033[0;37m'"
 #        -e 's/\(.*password:.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'"
   fi
