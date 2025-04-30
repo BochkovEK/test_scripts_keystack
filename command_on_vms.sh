@@ -10,6 +10,7 @@ green=$(tput setaf 2)
 red=$(tput setaf 1)
 violet=$(tput setaf 5)
 normal=$(tput sgr0)
+yellow=$(tput setaf 3)
 
 script_name=$(basename "$0")
 script_dir=$(dirname $0)
@@ -135,12 +136,15 @@ batch_run_command() {
     fi
   fi
   at_least_one_vm_is_not_avail="false"
-   "$TS_DEBUG" = true ] && echo -e "
+  "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]:
     VMs_IPs: $VMs_IPs
     KEY_PATH: $KEY_PATH
-
   "
+  if [ "$TS_DEBUG" = true ]; then
+    echo -e "${yellow}[Warning] in debug mode the script cannot execute commands on the VM${normal}"
+    exit 0
+  fi
   for IP in $VMs_IPs; do
 #    FIRST_IP=$(echo "${raw_string_ip%%,*}")
 #        FIRST_IP=$(echo $raw_string_ip|awk '{print $1}')
