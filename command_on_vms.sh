@@ -138,7 +138,8 @@ batch_run_command() {
   at_least_one_vm_is_not_avail="false"
   "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]:
-    VMs_IPs: $VMs_IPs
+    VMs_IPs:
+    $VMs_IPs
     KEY_PATH: $KEY_PATH
   "
   if [ "$TS_DEBUG" = true ]; then
