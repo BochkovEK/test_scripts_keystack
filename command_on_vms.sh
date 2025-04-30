@@ -153,7 +153,8 @@ batch_run_command() {
     if ping -c 2 $IP &> /dev/null; then
       echo -e "${green}There is a connection with $IP - success${normal}"
       if [ "$ONLY_PING" = "false" ]; then
-        ssh_conn=$(ssh -o StrictHostKeyChecking=no -o ConnectTimeout=$TS_SSH_TIMEOUT -q -i $KEY_PATH $VM_USER@$IP echo ok 2>&1)
+        ssh_conn=$(ssh -o StrictHostKeyChecking=no  -q -i $KEY_PATH $VM_USER@$IP echo ok 2>&1)
+        # -o ConnectTimeout=$TS_SSH_TIMEOUT
         # -o BatchMode=yes
         if [ "$ssh_conn" = "ok" ]; then
           echo -e "${green}There is a SSH connection with $IP - success${normal}"
