@@ -56,7 +56,7 @@ get_VMs_IPs () {
     command to check connection:
       for ip in \$VMs_IPs;do ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=5 -q -i ~/test_scripts_keystack/key_test.pem ubuntu@\$ip echo ok; done
     VMs_IPs:
-    $VMs_IPs
+$VMs_IPs
   "
   # in openstack cli version 6.2 the --host key gives an empty output
   if [ -z "$VMs_IPs" ]; then
@@ -70,7 +70,7 @@ get_VMs_IPs () {
     command to check connection:
       for ip in \$VMs_IPs;do ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=5 -q -i ~/test_scripts_keystack/key_test.pem ubuntu@\$ip echo ok; done
     VMs_IPs:
-    $VMs_IPs
+$VMs_IPs
   "
 #      grep -E "ACTIVE.*$HYPERVISOR_NAME" |awk '{print \$12}')
     if [ -z "$VMs_IPs" ]; then
