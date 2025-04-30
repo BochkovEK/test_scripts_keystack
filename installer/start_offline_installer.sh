@@ -90,7 +90,7 @@ get_init_vars () {
 
   # get CENTRAL_AUTH_SERVICE_IP
   if [[ -z "${CENTRAL_AUTH_SERVICE_IP}" ]]; then
-    read -rp "Enter central auth service ip or fqdn where is the catalog with certificates (\$HOME/certs) [ebochkov-keystack-add_vm-01]: " CENTRAL_AUTH_SERVICE_IP
+    read -rp "Enter central auth service ip or fqdn where is the catalog with certificates (\$HOME/certs) [$add_vm]: " CENTRAL_AUTH_SERVICE_IP
   fi
   export CENTRAL_AUTH_SERVICE_IP=${CENTRAL_AUTH_SERVICE_IP:-"$add_vm"}
   [[ -z "${CENTRAL_AUTH_SERVICE_IP}" ]] && { echo -e "${red}env CENTRAL_AUTH_SERVICE_IP not define - ERROR${normal}"; exit 1; }
