@@ -80,10 +80,12 @@ get_VMs_IPs () {
     fi
   fi
 
-  for raw_string_ip in $VMs_IPs; do
-    IP="${raw_string_ip##*=}"
-    echo $IP
-  done
+  if [ ! "$TS_DEBUG" = true ]; then
+    for raw_string_ip in $VMs_IPs; do
+      IP="${raw_string_ip##*=}"
+      echo $IP
+    done
+  fi
 }
 
 check_openstack_cli
