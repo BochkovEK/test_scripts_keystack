@@ -258,13 +258,17 @@ for host in "${NODES[@]}"; do
 
     is_ctrl=$(echo $host|grep ctrl)
     if [ -n "$is_ctrl" ]; then
-      required_containers_list=( "${ctrl_required_container_list[@]}" )
-      check_required_container
+      if [ -z $CONTAINER_NAME ]; then
+        required_containers_list=( "${ctrl_required_container_list[@]}" )
+        check_required_container
+      fi
     fi
     is_comp=$(echo $host|grep -E "comp|cmpt")
     if [ -n "$is_comp" ]; then
-      required_containers_list=( "${comp_required_container_list[@]}" )
-      check_required_container
+      if [ -z $CONTAINER_NAME ]; then
+        required_containers_list=( "${comp_required_container_list[@]}" )
+        check_required_container
+      fi
     fi
   elif [[ $status == "Permission denied"* ]] ; then
     printf "%40s\n" "${red}$status - error!${normal}"
