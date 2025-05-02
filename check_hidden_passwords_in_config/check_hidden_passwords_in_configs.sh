@@ -153,12 +153,13 @@ read_conf () {
       #ok\o033[39m/'
   if [ "$3" = castellan ]; then
     echo -E "${cyan}Check castellan strings...${normal}"
-    bash $script_dir/$command_on_nodes_script_name -nt $1 -c "cat $2 | grep -E 'auth-pass|requirepass|masterauth|db_uri|vault_secret|password_hash|with secret| password |\"password\"\:|password\:\s|_pass\"|password =|\[castellan_configsource\]'| \
+    bash $script_dir/$command_on_nodes_script_name -nt $1 -c "cat $2 | grep -E 'wsrep_sst_auth|auth-pass|requirepass|masterauth|db_uri|vault_secret|password_hash|with secret| password |\"password\"\:|password\:\s|_pass\"|password =|\[castellan_configsource\]'| \
       sed --unbuffered \
         -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - [ok: castellan group exists]\o033[39m/'\
         -e 's/\(.*password_hash.*\)/\o033[32m ...pass..._hash... - [ok: pass hash exists]\o033[39m/'\
         -e 's/\(.*vault_secret.*\)/\o033[32m ...vault_secret... - [ok: vault settings exists]\o033[39m/'\
         -e 's/\(.*with secret.*\)/\o033[32m ...with secret... - [ok: vault settings exists]\o033[39m/'\
+        -e 's/\(.*wsrep_sst_auth.*)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
         -e 's/\(.*password.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
         -e 's/\(.*auth-pass.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
         -e 's/\(.*requirepass.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
