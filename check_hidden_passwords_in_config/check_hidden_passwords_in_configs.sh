@@ -127,7 +127,7 @@ while [ -n "$1" ]; do
     -e|-env_config_list) ENV_CONFIG_LIST=$2
       echo "Found the -env_config_list. Use env confilg list file $ENV_CONFIG_LIST"
       shift ;;
-    -cl|-config_list) CONFIG_LIST=true
+    -cl|-config_list) CONFIG_LIST="true"
       echo "Found the -config_list. Check configs list"
       ;;
     --)
@@ -266,7 +266,7 @@ Config_list () {
 
 if [ -n "$CONFIG_PATH" ]; then
   Check_specify_config
-  exit 0
+#  exit 0
 fi
 
 #pull config from env file
@@ -307,6 +307,10 @@ fi
 
 if [ "$CONFIG_LIST" = true ]; then
   Config_list
+#  exit 0
+fi
+
+if [ "$CONFIG_LIST" = true ] || [ -n "$CONFIG_PATH" ]; then
   exit 0
 fi
 
