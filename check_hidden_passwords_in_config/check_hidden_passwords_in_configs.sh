@@ -108,10 +108,12 @@ while [ -n "$1" ]; do
       exit 0
       break ;;
     -comp) CHECK_COMP=true; CHECK_ALL="false"
-      echo "Found the -comp. Check configs on comp nodes ${compute_config_list[*]}"
+      echo "Found the -comp. Check configs on comp nodes"
+#      ${compute_config_list[*]}"
       ;;
     -ctrl) CHECK_CTRL=true; CHECK_ALL="false"
-      echo "Found the -ctrl. Check configs on ctrl nodes ${control_config_list[*]}"
+      echo "Found the -ctrl. Check configs on ctrl nodes"
+#       ${control_config_list[*]}"
       ;;
     -hashed) CHECK_HASHED=true; CHECK_ALL="false"
       echo "Found the -hashed. Check hashed passwords on configs ${hashed_password_config_list[*]}"
