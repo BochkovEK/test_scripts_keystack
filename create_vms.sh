@@ -35,8 +35,8 @@ yellow=$(tput setaf 3)
 
 # Constants
 TIMEOUT_BEFORE_NEXT_CREATION=10
-UBUNTU_IMAGE_NAME="ubuntu-20.04-server-cloudimg-amd64"
-CIRROS_IMAGE_NAME="cirros-0.6.2-x86_64-disk"
+UBUNTU_IMAGE_NAME="ubuntu-20.04-server-cloudimg-amd64.img"
+CIRROS_IMAGE_NAME="cirros-0.6.3-x86_64-disk.img"
 
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
@@ -314,7 +314,7 @@ check_hv () {
     echo "Hypervisor is not defined. VMs will be created on different hypervisors"
     host=""
   else
-    host="--hypervisor-hostname $HYPERVISOR_HOSTNAME"
+    host="--hypervisor-hostname $HYPERVISOR_HOSTNAME --os-compute-api-version $API_VERSION"
     echo "Check Hypervisor: $HYPERVISOR_HOSTNAME..."
     echo "Ping $HYPERVISOR_HOSTNAME..."
     if ping -c 1 $HYPERVISOR_HOSTNAME &> /dev/null; then
@@ -558,9 +558,9 @@ create_image () {
     read -p "Press enter to continue: "; }
   check_wget
   echo "Creating image \"$1\" in project \"$PROJECT\"..."
-  [ -f $script_dir/"$1".img ] && echo "File $script_dir/$1.img exist." \
-  || { echo "File $script_dir/$1.img does not exist. Try to download it..."; \
-  wget https://repo.itkey.com/repository/images/"$1".img -O $script_dir/"$1".img; }
+  [ -f $script_dir/"$1" ] && echo "File $script_dir/$1 exist." \
+  || { echo "File $script_dir/$1 does not exist. Try to download it..."; \
+  wget https://repo.itkey.com/repository/images/"$1" -O $script_dir/"$1"; }
   image_exists_in_openstack
   if [ "$1" = "$CIRROS_IMAGE_NAME" ]; then
     min_disk=1
@@ -572,7 +572,7 @@ create_image () {
     --min-disk $min_disk \
     --container-format bare \
     --public \
-    --file $script_dir/"$1".img
+    --file $script_dir/"$1"
 
   IMAGE=$1
 }
@@ -617,7 +617,7 @@ check_image () {
     printf "%s\n" "${orange}Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
     if [ -z "$(image_exists_in_openstack $CIRROS_IMAGE_NAME)" ]; then
 #      create_image $CIRROS_IMAGE_NAME
-      create_image $IMAGE
+      create_image $CIRROS_IMAGE_NAME
     else
       echo "But image: $CIRROS_IMAGE_NAME exists in project: $PROJECT"
       [[ ! $DONT_ASK = "true" ]] && read -p "Press enter to use this image and continue: "
@@ -802,7 +802,6 @@ create_vms () {
     --security-group $SECURITY_GR_ID \
     $key_string \
     $host \
-    --os-compute-api-version $API_VERSION \
     --network $NETWORK \
     --boot-from-volume $VOLUME_SIZE \
     $ADD_KEY $MAX_KEY
@@ -816,7 +815,6 @@ create_vms () {
       --security-group $SECURITY_GR_ID \
       $key_string \
       $host \
-      --os-compute-api-version $API_VERSION \
       --network $NETWORK \
       --boot-from-volume $VOLUME_SIZE \
       $ADD_KEY $MAX_KEY

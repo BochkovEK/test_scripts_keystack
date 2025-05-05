@@ -16,6 +16,8 @@ installer_conf_folder="installer_conf"
 start_installer_envs="start_installer_envs"
 #install_wget_script="install_wget.sh"
 install_package_script="install_package.sh"
+add_vm="qa-stable-ubuntu-add_vm-01"
+#local_certs_folder="$HOME/certs"
 #systems=(
 #  "ubuntu"
 #  "sberlinux"
@@ -47,7 +49,7 @@ source_envs () {
   if [ -f $installer_envs ]; then
     source $installer_envs
   else
-    echo -e "${yellow}Env file $installer_envs not exists"
+    echo -e "${yellow}Env file $installer_envs not exists${normal}"
   fi
 }
 
@@ -88,9 +90,9 @@ get_init_vars () {
 
   # get CENTRAL_AUTH_SERVICE_IP
   if [[ -z "${CENTRAL_AUTH_SERVICE_IP}" ]]; then
-    read -rp "Enter central auth service ip or fqdn where is the catalog with certificates (\$HOME/certs) [ebochkov-keystack-add_vm-01]: " CENTRAL_AUTH_SERVICE_IP
+    read -rp "Enter central auth service ip or fqdn where is the catalog with certificates (\$HOME/certs) [$add_vm]: " CENTRAL_AUTH_SERVICE_IP
   fi
-  export CENTRAL_AUTH_SERVICE_IP=${CENTRAL_AUTH_SERVICE_IP:-"ebochkov-keystack-add_vm-01"}
+  export CENTRAL_AUTH_SERVICE_IP=${CENTRAL_AUTH_SERVICE_IP:-"$add_vm"}
   [[ -z "${CENTRAL_AUTH_SERVICE_IP}" ]] && { echo -e "${red}env CENTRAL_AUTH_SERVICE_IP not define - ERROR${normal}"; exit 1; }
 
 
@@ -215,7 +217,7 @@ Before continue, make sure you have:
   - DNS (dnsmasq)
   - Self signed certs ($CERTS_FOLDER)
   - LDAP cert ($CERTS_FOLDER/ldaps.pem)
-  - Remote nexus with with the necessary repositories
+  - Remote nexus with the necessary repositories
 "
 read -p "Press enter to continue: "
 
@@ -234,7 +236,7 @@ fi
 if [[ -z "${KEYSTACK_RC_VERSION}" ]]; then
   read -rp "If necessary, specify the release candidate (exp: rc7) version or press Enter : " KEYSTACK_RC_VERSION
 fi
-export KEYSTACK_RC_VERSION=${KEYSTACK_RC_VERSION:-""}
+#export KEYSTACK_RC_VERSION=${KEYSTACK_RC_VERSION:-""}
 
 if [ -n "$KEYSTACK_RC_VERSION" ]; then
   export KEYSTACK_RC_VERSION="$KEYSTACK_RC_VERSION-"
@@ -291,12 +293,18 @@ if [ -d "$HOME/installer" ]; then
     mkdir -p ~/installer/certs
 
     for i in {1...5}; do
+      echo -e "${yellow}Try to check ssh to $CENTRAL_AUTH_SERVICE_IP [$i]${normal}"
       check_ssh_to_central_auth=$(ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=5 $CENTRAL_AUTH_SERVICE_IP echo ok 2>&1)
       if [ "$check_ssh_to_central_auth" = ok ]; then
         echo -e "${yellow}Copying certs from $CENTRAL_AUTH_SERVICE_IP:$CERTS_FOLDER to $HOME/installer/${normal}"
-        scp -r $CENTRAL_AUTH_SERVICE_IP:$CERTS_FOLDER $HOME/installer/
-        return
+        if ! scp -r $CENTRAL_AUTH_SERVICE_IP:$CERTS_FOLDER $HOME/installer/; then
+#          echo "Ошибка копирования! Код выхода: $?"
+          cp -r $CERTS_FOLDER/ $HOME/installer/
+        fi
+#        scp -r $CENTRAL_AUTH_SERVICE_IP:$CERTS_FOLDER $HOME/installer/
+        break
       fi
+      sleep 1
     done
 
     if [ ! "$check_ssh_to_central_auth" = ok ]; then

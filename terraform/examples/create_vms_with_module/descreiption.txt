@@ -1,5 +1,20 @@
-Create VMs by json like this:
-------------
+#Create VMs by json like this:
+#------------
+#simple example
+# VMs
+VMs = {
+  TEST_VM = {
+    image_name      = "ubuntu-20.04-server-cloudimg-amd64.img"
+    flavor          = {
+        vcpus = 2
+        ram   = 2048
+    }
+    vm_qty          = 4
+  }
+}
+AZs = {}
+server_groups = {}
+#------------
 # exemple 1
 # VMs
 VMs = {
@@ -21,6 +36,10 @@ VMs = {
     }
     keypair_name = "key_test"
     vm_qty          = 3
+    metadata = {
+        foo         = "baz"
+        test_meta   = "Created by Terraform VM_module"
+    }
   }
 }
 
@@ -36,7 +55,7 @@ AZs = {
 }
 
 server_groups = {}
-------------
+#------------
 # exemple 2
 # VMs
 VMs = {
@@ -80,20 +99,66 @@ AZs = {
     ]
   }
 }
-------------
-------------
+#------------
+# exemple 3
+# VMs
+VMs = {
+  TEST_VM = {
+    image_name      = "cirros-0.6.2-x86_64-disk.img"
+    flavor          = {
+        vcpus = 2
+        ram   = 2048
+    }
+    vm_qty          = 1
+    disks = [
+    {},
+    {
+        boot_index = 1
+        size = 2
+        delete_on_termination = true
+      },
+    {
+        boot_index = 2
+        size = 7
+        delete_on_termination = false
+      },
+    ]
+  }
+}
+
+# AZs
+AZs = {
+}
+
+# Server groups
+server_groups = {}
+#==================
 
 variable list:
 - image_name
-- flavor
-    flavor          = {
-        vcpus = 2
-        ram   = 3072
-    }
+- flavor (default_flavor" {
+    #  description = "Default flavor name"
+        default = {
+            vcpus = 2
+            ram   = 2048
+        }
+    )
 - flavor_name
 - keypair_name
 - security_groups
 - az_hint
+    az_hint = "<az_name>:<hyper_name>"
 - network_name
-- boot_volume_size, var.default_boot_volume_size)
+- boot_volume_size (default_volume_size = 5)
 - disks
+    disks           = [
+      {
+        boot_index = <boot_index>
+        size = <size>
+        delete_on_termination = <true\false>
+      },
+    ]
+- metadata
+    metadata = {}
+- user_data
+    user_data = "#cloud-config\nhostname: instance_1.example.com\nfqdn: instance_1.example.com"

@@ -1,0 +1,5 @@
+export CENTRAL_AUTH_SERVICE_IP=""
+export CERTS_FOLDER="$HOME/certs"
+export RELEASE_URL="https://repo.itkey.com/repository/k-install/installer-$KEYSTACK_RELEASE-$KEYSTACK_RC_VERSION$SYSTEM-offline.tgz"
+export INIT_INSTALLER_FOLDER="$HOME/installer"
+export INIT_INSTALLER_BACKUP_FOLDER="$HOME/installer_backup"

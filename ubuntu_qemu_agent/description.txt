@@ -1,0 +1,7 @@
+To install qemu agent to VM:
+1) Copy *.dep files to VM
+2) Install it
+    sudo apt install ./liburing2_2.1-2build1_amd64.deb
+    sudo apt install ./qemu-guest-agent_1%3a6.2+dfsg-2ubuntu6.25_amd64.deb
+3) Start qemu agent
+    systemctl enable --now qemu-guest-agent

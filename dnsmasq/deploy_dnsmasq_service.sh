@@ -4,10 +4,25 @@
 # for mapping "ip - name" add string to dns_ip_mapping.txt file like /etc/hosts
 
 #Error starting userland proxy: listen udp4 0.0.0.0:53: bind: address already in use
-#sudo systemctl stop systemd-resolved
-#sudo systemctl disable systemd-resolved
+# sudo systemctl stop systemd-resolved
+# sudo systemctl disable systemd-resolved
+
+#Error Failed to restart dnsmasq.service: Unit dnsmasq.service is masked.
+# sudo systemctl unmask dnsmasq.service
+# sudo systemctl stop systemd-resolved
+# sudo systemctl disable systemd-resolved
+# sudo systemctl restart dnsmasq.service
+# sudo systemctl status dnsmasq.service
+
+#For sberlinux:
+#firewall-cmd --add-port=53/udp
+#firewall-cmd --add-port=53/tcp
+
+#For ubuntu
 
 #Every time /etc/dnsmasq.conf and /etc/hosts are changed, restart the service 'systemctl restart dnsmasq'
+# To check
+# systemctl status dnsmasq
 
 #nc -vzu <IP> 53
 
@@ -28,7 +43,11 @@ region_name="ebochkov"
 domain_name="test.domain"
 #parse_inventory_script="parse_inventory.py"
 #inventory_file_name="dns_ip_mapping.txt"
-nodes_to_find='\-ctrl\-..( |$)|\-comp\-..( |$)|\-net\-..( |$)|\-lcm\-..( |$)'
+ctrl_pattern='\-ctrl\-..(\s+|$)'
+comp_pattern='\-comp\-..(\s+|$)'
+net_pattern='\-net\-..(\s+|$)'
+lcm_pattern='\-lcm\-..(\s+|$)'
+#nodes_to_find="$ctrl_pattern|$lcm_pattern|$comp_pattern|$net_pattern"
 add_string="# ------ ADD strings ------"
 ldap_string="# ------ LDAP SERVER ------"
 ldap_server="10.224.133.139 ldaps-lab.slavchenkov-keystack.vm.lab.itkey.com"
@@ -63,8 +82,8 @@ do
         -da|-dont_ask) DONT_ASK="true"
           echo "Found the -dont_ask option, with parameter value $DONT_ASK"
           ;;
-        -host_exist) HOST_EXIST="true"
-          echo "Found the -host_exist option, with parameter value $HOST_EXIST"
+        -hosts_exist) HOST_EXIST="true"
+          echo "Found the -hosts_exist option, with parameter value $HOST_EXIST"
           ;;
         -dns_ip_mapping_file) DNS_IP_MAPPING_FILE=$2
           echo "Found the -dns_ip_mapping_file option, with parameter value $DNS_IP_MAPPING_FILE"
@@ -102,13 +121,13 @@ EOF
            and edits /etc/resolv.conf on all of them
         3)
           a) bash $script_dir/$script_name
-          b) bash $script_dir/$script_name -host_exist (if file 'hosts' already edited)
+          b) bash $script_dir/$script_name -hosts_exist (if file 'hosts' already edited)
 
         Note:
         Every time /etc/dnsmasq.conf and /etc/hosts are changed, restart the service 'systemctl restart dnsmasq'
 
         -dont_ask, -da                                    silent deploy (without parameter)
-        -host_exist                                       if 'hosts' file already edited (without parameter)
+        -hosts_exist                                       if 'hosts' file already edited (without parameter)
         -dns_ip_mapping_file  <dns_ip_mapping_file_path>  path to dns ip mapping file like 'hosts'
         -inventory, -i        <inventory_from_vms_stage>  path to inventory file for generate hosts string by inventory
 
@@ -137,15 +156,22 @@ get_var () {
     if [[ -z "${DOMAIN}" ]]; then
       read -rp "Enter domain name for KeyStack region [$domain_name]: " DOMAIN
     fi
+    export DOMAIN=${DOMAIN:-$domain_name}
+
     if [[ -z "${REGION}" ]]; then
       read -rp "Enter region name KeyStack cloud [$region_name]: " REGION
     fi
+    export REGION=${REGION:-$region_name}
+
     if [[ -z "${INT_PREF}" ]]; then
       read -rp "Enter internal prefix for FQDN [$internal_prefix]: " INT_PREF
     fi
+    export INT_PREF=${INT_PREF:-$internal_prefix}
+
     if [[ -z "${EXT_PREF}" ]]; then
       read -rp "Enter external prefix for FQDN [$external_prefix]: " EXT_PREF
     fi
+    export EXT_PREF=${EXT_PREF:-$external_prefix}
   fi
 
   # get DNS_SERVER_IP
@@ -178,19 +204,13 @@ get_var () {
 
 sed_var_in_conf () {
   echo -e "\n${yellow}Sed vars in conf...${normal}"
+  cp $script_dir/$CONF_NAME $script_dir/"$CONF_NAME"_edited
   sed -i --regexp-extended "s/DOMAIN/$DOMAIN/" \
       $script_dir/$CONF_NAME
   sed -i --regexp-extended "s/DNS_SERVER_IP/$DNS_SERVER_IP/" \
       $script_dir/$CONF_NAME
   echo
 }
-
-#cat_conf () {
-#  echo "Cat conf..."
-#  echo
-#  cat $script_dir/$CONF_NAME
-#  echo ""
-#}
 
 install_dnsmasq () {
   #Install docker if need
@@ -222,7 +242,7 @@ install_dnsmasq () {
 }
 
 copy_dnsmasq_conf () {
-  cp "$script_dir"/$CONF_NAME /etc/$CONF_NAME
+  cp "$script_dir"/"$CONF_NAME"_edited /etc/$CONF_NAME
   # Checking the hosts file for the line # ----- ADD from deploy_dnsmasq_service.sh -----
   if [ "$HOST_EXIST" = false ]; then
     strings_from_dnsmasq_deployer=$(cat < $parses_file|grep "$add_string")
@@ -237,19 +257,41 @@ copy_dnsmasq_conf () {
 #    cat $parses_file
   fi
   # Check and add ldap string
-  ldap_string_exist=$(cat < $parses_file|grep "$ldap_string")
-  if [ -z "$ldap_string_exist" ]; then
+  ldap_string_exist=true
+  for word in $ldap_server; do
+  find_string=$(cat < $parses_file|grep "$word")
+    if [ -n "$find_string" ]; then
+      break
+      #echo $ldap_string >> $parses_file
+      #echo $ldap_server >> $parses_file
+    else
+      ldap_string_exist=false
+    fi
+  done
+  if [ "$ldap_string_exist" = false ]; then
     echo $ldap_string >> $parses_file
     echo $ldap_server >> $parses_file
   fi
-    echo "Hosts file: "
-    cat $parses_file
+  echo "Hosts file: "
+  cat $parses_file
 
 #  exit 0
   sed -i --regexp-extended "s/nameserver(\s+|)[0-9]+.[0-9]+.[0-9]+.[0-9]+/nameserver $DNS_SERVER_IP/" \
       /etc/resolv.conf
 #  echo "nameserver $DNS_SERVER_IP" >> /etc/resolv.conf
   systemctl restart dnsmasq
+  #check current node
+  current_node=$(hostname)
+  for node_pattern in $ctrl_pattern $comp_pattern $net_pattern $lcm_pattern; do
+    is_current_node_in_nodes_pattern=$(echo $current_node|grep -E $node_pattern)
+    if [ -z "$is_current_node_in_nodes_pattern" ]; then
+      if [ -z "$nodes_to_find" ]; then
+        nodes_to_find="$nodes_to_find$node_pattern"
+      else
+        nodes_to_find="$nodes_to_find|$node_pattern"
+      fi
+    fi
+  done
   srv=$(cat $parses_file | grep -E "$nodes_to_find" | awk '{print $1}')
   for host in $srv;do
     echo "Remove resolv.conf from $(cat $parses_file | grep -E ${host} | awk '{print $2}'):"
@@ -282,7 +324,8 @@ if [ "$HOST_EXIST" = false ]; then
   if [ ! -f $DNS_IP_MAPPING_FILE ]; then
     echo -e "${yellow}$DNS_IP_MAPPING_FILE file not found - WARNING${normal}"
     echo -e "Create it,
-      or specify -host_exist key (if hosts file already edited),
+      or specify -hosts_exist
+       key (if hosts file already edited),
       or specify -dns_ip_mapping_file key with file path,
       or environment var 'DNS_IP_MAPPING_FILE'${normal}"
     echo -e "${red}The script cannot be executed - ERROR${normal}"

@@ -19,8 +19,69 @@ get_nodes_list_script="get_nodes_list.sh"
 green=$(tput setaf 2)
 red=$(tput setaf 1)
 violet=$(tput setaf 5)
+magenta=$(tput setaf 200)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
+cyan=$(tput setaf 6)
+
+ctrl_required_container_list=(
+  "keystone"
+  "keystone_ssh"
+  "rabbitmq"
+  "memcached"
+  "mariadb"
+  "redis"
+  "haproxy"
+  "horizon"
+  "nova_serialproxy"
+  "nova_novncproxy"
+  "nova_conductor"
+  "nova_api"
+  "nova_scheduler"
+  "placement_api"
+  "cinder_volume"
+  "cinder_scheduler"
+  "cinder_api"
+  "adminui_frontend"
+  "adminui_backend"
+  "drs"
+  "consul"
+  "prometheus_consul_exporter"
+  "prometheus_blackbox_exporter"
+  "prometheus_elasticsearch_exporter"
+  "prometheus_openstack_exporter"
+  "prometheus_alertmanager"
+  "prometheus_memcached_exporter"
+  "prometheus_mysqld_exporter"
+  "prometheus_node_exporter"
+  "prometheus_server"
+)
+
+comp_required_container_list=(
+  "iscsid"
+  "consul"
+  "neutron_openvswitch_agent"
+  "openvswitch_vswitchd"
+  "openvswitch_db"
+  "nova_compute"
+  "nova_libvirt"
+  "nova_ssh"
+  "prometheus_hypervisor_exporter"
+  "prometheus_ovs_exporter"
+  "prometheus_libvirt_exporter"
+  "prometheus_node_exporter"
+  "prometheus_blackbox_exporter"
+  "cron"
+  "fluentd"
+)
+# inventory
+#   [monitoring:children]
+#   control
+#   [prometheus-blackbox-exporter:children]
+#   monitoring
+# "prometheus_blackbox_exporter" not required on comp
+
+required_container_list=()
 
 [[ -z $CONTAINER_NAME ]] && CONTAINER_NAME=""
 [[ -z $NODES ]] && NODES=()
@@ -28,29 +89,9 @@ yellow=$(tput setaf 3)
 [[ -z $NODES_TYPE ]] && NODES_TYPE=""
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $NODES_TYPE ]] && NODES_TYPE="all"
+[[ -z $NODE_NAME ]] && NODE_NAME=""
 #======================
 
-#note_type_func () {
-#  case "$1" in
-#        ctrl)
-#          nodes_to_find=$ctrl_pattern
-#          echo "Сontainer will be checked on ctrl nodes"
-#          ;;
-#        comp)
-#          nodes_to_find=$comp_pattern
-#          echo "Сontainer will be checked on comp nodes"
-#          ;;
-#        net)
-#          nodes_to_find=$net_pattern
-#          echo "Сontainer will be checked on net nodes"
-#          ;;
-#        *)
-#          echo "type is not specified correctly. Сontainers will be checked on ctr, comp, net nodes"
-#          ;;
-#        esac
-#}
-
-#======================
 
 # Define parameters
 define_parameters () {
@@ -65,6 +106,7 @@ do
       <container_name> as parameter
       -c, 	-container_name		<container_name>
       -nt, 	-type_of_nodes		<type_of_nodes> 'ctrl', 'comp', 'net'
+      -nn,  -node_name        <node_name>
       -check_unhealthy        check only unhealthy containers (without parameter)
       -debug                  enable debug output (without parameter)
 "
@@ -75,6 +117,10 @@ do
       shift ;;
     -nt|-type_of_nodes) NODES_TYPE=$2
       echo "Found the -type_of_nodes  with parameter value $NODES_TYPE"
+#      note_type_func "$2"
+      shift ;;
+    -nn|-node_name) NODE_NAME=$2
+      echo "Found the -node_name  with parameter value $NODE_NAME"
 #      note_type_func "$2"
       shift ;;
     -check_unhealthy) CHECK_UNHEALTHY="true"
@@ -90,10 +136,40 @@ do
       shift
 done
 
-error_output () {
-  printf "%s\n" "${yellow}Docker container not checked on $NODES_TYPE nodes${normal}"
-  printf "%s\n" "${red}$error_message - error${normal}"
-  exit 1
+#error_output () {
+#  printf "%s\n" "${yellow}Docker container not checked on $NODES_TYPE nodes${normal}"
+#  printf "%s\n" "${red}$error_message - error${normal}"
+#  exit 1
+#}
+
+#check_connection () {
+#  for host in "${NODES[@]}"; do
+#    echo "host: $host"
+#    sleep 1
+#    if ping -c 2 $host &> /dev/null; then
+#        printf "%40s\n" "${green}There is a connection with $host - success${normal}"
+#    else
+#        printf "%40s\n" "${red}No connection with $IP - error!${normal}"
+#    fi
+#  done
+#}
+
+check_required_container () {
+
+  container_name_on_lcm=$(ssh -o StrictHostKeyChecking=no $host 'docker ps --format "{{.Names}}" --filter status=running')
+  for container_requaired in "${required_containers_list[@]}"; do
+    container_exist="false"
+    for container in $container_name_on_lcm; do
+      if [ "$container" = "$container_requaired" ]; then
+        container_exist="true"
+      fi
+    done
+    if [ "$container_exist" = "true" ]; then
+      container_exist="true"
+    else
+      echo -e "${red}Container $container_requaired not exists - ERROR${normal}"
+    fi
+  done
 }
 
 get_nodes_list () {
@@ -127,17 +203,12 @@ get_nodes_list () {
   fi
 }
 
-get_nodes_list
+if [ -z "$NODE_NAME" ]; then
+  get_nodes_list
+else
+  NODES=("$NODE_NAME")
+fi
 
-#[[ -z ${NODES[0]} ]] && { srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}'); for i in $srv; do NODES+=("$i"); done; }
-
-#echo "Nodes for container checking:"
-#echo "${NODES[*]}"
-#
-#if [ ${#NODES[@]} -eq 0 ]; then
-#  error_message="Node list type of $nodes_to_find is empty"
-#  error_output
-#fi
 
 [[ "$CHECK_UNHEALTHY" = true  ]] && {
   UNHEALTHY="\(unhealthy\)";
@@ -155,25 +226,52 @@ get_nodes_list
 
 for host in "${NODES[@]}"; do
   if [ -z $CONTAINER_NAME ]; then
-    echo "Check container on ${host}"
+    echo -e "${cyan}Check container on ${host}${normal}"
   else
     echo "Check container (CONTAINER_NAME: $CONTAINER_NAME) on ${host}"
+    grep_string="|grep $CONTAINER_NAME"
   fi
-  if ping -c 2 $host &> /dev/null; then
+  status=$(ssh -o "StrictHostKeyChecking=no" -o BatchMode=yes -o ConnectTimeout=5 $host echo ok 2>&1)
+
+  if [[ $status == ok ]] ; then
+
+#  if ping -c 2 $host &> /dev/null; then
     printf "%40s\n" "There is a connection with $host - ok!"
 
 #    ssh -o StrictHostKeyChecking=no $host docker ps $grep_string \
-    ssh -o StrictHostKeyChecking=no $host docker ps \
+    ssh -o StrictHostKeyChecking=no $host docker ps $grep_string \
       |sed --unbuffered \
+        -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*second.*\)/\o033[33m\1\o033[39m/' \
+        -e 's/\(.*Less than.*\)/\o033[33m\1\o033[39m/' \
         -e 's/\(.*(healthy).*\)/\o033[92m\1\o033[39m/' \
+        -e 's/\(.*days.*\)/\o033[92m\1\o033[39m/' \
+        -e 's/\(.*About an hour.*\)/\o033[92m\1\o033[39m/' \
+        -e 's/\(.*minutes.*\)/\o033[92m\1\o033[39m/' \
+        -e 's/\(.*weeks.*\)/\o033[92m\1\o033[39m/' \
         -e 's/\(.*hours.*\)/\o033[92m\1\o033[39m/' \
         -e 's/\(.*starting).*\)/\o033[33m\1\o033[39m/'\
-        -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
-        -e 's/\(.*Less than.*\)/\o033[33m\1\o033[39m/' \
         -e 's/\(.*restarting.*\)/\o033[31m\1\o033[39m/'
 
 #        -e 's/\(.*Up.*\)/\o033[92m\1\o033[39m/' \
+    echo -e "Check required container on ${host}"
+
+    is_ctrl=$(echo $host|grep ctrl)
+    if [ -n "$is_ctrl" ]; then
+      if [ -z $CONTAINER_NAME ]; then
+        required_containers_list=( "${ctrl_required_container_list[@]}" )
+        check_required_container
+      fi
+    fi
+    is_comp=$(echo $host|grep -E "comp|cmpt")
+    if [ -n "$is_comp" ]; then
+      if [ -z $CONTAINER_NAME ]; then
+        required_containers_list=( "${comp_required_container_list[@]}" )
+        check_required_container
+      fi
+    fi
+  elif [[ $status == "Permission denied"* ]] ; then
+    printf "%40s\n" "${red}$status - error!${normal}"
   else
     printf "%40s\n" "${red}No connection with $host - error!${normal}"
     echo -e "${red}The node may be turned off.${normal}\n"

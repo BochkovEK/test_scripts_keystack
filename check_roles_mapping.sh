@@ -186,6 +186,12 @@ else
 fi
 
 #while IFS= read -r line; do echo ">>$line<<"; done < $ROLE_MAPPING_FILE
+if [ -f $ROLE_MAPPING_FILE ]; then
+   echo "File $ROLE_MAPPING_FILE exists."
+else
+   echo "File $ROLE_MAPPING_FILE does not exist."
+   exit 1
+fi
 while IFS= read -r line; do ROLE_MAPPING+=("$line"); done < $ROLE_MAPPING_FILE
 
 if [ "$TS_DEBUG" = true ]; then

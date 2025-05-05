@@ -24,7 +24,7 @@ variable "default_disks" {
   default     = []
 }
 
-variable "default_boot_volume_size" {
+variable "default_volume_size" {
   description = "Default volume size"
   type        = number
   default     = 5
@@ -36,6 +36,11 @@ variable "default_network_name" {
   default     = "pub_net"
 }
 
+variable "default_delete_on_termination" {
+  description = "Default delete on termination"
+  type        = string
+  default     = "true"
+}
 #variable "default_security_groups" {
 #  description = "Default security_groups"
 #  type        = list(string)
@@ -67,6 +72,13 @@ variable "default_server_group" {
   default     = {}
 }
 
+variable "default_metadata" {
+  description = "Default metadata"
+  default     = {
+    test_meta = "Created by Terraform VM_module"
+  }
+}
+
 #variable "default_server_group_id" {
 #  description = "Default server group id"
 #  default     = ""
@@ -87,3 +99,9 @@ variable "VMs" {
 #  description = "AZs list source"
 #  default = {}
 #}
+
+# user_data = "#cloud-config\nhostname: instance_1.example.com\nfqdn: instance_1.example.com"
+variable "default_user_data" {
+  description = "Default user data"
+  default = ""
+}

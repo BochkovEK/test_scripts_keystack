@@ -24,7 +24,7 @@ check_openrc_script="check_openrc.sh"
 check_openstack_cli_script="check_openstack_cli.sh"
 install_package_script="install_package.sh"
 
-edit_ha_region_config_script="edit_ha_region_config.sh"
+edit_ha_region_config_script="edit_ha_config.sh"
 
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
 [[ -z $TRY_TO_RISE ]] && TRY_TO_RISE="true"
@@ -226,9 +226,9 @@ Check_connection_to_nodes () {
     Switch_case_nodes_type $1
 
     for host in $nodes; do
-        host $host
-        sleep 1
+#        host $host
         Check_connection_to_node $host
+#        sleep 1
     done
 }
 
@@ -373,14 +373,17 @@ Check_consul_config () {
   [TS_DEBUG]: \"\$OS_REGION_NAME\": $OS_REGION_NAME\n
   [TS_DEBUG]: \"\$leader_ctrl_node\": $leader_ctrl_node\n
   "
-  echo -e "${ORANGE}ssh -t -o StrictHostKeyChecking=no $leader_ctrl_node cat /etc/kolla/consul/region-config_${REGION}.json${NC}"
-  ipmi_fencing_state=$(ssh -o StrictHostKeyChecking=no "$leader_ctrl_node" cat /etc/kolla/consul/region-config_"${REGION}".json| \
-  grep -E '"bmc": \w|"ipmi": \w|alive_compute_threshold|dead_compute_threshold|"ceph": \w|"nova": \w|"power_fence_mode"')
+  consul_config_path=$(bash $script_dir/$edit_ha_region_config_script config_path | tail -n1)
+  echo -e "${ORANGE}ssh -t -o StrictHostKeyChecking=no $leader_ctrl_node cat $consul_config_path${NC}"
+  ipmi_fencing_state=$(ssh -o StrictHostKeyChecking=no "$leader_ctrl_node" cat $consul_config_path| \
+  grep -E '"bmc": \w|"ipmi": \w|alive_compute_threshold|dead_compute_threshold|ceph =|nova =|bmc =|"ceph": \w|"nova": \w|"power_fence_mode"')
   echo "Fencing list:"
   echo "$ipmi_fencing_state" | \
             sed --unbuffered \
                 -e 's/\(.*true.*\)/\o033[92m\1\o033[39m/' \
+                -e 's/\(.*True.*\)/\o033[92m\1\o033[39m/' \
                 -e 's/\(.*false.*\)/\o033[31m\1\o033[39m/' \
+                -e 's/\(.*False.*\)/\o033[31m\1\o033[39m/' \
                 -e 's/\(.*alive_compute_threshold.*\)/\o033[33m\1\o033[39m/' \
                 -e 's/\(.*dead_compute_threshold.*\)/\o033[33m\1\o033[39m/'
 }
@@ -417,7 +420,7 @@ $comp_nodes
 #fi
 Check_openstack_cli
 Check_and_source_openrc_file
-Check_host_command
+#Check_host_command
 Check_nova_srvice_list
 Get_ctrl_comp_nodes
 [ "$CHECK" = nova ] && { echo "Nova checking..."; Check_nova_srvice_list; Check_disabled_computes_in_nova; exit 0; }

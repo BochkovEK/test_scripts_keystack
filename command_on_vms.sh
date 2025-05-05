@@ -10,12 +10,14 @@ green=$(tput setaf 2)
 red=$(tput setaf 1)
 violet=$(tput setaf 5)
 normal=$(tput sgr0)
+yellow=$(tput setaf 3)
 
 script_name=$(basename "$0")
 script_dir=$(dirname $0)
 utils_dir=$script_dir/utils
 openstack_utils=$utils_dir/openstack
 #check_openrc_script="check_openrc.sh"
+default_ssh_timeout=5
 get_active_vms_ips_list_script="get_active_vms_ips_list.sh"
 
 [[ -z $KEY_PATH ]] && KEY_PATH="$script_dir/key_test.pem"
@@ -30,6 +32,7 @@ get_active_vms_ips_list_script="get_active_vms_ips_list.sh"
 [[ -z $DONT_ASK ]] && DONT_ASK="true"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $VMs_IPs ]] && VMs_IPs=""
+[[ -z $TS_SSH_TIMEOUT ]] && TS_SSH_TIMEOUT=$default_ssh_timeout
 
 
 echo "Start $script_name script..."
@@ -47,6 +50,7 @@ while [ -n "$1" ]; do
       -ips          <ips list> (example: -ips \"<ip_vm_1> <ip_vm_2> ... \")
       -v, -debug    enabled debug output (without parameter)
       -check        only check access to OS vm (without parameter)
+      -t, -timeout  check ssh connection timeout
       "
       exit 0
       break ;;
@@ -61,6 +65,9 @@ while [ -n "$1" ]; do
       shift ;;
     -k|-key) KEY_PATH="$2"
 	    echo "Found the -key option, with parameter value $KEY_PATH"
+      shift ;;
+    -t|-timeout) TS_SSH_TIMEOUT="$2"
+	    echo "Found the -timeout option, with parameter value $TS_SSH_TIMEOUT"
       shift ;;
     -p|-project) PROJECT="$2"
       echo "Found the -project option, with parameter value $PROJECT"
@@ -129,12 +136,16 @@ batch_run_command() {
     fi
   fi
   at_least_one_vm_is_not_avail="false"
-   "$TS_DEBUG" = true ] && echo -e "
+  "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]:
-    VMs_IPs: $VMs_IPs
+    VMs_IPs:
+    $VMs_IPs
     KEY_PATH: $KEY_PATH
-
   "
+  if [ "$TS_DEBUG" = true ]; then
+    echo -e "${yellow}[Warning] in debug mode the script cannot execute commands on the VM${normal}"
+    exit 0
+  fi
   for IP in $VMs_IPs; do
 #    FIRST_IP=$(echo "${raw_string_ip%%,*}")
 #        FIRST_IP=$(echo $raw_string_ip|awk '{print $1}')
@@ -142,7 +153,9 @@ batch_run_command() {
     if ping -c 2 $IP &> /dev/null; then
       echo -e "${green}There is a connection with $IP - success${normal}"
       if [ "$ONLY_PING" = "false" ]; then
-        ssh_conn=$(ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=5 -q -i $KEY_PATH $VM_USER@$IP echo ok 2>&1)
+        ssh_conn=$(ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=20 -o ServerAliveCountMax=5 -o ConnectTimeout=$TS_SSH_TIMEOUT -q -i $KEY_PATH $VM_USER@$IP echo ok 2>&1)
+        # -o ConnectTimeout=$TS_SSH_TIMEOUT
+        # -o BatchMode=yes
         if [ "$ssh_conn" = "ok" ]; then
           echo -e "${green}There is a SSH connection with $IP - success${normal}"
         else

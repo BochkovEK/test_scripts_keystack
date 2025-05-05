@@ -9,6 +9,7 @@ green=$(tput setaf 2)
 red=$(tput setaf 1)
 violet=$(tput setaf 5)
 normal=$(tput sgr0)
+yellow=$(tput setaf 3)
 
 #script_name=$(basename "$0")
 # grep ip regex: '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'
@@ -49,9 +50,13 @@ get_VMs_IPs () {
   #awk '{print $8}')
   [ "$TS_DEBUG" = true ] && echo -e "
 
-  [DEBUG]: command to define vms ip list
-    VMs_IPs=\$(openstack server list $host_string $project_string |grep ACTIVE | grep -ohE \"$ip_pub_net_grep_string\")
-  [DEBUG]: VMs_IPs: $VMs_IPs
+  [DEBUG]:
+    command to define vms ip list
+      VMs_IPs=\$(openstack server list $host_string $project_string |grep ACTIVE | grep -ohE \"$ip_pub_net_grep_string\")
+    command to check connection:
+      for ip in \$VMs_IPs;do ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=5 -q -i ~/test_scripts_keystack/key_test.pem ubuntu@\$ip echo ok; done
+    VMs_IPs:
+$VMs_IPs
   "
   # in openstack cli version 6.2 the --host key gives an empty output
   if [ -z "$VMs_IPs" ]; then
@@ -59,9 +64,13 @@ get_VMs_IPs () {
       grep -E "ACTIVE.*$HYPERVISOR_NAME" | grep -ohE "$ip_pub_net_grep_string")
       #awk '{print $12}')
     [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]: command to define vms ip list
-    VMs_IPs=\$(openstack server list $project_string --long | grep -E \"ACTIVE.*$HYPERVISOR_NAME\" | grep -ohE \"$ip_pub_net_grep_string\"
-  [DEBUG]: VMs_IPs: $VMs_IPs
+  [DEBUG]:
+    command to define vms ip list:
+      VMs_IPs=\$(openstack server list $project_string --long | grep -E \"ACTIVE.*$HYPERVISOR_NAME\" | grep -ohE \"$ip_pub_net_grep_string\"
+    command to check connection:
+      for ip in \$VMs_IPs;do ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=5 -q -i ~/test_scripts_keystack/key_test.pem ubuntu@\$ip echo ok; done
+    VMs_IPs:
+$VMs_IPs
   "
 #      grep -E "ACTIVE.*$HYPERVISOR_NAME" |awk '{print \$12}')
     if [ -z "$VMs_IPs" ]; then
@@ -73,10 +82,12 @@ get_VMs_IPs () {
     fi
   fi
 
-  for raw_string_ip in $VMs_IPs; do
-    IP="${raw_string_ip##*=}"
-    echo $IP
-  done
+  if [ ! "$TS_DEBUG" = true ]; then
+    for raw_string_ip in $VMs_IPs; do
+      IP="${raw_string_ip##*=}"
+      echo $IP
+    done
+  fi
 }
 
 check_openstack_cli

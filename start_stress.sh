@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #The cpu/ram stress test will be launched on all VMs of hypervisor
-#Exapmple start command: ./stress_test_on_vms.sh -hv cmpt-1 -cpu 4
+#Exapmple start command: bash $HOME/test_scripts_keystack/start_stress.sh -cpu 2 -hv $comp_01
 
 #Colors
 green=$(tput setaf 2)

@@ -29,7 +29,7 @@ script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
 
-command_on_nodes_script_name="command_on_nodes.sh"
+command_on_nodes_script_name="../command_on_nodes.sh"
 
 control_config_list=(
   "/etc/kolla/keystone/keystone.conf"
@@ -76,12 +76,14 @@ prometheus_exporters_config_list=(
   "/etc/kolla/prometheus-openstack-exporter/clouds.yml"
 )
 
+#[[ -z $TS_CONTROL_CONFIG_LIST ]] && TS_CONTROL_CONFIG_LIST=$control_config_list
 [[ -z $CHECK_COMP ]] && CHECK_COMP="false"
 [[ -z $CHECK_CTRL ]] && CHECK_CTRL="false"
 [[ -z $CHECK_HASHED ]] && CHECK_HASHED="false"
 [[ -z $CHECK_PROMETH ]] && CHECK_PROMETH="false"
 [[ -z $CHECK_ALL ]] && CHECK_ALL="true"
 [[ -z $CONFIG_PATH ]] && CONFIG_PATH=""
+[[ -z $ENV_CONFIG_LIST ]] && ENV_CONFIG_LIST=""
 #[[ -z $DEBUG ]] && DEBUG="false"
 
 # Define parameters
@@ -99,15 +101,19 @@ while [ -n "$1" ]; do
       -ctrl                         check configs on ctrl nodes ${control_config_list[*]}
       -hashed                       check hashed passwords on configs ${hashed_password_config_list[*]}
       -prometheus                   check prometheus exporters configs ${prometheus_exporters_config_list[*]}
-      -c, -config <config_path>     check specify config
+      -cl, -config_list             check configs list
+      -c, -config <config_path>     check specify config (exp: -c /etc/kolla/adminui-backend/adminui-backend-osloconf.conf)
+      -e, -env_config_list          use config list from env file (for different KS release; exp: -e .config_list_for_ks2024.3)
 "
       exit 0
       break ;;
     -comp) CHECK_COMP=true; CHECK_ALL="false"
-      echo "Found the -comp. Check configs on comp nodes ${compute_config_list[*]}"
+      echo "Found the -comp. Check configs on comp nodes"
+#      ${compute_config_list[*]}"
       ;;
     -ctrl) CHECK_CTRL=true; CHECK_ALL="false"
-      echo "Found the -ctrl. Check configs on ctrl nodes ${control_config_list[*]}"
+      echo "Found the -ctrl. Check configs on ctrl nodes"
+#       ${control_config_list[*]}"
       ;;
     -hashed) CHECK_HASHED=true; CHECK_ALL="false"
       echo "Found the -hashed. Check hashed passwords on configs ${hashed_password_config_list[*]}"
@@ -118,6 +124,12 @@ while [ -n "$1" ]; do
     -c|-config) CONFIG_PATH=$2
       echo "Found the -config. Check specify config $CONFIG_PATH"
       shift ;;
+    -e|-env_config_list) ENV_CONFIG_LIST=$2
+      echo "Found the -env_config_list. Use env confilg list file $ENV_CONFIG_LIST"
+      shift ;;
+    -cl|-config_list) CONFIG_LIST="true"
+      echo "Found the -config_list. Check configs list"
+      ;;
     --)
       shift
       break ;;
@@ -143,15 +155,20 @@ read_conf () {
       #ok\o033[39m/'
   if [ "$3" = castellan ]; then
     echo -E "${cyan}Check castellan strings...${normal}"
-    bash $script_dir/$command_on_nodes_script_name -nt $1 -c "cat $2 | grep -E 'db_uri|vault_secret|password_hash|with secret| password |\"password\"\:|password\:\s|_pass\"|password =|\[castellan_configsource\]'| \
+    bash $script_dir/$command_on_nodes_script_name -nt $1 -c "cat $2 | grep -E 'wsrep_sst_auth|auth-pass|requirepass|masterauth|db_uri|vault_secret|password_hash|with secret| password |\"password\"\:|password\:\s|_pass\"|password =|\[castellan_configsource\]'| \
       sed --unbuffered \
         -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - [ok: castellan group exists]\o033[39m/'\
         -e 's/\(.*password_hash.*\)/\o033[32m ...pass..._hash... - [ok: pass hash exists]\o033[39m/'\
         -e 's/\(.*vault_secret.*\)/\o033[32m ...vault_secret... - [ok: vault settings exists]\o033[39m/'\
         -e 's/\(.*with secret.*\)/\o033[32m ...with secret... - [ok: vault settings exists]\o033[39m/'\
         -e 's/\(.*password.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
+        -e 's/\(.*auth-pass.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
+        -e 's/\(.*wsrep_sst_auth.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
+        -e 's/\(.*requirepass.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
+        -e 's/\(.*masterauth.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
         -e 's/\(.*_pass\".*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'; echo -e '\033[0;37m'"
 #        -e 's/\(.*password:.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'"
+#        -e 's/\(.*wsrep_sst_auth.*)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
   fi
   if [ "$4" = cat ]; then
     bash $script_dir/$command_on_nodes_script_name -nt $1 -c "cat $2"
@@ -215,22 +232,88 @@ Check_specify_config () {
   echo -E "${cyan_b}Check specify config $CONFIG_PATH${normal}"
   export DONT_CHECK_CONN=true
   if [ "$CHECK_CTRL" = true ]; then
-    read_conf ctrl $CONFIG_PATH castellan
+    read_conf ctrl $CONFIG_PATH castellan cat
   fi
   if [ "$CHECK_COMP" = true ]; then
-    read_conf comp $CONFIG_PATH castellan
+    read_conf comp $CONFIG_PATH castellan cat
   fi
   if [ "$CHECK_ALL" = true ]; then
-    read_conf ctrl $CONFIG_PATH castellan
-    read_conf comp $CONFIG_PATH castellan
+    read_conf ctrl $CONFIG_PATH castellan cat
+    read_conf comp $CONFIG_PATH castellan cat
   fi
   export DONT_CHECK_CONN=""
 }
 
+Config_list () {
+  echo -E "${yellow}control config list:${normal}"
+  for config in "${control_config_list[@]}"; do
+    echo $config
+  done
+  echo -E "${yellow}compute config list:${normal}"
+  for config in "${compute_config_list[@]}"; do
+    echo $config
+  done
+  echo -E "${yellow}hashed password config list:${normal}"
+  for config in "${hashed_password_config_list[@]}"; do
+    echo $config
+  done
+  echo -E "${yellow}prometheus exporters config listc:${normal}"
+  for config in "${prometheus_exporters_config_list[@]}"; do
+    echo $config
+  done
+}
+
+
 if [ -n "$CONFIG_PATH" ]; then
   Check_specify_config
+#  exit 0
+fi
+
+#pull config from env file
+if [ -n "$ENV_CONFIG_LIST" ]; then
+  unset control_config_list
+  declare -a control_config_list
+  while IFS='=' read -r key value; do
+    if [[ $key == TS_CONTROL_CONFIG_LIST_* ]]; then
+     index=${key#TS_CONTROL_CONFIG_LIST_}
+     control_config_list[$index]=$value
+    fi
+  done < $ENV_CONFIG_LIST
+  unset compute_config_list
+  declare -a compute_config_list
+  while IFS='=' read -r key value; do
+    if [[ $key == TS_COMPUTE_CONFIG_LIST_* ]]; then
+     index=${key#TS_COMPUTE_CONFIG_LIST_}
+     compute_config_list[$index]=$value
+    fi
+  done < $ENV_CONFIG_LIST
+  unset hashed_password_config_list
+  declare -a hashed_password_config_list
+  while IFS='=' read -r key value; do
+    if [[ $key == TS_HASHED_PASSWORD_CONFIG_LIST_* ]]; then
+     index=${key#TS_HASHED_PASSWORD_CONFIG_LIST_}
+     hashed_password_config_list[$index]=$value
+    fi
+  done < $ENV_CONFIG_LIST
+  unset prometheus_exporters_config_list
+  declare -a prometheus_exporters_config_list
+  while IFS='=' read -r key value; do
+    if [[ $key == TS_PROMETHEUS_EXPORTERS_CONFIG_LIST_* ]]; then
+     index=${key#TS_PROMETHEUS_EXPORTERS_CONFIG_LIST_}
+     prometheus_exporters_config_list[$index]=$value
+    fi
+  done < $ENV_CONFIG_LIST
+fi
+
+if [ "$CONFIG_LIST" = true ]; then
+  Config_list
+#  exit 0
+fi
+
+if [ "$CONFIG_LIST" = true ] || [ -n "$CONFIG_PATH" ]; then
   exit 0
 fi
+
 if [ "$CHECK_COMP" = true ] || [ "$CHECK_ALL" = true ]; then
   Check_configs_on_computes
 fi

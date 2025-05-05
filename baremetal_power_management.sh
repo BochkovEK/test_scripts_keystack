@@ -46,9 +46,12 @@ do
   --help) echo -E "
     The power management script
       -ip                   <ipmi_ip>       IPMI IP
-      -hv, -host_name,      <host_name>     Host name for power management (ipmi)
-      -p,  -power_state     <power_state>   check, on, off, restart, shutdown
-      -v,  -debug  enabled debug output (without parameter)
+      -hv,    -host_name,   <host_name>     Host name for power management (ipmi)
+      -p,     -power_state  <power_state>   check, on, off, restart, shutdown
+      -v,     -debug        enabled debug output (without parameter)
+      -pswd,  -password     <password_for_idrac> idrac password
+      -u,     -user_name    <user_name_for_idrac> idrac username
+      -b,     -bmc_suffix   <bmc_suffix_for_impi> example cdm-bl-pca04-rmi (bmc_suffix = rmi)
 
       Example to start script:
            bash baremetal_power_management.sh ebochkov-ks-sber-comp-05 check
@@ -131,9 +134,13 @@ start_python_power_management_script () {
       if [ -z $BMC_SUFFIX ]; then
         echo "Check bmc suffix by script $EDIT_HA_REGION_CONFIG..."
         bmc_suffix=$(bash $script_dir/$EDIT_HA_REGION_CONFIG suffix| tail -n1)
-        [[ -z $bmc_suffix ]] && { printf "%40s\n" "${red}variable bmc_suffix id empty${normal}"; exit 0; }
+        [[ -z $bmc_suffix ]] && { printf "%40s\n" "${red}variable bmc_suffix id empty${normal}"; exit 1; }
+#        bmc_suffix=$BMC_SUFFIX
+      else
+        bmc_suffix=$BMC_SUFFIX
       fi
-      bmc_suffix=$BMC_SUFFIX
+#      echo "bmc_suffix: $bmc_suffix"
+#      bmc_suffix=$BMC_SUFFIX
       echo "bmc_suffix: $bmc_suffix"
       BMC_HOST_NAME=$HOST_NAME$bmc_suffix
       echo "BMC_HOST_NAME: $BMC_HOST_NAME"

@@ -34,6 +34,7 @@ yellow=$(tput setaf 3)
 [[ -z $LEGACY_CONF ]] && LEGACY_CONF="false"
 [[ -z $CONF_NAME ]] && CONF_NAME=$conf_name
 [[ -z $OS_REGION_NAME ]] && OS_REGION_NAME=""
+[[ -z $GET_CONFIG_PATH ]] && GET_CONFIG_PATH="false"
 
 #[[ -z "${1}" ]] && { echo "Alive threshold value required as parameter script"; exit 1; }
 
@@ -41,6 +42,7 @@ yellow=$(tput setaf 3)
 define_parameters () {
 #  pass
   [ "$count" = 1 ] && [ "$1" = suffix ] && { CHECK_SUFFIX=true; echo "Check suffix parameter found"; }
+  [ "$count" = 1 ] && [ "$1" = config_path ] && { GET_CONFIG_PATH=true; echo "Get config path parameter found"; }
 #  [ "$count" = 1 ] && [ "$1" = check ] && { ONLY_CONF_CHECK=true; echo "Only conf check parameter found"; }
 }
 
@@ -307,6 +309,10 @@ check_bmc_suffix () {
   fi
 }
 
+get_config_path () {
+  echo $conf_dir/$CONF_NAME
+}
+
 get_nodes_list
 
 if [ "$LEGACY_CONF" = true ]; then
@@ -318,6 +324,7 @@ if [ "$LEGACY_CONF" = true ]; then
 fi
 
 [ "$CHECK_SUFFIX" = true ] && { check_bmc_suffix; exit 0; }
+[ "$GET_CONFIG_PATH" = true ] && { get_config_path; exit 0; }
 [ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
 [ "$PULL" = true ] && { pull_conf; exit 0; }
 [ "$PUSH" = true ] && { push_conf; conf_changed=true; }
