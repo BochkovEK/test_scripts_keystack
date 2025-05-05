@@ -232,14 +232,14 @@ Check_specify_config () {
   echo -E "${cyan_b}Check specify config $CONFIG_PATH${normal}"
   export DONT_CHECK_CONN=true
   if [ "$CHECK_CTRL" = true ]; then
-    read_conf ctrl $CONFIG_PATH castellan
+    read_conf ctrl $CONFIG_PATH castellan cat
   fi
   if [ "$CHECK_COMP" = true ]; then
-    read_conf comp $CONFIG_PATH castellan
+    read_conf comp $CONFIG_PATH castellan cat
   fi
   if [ "$CHECK_ALL" = true ]; then
-    read_conf ctrl $CONFIG_PATH castellan
-    read_conf comp $CONFIG_PATH castellan
+    read_conf ctrl $CONFIG_PATH castellan cat
+    read_conf comp $CONFIG_PATH castellan cat
   fi
   export DONT_CHECK_CONN=""
 }
