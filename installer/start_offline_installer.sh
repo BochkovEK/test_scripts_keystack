@@ -61,16 +61,22 @@ get_init_vars () {
 #    source $SCRIPT_INSTALLER_ENVS
 #  fi
    # check KEYSTACK_RELEASE SYSTEM vars
-  [[ -z "${KEYSTACK_RELEASE}" ]] && { echo -e "${red}env KEYSTACK_RELEASE not define - ERROR${normal}"; exit 1; }
+  if [[ -z "${KEYSTACK_RELEASE}" ]]; then
+    read -rp "Enter KeyStack release [ks2024.3]: " KEYSTACK_RELEASE
+  fi
+  export KEYSTACK_RELEASE=${KEYSTACK_RELEASE:-"ks2024.3"}
+#  [[ -z "${RELEASE_URL}" ]] && { echo -e "${red}env RELEASE_URL not define - ERROR${normal}"; exit 1; }
+#  [[ -z "${KEYSTACK_RELEASE}" ]] && { echo -e "${red}env KEYSTACK_RELEASE not define - ERROR${normal}"; exit 1; }
 #  [[ -z "${KEYSTACK_RC_VERSION}" ]] && { echo -e "${red}env KEYSTACK_RC_VERSION not define - ERROR${normal}"; exit 1; }
+
   [[ -z "${SYSTEM}" ]] && { echo -e "${red}env SYSTEM not define - ERROR${normal}"; exit 1; }
 
   # get RELEASE_URL
   if [[ -z "${RELEASE_URL}" ]]; then
     read -rp "Enter release download url [https://repo.itkey.com/repository/k-install/installer-$KEYSTACK_RELEASE-$SYSTEM-offline.tgz]: " RELEASE_URL
   fi
-  export RELEASE_URL=${RELEASE_URL:-"https://repo.itkey.com/repository/k-install/installer-$KEYSTACK_RELEASE-$KEYSTACK_RC_VERSION$SYSTEM-offline.tgz"}
-  [[ -z "${RELEASE_URL}" ]] && { echo -e "${red}env RELEASE_URL not define - ERROR${normal}"; exit 1; }
+  export RELEASE_URL=${RELEASE_URL:-"https://repo.itkey.com/repository/k-install/installer-$KEYSTACK_RELEASE-$SYSTEM-offline.tgz"}
+#  [[ -z "${RELEASE_URL}" ]] && { echo -e "${red}env RELEASE_URL not define - ERROR${normal}"; exit 1; }
 
 #  # get INIT_INSTALLER_FOLDER
 #  if [[ -z "${INIT_INSTALLER_FOLDER}" ]]; then
