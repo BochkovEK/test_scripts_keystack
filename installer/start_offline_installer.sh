@@ -14,7 +14,7 @@ parent_dir=$(dirname "$script_dir")
 utils_dir=$parent_dir/utils
 installer_conf_folder="installer_conf"
 script_installer_envs="script_installer_envs"
-start_installer_envs="start_installer_envs"
+#start_installer_envs="start_installer_envs"
 #install_wget_script="install_wget.sh"
 install_package_script="install_package.sh"
 add_vm="qa-stable-ubuntu-add_vm-01"
@@ -40,26 +40,26 @@ yellow=$(tput setaf 3)
 [[ -z $INIT_INSTALLER_FOLDER ]] && INIT_INSTALLER_FOLDER="$HOME/installer"
 [[ -z $INIT_INSTALLER_BACKUP_FOLDER ]] && INIT_INSTALLER_BACKUP_FOLDER="$HOME/installer_backup"
 [[ -z $KEYSTACK_RELEASE ]] && KEYSTACK_RELEASE=""
-[[ -z $KEYSTACK_RC_VERSION ]] && KEYSTACK_RC_VERSION=""
+#[[ -z $KEYSTACK_RC_VERSION ]] && KEYSTACK_RC_VERSION=""
 
 source_envs () {
 
-  installer_envs=$script_dir/$KEYSTACK_RELEASE/$start_installer_envs
+#  installer_envs=$SCRIPT_INSTALLER_ENVS
 
-  echo "Try to source $installer_envs"
+  echo "Try to source $SCRIPT_INSTALLER_ENVS"
 
-  if [ -f $installer_envs ]; then
-    source $installer_envs
+  if [ -f $SCRIPT_INSTALLER_ENVS ]; then
+    source $SCRIPT_INSTALLER_ENVS
   else
-    echo -e "${yellow}Env file $installer_envs not exists${normal}"
+    echo -e "${yellow}Env file $SCRIPT_INSTALLER_ENVS not exists${normal}"
   fi
 }
 
 get_init_vars () {
 
-  if [ -f $SCRIPT_INSTALLER_ENVS ]; then
-    source $SCRIPT_INSTALLER_ENVS
-  fi
+#  if [ -f $SCRIPT_INSTALLER_ENVS ]; then
+#    source $SCRIPT_INSTALLER_ENVS
+#  fi
    # check KEYSTACK_RELEASE SYSTEM vars
   [[ -z "${KEYSTACK_RELEASE}" ]] && { echo -e "${red}env KEYSTACK_RELEASE not define - ERROR${normal}"; exit 1; }
 #  [[ -z "${KEYSTACK_RC_VERSION}" ]] && { echo -e "${red}env KEYSTACK_RC_VERSION not define - ERROR${normal}"; exit 1; }
@@ -67,31 +67,31 @@ get_init_vars () {
 
   # get RELEASE_URL
   if [[ -z "${RELEASE_URL}" ]]; then
-    read -rp "Enter release download url [https://repo.itkey.com/repository/k-install/installer-$KEYSTACK_RELEASE-$KEYSTACK_RC_VERSION$SYSTEM-offline.tgz]: " RELEASE_URL
+    read -rp "Enter release download url [https://repo.itkey.com/repository/k-install/installer-$KEYSTACK_RELEASE-$SYSTEM-offline.tgz]: " RELEASE_URL
   fi
   export RELEASE_URL=${RELEASE_URL:-"https://repo.itkey.com/repository/k-install/installer-$KEYSTACK_RELEASE-$KEYSTACK_RC_VERSION$SYSTEM-offline.tgz"}
   [[ -z "${RELEASE_URL}" ]] && { echo -e "${red}env RELEASE_URL not define - ERROR${normal}"; exit 1; }
 
-  # get INIT_INSTALLER_FOLDER
-  if [[ -z "${INIT_INSTALLER_FOLDER}" ]]; then
-    read -rp "Enter region name [$HOME/installer]: " INIT_INSTALLER_FOLDER
-  fi
-  export INIT_INSTALLER_FOLDER=${INIT_INSTALLER_FOLDER:-"$HOME/installer"}
-  [[ -z "${INIT_INSTALLER_FOLDER}" ]] && { echo -e "${red}env INIT_INSTALLER_FOLDER not define - ERROR${normal}"; exit 1; }
+#  # get INIT_INSTALLER_FOLDER
+#  if [[ -z "${INIT_INSTALLER_FOLDER}" ]]; then
+#    read -rp "Enter region name [$HOME/installer]: " INIT_INSTALLER_FOLDER
+#  fi
+#  export INIT_INSTALLER_FOLDER=${INIT_INSTALLER_FOLDER:-"$HOME/installer"}
+#  [[ -z "${INIT_INSTALLER_FOLDER}" ]] && { echo -e "${red}env INIT_INSTALLER_FOLDER not define - ERROR${normal}"; exit 1; }
 
-   # get INIT_INSTALLER_BACKUP_FOLDER
-  if [[ -z "${INIT_INSTALLER_BACKUP_FOLDER}" ]]; then
-    read -rp "Enter region name [$HOME/installer_backup]: " INIT_INSTALLER_BACKUP_FOLDER
-  fi
-  export INIT_INSTALLER_BACKUP_FOLDER=${INIT_INSTALLER_BACKUP_FOLDER:-"$HOME/installer_backup"}
-  [[ -z "${INIT_INSTALLER_BACKUP_FOLDER}" ]] && { echo -e "${red}env INIT_INSTALLER_BACKUP_FOLDER not define - ERROR${normal}"; exit 1; }
+#   # get INIT_INSTALLER_BACKUP_FOLDER
+#  if [[ -z "${INIT_INSTALLER_BACKUP_FOLDER}" ]]; then
+#    read -rp "Enter region name [$HOME/installer_backup]: " INIT_INSTALLER_BACKUP_FOLDER
+#  fi
+#  export INIT_INSTALLER_BACKUP_FOLDER=${INIT_INSTALLER_BACKUP_FOLDER:-"$HOME/installer_backup"}
+#  [[ -z "${INIT_INSTALLER_BACKUP_FOLDER}" ]] && { echo -e "${red}env INIT_INSTALLER_BACKUP_FOLDER not define - ERROR${normal}"; exit 1; }
 
-  # get domain
-  if [[ -z "${KS_INSTALL_DOMAIN}" ]]; then
-    read -rp "Enter domain [test.domain]: " KS_INSTALL_DOMAIN
-  fi
-  export KS_INSTALL_DOMAIN=${KS_INSTALL_DOMAIN:-"test.domain"}
-  [[ -z "${KS_INSTALL_DOMAIN}" ]] && { echo -e "${red}env KS_INSTALL_DOMAIN not define - ERROR${normal}"; exit 1; }
+#  # get domain
+#  if [[ -z "${KS_INSTALL_DOMAIN}" ]]; then
+#    read -rp "Enter domain [test.domain]: " KS_INSTALL_DOMAIN
+#  fi
+#  export KS_INSTALL_DOMAIN=${KS_INSTALL_DOMAIN:-"test.domain"}
+#  [[ -z "${KS_INSTALL_DOMAIN}" ]] && { echo -e "${red}env KS_INSTALL_DOMAIN not define - ERROR${normal}"; exit 1; }
 
   # get CENTRAL_AUTH_SERVICE_IP
   if [[ -z "${CENTRAL_AUTH_SERVICE_IP}" ]]; then
@@ -102,26 +102,27 @@ get_init_vars () {
 
   echo -E "
     KEYSTACK_RELEASE:               $KEYSTACK_RELEASE
-    KEYSTACK_RC_VERSION:            $KEYSTACK_RC_VERSION
-    SYSTEM:                         $SYSTEM
     RELEASE_URL:                    $RELEASE_URL
-    INIT_INSTALLER_FOLDER:          $INIT_INSTALLER_FOLDER
-    INIT_INSTALLER_BACKUP_FOLDER:   $INIT_INSTALLER_BACKUP_FOLDER
-    KS_INSTALL_DOMAIN:              $KS_INSTALL_DOMAIN
     CENTRAL_AUTH_SERVICE_IP:        $CENTRAL_AUTH_SERVICE_IP
   "
+#    SYSTEM:                         $SYSTEM
+#    INIT_INSTALLER_FOLDER:          $INIT_INSTALLER_FOLDER
+#    INIT_INSTALLER_BACKUP_FOLDER:   $INIT_INSTALLER_BACKUP_FOLDER
+#    KS_INSTALL_DOMAIN:              $KS_INSTALL_DOMAIN
+#    KEYSTACK_RC_VERSION:            $KEYSTACK_RC_VERSION
 
   if [ ! -f $SCRIPT_INSTALLER_ENVS ]; then
     echo "
-export KEYSTACK_RC_VERSION=$KEYSTACK_RC_VERSION
-export SYSTEM=$SYSTEM
+export KEYSTACK_RELEASE=$KEYSTACK_RELEASE
 export RELEASE_URL=$RELEASE_URL
-export INIT_INSTALLER_FOLDER=$INIT_INSTALLER_FOLDER
-export INIT_INSTALLER_BACKUP_FOLDER=$INIT_INSTALLER_BACKUP_FOLDER
-export KS_INSTALL_DOMAIN=$KS_INSTALL_DOMAIN
 export CENTRAL_AUTH_SERVICE_IP=$CENTRAL_AUTH_SERVICE_IP
     " > $SCRIPT_INSTALLER_ENVS
   fi
+#export KEYSTACK_RC_VERSION=$KEYSTACK_RC_VERSION
+#export SYSTEM=$SYSTEM
+#export INIT_INSTALLER_FOLDER=$INIT_INSTALLER_FOLDER
+#export KS_INSTALL_DOMAIN=$KS_INSTALL_DOMAIN
+#export INIT_INSTALLER_BACKUP_FOLDER=$INIT_INSTALLER_BACKUP_FOLDER
 
   read -p "Press enter to continue: "
 }
@@ -238,25 +239,30 @@ Before continue, make sure you have:
 read -p "Press enter to continue: "
 
 # Get KEYSTACK_RELEASE
-if [ -z "$1" ]; then
-  if [ -z "$KEYSTACK_RELEASE" ]; then
-    read -rp "Enter KeyStack release [ks2024.3]: " KEYSTACK_RELEASE
-  fi
-  export KEYSTACK_RELEASE=${KEYSTACK_RELEASE:-"ks2024.3"}
-else
-  KEYSTACK_RELEASE=$1
-  export KEYSTACK_RELEASE=$KEYSTACK_RELEASE
-fi
+#if [ -n "$1" ]; then
+##  if [ ! -f $SCRIPT_INSTALLER_ENVS ]; then
+#    if [ -z "$KEYSTACK_RELEASE" ]; then
+#
+#      read -rp "Enter KeyStack release [$ks2024.3]: " KEYSTACK_RELEASE
+##    fi
+#    export KEYSTACK_RELEASE=${KEYSTACK_RELEASE:-"ks2024.3"}
+##  else
+##    source $SCRIPT_INSTALLER_ENVS
+#  fi
+#else
+#  KEYSTACK_RELEASE=$1
+#  export KEYSTACK_RELEASE=$KEYSTACK_RELEASE
+#fi
 
-# Get Release candidate version
-if [[ -z "${KEYSTACK_RC_VERSION}" ]]; then
-  read -rp "If necessary, specify the release candidate (exp: rc7) version or press Enter : " KEYSTACK_RC_VERSION
-fi
-#export KEYSTACK_RC_VERSION=${KEYSTACK_RC_VERSION:-""}
-
-if [ -n "$KEYSTACK_RC_VERSION" ]; then
-  export KEYSTACK_RC_VERSION="$KEYSTACK_RC_VERSION-"
-fi
+## Get Release candidate version
+#if [[ -z "${KEYSTACK_RC_VERSION}" ]]; then
+#  read -rp "If necessary, specify the release candidate (exp: rc7) version or press Enter : " KEYSTACK_RC_VERSION
+#fi
+##export KEYSTACK_RC_VERSION=${KEYSTACK_RC_VERSION:-""}
+#
+#if [ -n "$KEYSTACK_RC_VERSION" ]; then
+#  export KEYSTACK_RC_VERSION="$KEYSTACK_RC_VERSION-"
+#fi
 
 select_os
 source_envs
