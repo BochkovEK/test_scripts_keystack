@@ -4,7 +4,7 @@ import re
 
 # the script work by inventory_to_hosts.sh
 
-node_pattern = "-lcm-|-comp-|-cmpt-|-ctrl-|-net-"
+node_pattern = "-lcm-|-comp-|-cmpt-|-ctrl-|-net-|-add_vm-"
 lcm_pattern = "lcm-01"
 kolla_internal_address = "kolla_internal_address"
 external_floating = "external_floating"
