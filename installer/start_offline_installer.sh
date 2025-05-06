@@ -13,6 +13,7 @@ script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
 utils_dir=$parent_dir/utils
 installer_conf_folder="installer_conf"
+script_installer_envs="script_installer_envs"
 start_installer_envs="start_installer_envs"
 #install_wget_script="install_wget.sh"
 install_package_script="install_package.sh"
@@ -35,6 +36,7 @@ yellow=$(tput setaf 3)
 [[ -z $CERTS_FOLDER ]] && CERTS_FOLDER="$HOME/certs"
 [[ -z $RELEASE_URL ]] && RELEASE_URL=""
 [[ -z $INSTALLER_CONF ]] && INSTALLER_CONF=""
+[[ -z $SCRIPT_INSTALLER_ENVS ]] && SCRIPT_INSTALLER_ENVS=$script_dir/$script_installer_envs
 [[ -z $INIT_INSTALLER_FOLDER ]] && INIT_INSTALLER_FOLDER="$HOME/installer"
 [[ -z $INIT_INSTALLER_BACKUP_FOLDER ]] && INIT_INSTALLER_BACKUP_FOLDER="$HOME/installer_backup"
 [[ -z $KEYSTACK_RELEASE ]] && KEYSTACK_RELEASE=""
@@ -55,6 +57,9 @@ source_envs () {
 
 get_init_vars () {
 
+  if [ -f $SCRIPT_INSTALLER_ENVS ]; then
+    source $SCRIPT_INSTALLER_ENVS
+  fi
    # check KEYSTACK_RELEASE SYSTEM vars
   [[ -z "${KEYSTACK_RELEASE}" ]] && { echo -e "${red}env KEYSTACK_RELEASE not define - ERROR${normal}"; exit 1; }
 #  [[ -z "${KEYSTACK_RC_VERSION}" ]] && { echo -e "${red}env KEYSTACK_RC_VERSION not define - ERROR${normal}"; exit 1; }
@@ -95,7 +100,6 @@ get_init_vars () {
   export CENTRAL_AUTH_SERVICE_IP=${CENTRAL_AUTH_SERVICE_IP:-"$add_vm"}
   [[ -z "${CENTRAL_AUTH_SERVICE_IP}" ]] && { echo -e "${red}env CENTRAL_AUTH_SERVICE_IP not define - ERROR${normal}"; exit 1; }
 
-
   echo -E "
     KEYSTACK_RELEASE:               $KEYSTACK_RELEASE
     KEYSTACK_RC_VERSION:            $KEYSTACK_RC_VERSION
@@ -106,6 +110,18 @@ get_init_vars () {
     KS_INSTALL_DOMAIN:              $KS_INSTALL_DOMAIN
     CENTRAL_AUTH_SERVICE_IP:        $CENTRAL_AUTH_SERVICE_IP
   "
+
+  if [ ! -f $SCRIPT_INSTALLER_ENVS ]; then
+    echo "
+export KEYSTACK_RC_VERSION=$KEYSTACK_RC_VERSION
+export SYSTEM=$SYSTEM
+export RELEASE_URL=$RELEASE_URL
+export INIT_INSTALLER_FOLDER=$INIT_INSTALLER_FOLDER
+export INIT_INSTALLER_BACKUP_FOLDER=$INIT_INSTALLER_BACKUP_FOLDER
+export KS_INSTALL_DOMAIN=$KS_INSTALL_DOMAIN
+export CENTRAL_AUTH_SERVICE_IP=$CENTRAL_AUTH_SERVICE_IP
+    " > $SCRIPT_INSTALLER_ENVS
+  fi
 
   read -p "Press enter to continue: "
 }
