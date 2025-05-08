@@ -157,7 +157,7 @@ start_commands_on_nodes () {
   fi
   for host in "${NODES[@]}"; do
     echo -E "${blue}Start command on ${host}${normal}"
-    ssh -o StrictHostKeyChecking=no -t $SENDENV SSH_USER@$host "sudo ${COMMAND}"
+    ssh -o StrictHostKeyChecking=no -t $SENDENV $SSH_USER@$host "sudo ${COMMAND}"
 #    ssh -o StrictHostKeyChecking=no -t $host << EOF
 #$COMMAND
 #EOF
