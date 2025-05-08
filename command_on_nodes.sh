@@ -9,6 +9,7 @@
 script_dir=$(dirname $0)
 utils_dir=$script_dir/utils
 get_nodes_list_script="get_nodes_list.sh"
+default_ssh_user="root"
 
 #comp_pattern="\-comp\-.."
 ##$"
@@ -32,6 +33,7 @@ blue=$(tput setaf 4)
 [[ -z $PING ]] && PING="false"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $DONT_CHECK_CONN ]] && DONT_CHECK_CONN="false"
+[[ -z $SSH_USER ]] && SSH_USER=$default_ssh_user
 #======================
 
 #node_type_func () {
@@ -68,6 +70,7 @@ while [ -n "$1" ]; do
       -c,   -command        \"<command>\"
       -nt,  -type_of_nodes  <type_of_nodes> 'ctrl', 'comp', 'net'
       -nn,  -node_name      <node_name\ip> example: -nn \"ebochkov-keystack-comp-01 ebochkov-keystack-comp-02\"
+      -u,   -user           <ssh_user>
       -p,   -ping           ping before execution command
       -debug                debug mode
       Remove all containers on all nodes:
@@ -91,6 +94,10 @@ while [ -n "$1" ]; do
     -nt|-type_of_nodes) NODES_TYPE=$2
       echo "Found the -type_of_nodes, with parameter value $NODES_TYPE"
       shift ;;
+    -u|-user) SSH_USER=$2
+      echo "Found the -user  with parameter value $SSH_USER"
+      shift
+      ;;
     -nn|-node_name)
       for i in $2; do NODES+=("$i"); done
       echo "Found the -nn option, with parameter value ${NODES[*]}"
@@ -150,7 +157,7 @@ start_commands_on_nodes () {
   fi
   for host in "${NODES[@]}"; do
     echo -E "${blue}Start command on ${host}${normal}"
-    ssh -o StrictHostKeyChecking=no -t $SENDENV "$host" ${COMMAND}
+    ssh -o StrictHostKeyChecking=no -t $SENDENV SSH_USER@$host "sudo ${COMMAND}"
 #    ssh -o StrictHostKeyChecking=no -t $host << EOF
 #$COMMAND
 #EOF

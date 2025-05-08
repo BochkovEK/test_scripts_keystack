@@ -82,7 +82,7 @@ comp_required_container_list=(
 #   monitoring
 # "prometheus_blackbox_exporter" not required on comp
 
-required_container_list=()
+#required_container_list=()
 
 [[ -z $CONTAINER_NAME ]] && CONTAINER_NAME=""
 [[ -z $NODES ]] && NODES=()
@@ -110,7 +110,7 @@ do
       -nt, 	-type_of_nodes		<type_of_nodes> 'ctrl', 'comp', 'net'
       -nn,  -node_name        <node_name>
       -check_unhealthy        check only unhealthy containers (without parameter)
-      -u,   -user             ssh user
+      -u,   -user             <ssh_user>
       -debug                  enable debug output (without parameter)
 "
       exit 0
