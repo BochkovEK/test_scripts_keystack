@@ -14,6 +14,7 @@
 script_dir=$(dirname $0)
 utils_dir=$script_dir/utils
 get_nodes_list_script="get_nodes_list.sh"
+default_ssh_user="root"
 
 #Colors
 green=$(tput setaf 2)
@@ -90,6 +91,7 @@ required_container_list=()
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $NODES_TYPE ]] && NODES_TYPE="all"
 [[ -z $NODE_NAME ]] && NODE_NAME=""
+[[ -z $SSH_USER ]] && SSH_USER=$default_ssh_user
 #======================
 
 
@@ -108,21 +110,30 @@ do
       -nt, 	-type_of_nodes		<type_of_nodes> 'ctrl', 'comp', 'net'
       -nn,  -node_name        <node_name>
       -check_unhealthy        check only unhealthy containers (without parameter)
+      -u,   -user             ssh user
       -debug                  enable debug output (without parameter)
 "
       exit 0
-      break ;;
+      break
+      ;;
 	  -c|-container_name) CONTAINER_NAME="$2"
 	    echo "Found the -container_name <container_name> option, with parameter value $CONTAINER_NAME"
-      shift ;;
+      shift
+      ;;
     -nt|-type_of_nodes) NODES_TYPE=$2
       echo "Found the -type_of_nodes  with parameter value $NODES_TYPE"
 #      note_type_func "$2"
-      shift ;;
+      shift
+      ;;
     -nn|-node_name) NODE_NAME=$2
       echo "Found the -node_name  with parameter value $NODE_NAME"
 #      note_type_func "$2"
-      shift ;;
+      shift
+      ;;
+    -u|-user) SSH_USER=$2
+      echo "Found the -user  with parameter value $SSH_USER"
+      shift
+      ;;
     -check_unhealthy) CHECK_UNHEALTHY="true"
       echo "Found the -check_unhealthy  with parameter value $CHECK_UNHEALTHY"
       ;;
@@ -130,7 +141,8 @@ do
       echo "Found the -debug with parameter value $TS_DEBUG"
       ;;
     --) shift
-      break ;;
+      break
+      ;;
     *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
       esac
       shift
@@ -156,7 +168,7 @@ done
 
 check_required_container () {
 
-  container_name_on_lcm=$(ssh -o StrictHostKeyChecking=no $host 'docker ps --format "{{.Names}}" --filter status=running')
+  container_name_on_lcm=$(ssh -o StrictHostKeyChecking=no $SSH_USER@$host 'sudo docker ps --format "{{.Names}}" --filter status=running')
   for container_requaired in "${required_containers_list[@]}"; do
     container_exist="false"
     for container in $container_name_on_lcm; do
@@ -231,7 +243,7 @@ for host in "${NODES[@]}"; do
     echo "Check container (CONTAINER_NAME: $CONTAINER_NAME) on ${host}"
     grep_string="|grep $CONTAINER_NAME"
   fi
-  status=$(ssh -o "StrictHostKeyChecking=no" -o BatchMode=yes -o ConnectTimeout=5 $host echo ok 2>&1)
+  status=$(ssh -o "StrictHostKeyChecking=no" -o BatchMode=yes -o ConnectTimeout=5 $SSH_USER@$host echo ok 2>&1)
 
   if [[ $status == ok ]] ; then
 
@@ -239,7 +251,7 @@ for host in "${NODES[@]}"; do
     printf "%40s\n" "There is a connection with $host - ok!"
 
 #    ssh -o StrictHostKeyChecking=no $host docker ps $grep_string \
-    ssh -o StrictHostKeyChecking=no $host docker ps $grep_string \
+    ssh -o StrictHostKeyChecking=no $SSH_USER@$host "sudo docker ps $grep_string \
       |sed --unbuffered \
         -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*second.*\)/\o033[33m\1\o033[39m/' \
@@ -252,6 +264,7 @@ for host in "${NODES[@]}"; do
         -e 's/\(.*hours.*\)/\o033[92m\1\o033[39m/' \
         -e 's/\(.*starting).*\)/\o033[33m\1\o033[39m/'\
         -e 's/\(.*restarting.*\)/\o033[31m\1\o033[39m/'
+        "
 
 #        -e 's/\(.*Up.*\)/\o033[92m\1\o033[39m/' \
     echo -e "Check required container on ${host}"
