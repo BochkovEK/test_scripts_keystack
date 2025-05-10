@@ -152,7 +152,7 @@ fi
 
 read_conf () {
   echo -E "${cyan}Check file $2 exists on $1${normal}"
-  bash $script_dir/$command_on_nodes_script_name -nt $1 -u $SSH_USER -c "sudo sh -c ' ls $2'" |
+  bash $script_dir/$command_on_nodes_script_name -nt $1 -u $SSH_USER -c "sudo sh -c 'ls $2'" |
     sed --unbuffered \
       -e 's/\(.*No such file or directory.*\)/\o033[31m\1\o033[39m/'
 #    -e 's/\(.*No such file or directory.*\)/\o033[31m\1 \o033[39m/'
@@ -161,7 +161,7 @@ read_conf () {
       #ok\o033[39m/'
   if [ "$3" = castellan ]; then
     echo -E "${cyan}Check castellan strings...${normal}"
-    bash $script_dir/$command_on_nodes_script_name -u $SSH_USER -nt $1 -c "cat $2 | grep -E 'wsrep_sst_auth|auth-pass|requirepass|masterauth|db_uri|vault_secret|password_hash|with secret| password |\"password\"\:|password\:\s|_pass\"|password =|\[castellan_configsource\]'| \
+    bash $script_dir/$command_on_nodes_script_name -u $SSH_USER -nt $1 -c "sudo sh -c 'cat $2' | grep -E 'wsrep_sst_auth|auth-pass|requirepass|masterauth|db_uri|vault_secret|password_hash|with secret| password |\"password\"\:|password\:\s|_pass\"|password =|\[castellan_configsource\]'| \
       sed --unbuffered \
         -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - [ok: castellan group exists]\o033[39m/'\
         -e 's/\(.*password_hash.*\)/\o033[32m ...pass..._hash... - [ok: pass hash exists]\o033[39m/'\
