@@ -152,7 +152,7 @@ fi
 
 read_conf () {
   echo -E "${cyan}Check file $2 exists on $1${normal}"
-  bash $script_dir/$command_on_nodes_script_name -nt $1 -u $SSH_USER -c "sudo ls $2" |
+  bash $script_dir/$command_on_nodes_script_name -nt $1 -u $SSH_USER -c "sudo sh -c ' ls $2'" |
     sed --unbuffered \
       -e 's/\(.*No such file or directory.*\)/\o033[31m\1\o033[39m/'
 #    -e 's/\(.*No such file or directory.*\)/\o033[31m\1 \o033[39m/'
