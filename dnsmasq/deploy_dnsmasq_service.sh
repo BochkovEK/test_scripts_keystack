@@ -317,9 +317,9 @@ if [ "$HOST_EXIST" = false ]; then
 #      :-$domain_name}
       export REGION=$REGION
 #      :-$region_name}
-     export INT_PREF=$INT_PREF
+      export INT_PREF=$INT_PREF
 #     :-$internal_prefix}
-     export EXT_PREF=$EXT_PREF
+      export EXT_PREF=$EXT_PREF
 #     :-$external_prefix}
       echo "Start $test_scripts_keystack_dir/$inventory_to_hosts_script ..."
       if ! bash $test_scripts_keystack_dir/$inventory_to_hosts_script; then
