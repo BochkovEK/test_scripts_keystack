@@ -301,6 +301,9 @@ copy_dnsmasq_conf () {
   done
 }
 
+get_var
+sed_var_in_conf
+
 if [ "$HOST_EXIST" = false ]; then
   if [[ -n $INVENTORY_PATH ]]; then
     if [ ! -f $INVENTORY_PATH ]; then
@@ -310,10 +313,14 @@ if [ "$HOST_EXIST" = false ]; then
     else
       export INVENTORY_PATH=$INVENTORY_PATH
       export OUTPUT_FILE=${OUTPUT_FILE:-$DNS_IP_MAPPING_FILE}
-      export DOMAIN=${DOMAIN:-$domain_name}
-      export REGION=${REGION:-$region_name}
-      export INT_PREF=${INT_PREF:-$internal_prefix}
-      export EXT_PREF=${EXT_PREF:-$external_prefix}
+      export DOMAIN=$DOMAIN
+#      :-$domain_name}
+      export REGION=$REGION
+#      :-$region_name}
+     export INT_PREF=$INT_PREF
+#     :-$internal_prefix}
+     export EXT_PREF=$EXT_PREF
+#     :-$external_prefix}
       echo "Start $test_scripts_keystack_dir/$inventory_to_hosts_script ..."
       if ! bash $test_scripts_keystack_dir/$inventory_to_hosts_script; then
         echo -e "${red}Could not parse inventory - ERROR${normal}"
@@ -333,8 +340,6 @@ if [ "$HOST_EXIST" = false ]; then
   fi
 fi
 
-get_var
-sed_var_in_conf
 echo -e "\n${yellow}Cat conf...${normal}"
 echo
 cat $script_dir/$CONF_NAME
