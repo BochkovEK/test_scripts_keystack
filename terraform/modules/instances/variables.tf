@@ -17,7 +17,7 @@ variable "default_flavor" {
     vcpus       = 2
     ram         = 2048
     extra_specs = {
-    "hw:mem_page_size" = "2048"
+    "hw:mem_page_size" = "large"
     }
   }
 }
