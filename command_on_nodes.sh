@@ -144,8 +144,7 @@ start_commands_on_nodes () {
   if [ "$TS_DEBUG" = true ]; then
     echo -e "
   [DEBUG]
-  NODES:
-    "
+  NODES:"
     for host in "${NODES[@]}"; do
       echo $host
     done
