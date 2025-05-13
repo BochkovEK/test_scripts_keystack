@@ -149,7 +149,8 @@ start_commands_on_nodes () {
       echo $host
     done
   fi
-  if [[ -z ${NODES[0]} ]]; then
+#  if [[ -z ${NODES[0]} ]]; then
+  if [ "${#NODES[@]}" -eq 0 ]; then
     error_message="Failed to access to $NODES_TYPE"
     error_output
     exit 1
