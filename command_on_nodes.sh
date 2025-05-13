@@ -141,7 +141,7 @@ check_connection () {
 }
 
 start_commands_on_nodes () {
-  if [ "$DEBUG" = true ]; then
+  if [ "$TS_DEBUG" = true ]; then
     echo -e "
   [DEBUG]
   NODES:
