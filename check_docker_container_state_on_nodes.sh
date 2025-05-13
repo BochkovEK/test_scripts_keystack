@@ -167,11 +167,11 @@ done
 #}
 
 check_required_container () {
-
-  container_name_on_lcm=$(ssh -o StrictHostKeyChecking=no $SSH_USER@$host 'sudo docker ps --format "{{.Names}}" --filter status=running')
+  echo -e "Check required container on $1"
+  container_name_on_node=$(ssh -o StrictHostKeyChecking=no $SSH_USER@$1 'sudo docker ps --format "{{.Names}}" --filter status=running')
   for container_requaired in "${required_containers_list[@]}"; do
     container_exist="false"
-    for container in $container_name_on_lcm; do
+    for container in $container_name_on_node; do
       if [ "$container" = "$container_requaired" ]; then
         container_exist="true"
       fi
@@ -267,20 +267,20 @@ for host in "${NODES[@]}"; do
         "
 
 #        -e 's/\(.*Up.*\)/\o033[92m\1\o033[39m/' \
-    echo -e "Check required container on ${host}"
+#
 
     is_ctrl=$(echo $host|grep ctrl)
     if [ -n "$is_ctrl" ]; then
       if [ -z $CONTAINER_NAME ]; then
         required_containers_list=( "${ctrl_required_container_list[@]}" )
-        check_required_container
+        check_required_container $host
       fi
     fi
     is_comp=$(echo $host|grep -E "comp|cmpt")
     if [ -n "$is_comp" ]; then
       if [ -z $CONTAINER_NAME ]; then
         required_containers_list=( "${comp_required_container_list[@]}" )
-        check_required_container
+        check_required_container $hosts
       fi
     fi
   elif [[ $status == "Permission denied"* ]] ; then
