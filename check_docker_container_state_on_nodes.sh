@@ -238,7 +238,7 @@ fi
 
 for host in "${NODES[@]}"; do
   if [ -z $CONTAINER_NAME ]; then
-    echo -e "${cyan}Check container on ${host}${normal}"
+    echo -e "${cyan}Check containers on ${host}${normal}"
   else
     echo "Check container (CONTAINER_NAME: $CONTAINER_NAME) on ${host}"
     grep_string="|grep $CONTAINER_NAME"
@@ -266,9 +266,6 @@ for host in "${NODES[@]}"; do
         -e 's/\(.*restarting.*\)/\o033[31m\1\o033[39m/'
         "
 
-#        -e 's/\(.*Up.*\)/\o033[92m\1\o033[39m/' \
-#
-
     is_ctrl=$(echo $host|grep ctrl)
     if [ -n "$is_ctrl" ]; then
       if [ -z $CONTAINER_NAME ]; then
@@ -280,7 +277,7 @@ for host in "${NODES[@]}"; do
     if [ -n "$is_comp" ]; then
       if [ -z $CONTAINER_NAME ]; then
         required_containers_list=( "${comp_required_container_list[@]}" )
-        check_required_container $hosts
+        check_required_container $host
       fi
     fi
   elif [[ $status == "Permission denied"* ]] ; then

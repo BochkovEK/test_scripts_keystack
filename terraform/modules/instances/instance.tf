@@ -100,14 +100,18 @@ resource "openstack_compute_flavor_v2" flavor {
 #  for_each    = { for k, v in local.instances : v.name => v }
   for_each = var.VMs
   name        = "${each.key}-flavor"
-#  flavor_id = "2c-2r"
-#  name      = "2c-2r"
-#  vcpus     = try(instance.flavor.vcpus, var.default_flavor.vcpus)
-#  ram       = try(instance.falvor.ram, var.default_flavor.ram)
-  vcpus     = try(each.value.flavor.vcpus, var.default_flavor.vcpus) #each.value.flavor.vcpus
-  ram       = try(each.value.flavor.ram, var.default_flavor.ram)
-  disk      = "0"
-  is_public = "true"
+#  flavor_id  = "2c-2r"
+#  name       = "2c-2r"
+#  vcpus      = try(instance.flavor.vcpus, var.default_flavor.vcpus)
+#  ram        = try(instance.falvor.ram, var.default_flavor.ram)
+  vcpus       = try(each.value.flavor.vcpus, var.default_flavor.vcpus) #each.value.flavor.vcpus
+  ram         = try(each.value.flavor.ram, var.default_flavor.ram)
+  disk        = "0"
+  is_public   = "true"
+  extra_specs = try(each.value.flavor.extra_specs, var.default_flavor.extra_specs)
+#  {
+#    "hw:mem_page_size" = "large"
+#  }
 }
 
 data "openstack_images_image_v2" "image_id" {

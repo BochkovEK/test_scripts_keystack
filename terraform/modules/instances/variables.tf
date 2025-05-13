@@ -14,8 +14,11 @@ variable "default_flavor_name" {
 variable "default_flavor" {
 #  description = "Default flavor name"
   default = {
-    vcpus = 2
-    ram   = 2048
+    vcpus       = 2
+    ram         = 2048
+    extra_specs = {
+    "hw:mem_page_size" = "2048"
+    }
   }
 }
 
