@@ -20,7 +20,7 @@ all_docker_cleanup () {
 }
 
 # Function for normal argument processing
-process_item() {
+docker_cleanup() {
     local item="$1"
     echo "Processing item: '$item'"
     while true; do
@@ -33,37 +33,31 @@ process_item() {
             docker stop $CONTAINER_NAME;
             docker rm $id_docker;
             docker volume rm $CONTAINER_NAME
-            docker_cleanup; break;;
+            break;;
           [Nn]* ) exit;;
           * ) echo "Please answer yes or no.";;
       esac
     done
 }
 
-# Function for special 'all' processing
-process_all() {
-    echo "Executing special ALL operation"
-    # Your custom action for 'all' here
-    # Example: ls -l, perform cleanup, etc.
-}
-
-# Validate arguments
-if [ "$#" -eq 0 ]; then
-    echo "Error: No arguments provided" >&2
-    echo "Usage: $0 item1 item2 ..." >&2
-    echo "       $0 all (for special operation)" >&2
-    exit 1
+# Check if first argument is 'all'
+if [ "$1" = "all" ]; then
+    all_docker_cleanup  # Execute special operation
+    exit 0
+    # Process remaining arguments (if any)
+#    if [ "$#" -gt 1 ]; then
+#        shift  # Remove 'all' from arguments
+#        for arg in "$@"; do
+#            docker_cleanup "$arg"
+#        done
+#    fi
+else
+    # Process all arguments normally
+    for arg in "$@"; do
+        docker_cleanup "$arg"
+    done
 fi
 
-# Process arguments
-for arg in "$@"; do
-    if [[ "$arg" == "all" ]]; then
-        process_all
-    else
-        process_item "$arg"
-    fi
-done
-
-echo "Completed. Processed $# argument(s)."
+#echo "Done. Processed arguments: $#"
 
 
