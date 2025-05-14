@@ -53,6 +53,7 @@ ctrl_required_container_list=(
   "prometheus_openstack_exporter"
   "prometheus_alertmanager"
   "prometheus_memcached_exporter"
+  "prometheus_rabbitmq_exporter"
   "prometheus_mysqld_exporter"
   "prometheus_node_exporter"
   "prometheus_server"
@@ -179,7 +180,7 @@ check_required_container () {
     if [ "$container_exist" = "true" ]; then
       container_exist="true"
     else
-      echo -e "${red}Container $container_requaired not exists - ERROR${normal}"
+      echo -e "${red}Container $container_requaired not running - ERROR${normal}"
     fi
   done
 }
