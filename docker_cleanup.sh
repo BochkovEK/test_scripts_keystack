@@ -4,8 +4,8 @@
 
 all_docker_cleanup () {
   while true; do
-      read -p "Do you wish to cleanup $item docker data? [Yes]: " yn
-      yn=${yn:-"Yes"}
+      read -p "Do you wish to cleanup $item docker data? [No]: " yn
+      yn=${yn:-"No"}
       case $yn in
           [Yy]* )
             docker stop $(docker ps -a -q);
