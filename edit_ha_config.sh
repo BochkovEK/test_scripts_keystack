@@ -155,7 +155,7 @@ check_and_source_openrc_file () {
 
 cat_conf () {
   echo "Cat all $service_name configs..."
-  bash $script_dir/command_on_nodes.sh $USER_USER_STR -nt $nodes_type -c "echo \"cat $conf_dir/$CONF_NAME\"; cat $conf_dir/$CONF_NAME"
+  bash $script_dir/command_on_nodes.sh $USER_STR -nt $nodes_type -c "echo \"cat $conf_dir/$CONF_NAME\"; cat $conf_dir/$CONF_NAME"
 }
 
 #pull_conf () {
