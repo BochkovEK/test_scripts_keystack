@@ -201,11 +201,11 @@ yes_no_answer () {
 
 check_ping () {
   if ping -c 2 $1 &> /dev/null; then
-    printf "%40s\n" "${green}There is a connection with $1 - success${normal}"
+    printf "%40s\n" "${green}There is a ping with $1 - success${normal}"
 #    NODES+=("$1")
     sleep 1
   else
-    printf "%40s\n" "${red}No connection with $1${normal}"
+    printf "%40s\n" "${red}No ping with $1${normal}"
     connection_problem="true"
     delete=$1
     NODES=( "${NODES[@]/$delete}" )
