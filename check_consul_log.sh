@@ -106,6 +106,29 @@ Check_openstack_cli () {
   fi
 }
 
+chack_consul_log_one_node () {
+  ssh -o StrictHostKeyChecking=no $USER@$1 'echo -e "\033[0;35m$(date)\033[0m
+\033[0;35mLogs from: $(hostname)\033[0m
+\033[0;35mFor check this log: \033[0m
+\033[0;35mssh $(hostname) less /var/log/kolla/autoevacuate.log | less\033[0m"'
+  ssh -o StrictHostKeyChecking=no $USER@$1 "sudo sh -c 'tail -f /var/log/kolla/autoevacuate.log'" | \
+    sed --unbuffered \
+    -e 's/\(.*Force off.*\)/\o033[31m\1\o033[39m/' \
+    -e 's/\(.*Server.*\)/\o033[33m\1\o033[39m/' \
+    -e 's/\(.*Evacuating instance.*\)/\o033[33m\1\o033[39m/' \
+    -e 's/\(.*IPMI "power off".*\)/\o033[31m\1\o033[39m/' \
+    -e 's/\(.*CRITICAL.*\)/\o033[31m\1\o033[39m/' \
+    -e 's/\(.*ERROR.*\)/\o033[31m\1\o033[39m/' \
+    -e 's/\(.*Not enough.*\)/\o033[31m\1\o033[39m/' \
+    -e 's/\(.*Too many.*\)/\o033[31m\1\o033[39m/' \
+    -e 's/\(.*disabled,.*\)/\o033[33m\1\o033[39m/' \
+    -e 's/\(.*down.*\)/\o033[33m\1\o033[39m/' \
+    -e 's/\(.*failed: True.*\)/\o033[33m\1\o033[39m/' \
+    -e 's/\(.*WARNING.*\)/\o033[33m\1\o033[39m/' \
+    -e 's/\(.*status_code\: 400.*\)/\o033[33m\1\o033[39m/' \
+    -e 's/\(.*Starting fence.*\)/\o033[33m\1\o033[39m/'
+}
+
 check_log_on_all_ctrl () {
   for ctrl in $NODE_NAME; do
     echo -e "${cyan}Check logs on $ctrl...${normal}"
@@ -113,8 +136,9 @@ check_log_on_all_ctrl () {
 \033[0;35mLogs from: $(hostname)\033[0m
 \033[0;35mFor check this log: \033[0m
 \033[0;35mssh $(hostname) less /var/log/kolla/autoevacuate.log | less\033[0m"'
+    chack_consul_log_one_node $ctrl
 #    ssh -o StrictHostKeyChecking=no $USER@$ctrl "sudo tail -n $LOG_LAST_LINES_NUMBER /var/log/kolla/autoevacuate.log"
-    ssh -o StrictHostKeyChecking=no kolla@qa-stable-ubuntu-ctrl-01 "sudo sh -c 'cat /var/log/kolla/autoevacuate.log'"
+#    ssh -o StrictHostKeyChecking=no kolla@qa-stable-ubuntu-ctrl-01 "sudo sh -c 'cat /var/log/kolla/autoevacuate.log'"
 #    | \
 #        sed --unbuffered \
 #        -e 's/\(.*Force off.*\)/\o033[31m\1\o033[39m/' \
@@ -187,26 +211,7 @@ if (( $i > 1 )); then
   check_log_on_all_ctrl
 else
   echo -e "${cyan}Check logs on $ctrl...${normal}"
-  ssh -o StrictHostKeyChecking=no $USER@$ctrl 'echo -e "\033[0;35m$(date)\033[0m
-\033[0;35mLogs from: $(hostname)\033[0m
-\033[0;35mFor check this log: \033[0m
-\033[0;35mssh $(hostname) less /var/log/kolla/autoevacuate.log | less\033[0m"'
-  ssh -o StrictHostKeyChecking=no $USER@$ctrl tail -f /var/log/kolla/autoevacuate.log | \
-    sed --unbuffered \
-    -e 's/\(.*Force off.*\)/\o033[31m\1\o033[39m/' \
-    -e 's/\(.*Server.*\)/\o033[33m\1\o033[39m/' \
-    -e 's/\(.*Evacuating instance.*\)/\o033[33m\1\o033[39m/' \
-    -e 's/\(.*IPMI "power off".*\)/\o033[31m\1\o033[39m/' \
-    -e 's/\(.*CRITICAL.*\)/\o033[31m\1\o033[39m/' \
-    -e 's/\(.*ERROR.*\)/\o033[31m\1\o033[39m/' \
-    -e 's/\(.*Not enough.*\)/\o033[31m\1\o033[39m/' \
-    -e 's/\(.*Too many.*\)/\o033[31m\1\o033[39m/' \
-    -e 's/\(.*disabled,.*\)/\o033[33m\1\o033[39m/' \
-    -e 's/\(.*down.*\)/\o033[33m\1\o033[39m/' \
-    -e 's/\(.*failed: True.*\)/\o033[33m\1\o033[39m/' \
-    -e 's/\(.*WARNING.*\)/\o033[33m\1\o033[39m/' \
-    -e 's/\(.*status_code\: 400.*\)/\o033[33m\1\o033[39m/' \
-    -e 's/\(.*Starting fence.*\)/\o033[33m\1\o033[39m/'
+  chack_consul_log_one_node $ctrl
 fi
 
 
