@@ -145,7 +145,7 @@ variable list:
     )
 - flavor_name
 - keypair_name
-- security_groups
+- security_groups = [] #list
 - az_hint
     az_hint = "<az_name>:<hyper_name>"
 - network_name
