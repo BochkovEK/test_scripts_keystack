@@ -218,7 +218,7 @@ push_conf () {
         $script_dir/$test_node_conf_dir/$CONF_NAME
       echo "Push consul conf to $node:$conf_dir/$CONF_NAME"
 #      scp -o StrictHostKeyChecking=no $script_dir/$test_node_conf_dir/$CONF_NAME $USER@$node:$conf_dir/$CONF_NAME
-      scp -o StrictHostKeyChecking=no $script_dir/$test_node_conf_dir/$CONF_NAME $USER@$node:tmp/$CONF_NAME
+      scp -o StrictHostKeyChecking=no $script_dir/$test_node_conf_dir/$CONF_NAME $USER@$node:/tmp/$CONF_NAME
       ssh -o StrictHostKeyChecking=no $USER@$node "sudo mv /tmp/$CONF_NAME $conf_dir/$CONF_NAME"
     else
       echo -e "${red}ip could not be define from hostname: $node - ERROR${normal}"
