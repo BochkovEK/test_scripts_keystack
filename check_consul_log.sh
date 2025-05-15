@@ -113,22 +113,23 @@ check_log_on_all_ctrl () {
 \033[0;35mLogs from: $(hostname)\033[0m
 \033[0;35mFor check this log: \033[0m
 \033[0;35mssh $(hostname) less /var/log/kolla/autoevacuate.log | less\033[0m"'
-    ssh -o StrictHostKeyChecking=no $USER@$ctrl "sudo sh -c tail -n $LOG_LAST_LINES_NUMBER /var/log/kolla/autoevacuate.log | \
-        sed --unbuffered \
-        -e 's/\(.*Force off.*\)/\o033[31m\1\o033[39m/' \
-        -e 's/\(.*Server.*\)/\o033[33m\1\o033[39m/' \
-        -e 's/\(.*Evacuating instance.*\)/\o033[33m\1\o033[39m/' \
-        -e 's/\(.*IPMI \"power off\".*\)/\o033[31m\1\o033[39m/' \
-        -e 's/\(.*CRITICAL.*\)/\o033[31m\1\o033[39m/' \
-        -e 's/\(.*ERROR.*\)/\o033[31m\1\o033[39m/' \
-        -e 's/\(.*Not enough.*\)/\o033[31m\1\o033[39m/' \
-        -e 's/\(.*Too many.*\)/\o033[31m\1\o033[39m/' \
-        -e 's/\(.*disabled,.*\)/\o033[33m\1\o033[39m/' \
-        -e 's/\(.*down.*\)/\o033[33m\1\o033[39m/' \
-        -e 's/\(.*failed: True.*\)/\o033[33m\1\o033[39m/' \
-        -e 's/\(.*WARNING.*\)/\o033[33m\1\o033[39m/' \
-        -e 's/\(.*status_code\: 400.*\)/\o033[33m\1\o033[39m/' \
-        -e 's/\(.*Starting fence.*\)/\o033[33m\1\o033[39m/'"
+    ssh -o StrictHostKeyChecking=no $USER@$ctrl "sudo sh -c 'tail -n $LOG_LAST_LINES_NUMBER /var/log/kolla/autoevacuate.log'"
+#    | \
+#        sed --unbuffered \
+#        -e 's/\(.*Force off.*\)/\o033[31m\1\o033[39m/' \
+#        -e 's/\(.*Server.*\)/\o033[33m\1\o033[39m/' \
+#        -e 's/\(.*Evacuating instance.*\)/\o033[33m\1\o033[39m/' \
+#        -e 's/\(.*IPMI \"power off\".*\)/\o033[31m\1\o033[39m/' \
+#        -e 's/\(.*CRITICAL.*\)/\o033[31m\1\o033[39m/' \
+#        -e 's/\(.*ERROR.*\)/\o033[31m\1\o033[39m/' \
+#        -e 's/\(.*Not enough.*\)/\o033[31m\1\o033[39m/' \
+#        -e 's/\(.*Too many.*\)/\o033[31m\1\o033[39m/' \
+#        -e 's/\(.*disabled,.*\)/\o033[33m\1\o033[39m/' \
+#        -e 's/\(.*down.*\)/\o033[33m\1\o033[39m/' \
+#        -e 's/\(.*failed: True.*\)/\o033[33m\1\o033[39m/' \
+#        -e 's/\(.*WARNING.*\)/\o033[33m\1\o033[39m/' \
+#        -e 's/\(.*status_code\: 400.*\)/\o033[33m\1\o033[39m/' \
+#        -e 's/\(.*Starting fence.*\)/\o033[33m\1\o033[39m/'"
   done
 }
 
