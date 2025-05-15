@@ -16,6 +16,7 @@ script_dir=$(dirname $0)
 utils_dir=$script_dir/utils
 check_openrc_script="check_openrc.sh"
 check_openstack_cli_script="check_openstack_cli.sh"
+default_user="root"
 
 [[ -z $LOG_LAST_LINES_NUMBER ]] && LOG_LAST_LINES_NUMBER=35
 #[[ -z $OUTPUT_PERIOD ]] && OUTPUT_PERIOD=10
@@ -24,6 +25,7 @@ check_openstack_cli_script="check_openstack_cli.sh"
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
 [[ -z $CTRL_LIST ]] && CTRL_LIST=""
 [[ -z $ALL_CTRL ]] && ALL_CTRL="false"
+[[ -z $USER ]] && USER="$default_user"
 #========================
 
 
@@ -44,6 +46,7 @@ while [ -n "$1" ]; do
       -n,   -node_name        <node_name>
       -ctrl_list              <ctrl_list> example: -ctrl_list \"ctrl-01 ctrl-02 ctrl-02\"
       -all_ctrl               check logs on all ctrl nodes (without parameter)
+      -u, user      set user for ssh access
 
       Example satart command:
         bash $HOME/test_scripts_keystack/chack_consul_log.sh <ctrl_01> <check_period> <log last lines number>
@@ -66,6 +69,11 @@ while [ -n "$1" ]; do
       shift ;;
     -all_ctrl) ALL_CTRL="true"
       echo "Found the -all_ctrl option, with parameter value $ALL_CTRL"
+      ;;
+    -u|-user) USER="$2"
+      USER_STR="-u $USER"
+      echo "Found the -user parameter with value $USER"
+      shift
       ;;
     --) shift
       break ;;
@@ -101,11 +109,11 @@ Check_openstack_cli () {
 check_log_on_all_ctrl () {
   for ctrl in $NODE_NAME; do
     echo -e "${cyan}Check logs on $ctrl...${normal}"
-    ssh -o StrictHostKeyChecking=no "$ctrl" 'echo -e "\033[0;35m$(date)\033[0m
+    ssh -o StrictHostKeyChecking=no $USER@$ctrl 'echo -e "\033[0;35m$(date)\033[0m
 \033[0;35mLogs from: $(hostname)\033[0m
 \033[0;35mFor check this log: \033[0m
 \033[0;35mssh $(hostname) less /var/log/kolla/autoevacuate.log | less\033[0m"'
-    ssh -o StrictHostKeyChecking=no "$ctrl" tail -n $LOG_LAST_LINES_NUMBER /var/log/kolla/autoevacuate.log | \
+    ssh -o StrictHostKeyChecking=no $USER@$ctrl tail -n $LOG_LAST_LINES_NUMBER /var/log/kolla/autoevacuate.log | \
         sed --unbuffered \
         -e 's/\(.*Force off.*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*Server.*\)/\o033[33m\1\o033[39m/' \
@@ -149,7 +157,7 @@ if [ -z "${NODE_NAME}" ]; then
 #    if [ -z "${ALL_CTRL}" ]; then
       echo "Attempt to identify a leader in the consul cluster and read logs..."
       first_ctrl_node=${nova_ctrl_arr[0]}
-      leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no "$first_ctrl_node" "docker exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
+      leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no $USER@$first_ctrl_node "docker exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
       if [ -z "${leader_ctrl_node}" ]; then
         NODE_NAME=$ctrl_nodes_list
         echo -e "${yallow}Check logs on ctrl_nodes_list: \'$ctrl_nodes_list\' nodes${normal}"
@@ -177,11 +185,11 @@ if (( $i > 1 )); then
   check_log_on_all_ctrl
 else
   echo -e "${cyan}Check logs on $ctrl...${normal}"
-  ssh -o StrictHostKeyChecking=no "$ctrl" 'echo -e "\033[0;35m$(date)\033[0m
+  ssh -o StrictHostKeyChecking=no $USER@$ctrl 'echo -e "\033[0;35m$(date)\033[0m
 \033[0;35mLogs from: $(hostname)\033[0m
 \033[0;35mFor check this log: \033[0m
 \033[0;35mssh $(hostname) less /var/log/kolla/autoevacuate.log | less\033[0m"'
-  ssh -o StrictHostKeyChecking=no "$ctrl" tail -f /var/log/kolla/autoevacuate.log | \
+  ssh -o StrictHostKeyChecking=no $USER@$ctrl tail -f /var/log/kolla/autoevacuate.log | \
     sed --unbuffered \
     -e 's/\(.*Force off.*\)/\o033[31m\1\o033[39m/' \
     -e 's/\(.*Server.*\)/\o033[33m\1\o033[39m/' \
