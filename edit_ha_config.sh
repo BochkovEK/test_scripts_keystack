@@ -179,7 +179,7 @@ pull_conf () {
 
 
   echo "Сopying $service_name conf from ${NODES[0]}:$conf_dir/$CONF_NAME"
-  ssh -o StrictHostKeyChecking=no $USER@${NODES[0]} "sudo cat $conf_dir/$CONF_NAME" > $script_dir/$test_node_conf_dir
+  ssh -o StrictHostKeyChecking=no $USER@${NODES[0]} "sudo cat $conf_dir/$CONF_NAME" > $script_dir/$test_node_conf_dir/${CONF_NAME}
 #  scp -o StrictHostKeyChecking=no $USER@${NODES[0]}:$conf_dir/$CONF_NAME $script_dir/$test_node_conf_dir
   [ ! -f $script_dir/$test_node_conf_dir/${CONF_NAME}_backup ] && { cp $script_dir/$test_node_conf_dir/${CONF_NAME} $script_dir/$test_node_conf_dir/${CONF_NAME}_backup; }
   echo -e "
