@@ -114,7 +114,7 @@ check_log_on_all_ctrl () {
 \033[0;35mFor check this log: \033[0m
 \033[0;35mssh $(hostname) less /var/log/kolla/autoevacuate.log | less\033[0m"'
 #    ssh -o StrictHostKeyChecking=no $USER@$ctrl "sudo tail -n $LOG_LAST_LINES_NUMBER /var/log/kolla/autoevacuate.log"
-    ssh -o StrictHostKeyChecking=no kolla@qa-stable-ubuntu-ctrl-01 "sudo sh -c 'tail -n 10 /var/log/kolla/autoevacuate.log'"
+    ssh -o StrictHostKeyChecking=no kolla@qa-stable-ubuntu-ctrl-01 "sudo sh -c 'cat /var/log/kolla/autoevacuate.log'"
 #    | \
 #        sed --unbuffered \
 #        -e 's/\(.*Force off.*\)/\o033[31m\1\o033[39m/' \
