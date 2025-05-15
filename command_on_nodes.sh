@@ -310,7 +310,7 @@ get_nodes_list () {
 get_nodes_list
 
 if [ "$DONT_CHECK_CONN" = false ]; then
-  echo "Check connection to $NODES_TYPE"
+  echo "Check: ping to $NODES_TYPE"
   for node in "${NODES[@]}"; do
     check_ping $node
   done
