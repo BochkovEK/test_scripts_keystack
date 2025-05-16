@@ -188,6 +188,7 @@ if [ -z "${NODE_NAME}" ]; then
       if [ -n "${leader_ctrl_node}" ]; then
         NODE_NAME=$leader_ctrl_node
         echo "Leader consul node is $NODE_NAME"
+        break
       fi
     done
     if [ -z "${leader_ctrl_node}" ]; then
