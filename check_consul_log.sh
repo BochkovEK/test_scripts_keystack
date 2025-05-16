@@ -177,27 +177,34 @@ if [ -z "${NODE_NAME}" ]; then
   else
     ctrl_nodes_list=$CTRL_LIST
   fi
-    for i in $ctrl_nodes_list; do nova_ctrl_arr+=("$i"); done
+  for i in $ctrl_nodes_list; do nova_ctrl_arr+=("$i"); done
 #    echo $ALL_CTRL
-    if [ ! "$ALL_CTRL" = true ]; then
+  if [ ! "$ALL_CTRL" = true ]; then
 #    if [ -z "${ALL_CTRL}" ]; then
-      echo "Attempt to identify a leader in the consul cluster and read logs..."
-      first_ctrl_node=${nova_ctrl_arr[0]}
-      leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no $USER@$first_ctrl_node "docker exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
-      if [ -z "${leader_ctrl_node}" ]; then
-        NODE_NAME=$ctrl_nodes_list
-        echo -e "${yallow}Check logs on ctrl_nodes_list: \'$ctrl_nodes_list\' nodes${normal}"
-      else
+    echo "Attempt to identify a leader in the consul cluster and read logs..."
+    for ctrl in "${nova_ctrl_arr[@]}"; do
+#   first_ctrl_node=${nova_ctrl_arr[0]}
+      leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no $USER@$ctrl "docker exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
+      if [ -n "${leader_ctrl_node}" ]; then
         NODE_NAME=$leader_ctrl_node
         echo "Leader consul node is $NODE_NAME"
       fi
-    else
-      echo -e "${yallow}Check logs on all ctrl nodes${normal}"
+    done
+    if [ -z "${leader_ctrl_node}" ]; then
+#    NODE_NAME=$leader_ctrl_node
       NODE_NAME=$ctrl_nodes_list
-#      NODE_NAME=$ALL_CTRL
+#    echo "Leader consul node is $NODE_NAME"
+      echo -e "${yallow}Leader node not found. Check logs on all ctrl nodes${normal}
+      $ctrl_nodes_list\' nodes${normal}"
+#        else
     fi
+#    else
+#      NODE_NAME=$ctrl_nodes_list
+#      NODE_NAME=$ALL_CTRL
+#    fi
 #else
 #  NODE_NAME=$1
+  fi
 fi
 
 echo -e "Consul logs from $NODE_NAME node"

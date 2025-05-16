@@ -1,6 +1,9 @@
 #!/bin/bash
 
-#The scrip cleanup all docker data
+#The scrip cleanup docker data
+# example: bash ~/test_scripts_keystack/docker_cleanup.sh $(docker ps -a --format '{{.Names}}' | grep redis)
+# example: bash ~/test_scripts_keystack/docker_cleanup.sh all
+
 
 all_docker_cleanup () {
   while true; do
