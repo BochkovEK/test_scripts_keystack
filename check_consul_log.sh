@@ -209,7 +209,7 @@ if [ -z "${NODE_NAME}" ]; then
 fi
 
 echo -e "Consul logs from $NODE_NAME node"
-echo -e "Output period check: $OUTPUT_PERIOD sec"
+#echo -e "Output period check: $OUTPUT_PERIOD sec"
 
 i=0
 for ctrl in $NODE_NAME; do
