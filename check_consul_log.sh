@@ -137,24 +137,6 @@ check_log_on_all_ctrl () {
 \033[0;35mFor check this log: \033[0m
 \033[0;35mssh $(hostname) less /var/log/kolla/autoevacuate.log | less\033[0m"'
     chack_consul_log_one_node $ctrl
-#    ssh -o StrictHostKeyChecking=no $USER@$ctrl "sudo tail -n $LOG_LAST_LINES_NUMBER /var/log/kolla/autoevacuate.log"
-#    ssh -o StrictHostKeyChecking=no kolla@qa-stable-ubuntu-ctrl-01 "sudo sh -c 'cat /var/log/kolla/autoevacuate.log'"
-#    | \
-#        sed --unbuffered \
-#        -e 's/\(.*Force off.*\)/\o033[31m\1\o033[39m/' \
-#        -e 's/\(.*Server.*\)/\o033[33m\1\o033[39m/' \
-#        -e 's/\(.*Evacuating instance.*\)/\o033[33m\1\o033[39m/' \
-#        -e 's/\(.*IPMI \"power off\".*\)/\o033[31m\1\o033[39m/' \
-#        -e 's/\(.*CRITICAL.*\)/\o033[31m\1\o033[39m/' \
-#        -e 's/\(.*ERROR.*\)/\o033[31m\1\o033[39m/' \
-#        -e 's/\(.*Not enough.*\)/\o033[31m\1\o033[39m/' \
-#        -e 's/\(.*Too many.*\)/\o033[31m\1\o033[39m/' \
-#        -e 's/\(.*disabled,.*\)/\o033[33m\1\o033[39m/' \
-#        -e 's/\(.*down.*\)/\o033[33m\1\o033[39m/' \
-#        -e 's/\(.*failed: True.*\)/\o033[33m\1\o033[39m/' \
-#        -e 's/\(.*WARNING.*\)/\o033[33m\1\o033[39m/' \
-#        -e 's/\(.*status_code\: 400.*\)/\o033[33m\1\o033[39m/' \
-#        -e 's/\(.*Starting fence.*\)/\o033[33m\1\o033[39m/'"
   done
 }
 
@@ -199,12 +181,6 @@ if [ -z "${NODE_NAME}" ]; then
       $ctrl_nodes_list\' nodes${normal}"
 #        else
     fi
-#    else
-#      NODE_NAME=$ctrl_nodes_list
-#      NODE_NAME=$ALL_CTRL
-#    fi
-#else
-#  NODE_NAME=$1
   fi
 fi
 
@@ -221,71 +197,3 @@ else
   echo -e "${cyan}Check logs on $ctrl...${normal}"
   chack_consul_log_one_node $ctrl
 fi
-
-
-#while :
-#do
-#  is_log_new="false"
-#  first_or_leader_contr_node="true"
-#  if [ -z "$log_old" ]; then
-#    log_old="foo bar baz"
-#  else
-#    log_old=$log_new
-#  fi
-#  for ctrl in $NODE_NAME; do
-#    echo -e "${cyan}Check logs on $ctrl...${normal}"
-#    if [ -n "${leader_ctrl_node}" ]; then
-#      first_or_leader_contr_node="false"
-
-#      log_new=$(ssh -o StrictHostKeyChecking=no "$ctrl" tail -n $LOG_LAST_LINES_NUMBER /var/log/kolla/autoevacuate.log)
-#      for i in {1..3};do
-#        a=1
-#        b=1
-#        for word_1 in $log_new; do
-#          if (( $a == $i )); then
-#            for word_2 in $log_old; do
-#              if (( $b == $a )); then
-#                if [ ! "$word_1" = "$word_2" ]; then
-#                  is_log_new="true"
-#                fi
-#                break
-#              fi
-#              b=$(( $b + 1 ))
-#            done
-#            #echo $word_1
-#            break
-#          fi
-#          a=$(( $a + 1 ))
-#        done
-#      done
-#    fi
-#
-#    if [ -n "${leader_ctrl_node}" ] && [ "${is_log_new}" = "false" ]; then
-#      echo -e "${yallow}consul log update not updated${normal}";
-#      echo -e "\tpossible reasons:\n\t- the leader of the consul cluster has changed\n\t- the state commit cycle is not completed"
-#    else
-#      ssh -o StrictHostKeyChecking=no "$ctrl" tail -n $LOG_LAST_LINES_NUMBER /var/log/kolla/autoevacuate.log | \
-#      ssh -o StrictHostKeyChecking=no "$ctrl" tail -f /var/log/kolla/autoevacuate.log | \
-#        sed --unbuffered \
-#        -e 's/\(.*Force off.*\)/\o033[31m\1\o033[39m/' \
-#        -e 's/\(.*Server.*\)/\o033[33m\1\o033[39m/' \
-#        -e 's/\(.*Evacuating instance.*\)/\o033[33m\1\o033[39m/' \
-#        -e 's/\(.*IPMI "power off".*\)/\o033[31m\1\o033[39m/' \
-#        -e 's/\(.*CRITICAL.*\)/\o033[31m\1\o033[39m/' \
-#        -e 's/\(.*ERROR.*\)/\o033[31m\1\o033[39m/' \
-#        -e 's/\(.*Not enough.*\)/\o033[31m\1\o033[39m/' \
-#        -e 's/\(.*Too many.*\)/\o033[31m\1\o033[39m/' \
-#        -e 's/\(.*disabled,.*\)/\o033[33m\1\o033[39m/' \
-#        -e 's/\(.*down.*\)/\o033[33m\1\o033[39m/' \
-#        -e 's/\(.*failed: True.*\)/\o033[33m\1\o033[39m/' \
-#        -e 's/\(.*WARNING.*\)/\o033[33m\1\o033[39m/' \
-#        -e 's/\(.*Starting fence.*\)/\o033[33m\1\o033[39m/'
-#    fi
-#    ssh -o StrictHostKeyChecking=no "$ctrl" 'echo -e "\033[0;35m$(date)\033[0m
-#\033[0;35mLogs from: $(hostname)\033[0m
-#\033[0;35mFor check this log: \033[0m
-#\033[0;35mssh $(hostname) less /var/log/kolla/autoevacuate.log | less\033[0m"'
-#  done
-#  sleep "$OUTPUT_PERIOD"
-#done
-
