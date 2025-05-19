@@ -44,7 +44,7 @@ while [ -n "$1" ]; do
     --help) echo -E "
       ip and name nodes list needed in /etc/hosts
 
-      -nt,  -type_of_nodes          <type_of_nodes> 'ctrl', 'comp', 'net', 'all', 'all_without_network'
+      -nt,  -type_of_nodes          <type_of_nodes> 'ctrl', 'comp', 'net', 'all', 'all_without_network\wwn'
       -debug                        debug mode (without parameter)
 "
 #      -wnn, -without_network_nodes  if the region does not have a network node (without parameter)
@@ -171,7 +171,7 @@ NODES_TYPE: $NODES_TYPE
 nodes_to_find: $nodes_to_find
       "
       ;;
-    all_without_network)
+    wwn|all_without_network)
       NODES_TYPE=all_without_network
       nodes_to_find="$comp_pattern|$ctrl_pattern"
       grep_from_compute_service="$comp_compute_service_pattern|$ctrl_compute_service_pattern"
