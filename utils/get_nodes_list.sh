@@ -138,13 +138,14 @@ get_list_from_compute_service () {
 [DEBUG]
 ${yellow}Failed - openstack compute service is empty${normal}
    "
+    parse_hosts
+  else
     nodes=$(echo "$nova_state_list" | grep -E $grep_from_compute_service | awk '{print $6}')
     if [[ -z $nodes ]];then
       [ "$TS_DEBUG" = true ] && echo -e "
       [DEBUG]
       ${yellow}Failed to find $grep_from_compute_service in compute service list${normal}
       "
-      parse_hosts
     else
       echo $nodes
     fi
