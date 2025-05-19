@@ -161,6 +161,7 @@ define_node_type () {
 NODES_TYPE: $NODES_TYPE
 nodes_to_find: $nodes_to_find
       "
+      get_list_from_compute_service
       ;;
     comp|cmpt)
       NODES_TYPE=comp
@@ -170,6 +171,7 @@ nodes_to_find: $nodes_to_find
 NODES_TYPE: $NODES_TYPE
 nodes_to_find: $nodes_to_find
       "
+      get_list_from_compute_service
       ;;
     wwn|all_without_network)
       NODES_TYPE=all_without_network
@@ -179,6 +181,7 @@ nodes_to_find: $nodes_to_find
 NODES_TYPE: $NODES_TYPE
 nodes_to_find: $nodes_to_find
       "
+      get_list_from_compute_service
       ;;
     net)
       NODES_TYPE=net
