@@ -108,7 +108,7 @@ do
     --help) echo -E "
       <container_name> as parameter
       -c, 	-container_name		<container_name>
-      -nt, 	-type_of_nodes		<type_of_nodes> 'ctrl', 'comp', 'net'
+      -nt, 	-type_of_nodes		<type_of_nodes> 'ctrl', 'comp', 'net', 'all_without_network\wwn'
       -nn,  -node_name        <node_name>
       -check_unhealthy        check only unhealthy containers (without parameter)
       -u,   -user             <ssh_user>
