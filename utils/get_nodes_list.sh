@@ -14,6 +14,8 @@ comp_pattern="comp\-..(\s|$)"
 ctrl_pattern="ctrl\-..(\s|$)"
 #$"
 net_pattern="net\-..(\s|$)"
+comp_compute_service_pattern="(nova-compute)"
+ctrl_compute_service_pattern="(nova-scheduler)"
 #net_pattern="\-net\-.."
 #$"
 
@@ -24,9 +26,11 @@ violet=$(tput setaf 5)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
 
-[[ -z $NODES_TYPE ]] && NODES_TYPE=""
+[[ -z $NODES_TYPE ]] && NODES_TYPE="all"
 [[ -z $PING ]] && PING="false"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
+#[[ -z $WITHOUT_NETWORK_NODES ]] && WITHOUT_NETWORK_NODES="false"
+
 #======================
 
 # Define parameters
@@ -40,9 +44,10 @@ while [ -n "$1" ]; do
     --help) echo -E "
       ip and name nodes list needed in /etc/hosts
 
-      -nt,  -type_of_nodes  <type_of_nodes> 'ctrl', 'comp', 'net'
-      -debug               debug mode (without parameter)
+      -nt,  -type_of_nodes          <type_of_nodes> 'ctrl', 'comp', 'net', 'all', 'all_without_network'
+      -debug                        debug mode (without parameter)
 "
+#      -wnn, -without_network_nodes  if the region does not have a network node (without parameter)
         exit 0
         break ;;
     -debug) TS_DEBUG="true"
@@ -50,6 +55,11 @@ while [ -n "$1" ]; do
       Found the -debug parameter
       "
       ;;
+#    -wnn|-without_network_nodes) NODES_TYPE=$2
+#      [ "$TS_DEBUG" = true ] && echo -e "
+#      Found the -without_network_nodes with parameter value $WITHOUT_NETWORK_NODES
+#      "
+#      ;;
     -nt|-type_of_nodes) NODES_TYPE=$2
       [ "$TS_DEBUG" = true ] && echo -e "
       Found the -type_of_nodes with parameter value $NODES_TYPE
@@ -67,46 +77,6 @@ while [ -n "$1" ]; do
   esac
   shift
 done
-
-
-node_type_func () {
-  case "$1" in
-        ctrl)
-          NODES_TYPE=ctrl
-          nodes_to_find=$ctrl_pattern
-          [ "$TS_DEBUG" = true ] && echo -e "
-          NODES_TYPE: $NODES_TYPE
-          nodes_to_find: $nodes_to_find
-          "
-#          ${yellow}Execute command on ctrl nodes${normal}
-          ;;
-        comp|cmpt)
-          NODES_TYPE=comp
-          nodes_to_find=$comp_pattern
-          [ "$TS_DEBUG" = true ] && echo -e "
-          NODES_TYPE: $NODES_TYPE
-          nodes_to_find: $nodes_to_find
-          "
-          ;;
-        net)
-          NODES_TYPE=net
-          nodes_to_find=$net_pattern
-          [ "$TS_DEBUG" = true ] && echo -e "
-          NODES_TYPE: $NODES_TYPE
-          nodes_to_find: $nodes_to_find
-          "
-          ;;
-        *)
-          NODES_TYPE=all
-          nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
-          [ "$TS_DEBUG" = true ] && echo -e "
-          NODES_TYPE: $NODES_TYPE
-          nodes_to_find: $nodes_to_find
-          "
-#          ${yellow}Nodes type is not specified correctly. Execute command on ctr, comp, net nodes${normal}
-          ;;
-        esac
-}
 
 check_openstack_cli () {
 #  echo "check"
@@ -156,65 +126,91 @@ parse_hosts () {
   fi
   echo "${NODES[*]}"
   if [ -z "${NODES[*]}" ]; then
-    echo -e "${red}Failed to determine node $NODES_TYPE list - ERROR!${normal}"
+    echo -e "${red}Failed to determine node $NODES_TYPE list from /etc/hosts - ERROR!${normal}"
     exit 1
   fi
 }
 
 get_list_from_compute_service () {
-#    echo "get_list_from_compute_service..."
-  if [ -z ${NODES[0]} ]; then
-     [ "$TS_DEBUG" = true ] && echo -e "
-        [DEBUG]
-          NODES[0]: ${NODES[0]}
-          "
-    if [ "$NODES_TYPE" = comp ] || [ "$NODES_TYPE" = ctrl ]; then
+  nova_state_list=$(openstack compute service list)
+  if [ -z "$nova_state_list" ];then
+   [ "$TS_DEBUG" = true ] && echo -e "
+[DEBUG]
+${yellow}Failed - openstack compute service is empty${normal}
+   "
+    nodes=$(echo "$nova_state_list" | grep -E $grep_from_compute_service | awk '{print $6}')
+    if [[ -z $nodes ]];then
       [ "$TS_DEBUG" = true ] && echo -e "
-        [DEBUG]
-          NODES_TYPE: $NODES_TYPE
-          "
-      nova_state_list=$(openstack compute service list)
-      if [ -z "$nova_state_list" ];then
-        [ "$TS_DEBUG" = true ] && echo -e "
-        [DEBUG]
-        ${yellow}Failed to determine node $NODES_TYPE list${normal}
-        "
-#        return
-#        exit 1
-      elif [ "$NODES_TYPE" = comp ]; then
-        #compute
-        nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
-      else
-        #control
-        nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
-      fi
-      if [[ -z $nodes ]];then
-        [ "$TS_DEBUG" = true ] && echo -e "
-        [DEBUG]
-        ${yellow}Failed to determine node $NODES_TYPE list${normal}
-        "
-#        return
-#        exit 1
-        parse_hosts
-      else
-        echo $nodes
-      fi
-    elif [ "$NODES_TYPE" = all ]; then
+      [DEBUG]
+      ${yellow}Failed to find $grep_from_compute_service in compute service list${normal}
+      "
       parse_hosts
+    else
+      echo $nodes
     fi
-  else
-    return
   fi
 }
 
+define_node_type () {
+  case "$1" in
+    ctrl)
+      NODES_TYPE=ctrl
+      nodes_to_find=$ctrl_pattern
+      grep_from_compute_service=$ctrl_compute_service_pattern
+      [ "$TS_DEBUG" = true ] && echo -e "
+NODES_TYPE: $NODES_TYPE
+nodes_to_find: $nodes_to_find
+      "
+      ;;
+    comp|cmpt)
+      NODES_TYPE=comp
+      nodes_to_find=$comp_pattern
+      grep_from_compute_service=$comp_compute_service_pattern
+      [ "$TS_DEBUG" = true ] && echo -e "
+NODES_TYPE: $NODES_TYPE
+nodes_to_find: $nodes_to_find
+      "
+      ;;
+    all_without_network)
+      NODES_TYPE=all_without_network
+      nodes_to_find="$comp_pattern|$ctrl_pattern"
+      grep_from_compute_service="$comp_compute_service_pattern|$ctrl_compute_service_pattern"
+      [ "$TS_DEBUG" = true ] && echo -e "
+NODES_TYPE: $NODES_TYPE
+nodes_to_find: $nodes_to_find
+      "
+      ;;
+    net)
+      NODES_TYPE=net
+      nodes_to_find=$net_pattern
+      [ "$TS_DEBUG" = true ] && echo -e "
+NODES_TYPE: $NODES_TYPE
+nodes_to_find: $nodes_to_find
+      "
+#      coming soon: openstack network agent list
+      parse_hosts
+      ;;
+    all)
+      NODES_TYPE=all
+      nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
+      [ "$TS_DEBUG" = true ] && echo -e "
+      NODES_TYPE: $NODES_TYPE
+      nodes_to_find: $nodes_to_find
+      "
+      parse_hosts
+      ;;
+    *)
+      [ "$TS_DEBUG" = true ] && echo -e "${red}Node type \'$2\' could not be determined, run script with --help - ERROR${normal}"
+      exit 1
+      ;;
+  esac
+}
 
-node_type_func $NODES_TYPE
-check_openstack_cli
-#check_and_source_openrc_file
-get_list_from_compute_service
-#check_and_source_openrc_file
-#parse_hosts
-#get_list_from_compute_service
+
+check_and_source_openrc_file
+define_node_type $NODES_TYPE
+#node_type_func
+#check_openstack_cli
 
 
 
