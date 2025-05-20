@@ -68,7 +68,7 @@ while [ -n "$1" ]; do
       ip and name nodes list needed in /etc/hosts
 
       -c,   -command        \"<command>\"
-      -nt,  -type_of_nodes  <type_of_nodes> 'ctrl', 'comp', 'net'
+      -nt,  -type_of_nodes  <type_of_nodes> 'ctrl', 'comp', 'net', 'all', 'all_without_network\awn'
       -nn,  -node_name      <node_name\ip> example: -nn \"ebochkov-keystack-comp-01 ebochkov-keystack-comp-02\"
       -u,   -user           <ssh_user>
       -p,   -ping           ping before execution command
