@@ -12,15 +12,15 @@ variable "default_flavor_name" {
 }
 
 variable "default_flavor" {
-#  description = "Default flavor name"
+  #  description = "Default flavor name"
   default = {
     vcpus       = 2
     ram         = 2048
     extra_specs = {
-    "hw:mem_page_size" = "large"
     }
   }
 }
+#    "hw:mem_page_size" = "large"
 
 variable "default_disks" {
   description = "Default disks"

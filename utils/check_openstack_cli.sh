@@ -1,5 +1,12 @@
 #The Script check openstack cli or install openstack cli
 
+# check in stands nexus
+# https://nexus.qa-stable-sberlinux.vm.lab.itkey.com/#browse/browse:k-pip
+
+# Example install from public installation:
+# export FROM_PUBLIC=true
+# bash ~/test_scripts_keystack/utils/check_openstack_cli.sh
+
 public_repo="https://pypi.org/simple/"
 
 #Colors:
