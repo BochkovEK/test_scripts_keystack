@@ -135,22 +135,20 @@ server_groups = {}
 #==================
 
 variable list:
-- image_name
-- flavor (default_flavor" {
-    #  description = "Default flavor name"
-        default = {
-            vcpus = 2
-            ram   = 2048
+VM:
+    <vm_name> = {
+        image_name
+        flavor {
+            vcpus = <vcpus>
+            ram   = <ram_in_MB>
         }
     )
-- flavor_name
-- keypair_name
-- security_groups = [] #list
-- az_hint
+    flavor_name
+    keypair_name
+    security_groups = [] #list
     az_hint = "<az_name>:<hyper_name>"
-- network_name
-- boot_volume_size (default_volume_size = 5)
-- disks
+    network_name
+    boot_volume_size (default_volume_size = 5)
     disks           = [
       {
         boot_index = <boot_index>
@@ -158,7 +156,11 @@ variable list:
         delete_on_termination = <true\false>
       },
     ]
-- metadata
     metadata = {}
-- user_data
     user_data = "#cloud-config\nhostname: instance_1.example.com\nfqdn: instance_1.example.com"
+
+AZ:
+    <aggr_name> = {
+        az_name    = "az_name" #(exp: "az_1")
+        hosts_list = [ "<list_hosts>" ]
+}
