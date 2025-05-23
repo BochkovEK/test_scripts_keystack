@@ -219,7 +219,10 @@ get_nodes_list () {
 if [ -z "$NODE_NAME" ]; then
   get_nodes_list
 else
-  NODES=("$NODE_NAME")
+  for word in $NODE_NAME; do
+    NODES+=("$word")
+  done
+#  NODES=("$NODE_NAME")
 fi
 
 
