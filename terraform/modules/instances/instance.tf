@@ -24,49 +24,41 @@ resource "openstack_compute_instance_v2" "vm" {
     name = each.value.network_name
   }
 
-  depends_on = [
-    openstack_compute_flavor_v2.flavor
-  ]
+  depends_on = [openstack_compute_flavor_v2.flavor]
 }
 
-# Создание дополнительных томов и их подключение
+# Создание дополнительных томов
 resource "openstack_blockstorage_volume_v3" "additional_volumes" {
   for_each = {
-    for vol in flatten([
+    for idx, disk in flatten([
       for vm_name, vm_config in local.instances : [
-        for disk in vm_config.disks : {
-          vm_name = vm_name
-          disk_id = "${vm_name}-${try(disk.boot_index, index(vm_config.disks, disk))}"
-          size    = try(disk.size, var.default_volume_size)
-          delete_on_termination = try(disk.delete_on_termination, var.default_delete_on_termination)
+        for disk_idx, disk in vm_config.disks : {
+          vm_key      = vm_name
+          disk_key    = "${vm_name}-disk-${disk_idx}"
+          size        = try(disk.size, var.default_volume_size)
+          delete_flag = try(disk.delete_on_termination, var.default_delete_on_termination)
           device_name = try(disk.device_name, null)
         }
-      ] if length(vm_config.disks) > 0
-    ]) : each.disk_id => each
+      ] if try(length(vm_config.disks), 0) > 0
+    ]) : each.disk_key => each
   }
 
-  name              = "${each.value.vm_name}-vol-${each.key}"
+  name              = each.value.disk_key
   size              = each.value.size
   volume_type       = try(each.value.volume_type, null)
   availability_zone = try(each.value.az, null)
 }
 
+# Подключение томов
 resource "openstack_compute_volume_attach_v2" "volume_attachments" {
   for_each = openstack_blockstorage_volume_v3.additional_volumes
 
-  instance_id = openstack_compute_instance_v2.vm[each.value.vm_name].id
+  instance_id = openstack_compute_instance_v2.vm[each.value.vm_key].id
   volume_id   = each.value.id
-  device      = each.value.device_name != null ? each.value.device_name : "/dev/vd${lower(letter[each.key])}"
+  device      = each.value.device_name != null ? each.value.device_name : "/dev/vd${chr(98 + index(keys(openstack_blockstorage_volume_v3.additional_volumes), each.key))}"
 }
 
-# Локальная переменная для генерации букв устройств
-locals {
-  letter = {
-    for i in range(1, 27) : i => substr("bcdefghijklmnopqrstuvwxyz", i-1, 1)
-  }
-}
-
-# Остальные ресурсы (flavor, image, security group, keypair) остаются без изменений
+# Остальные ресурсы без изменений
 resource "openstack_compute_flavor_v2" "flavor" {
   for_each    = var.VMs
   name        = "${each.key}-flavor"
