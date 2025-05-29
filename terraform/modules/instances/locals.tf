@@ -43,17 +43,17 @@ locals {
   }
   }
 
-  # Модифицируем disk_attachments, добавляя device_name с префиксом /dev/
-  formatted_disk_attachments = {
-    for k, v in local.disk_attachments : k => {
-      vm_name     = v.vm_name
-      disk_config = {
-        size        = try(v.disk_config.size, null)
-        volume_type = try(v.disk_config.volume_type, null)
-        az          = try(v.disk_config.az, null)
-        device_name = try("/dev/${v.disk_config.device}", null) # Добавляем префикс здесь
-      }
-      unique_key  = v.unique_key
-    }
-  }
+#  # Модифицируем disk_attachments, добавляя device_name с префиксом /dev/
+#  formatted_disk_attachments = {
+#    for k, v in local.disk_attachments : k => {
+#      vm_name     = v.vm_name
+#      disk_config = {
+#        size        = try(v.disk_config.size, null)
+#        volume_type = try(v.disk_config.volume_type, null)
+#        az          = try(v.disk_config.az, null)
+#        device_name = try("/dev/${v.disk_config.device}", null) # Добавляем префикс здесь
+#      }
+#      unique_key  = v.unique_key
+#    }
+#  }
 }
