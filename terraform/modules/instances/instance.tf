@@ -70,7 +70,7 @@ resource "openstack_compute_volume_attach_v2" "volume_attachment" {
   instance_id = openstack_compute_instance_v2.vm[each.value.name].id
   volume_id   = each.value.id
 #  device      = try(each.value.disk.device_name, null)
-  device      = each.value.disk.device_name == "" ? "${each.value.base_name}-flavor" : "/dev/${each.value.disk.device_name}"
+  device      = each.value.disks.device_name == "" ? "${each.value.base_name}-flavor" : "/dev/${each.value.disk.device_name}"
 #                  "/dev/vd${chr(98 + index([for d in local.disk_attachments : d.unique_key], each.key))}")
 }
 
