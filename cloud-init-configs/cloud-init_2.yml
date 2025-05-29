@@ -40,7 +40,7 @@ write_files:
 
       # Configuration
       LOG_FILE="/var/log/disk_check.log"
-      DISK="/dev/nvme0n1"
+      DISK="/dev/vda"
       TEST_DURATION="1s"
       CHECK_INTERVAL="10"
 
