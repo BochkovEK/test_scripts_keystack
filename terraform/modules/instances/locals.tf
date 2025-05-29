@@ -38,4 +38,6 @@ locals {
     az          = try(disk.disk_config.az, null)
     device_name = try(disk.disk_config.device, null)
   }}
+
+  format_device = (name) -> startswith(name, "/dev/") ? name : "/dev/${name}"
 }
