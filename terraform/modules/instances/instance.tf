@@ -41,7 +41,7 @@ resource "openstack_blockstorage_volume_v3" "additional_volume" {
   for_each = { for disk in local.disk_attachments : disk.unique_key => disk }
 
   name              = each.key
-  size              = try(each.value.disk_config.size, var.default_volume_size)
+  size              = try(each.value.disk.size, var.default_volume_size)
   volume_type       = try(each.value.disk_config.volume_type, null)
   availability_zone = try(each.value.disk_config.az, null)
   metadata          = try(each.value.disk_config.metadata, null)
