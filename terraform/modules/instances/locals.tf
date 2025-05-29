@@ -37,7 +37,7 @@ locals {
     size        = try(disk.disk_config.size, var.default_volume_size)
     volume_type = try(disk.disk_config.volume_type, null)
     az          = try(disk.disk_config.az, null)
-    device = try(disk.disk_config.device, null)
+    device      = try(disk.disk_config.device, null)
   }
   }
 }

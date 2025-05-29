@@ -65,7 +65,7 @@ resource "openstack_compute_volume_attach_v2" "volume_attachment" {
 
   # Если device указан в disk_config - используем его с префиксом /dev/, иначе /dev/vdb, /dev/vdc и т.д.
   device = try(
-    "/dev/${each.value.disk_config.device}",
+    "/dev/${local.volume_attachments[each.key].device}",
     "/dev/vd${element(["b", "c", "d", "e", "f", "g"], index(keys(openstack_blockstorage_volume_v3.additional_volume), each.key))}"
   )
 }
