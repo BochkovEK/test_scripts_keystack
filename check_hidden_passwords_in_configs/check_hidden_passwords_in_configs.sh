@@ -332,3 +332,11 @@ fi
 if [ "$CHECK_PROMETH" = true ] || [ "$CHECK_ALL" = true ]; then
   Check_hidden_passwords_in_prometheus_exporters
 fi
+
+~/installer/deploy_lab_certs_repo_ubuntu.sh
+source /installer/config/settings
+sed -i "s/NEXUS_FQDN/$NEXUS_FQDN/g" pip.conf
+sed -i "s/NEXUS_FQDN/$NEXUS_FQDN/g" sources.list
+KEY=$(cat $INSTALL_HOME/config/gitlab_key.pub)
+# if no hosts in hosts use srv="host1 host2 host3"
+srv=$(cat /etc/hosts | grep -E "ctrl|comp|lcm|net-" | awk '{print $1}')

@@ -12,6 +12,7 @@ resource "openstack_compute_instance_v2" "vm" {
   availability_zone_hints     = each.value.az_hint
   metadata                    = each.value.metadata
   user_data                   = each.value.user_data
+
 #  scheduler_hints {
 #    group = each.value.server_group == null ? "" : openstack_compute_servergroup_v2.server_groups[each.key].id
 #     group = each.value.server_group == null ? "" : module.server_group[each.value.server_group][0].server_group_id
@@ -36,6 +37,7 @@ resource "openstack_compute_instance_v2" "vm" {
     boot_index            = 0
     destination_type      = "volume"
     delete_on_termination = each.value.boot_volume_delete_on_termination
+    device_name           = each.value.boot_volume_device_name
   }
 #  dynamic "block_device" {
 ##    for iter in range(1, instance.vm_qty+1) : {
@@ -62,6 +64,7 @@ dynamic block_device {
         boot_index = try(volume.boot_index, -1)
         size = try(volume.size, var.default_volume_size)
         delete_on_termination = try(volume.delete_on_termination, var.default_delete_on_termination)
+        device_name           = try(volume.device_name, null)
     }]
     content {
 #        uuid = "volume-${each.value.base_name}-${block_device.value.boot_index}"
@@ -70,6 +73,7 @@ dynamic block_device {
         boot_index            = block_device.value.boot_index
         destination_type      = "volume"
         delete_on_termination = block_device.value.delete_on_termination
+        device_name           = block_device.value.device_name
     }
  }
 

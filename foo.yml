@@ -1,0 +1,48 @@
+---
+bird_services:
+  bird:
+    container_name: bird
+    group: bird
+    enabled: true
+    image: "{{ bird_image_full }}"
+    volumes: "{{ bird_default_volumes + bird_extra_volumes }}"
+    healthcheck: "{{ bird_healthcheck }}"
+    cap_add:
+      - NET_BROADCAST
+      - NET_RAW
+      - NET_ADMIN
+      - NET_BIND_SERVICE
+    dimensions: "{{ bird_dimensions }}"
+
+####################
+# Docker
+####################
+bird_tag: "{{ openstack_tag }}"
+
+bird_image: "{{ docker_registry ~ '/' if docker_registry else '' }}{{ docker_namespace }}/bird"
+bird_image_full: "{{ bird_image }}:{{ bird_tag }}"
+
+bird_dimensions: "{{ default_container_dimensions }}"
+
+bird_enable_healthchecks: "{{ enable_container_healthchecks }}"
+bird_healthcheck_interval: "{{ default_container_healthcheck_interval }}"
+bird_healthcheck_retries: "{{ default_container_healthcheck_retries }}"
+bird_healthcheck_start_period: "{{ default_container_healthcheck_start_period }}"
+bird_healthcheck_test: ["CMD-SHELL", "healthcheck_port bird {{ bird_port }}"]
+bird_healthcheck_timeout: "{{ default_container_healthcheck_timeout }}"
+bird_healthcheck:
+  interval: "{{ bird_healthcheck_interval }}"
+  retries: "{{ bird_healthcheck_retries }}"
+  start_period: "{{ bird_healthcheck_start_period }}"
+  test: "{% if bird_enable_healthchecks | bool %}{{ bird_healthcheck_test }}{% else %}NONE{% endif %}"
+  timeout: "{{ bird_healthcheck_timeout }}"
+
+bird_default_volumes:
+  - "{{ node_config_directory }}/bird/:{{ container_config_directory }}/:ro"
+  - "/etc/localtime:/etc/localtime:ro"
+  - "{{ '/etc/timezone:/etc/timezone:ro' if ansible_facts.os_family == 'Debian' else '' }}"
+  - "kolla_logs:/var/log/kolla/"
+  - "bird_socket:/var/lib/kolla/bird/"
+
+bird_extra_volumes: "{{ default_extra_volumes }}"
+
