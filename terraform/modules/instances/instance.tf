@@ -44,7 +44,7 @@ resource "openstack_compute_volume_attach_v2" "volume_attachment" {
   instance_id = openstack_compute_instance_v2.vm[local.volume_attachments[each.key].vm_name].id
   volume_id   = each.value.id
 # Безопасное определение устройства с явным приведением к map
-device = can(regex("^/dev/", each.value.device)) ? each.value.device : "/dev/vd${each.value.device}"
+device      = "/dev/vd${element(["b", "c", "d", "e", "f", "g"], index(keys(openstack_blockstorage_volume_v3.additional_volume), each.key))}"
 }
 
 # Flavor
