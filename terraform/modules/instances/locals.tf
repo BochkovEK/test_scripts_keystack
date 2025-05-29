@@ -30,19 +30,9 @@ locals {
   }
   ]
   ])
-#
-#    # Преобразуем disk_attachments в map с правильной структурой
-#  disk_attachments_map = {
-#    for idx, attachment in local.disk_attachments :
-#    attachment.unique_key => {
-#      vm_name     = attachment.vm_name
-#      disk_config = try(attachment.disk_config, {})
-#      unique_key  = attachment.unique_key
-#    }
-#  }
 
-#  # Список букв для имен устройств
-#  disk_letters = ["b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m"]
+  disk_letters = ["b", "c", "d", "e", "f", "g"]
+  disk_keys    = keys({for k,v in local.disk_attachments: k => v})
 
   volume_attachments = {
   for disk in local.disk_attachments : disk.unique_key => {
@@ -53,18 +43,4 @@ locals {
     device_name = try(disk.disk_config.device, null)
   }
   }
-
-#  # Модифицируем disk_attachments, добавляя device_name с префиксом /dev/
-#  formatted_disk_attachments = {
-#    for k, v in local.disk_attachments : k => {
-#      vm_name     = v.vm_name
-#      disk_config = {
-#        size        = try(v.disk_config.size, null)
-#        volume_type = try(v.disk_config.volume_type, null)
-#        az          = try(v.disk_config.az, null)
-#        device_name = try("/dev/${v.disk_config.device}", null) # Добавляем префикс здесь
-#      }
-#      unique_key  = v.unique_key
-#    }
-#  }
 }

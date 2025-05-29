@@ -43,21 +43,7 @@ resource "openstack_compute_volume_attach_v2" "volume_attachment" {
 
   instance_id = openstack_compute_instance_v2.vm[each.value.vm_name].id
   volume_id   = each.value.id
-
-  # Безопасное определение устройства с явным приведением к map
-  device = length(
-    lookup(
-      lookup(each.value, "disk_config", {}),
-      "device",
-      ""
-    )
-  ) > 0 ? (
-    "/dev/${each.value.disk_config.device}"
-  ) : (
-    "/dev/vd${element(["b", "c", "d", "e", "f", "g"],
-      index(keys({for k,v in local.disk_attachments: k => v}), each.key
-    )}"
-  )
+  device      = "/dev/vd${element(local.disk_letters, index(local.disk_keys, each.key))}"
 }
 
 # Flavor
