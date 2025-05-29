@@ -1,5 +1,5 @@
 resource "openstack_compute_instance_v2" "vm" {
-  for_each = { for k, v in local.instances : v.name => v }
+  for_each = { for k, v in local.instances : k => v }
 
   name                    = each.value.name
   image_name              = each.value.image_name
@@ -26,42 +26,40 @@ resource "openstack_compute_instance_v2" "vm" {
   depends_on = [openstack_compute_flavor_v2.flavor]
 }
 
-# Локальные переменные для томов
+# Создаем map для хранения информации о дисках
 locals {
-  volume_pairs = flatten([
+  disk_attachments = flatten([
     for vm_key, vm_config in local.instances : [
       for disk_idx, disk in try(vm_config.disks, []) : {
-        vm_key       = vm_key
-        disk_config  = disk
-        disk_key     = "${vm_key}-disk-${disk_idx}"
+        vm_key      = vm_key
+        disk_config = disk
+        unique_key  = "${vm_key}-${disk_idx}"
       }
     ]
   ])
-
-  volume_map = { for pair in local.volume_pairs : pair.disk_key => pair }
 }
 
-# Создание томов
-resource "openstack_blockstorage_volume_v3" "additional_volumes" {
-  for_each = local.volume_map
+# Создаем тома
+resource "openstack_blockstorage_volume_v3" "volume" {
+  for_each = { for item in local.disk_attachments : item.unique_key => item }
 
-  name              = each.key
+  name              = "${each.value.vm_key}-disk-${split("-", each.key)[1]}"
   size              = try(each.value.disk_config.size, var.default_volume_size)
   volume_type       = try(each.value.disk_config.volume_type, null)
   availability_zone = try(each.value.disk_config.az, null)
 }
 
-# Подключение томов
-resource "openstack_compute_volume_attach_v2" "volume_attachments" {
-  for_each = openstack_blockstorage_volume_v3.additional_volumes
+# Прикрепляем тома к инстансам
+resource "openstack_compute_volume_attach_v2" "attachment" {
+  for_each = openstack_blockstorage_volume_v3.volume
 
-  instance_id = openstack_compute_instance_v2.vm[local.volume_map[each.key].vm_key].id
+  instance_id = openstack_compute_instance_v2.vm[each.value.vm_key].id
   volume_id   = each.value.id
-  device      = try(local.volume_map[each.key].disk_config.device_name,
-                   "/dev/vd${chr(98 + index(keys(local.volume_map), each.key))}")
+  device      = try(each.value.disk_config.device_name,
+                  "/dev/vd${chr(98 + index([for x in local.disk_attachments : x.unique_key], each.key))}")
 }
 
-# Остальные ресурсы
+# Остальные ресурсы остаются без изменений
 resource "openstack_compute_flavor_v2" "flavor" {
   for_each    = var.VMs
 
@@ -74,7 +72,7 @@ resource "openstack_compute_flavor_v2" "flavor" {
 }
 
 data "openstack_images_image_v2" "image_id" {
-  for_each = { for k, v in local.instances : v.name => v }
+  for_each = local.instances
   name     = each.value.image_name
 }
 
