@@ -37,14 +37,24 @@ resource "openstack_blockstorage_volume_v3" "additional_volume" {
   availability_zone = each.value.az
 }
 
-# Attach additional volumes
+## Attach additional volumes
+#resource "openstack_compute_volume_attach_v2" "volume_attachment" {
+#  for_each = openstack_blockstorage_volume_v3.additional_volume
+#
+#  instance_id = openstack_compute_instance_v2.vm[local.volume_attachments[each.key].vm_name].id
+#  volume_id   = each.value.id
+## Безопасное определение устройства с явным приведением к map
+#device      = "/dev/vd${element(["b", "c", "d", "e", "f", "g"], index(keys(openstack_blockstorage_volume_v3.additional_volume), each.key))}"
+#}
+
+# Подключение дополнительных томов
 resource "openstack_compute_volume_attach_v2" "volume_attachment" {
   for_each = openstack_blockstorage_volume_v3.additional_volume
 
-  instance_id = openstack_compute_instance_v2.vm[local.volume_attachments[each.key].vm_name].id
+  instance_id = openstack_compute_instance_v2.vm[each.value.vm_name].id
   volume_id   = each.value.id
-# Безопасное определение устройства с явным приведением к map
-device      = "/dev/vd${element(["b", "c", "d", "e", "f", "g"], index(keys(openstack_blockstorage_volume_v3.additional_volume), each.key))}"
+  device      = try(each.value.disk_config.device_name,
+                  "/dev/vd${chr(98 + index([for d in local.disk_attachments : d.unique_key], each.key))}")
 }
 
 # Flavor
