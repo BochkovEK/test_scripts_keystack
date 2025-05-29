@@ -61,7 +61,7 @@ resource "openstack_blockstorage_volume_v3" "additional_volume" {
   size              = try(each.value.disk.size, var.default_volume_size)
   volume_type       = try(each.value.disk.volume_type, null)
   availability_zone = try(each.value.disk.az, null)
-  device            = try(each.value.disk.device, null)
+#  device            = try(each.value.disk.device, null)
 
 }
 
@@ -72,7 +72,7 @@ resource "openstack_compute_volume_attach_v3" "volume_attachment" {
   instance_id = openstack_compute_instance_v2.vm[each.value.name].id
   volume_id   = each.value.id
 #  device      = try(each.value.disk.device_name, null)
-  device      = each.value.device
+  device      = try(each.value.disks.device, null)
   #== "" ? "${each.value.base_name}-flavor" : "/dev/${each.value.disk.device_name}"
 #                  "/dev/vd${chr(98 + index([for d in local.disk_attachments : d.unique_key], each.key))}")
 }
