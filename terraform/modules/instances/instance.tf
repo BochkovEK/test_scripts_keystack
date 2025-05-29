@@ -22,7 +22,7 @@ resource "openstack_compute_instance_v2" "vm" {
     boot_index            = 0
     destination_type      = "volume"
     delete_on_termination = each.value.boot_volume_delete_on_termination
-    device_name           = "/dev/vda"
+#    device_name           = "/dev/vda"
   }
 
 dynamic block_device {
