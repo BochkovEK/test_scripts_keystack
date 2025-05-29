@@ -1,143 +1,113 @@
-locals {
-  instances = flatten([
-    for instance_key, instance in var.VMs : [
-      for iter in range(1, instance.vm_qty+1) : {
-        base_name                         = instance_key
-        name                              = format("%s-%02d", instance_key, iter)
-        image_name                        = try(instance.image_name, var.default_image_name)
-        metadata                          = try(instance.metadata, var.default_metadata)
-        flavor_name                       = try(instance.flavor_name, var.default_flavor_name)
-        keypair_name                      = try(instance.keypair_name, null)
-        security_groups                   = try(instance.security_groups, null)
-        az_hint                           = try(instance.az_hint, null)
-        network_name                      = try(instance.network_name, var.default_network_name)
-        boot_volume_size                  = try(instance.boot_volume_size, var.default_volume_size)
-        boot_volume_delete_on_termination = try(instance.boot_volume_delete_on_termination, var.default_delete_on_termination)
-        disks                             = try(instance.disks, var.default_disks)
-        user_data                         = try(instance.user_data, var.default_user_data)
-      }
-    ]
-  ])
-
-  instances_map = { for instance in local.instances : instance.name => instance }
-
-  disk_attachments = flatten([
-    for vm_name, vm_config in local.instances_map : [
-      for disk_idx, disk in try(vm_config.disks, []) : {
-        vm_name     = vm_name
-        disk_config = disk
-        unique_key  = "${vm_name}-disk-${disk_idx}"
-      }
-    ]
-  ])
-}
-
-# Загрузочные тома
-resource "openstack_blockstorage_volume_v3" "boot_volume" {
-  for_each = local.instances_map
-
-  name              = "${each.key}-boot"
-  size              = each.value.boot_volume_size
-  image_id          = data.openstack_images_image_v2.image_id[each.key].id
-  availability_zone = try(each.value.az_hint, null)
-}
-
-# ВМ без block_device (тома подключаем отдельно)
 resource "openstack_compute_instance_v2" "vm" {
-  for_each = local.instances_map
+  for_each     = { for k, v in local.instances : v.name => v
+#  if try(v.image_name, null) != null
+  }
+#  for_each = var.VMs # == {} ? null : var.VMs
+  name                        = each.value.name
+  image_name                  = each.value.image_name
+  flavor_name                 = each.value.flavor_name == "" ? "${each.value.base_name}-flavor" : each.value.flavor_name
+#  flavor_id                   = openstack_compute_flavor_v2.flavor[each.value].id
+  key_pair                    = each.value.keypair_name == null ? openstack_compute_keypair_v2.keypair.name : each.value.keypair_name
+  security_groups             = each.value.security_groups == null ? [openstack_compute_secgroup_v2.secgroup.name] : each.value.security_groups
+  availability_zone_hints     = each.value.az_hint
+  metadata                    = each.value.metadata
+  user_data                   = each.value.user_data
 
-  name                    = each.value.name
-  flavor_name             = each.value.flavor_name == "" ? "${each.value.base_name}-flavor" : each.value.flavor_name
-  key_pair                = each.value.keypair_name == null ? openstack_compute_keypair_v2.keypair.name : each.value.keypair_name
-  security_groups         = each.value.security_groups == null ? [openstack_compute_secgroup_v2.secgroup.name] : each.value.security_groups
-  availability_zone_hints = each.value.az_hint
-  metadata                = each.value.metadata
-  user_data               = each.value.user_data
+ block_device {
+#    uuid                  = openstack_blockstorage_volume_v3.fc_hdd_sda[count.index].id
+#    name         = "fc_hdd_boot"
+    uuid                  = data.openstack_images_image_v2.image_id[each.key].id
+    volume_size           = each.value.boot_volume_size
+    source_type           = "image"
+    boot_index            = 0
+    destination_type      = "volume"
+    delete_on_termination = each.value.boot_volume_delete_on_termination
+#    device_name           = "/dev/vda"
+  }
+
+dynamic block_device {
+    for_each = [for volume in each.value.disks: {
+#      for_each = {}
+#      for key, value in var.volume : key
+        boot_index = try(volume.boot_index, -1)
+        size = try(volume.size, var.default_volume_size)
+        delete_on_termination = try(volume.delete_on_termination, var.default_delete_on_termination)
+        device_name           = try(volume.device_name, null)
+    }]
+    content {
+#        uuid = "volume-${each.value.base_name}-${block_device.value.boot_index}"
+        source_type           = "blank"
+        volume_size           = block_device.value.size
+        boot_index            = block_device.value.boot_index
+        destination_type      = "volume"
+        delete_on_termination = block_device.value.delete_on_termination
+        device_name           = block_device.value.device_name
+    }
+ }
 
   network {
     name = each.value.network_name
   }
-
-  depends_on = [openstack_compute_flavor_v2.flavor]
+  depends_on = [
+    openstack_compute_flavor_v2.flavor
+  ]
 }
 
-# Подключение загрузочных томов
-resource "openstack_compute_volume_attach_v2" "boot_attach" {
-  for_each = local.instances_map
-
-  instance_id = openstack_compute_instance_v2.vm[each.key].id
-  volume_id   = openstack_blockstorage_volume_v3.boot_volume[each.key].id
-  device      = "/dev/vda" # Загрузочный диск всегда vda
-}
-
-# Дополнительные тома
-resource "openstack_blockstorage_volume_v3" "additional_volume" {
-  for_each = { for disk in local.disk_attachments : disk.unique_key => disk }
-
-  name              = each.key
-  size              = try(each.value.disk_config.size, var.default_volume_size)
-  volume_type       = try(each.value.disk_config.volume_type, null)
-  availability_zone = try(each.value.disk_config.az, null)
-}
-
-# Подключение дополнительных томов
-resource "openstack_compute_volume_attach_v2" "volume_attachment" {
-  for_each = openstack_blockstorage_volume_v3.additional_volume
-
-  instance_id = openstack_compute_instance_v2.vm[each.value.vm_name].id
-  volume_id   = each.value.id
-  device      = try(each.value.disk_config.device_name,
-                  "/dev/vd${chr(98 + index([for d in local.disk_attachments : d.unique_key], each.key))}")
-}
-
-# Data source для образов
-data "openstack_images_image_v2" "image_id" {
-  for_each    = local.instances_map
-  name        = each.value.image_name
-  most_recent = true
-}
-
-# Flavor
-resource "openstack_compute_flavor_v2" "flavor" {
-  for_each = { for k, v in var.VMs : k => v if try(v.create_flavor, false) }
-
+resource "openstack_compute_flavor_v2" flavor {
+#  for_each    = { for k, v in local.instances : v.name => v }
+  for_each = var.VMs
   name        = "${each.key}-flavor"
-  vcpus       = try(each.value.flavor.vcpus, var.default_flavor.vcpus)
+#  flavor_id  = "2c-2r"
+#  name       = "2c-2r"
+#  vcpus      = try(instance.flavor.vcpus, var.default_flavor.vcpus)
+#  ram        = try(instance.falvor.ram, var.default_flavor.ram)
+  vcpus       = try(each.value.flavor.vcpus, var.default_flavor.vcpus) #each.value.flavor.vcpus
   ram         = try(each.value.flavor.ram, var.default_flavor.ram)
-  disk        = 0
-  is_public   = true
+  disk        = "0"
+  is_public   = "true"
   extra_specs = try(each.value.flavor.extra_specs, var.default_flavor.extra_specs)
+#  {
+#    "hw:mem_page_size" = "large"
+#  }
 }
 
-# Security group
+data "openstack_images_image_v2" "image_id" {
+  for_each    = { for k, v in local.instances : v.name => v }
+  name        = each.value.image_name
+}
+
+#security group
 resource "openstack_compute_secgroup_v2" "secgroup" {
-  name        = "terraform_security_group"
-  description = "Created by terraform"
-
-  rule {
-    from_port   = -1
-    to_port     = -1
-    ip_protocol = "icmp"
-    cidr        = "0.0.0.0/0"
-  }
-
-  rule {
-    from_port   = 1
-    to_port     = 65535
-    ip_protocol = "tcp"
-    cidr        = "0.0.0.0/0"
-  }
-
-  rule {
-    from_port   = 1
-    to_port     = 65535
-    ip_protocol = "udp"
-    cidr        = "0.0.0.0/0"
-  }
+ name = "terraform_security_group"
+ description = "Created by test terraform security group"
+# rule {
+#  from_port = 22
+#  to_port = 22
+#  ip_protocol = "tcp"
+#  cidr = "0.0.0.0/0"
+# }
+ rule {
+  from_port = -1
+  to_port = -1
+  ip_protocol = "icmp"
+  cidr = "0.0.0.0/0"
+ }
+ rule {
+  from_port = 1
+  to_port = 65535
+  ip_protocol = "udp"
+  cidr = "0.0.0.0/0"
+ }
+ rule {
+  from_port = 1
+  to_port = 65535
+  ip_protocol = "tcp"
+  cidr = "0.0.0.0/0"
+ }
 }
 
-# Key pair
+#key_pair
 resource "openstack_compute_keypair_v2" "keypair" {
-  name       = "terraform_keypair"
-  public_key = var.default_puplic_key
+  name        = "terraform_keypair"
+  public_key  = var.default_puplic_key
 }
