@@ -26,42 +26,42 @@ resource "openstack_compute_instance_v2" "vm" {
   depends_on = [openstack_compute_flavor_v2.flavor]
 }
 
-# Создаем дополнительные тома
+# Локальные переменные для томов
 locals {
-  volume_definitions = flatten([
-    for vm_name, vm_config in local.instances : [
+  volume_pairs = flatten([
+    for vm_key, vm_config in local.instances : [
       for disk_idx, disk in try(vm_config.disks, []) : {
-        vm_name      = vm_name
-        disk_key     = "${vm_name}-disk-${disk_idx}"
-        size         = try(disk.size, var.default_volume_size)
-        delete_flag  = try(disk.delete_on_termination, var.default_delete_on_termination)
-        device_name  = try(disk.device_name, null)
-        volume_type  = try(disk.volume_type, null)
-        az           = try(disk.az, null)
+        vm_key       = vm_key
+        disk_config  = disk
+        disk_key     = "${vm_key}-disk-${disk_idx}"
       }
     ]
   ])
+
+  volume_map = { for pair in local.volume_pairs : pair.disk_key => pair }
 }
 
+# Создание томов
 resource "openstack_blockstorage_volume_v3" "additional_volumes" {
-  for_each = { for vol in local.volume_definitions : vol.disk_key => vol }
+  for_each = local.volume_map
 
-  name              = each.value.disk_key
-  size              = each.value.size
-  volume_type       = each.value.volume_type
-  availability_zone = each.value.az
+  name              = each.key
+  size              = try(each.value.disk_config.size, var.default_volume_size)
+  volume_type       = try(each.value.disk_config.volume_type, null)
+  availability_zone = try(each.value.disk_config.az, null)
 }
 
-# Подключаем тома к инстансам
+# Подключение томов
 resource "openstack_compute_volume_attach_v2" "volume_attachments" {
   for_each = openstack_blockstorage_volume_v3.additional_volumes
 
-  instance_id = openstack_compute_instance_v2.vm[each.value.vm_name].id
+  instance_id = openstack_compute_instance_v2.vm[local.volume_map[each.key].vm_key].id
   volume_id   = each.value.id
-  device      = each.value.device_name != null ? each.value.device_name : "/dev/vd${chr(98 + index([for v in local.volume_definitions : v.disk_key], each.key))}"
+  device      = try(local.volume_map[each.key].disk_config.device_name,
+                   "/dev/vd${chr(98 + index(keys(local.volume_map), each.key))}")
 }
 
-# Ресурсы flavor, image, security group и keypair
+# Остальные ресурсы
 resource "openstack_compute_flavor_v2" "flavor" {
   for_each    = var.VMs
 
@@ -106,5 +106,5 @@ resource "openstack_compute_secgroup_v2" "secgroup" {
 
 resource "openstack_compute_keypair_v2" "keypair" {
   name       = "terraform_keypair"
-  public_key = var.default_puplic_key  # Исправлено на правильное имя переменной
+  public_key = var.default_puplic_key
 }
