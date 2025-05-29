@@ -41,11 +41,10 @@ resource "openstack_blockstorage_volume_v3" "additional_volume" {
 resource "openstack_compute_volume_attach_v2" "volume_attachment" {
   for_each = openstack_blockstorage_volume_v3.additional_volume
 
-  instance_id = openstack_compute_instance_v2.vm[each.value.name].id
+  instance_id = openstack_compute_instance_v2.vm[local.volume_attachments[each.key].vm_name].id
   volume_id   = each.value.id
-
-  # Если device начинается с /dev/ - используем как есть, иначе добавляем /dev/vd + имя
-  device = can(regex("^/dev/", each.value.device_name)) ? each.value.device_name : "/dev/vd${each.value.device_name}"
+# Безопасное определение устройства с явным приведением к map
+device = can(regex("^/dev/", each.value.device)) ? each.value.device : "/dev/vd${each.value.device}"
 }
 
 # Flavor
