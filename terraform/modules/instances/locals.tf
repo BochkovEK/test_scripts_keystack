@@ -27,5 +27,19 @@ locals {
   }
   ]
   ])
+
+  # Преобразуем в map с уникальными ключами
+  instances_map = { for instance in local.instances : instance.name => instance }
+
+  # Подготовка данных для дополнительных дисков
+  disk_attachments = flatten([
+    for vm_name, vm_config in local.instances_map : [
+      for disk_idx, disk in try(vm_config.disks, []) : {
+        vm_name     = vm_name
+        disk_config = disk
+        unique_key  = "${vm_name}-disk-${disk_idx}"
+      }
+    ]
+  ])
 }
 
