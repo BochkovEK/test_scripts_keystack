@@ -32,7 +32,6 @@ dynamic block_device {
         boot_index = try(volume.boot_index, -1)
         size = try(volume.size, var.default_volume_size)
         delete_on_termination = try(volume.delete_on_termination, var.default_delete_on_termination)
-        device_name           = try(volume.device_name, null)
     }]
     content {
 #        uuid = "volume-${each.value.base_name}-${block_device.value.boot_index}"
@@ -41,7 +40,6 @@ dynamic block_device {
         boot_index            = block_device.value.boot_index
         destination_type      = "volume"
         delete_on_termination = block_device.value.delete_on_termination
-        device_name           = block_device.value.device_name
     }
  }
 
