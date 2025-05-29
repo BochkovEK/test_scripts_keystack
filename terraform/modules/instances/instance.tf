@@ -1,3 +1,8 @@
+# Преобразуем local.instances в map, если это еще не сделано
+locals {
+  instances_map = { for idx, instance in local.instances : instance.name => instance }
+}
+
 resource "openstack_compute_instance_v2" "vm" {
   for_each = { for k, v in local.instances : k => v }
 
