@@ -41,7 +41,7 @@ locals {
   }}
 }
 
-# Основные инстансы
+# Instances
 resource "openstack_compute_instance_v2" "vm" {
   for_each = local.instances_map
 
@@ -70,6 +70,7 @@ resource "openstack_compute_instance_v2" "vm" {
   depends_on = [openstack_compute_flavor_v2.flavor]
 }
 
+# Additional volumes
 resource "openstack_blockstorage_volume_v3" "additional_volume" {
   for_each = local.volume_attachments
 
@@ -79,13 +80,14 @@ resource "openstack_blockstorage_volume_v3" "additional_volume" {
   availability_zone = each.value.az
 }
 
+# Attach additional volumes
 resource "openstack_compute_volume_attach_v2" "volume_attachment" {
   for_each = openstack_blockstorage_volume_v3.additional_volume
 
   instance_id = openstack_compute_instance_v2.vm[local.volume_attachments[each.key].vm_name].id
   volume_id   = each.value.id
   device      = try(local.volume_attachments[each.key].device_name,
-                  "/dev/vd${chr(98 + index(keys(local.volume_attachments), each.key))}")
+                  "/dev/${chr(98 + index(keys(local.volume_attachments), each.key))}")
 }
 
 # Flavor
@@ -100,7 +102,7 @@ resource "openstack_compute_flavor_v2" "flavor" {
   extra_specs = try(each.value.flavor.extra_specs, var.default_flavor.extra_specs)
 }
 
-# Data source для образов
+# Data source for images
 data "openstack_images_image_v2" "image_id" {
   for_each = local.instances_map
   name     = each.value.image_name
