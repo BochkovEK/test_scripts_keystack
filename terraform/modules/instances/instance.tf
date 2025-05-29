@@ -1,30 +1,39 @@
+# Создаем загрузочные тома
+resource "openstack_blockstorage_volume_v3" "boot_volume" {
+  for_each = local.instances_map
+
+  name              = "${each.key}-boot"
+  size              = each.value.boot_volume_size
+  image_id          = data.openstack_images_image_v2.image_id[each.key].id
+  volume_type       = try(each.value.boot_volume_type, null)
+  availability_zone = try(each.value.az_hint, null)
+}
+
+# Создаем инстансы без block_device
 resource "openstack_compute_instance_v2" "vm" {
   for_each = local.instances_map
 
-  name                    = each.value.name
-  image_name              = each.value.image_name
-  flavor_name             = each.value.flavor_name == "" ? "${each.value.base_name}-flavor" : each.value.flavor_name
-  key_pair                = each.value.keypair_name == null ? openstack_compute_keypair_v2.keypair.name : each.value.keypair_name
-  security_groups         = each.value.security_groups == null ? [openstack_compute_secgroup_v2.secgroup.name] : each.value.security_groups
-  availability_zone_hints = each.value.az_hint
-  metadata                = each.value.metadata
-  user_data               = each.value.user_data
-
-  block_device {
-    uuid                  = data.openstack_images_image_v2.image_id[each.key].id
-    volume_size           = each.value.boot_volume_size
-    source_type           = "image"
-    boot_index            = 0
-    destination_type      = "volume"
-    delete_on_termination = each.value.boot_volume_delete_on_termination
-    device_name           = each.value.boot_volume_device_name # Добавляем явное имя устройства для загрузочного диска
-  }
+  name            = each.value.name
+  flavor_name     = each.value.flavor_name == "" ? "${each.value.base_name}-flavor" : each.value.flavor_name
+  key_pair        = each.value.keypair_name == null ? openstack_compute_keypair_v2.keypair.name : each.value.keypair_name
+  security_groups = each.value.security_groups == null ? [openstack_compute_secgroup_v2.secgroup.name] : each.value.security_groups
+  metadata        = each.value.metadata
+  user_data       = each.value.user_data
 
   network {
     name = each.value.network_name
   }
 
   depends_on = [openstack_compute_flavor_v2.flavor]
+}
+
+# Подключаем загрузочные тома
+resource "openstack_compute_volume_attach_v2" "boot_attach" {
+  for_each = local.instances_map
+
+  instance_id = openstack_compute_instance_v2.vm[each.key].id
+  volume_id   = openstack_blockstorage_volume_v3.boot_volume[each.key].id
+  device      = "/dev/vda" # Загрузочный диск всегда будет /dev/vda
 }
 
 # Создаем дополнительные тома

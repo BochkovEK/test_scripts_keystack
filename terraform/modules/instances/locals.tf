@@ -13,7 +13,6 @@ locals {
         network_name                      = try(instance.network_name, var.default_network_name)
         boot_volume_size                  = try(instance.boot_volume_size, var.default_volume_size)
         boot_volume_delete_on_termination = try(instance.boot_volume_delete_on_termination, var.default_delete_on_termination)
-        boot_volume_device_name           = try(instance.boot_volume_device_name, null)
         disks                             = try(instance.disks, var.default_disks)
         user_data                         = try(instance.user_data, var.default_user_data)
       }
@@ -34,3 +33,5 @@ locals {
     ]
   ])
 }
+
+#boot_volume_device_name           = try(instance.boot_volume_device_name, null)
