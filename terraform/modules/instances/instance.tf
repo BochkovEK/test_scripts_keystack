@@ -60,7 +60,7 @@ resource "openstack_blockstorage_volume_v3" "additional_volume" {
 resource "openstack_compute_volume_attach_v2" "volume_attachment" {
   for_each = openstack_blockstorage_volume_v3.additional_volume
 
-  instance_id = openstack_compute_instance_v2.vm[each.value.vm_name].id
+  instance_id = openstack_compute_instance_v2.vm[local.volume_attachments[each.key].vm_name].id
   volume_id   = each.value.id
 
   # Если device указан в disk_config - используем его с префиксом /dev/, иначе /dev/vdb, /dev/vdc и т.д.
