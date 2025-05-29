@@ -21,6 +21,17 @@ locals {
 
   instances_map = {for instance in local.instances : instance.name => instance}
 
+  disk_attachments = flatten([
+  for vm_name, vm_config in local.instances_map : [
+  for disk_idx, disk in try(vm_config.disks, []) : {
+    vm_name     = vm_name
+    disk_config = disk
+    unique_key  = "${vm_name}-disk-${disk_idx}"
+  }
+  ]
+  ])
+
+    # Преобразуем disk_attachments в map с правильной структурой
   disk_attachments_map = {
     for idx, attachment in local.disk_attachments :
     attachment.unique_key => {
@@ -43,17 +54,17 @@ locals {
   }
   }
 
-#  # Модифицируем disk_attachments, добавляя device_name с префиксом /dev/
-#  formatted_disk_attachments = {
-#    for k, v in local.disk_attachments : k => {
-#      vm_name     = v.vm_name
-#      disk_config = {
-#        size        = try(v.disk_config.size, null)
-#        volume_type = try(v.disk_config.volume_type, null)
-#        az          = try(v.disk_config.az, null)
-#        device_name = try("/dev/${v.disk_config.device}", null) # Добавляем префикс здесь
-#      }
-#      unique_key  = v.unique_key
-#    }
-#  }
+  # Модифицируем disk_attachments, добавляя device_name с префиксом /dev/
+  formatted_disk_attachments = {
+    for k, v in local.disk_attachments : k => {
+      vm_name     = v.vm_name
+      disk_config = {
+        size        = try(v.disk_config.size, null)
+        volume_type = try(v.disk_config.volume_type, null)
+        az          = try(v.disk_config.az, null)
+        device_name = try("/dev/${v.disk_config.device}", null) # Добавляем префикс здесь
+      }
+      unique_key  = v.unique_key
+    }
+  }
 }
