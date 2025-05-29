@@ -21,15 +21,17 @@ locals {
 
   instances_map = {for instance in local.instances : instance.name => instance}
 
-  disk_attachments = flatten([
-  for vm_name, vm_config in local.instances_map : [
-  for disk_idx, disk in try(vm_config.disks, []) : {
-    vm_name     = vm_name
-    disk_config = disk
-    unique_key  = "${vm_name}-disk-${disk_idx}"
+  disk_attachments_map = {
+    for idx, attachment in local.disk_attachments :
+    attachment.unique_key => {
+      vm_name     = attachment.vm_name
+      disk_config = try(attachment.disk_config, {})
+      unique_key  = attachment.unique_key
+    }
   }
-  ]
-  ])
+
+  # Список букв для имен устройств
+  disk_letters = ["b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m"]
 
   volume_attachments = {
   for disk in local.disk_attachments : disk.unique_key => {
@@ -54,6 +56,4 @@ locals {
       unique_key  = v.unique_key
     }
   }
-  # Список букв для имен дисков (b, c, d,...)
-  disk_letters = ["b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m"]
 }

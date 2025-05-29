@@ -43,10 +43,9 @@ resource "openstack_compute_volume_attach_v2" "volume_attachment" {
 
   instance_id = openstack_compute_instance_v2.vm[local.volume_attachments[each.key].vm_name].id
   volume_id   = each.value.id
-  device      = try(
-    "/dev/${each.value.disk_config.device}",
-    "/dev/vd${local.disk_letters[index(keys(local.disk_attachments), each.key)]}"
-  )
+  device = can(local.disk_attachments_map[each.key].disk_config.device) ?
+           "/dev/${local.disk_attachments_map[each.key].disk_config.device}" :
+           "/dev/vd${local.disk_letters[index(keys(local.disk_attachments_map), each.key)]}"
 }
 
 # Flavor
