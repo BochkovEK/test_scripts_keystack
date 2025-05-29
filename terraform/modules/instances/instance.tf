@@ -31,6 +31,14 @@ locals {
       }
     ]
   ])
+
+  volume_attachments = { for disk in local.disk_attachments : disk.unique_key => {
+    vm_name     = disk.vm_name
+    size        = try(disk.disk_config.size, var.default_volume_size)
+    volume_type = try(disk.disk_config.volume_type, null)
+    az          = try(disk.disk_config.az, null)
+    device_name = try(disk.disk_config.device_name, null)
+  }}
 }
 
 # Основные инстансы
@@ -62,24 +70,22 @@ resource "openstack_compute_instance_v2" "vm" {
   depends_on = [openstack_compute_flavor_v2.flavor]
 }
 
-# Дополнительные тома
 resource "openstack_blockstorage_volume_v3" "additional_volume" {
-  for_each = { for disk in local.disk_attachments : disk.unique_key => disk }
+  for_each = local.volume_attachments
 
   name              = each.key
-  size              = try(each.value.disk_config.size, var.default_volume_size)
-  volume_type       = try(each.value.disk_config.volume_type, null)
-  availability_zone = try(each.value.disk_config.az, null)
+  size              = each.value.size
+  volume_type       = each.value.volume_type
+  availability_zone = each.value.az
 }
 
-# Подключение дополнительных томов (исправленная версия)
 resource "openstack_compute_volume_attach_v2" "volume_attachment" {
   for_each = openstack_blockstorage_volume_v3.additional_volume
 
-  instance_id = openstack_compute_instance_v2.vm[each.value.name].id
+  instance_id = openstack_compute_instance_v2.vm[local.volume_attachments[each.key].vm_name].id
   volume_id   = each.value.id
-  device      = try(each.value.disk_config.device_name, 
-                  "/dev/vd${chr(98 + index([for d in local.disk_attachments : d.unique_key], each.key))}")
+  device      = try(local.volume_attachments[each.key].device_name,
+                  "/dev/vd${chr(98 + index(keys(local.volume_attachments), each.key))}")
 }
 
 # Flavor
