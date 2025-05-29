@@ -1,3 +1,18 @@
+# to string for tf: https://dadroit.com/yaml-to-string/
+# description:
+# - change pass for ubuntu user by echo -n "1111" | openssl passwd -6 -stdin
+# - add dns servers (google)
+# - install fio, jq
+# !!! Note:
+#  - After creating the VM, cloud-init may still be executing the configured commands.
+#  - check log:
+#       tail -f /var/log/cloud-init-output.log
+#  - cloud-init status -> status: done
+#  - View disk_check logs if FAIL
+#       journalctl -u disk_check.service -f --since "5 min ago"
+#  - View disk_check logs if OK
+#       tail -f /var/log/disk_check.log
+
 #cloud-config
 chpasswd:
   expire: false
@@ -11,7 +26,7 @@ write_files:
   - path: /etc/systemd/resolved.conf
     content: |
       [Resolve]
-      DNS=8.8.8.8 8.8.4.4 77.88.8.8
+      DNS=8.8.8.8 8.8.4.4 77.88.8.8 127.0.0.53
       FallbackDNS=1.1.1.1
       Domains=~.
   # 1. Create systemd service file
