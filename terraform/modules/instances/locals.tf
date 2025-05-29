@@ -21,13 +21,11 @@ locals {
 
   instances_map = { for instance in local.instances : instance.name => instance }
 
-disk_attachments = flatten([
+  disk_attachments = flatten([
     for vm_name, vm_config in local.instances_map : [
       for disk_idx, disk in try(vm_config.disks, []) : {
         vm_name     = vm_name
-        disk_config = merge(disk, {
-          device_name = disk.device_name != null ? "/dev/${disk.device_name}" : null
-        })
+        disk_config = disk
         unique_key  = "${vm_name}-disk-${disk_idx}"
       }
     ]
