@@ -54,4 +54,6 @@ locals {
       unique_key  = v.unique_key
     }
   }
+  # Список букв для имен дисков (b, c, d,...)
+  disk_letters = ["b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m"]
 }

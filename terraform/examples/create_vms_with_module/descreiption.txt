@@ -154,12 +154,10 @@ az_hint                                 = "<az_name>:<hyper_name>"
     network_name                        = "<network_name>"
     boot_volume_size                    = <size> (default_volume_size = 5)
     boot_volume_delete_on_termination   = "true\false" (default "true")
-    boot_volume_device_name = "<device_name>" (exp: vdf)
     disks           = [
       {
         boot_index = <boot_index>
         size = <size>
-        delete_on_termination = <true\false>
         device_name = "<device_name>" (exp: vdb)
       },
     ]
