@@ -25,32 +25,52 @@ resource "openstack_compute_instance_v2" "vm" {
 #    device_name           = "/dev/vda"
   }
 
-dynamic block_device {
-    for_each = [for volume in each.value.disks: {
-#      for_each = {}
-#      for key, value in var.volume : key
-        boot_index = try(volume.boot_index, -1)
-        size = try(volume.size, var.default_volume_size)
-        delete_on_termination = try(volume.delete_on_termination, var.default_delete_on_termination)
-        device_name           = try(volume.device_name, null)
-    }]
-    content {
-#        uuid = "volume-${each.value.base_name}-${block_device.value.boot_index}"
-        source_type           = "blank"
-        volume_size           = block_device.value.size
-        boot_index            = block_device.value.boot_index
-        destination_type      = "volume"
-        delete_on_termination = block_device.value.delete_on_termination
-        device_name           = block_device.value.device_name
-    }
- }
+#dynamic block_device {
+#    for_each = [for volume in each.value.disks: {
+##      for_each = {}
+##      for key, value in var.volume : key
+#        boot_index = try(volume.boot_index, -1)
+#        size = try(volume.size, var.default_volume_size)
+#        delete_on_termination = try(volume.delete_on_termination, var.default_delete_on_termination)
+#        device_name           = try(volume.device_name, null)
+#    }]
+#    content {
+##        uuid = "volume-${each.value.base_name}-${block_device.value.boot_index}"
+#        source_type           = "blank"
+#        volume_size           = block_device.value.size
+#        boot_index            = block_device.value.boot_index
+#        destination_type      = "volume"
+#        delete_on_termination = block_device.value.delete_on_termination
+#        device_name           = block_device.value.device_name
+#    }
+# }
 
   network {
     name = each.value.network_name
   }
+
   depends_on = [
     openstack_compute_flavor_v2.flavor
   ]
+}
+
+resource "openstack_blockstorage_volume_v3" "additional_volume" {
+  for_each = { for disk in local.disk_attachments : disk.unique_key => disk }
+
+  name              = each.key
+  size              = try(each.value.disk.size, var.default_volume_size)
+  volume_type       = try(each.value.disk.volume_type, null)
+  availability_zone = try(each.value.disk.az, null)
+}
+
+# Подключение дополнительных томов
+resource "openstack_compute_volume_attach_v2" "volume_attachment" {
+  for_each = openstack_blockstorage_volume_v3.additional_volume
+
+  instance_id = openstack_compute_instance_v2.vm[each.value.vm_name].id
+  volume_id   = each.value.id
+  device      = try(each.value.disk.device_name, null)
+#                  "/dev/vd${chr(98 + index([for d in local.disk_attachments : d.unique_key], each.key))}")
 }
 
 resource "openstack_compute_flavor_v2" flavor {
