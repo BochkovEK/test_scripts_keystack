@@ -10,7 +10,6 @@ resource "openstack_compute_instance_v2" "vm" {
   metadata                = each.value.metadata
   user_data               = each.value.user_data
 
-  # Основной загрузочный диск
   block_device {
     uuid                  = data.openstack_images_image_v2.image_id[each.key].id
     volume_size           = each.value.boot_volume_size
@@ -27,40 +26,45 @@ resource "openstack_compute_instance_v2" "vm" {
   depends_on = [openstack_compute_flavor_v2.flavor]
 }
 
-# Создание дополнительных томов
+# Создаем дополнительные тома
+locals {
+  volume_definitions = flatten([
+    for vm_name, vm_config in local.instances : [
+      for disk_idx, disk in try(vm_config.disks, []) : {
+        vm_name      = vm_name
+        disk_key     = "${vm_name}-disk-${disk_idx}"
+        size         = try(disk.size, var.default_volume_size)
+        delete_flag  = try(disk.delete_on_termination, var.default_delete_on_termination)
+        device_name  = try(disk.device_name, null)
+        volume_type  = try(disk.volume_type, null)
+        az           = try(disk.az, null)
+      }
+    ]
+  ])
+}
+
 resource "openstack_blockstorage_volume_v3" "additional_volumes" {
-  for_each = {
-    for idx, disk in flatten([
-      for vm_name, vm_config in local.instances : [
-        for disk_idx, disk in vm_config.disks : {
-          vm_key      = vm_name
-          disk_key    = "${vm_name}-disk-${disk_idx}"
-          size        = try(disk.size, var.default_volume_size)
-          delete_flag = try(disk.delete_on_termination, var.default_delete_on_termination)
-          device_name = try(disk.device_name, null)
-        }
-      ] if try(length(vm_config.disks), 0) > 0
-    ]) : each.disk_key => each
-  }
+  for_each = { for vol in local.volume_definitions : vol.disk_key => vol }
 
   name              = each.value.disk_key
   size              = each.value.size
-  volume_type       = try(each.value.volume_type, null)
-  availability_zone = try(each.value.az, null)
+  volume_type       = each.value.volume_type
+  availability_zone = each.value.az
 }
 
-# Подключение томов
+# Подключаем тома к инстансам
 resource "openstack_compute_volume_attach_v2" "volume_attachments" {
   for_each = openstack_blockstorage_volume_v3.additional_volumes
 
-  instance_id = openstack_compute_instance_v2.vm[each.value.vm_key].id
+  instance_id = openstack_compute_instance_v2.vm[each.value.vm_name].id
   volume_id   = each.value.id
-  device      = each.value.device_name != null ? each.value.device_name : "/dev/vd${chr(98 + index(keys(openstack_blockstorage_volume_v3.additional_volumes), each.key))}"
+  device      = each.value.device_name != null ? each.value.device_name : "/dev/vd${chr(98 + index([for v in local.volume_definitions : v.disk_key], each.key))}"
 }
 
-# Остальные ресурсы без изменений
+# Ресурсы flavor, image, security group и keypair
 resource "openstack_compute_flavor_v2" "flavor" {
   for_each    = var.VMs
+
   name        = "${each.key}-flavor"
   vcpus       = try(each.value.flavor.vcpus, var.default_flavor.vcpus)
   ram         = try(each.value.flavor.ram, var.default_flavor.ram)
@@ -102,5 +106,5 @@ resource "openstack_compute_secgroup_v2" "secgroup" {
 
 resource "openstack_compute_keypair_v2" "keypair" {
   name       = "terraform_keypair"
-  public_key = var.default_public_key
+  public_key = var.default_puplic_key  # Исправлено на правильное имя переменной
 }
