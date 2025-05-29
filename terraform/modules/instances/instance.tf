@@ -43,7 +43,9 @@ resource "openstack_compute_volume_attach_v2" "volume_attachment" {
 
   instance_id = openstack_compute_instance_v2.vm[each.value.vm_name].id
   volume_id   = each.value.id
-  device      = "/dev/vd${element(local.disk_letters, index(local.disk_keys, each.key))}"
+
+  # Если device начинается с /dev/ - используем как есть, иначе добавляем /dev/vd + имя
+  device = can(regex("^/dev/", each.value.device)) ? each.value.device : "/dev/vd${each.value.device}"
 }
 
 # Flavor

@@ -31,9 +31,6 @@ locals {
   ]
   ])
 
-  disk_letters = ["b", "c", "d", "e", "f", "g"]
-  disk_keys    = keys({for k,v in local.disk_attachments: k => v})
-
   volume_attachments = {
   for disk in local.disk_attachments : disk.unique_key => {
     vm_name     = disk.vm_name
