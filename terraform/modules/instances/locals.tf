@@ -41,8 +41,8 @@ locals {
 #    }
 #  }
 
-  # Список букв для имен устройств
-  disk_letters = ["b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m"]
+#  # Список букв для имен устройств
+#  disk_letters = ["b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m"]
 
   volume_attachments = {
   for disk in local.disk_attachments : disk.unique_key => {
