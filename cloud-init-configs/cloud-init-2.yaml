@@ -94,10 +94,10 @@ runcmd:
   - systemctl daemon-reload
   - systemctl start disk_check.service
   - systemctl enable disk_check.service
-  - echo -e "------------------------------------\nServer listening on 5201\n------------------------------------" > /var/log/iperf3_port_1.log
-  - iperf3 -s -p 5201 --daemon --logfile --debug /var/log/iperf3_port_1.log"
-  - echo -e "------------------------------------\nServer listening on 5202\n------------------------------------" > /var/log/iperf3_port_2.log
-  - iperf3 -s -p 5202 --daemon --logfile --debug /var/log/iperf3_port_2.log"
+  - echo "------------------------------------\nServer listening on 5201\n------------------------------------" > /var/log/iperf3_port_1.log
+  - iperf3 -s -p 5201 --daemon --logfile --debug /var/log/iperf3_port_1.log
+  - echo "------------------------------------\nServer listening on 5203\n------------------------------------" > /var/log/iperf3_port_3.log
+  - iperf3 -s -p 5203 --daemon --logfile --debug /var/log/iperf3_port_3.log
   - echo "Custom cloud initialization commands completed!" >> /var/log/cloud-init-output.log
 
 # ----------------------- CUT TO PAST END -----------------------
