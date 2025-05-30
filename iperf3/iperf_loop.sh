@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # To start
-#   nohup ./iperf_loop.sh 192.168.1.100:5201 >> /tmp/iperf_client.log 2>&1 &
+#   nohup ./iperf_loop.sh 192.168.1.100:5201 > 2>&1 &
 # To check
 #   ss -ntp
 #   tail -f /tmp/iperf_client.log
