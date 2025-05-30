@@ -18,9 +18,13 @@ locals {
     disks                             = try(instance.disks, var.default_disks)
 #    user_data                         = try(instance.user_data, var.default_user_data)
     user_data = try(
-        templatefile(
-          instance.user_data.template_file
+      templatefile(
+          instance.user_data.template_file,
+          try(config.user_data.vars, {})  # Если vars нет, передаём пустой объект
         ),
+#      templatefile(
+#          instance.user_data.template_file
+#        ),
         # Иначе используем как есть (если это строка)
         instance.user_data, var.default_user_data)
   }
