@@ -162,8 +162,14 @@ az_hint                                 = "<az_name>:<hyper_name>"
       },
     ]
     metadata = {}
-    user_data = "#cloud-config\nhostname: instance_1.example.com\nfqdn: instance_1.example.com"
-
+    user_data =
+        #or string:
+            <<-EOT
+            #cloud-config
+            hostname: my-vm
+            EOT
+        #or template:
+            { template_file = "templates/cloud-init-2.yaml" }
 AZ:
     <aggr_name> = {
         az_name    = "az_name" #(exp: "az_1")
