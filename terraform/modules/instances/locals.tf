@@ -20,7 +20,7 @@ locals {
     user_data = try(
       templatefile(
           instance.user_data.template_file,
-          try(config.user_data.vars, {})  # Если vars нет, передаём пустой объект
+          try(instance.user_data.vars, {})  # Если vars нет, передаём пустой объект
         ),
 #      templatefile(
 #          instance.user_data.template_file
