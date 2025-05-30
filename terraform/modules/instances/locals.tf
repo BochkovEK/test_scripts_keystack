@@ -23,7 +23,7 @@ locals {
           instance.user_data.vars
         ),
         # Иначе используем как есть (если это строка)
-        instance.user_data)
+        instance.user_data, null)
   }
   ]
   ])
