@@ -82,26 +82,10 @@ variable "default_metadata" {
   }
 }
 
-#variable "default_server_group_id" {
-#  description = "Default server group id"
-#  default     = ""
-#}
-
-# server_group = {
-#   name = "affinity_group"
-#   policies = []
-# }
-
-
 variable "VMs" {
   description = "VMs list source"
   default = {}
 }
-
-#variable "AZs" {
-#  description = "AZs list source"
-#  default = {}
-#}
 
 # user_data = "#cloud-config\nhostname: instance_1.example.com\nfqdn: instance_1.example.com"
 variable "default_user_data" {
