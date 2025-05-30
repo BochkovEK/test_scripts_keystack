@@ -19,8 +19,7 @@ locals {
 #    user_data                         = try(instance.user_data, var.default_user_data)
     user_data = try(
         templatefile(
-          instance.user_data.template_file,
-          instance.user_data.vars
+          instance.user_data.template_file
         ),
         # Иначе используем как есть (если это строка)
         instance.user_data, var.default_user_data)
