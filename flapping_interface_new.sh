@@ -19,8 +19,8 @@ default_sleep_time=5
 echo "Start flapping interface test script..."
 echo -e "${yellow}[WARNING]: This script must be executed on the node where the interface is being disabled(flapping).${normal}"
 
-# Check interface status (UP/DOWN/UNKNOWN)
-check_interface_status() {
+# Check interface state (UP/DOWN/UNKNOWN)
+check_interface_state() {
     local interface=$1
     local state
 
@@ -44,12 +44,12 @@ check_all_interfaces() {
     local error_flag=0
 
     for interface in "${interfaces[@]}"; do
-        check_interface_status "$interface"
-        local status=$?
+        check_interface_state "$interface"
+        local state=$?
 
-        if [ $status -eq 2 ]; then
+        if [ $state -eq 2 ]; then
             error_flag=1
-        elif [ $status -eq 1 ]; then
+        elif [ $state -eq 1 ]; then
             error_flag=1
         fi
     done
@@ -98,8 +98,8 @@ if [ ! "$found" = true ]; then
     exit 1
 fi
 
-# Show initial interface status
-check_interface_status "$TS_INTERFACE_NAME"
+# Show initial interface state
+check_interface_state "$TS_INTERFACE_NAME"
 
 # Display all available interfaces
 echo -e "\nAll available interfaces:"
@@ -118,12 +118,12 @@ for (( c=1; c<=${TS_NUMBER_OF_CYCLES}; c++ )); do
     echo "Cycle $c/$TS_NUMBER_OF_CYCLES"
     echo "Bringing interface $TS_INTERFACE_NAME down"
     ip link set "$TS_INTERFACE_NAME" down
-    check_interface_status "$TS_INTERFACE_NAME"
+    check_interface_state "$TS_INTERFACE_NAME"
     sleep "$TS_SLEEP_TIME"
 
     echo "Bringing interface $TS_INTERFACE_NAME up"
     ip link set "$TS_INTERFACE_NAME" up
-    check_interface_status "$TS_INTERFACE_NAME"
+    check_interface_state "$TS_INTERFACE_NAME"
     sleep "$TS_SLEEP_TIME"
 
     date
