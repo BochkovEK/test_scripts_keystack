@@ -202,8 +202,13 @@ for image_name in "${public_images_list[@]}"; do
 done
 
 # Create network
+echo "Check external network: $NETWORK"
 export NETWORK=$NETWORK
 if ! bash $utils_dir/openstack/create_pub_network.sh; then
+  export TS_YES_NO_QUESTION="Do you want to skip check external network [Yes]:"
+  yes_no_input=$(bash $utils_dir/yes_no_answer.sh)
+
+  if [ ! "$yes_no_input" = "true" ]; then
   exit 1
 fi
 
