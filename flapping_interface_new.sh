@@ -31,6 +31,7 @@ check_interface_state() {
         return 0
     elif [[ "$state" == "DOWN" ]]; then
         echo -e "${red}$interface: DOWN${normal}"
+
         return 1
     else
         echo -e "${yellow}$interface: UNKNOWN (state: ${state:-N/A})${normal}"
@@ -53,6 +54,11 @@ check_all_interfaces() {
             error_flag=1
         fi
     done
+
+    if [ $error_flag -eq 1 ]; then
+      echo -e "${yellow}[NOTICE] To try raiseup interface:
+      ip link set <interface_name> up${normal}"
+    fi
 
     return $error_flag
 }
@@ -106,7 +112,7 @@ echo -e "\nAll available interfaces:"
 check_all_interfaces "${ALL_INTERFACES[@]}"
 
 # Confirm parameters before starting
-echo "Start flapping with the following parameters?
+echo -e "\nStart flapping with the following parameters?
   TS_INTERFACE_NAME:    $TS_INTERFACE_NAME
   TS_NUMBER_OF_CYCLES:  $TS_NUMBER_OF_CYCLES
   TS_SLEEP_TIME:        $TS_SLEEP_TIME
