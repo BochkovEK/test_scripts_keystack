@@ -106,13 +106,38 @@ Check_openstack_cli () {
   fi
 }
 
-check_consul_log_one_node () {
+#check_consul_log_one_node () {
+#  ssh -o StrictHostKeyChecking=no $USER@$1 'echo -e "\033[0;35m$(date)\033[0m
+#\033[0;35mLogs from: $(hostname)\033[0m
+#\033[0;35mFor check this log: \033[0m
+#\033[0;35mssh $(hostname) less /var/log/kolla/autoevacuate.log | less\033[0m"'
+#  ssh -o StrictHostKeyChecking=no $USER@$1 "sudo sh -c 'tail -f /var/log/kolla/autoevacuate.log'" | \
+#    sed --unbuffered \
+#    -e 's/\(.*Force off.*\)/\o033[31m\1\o033[39m/' \
+#    -e 's/\(.*Server.*\)/\o033[33m\1\o033[39m/' \
+#    -e 's/\(.*Evacuating instance.*\)/\o033[33m\1\o033[39m/' \
+#    -e 's/\(.*IPMI "power off".*\)/\o033[31m\1\o033[39m/' \
+#    -e 's/\(.*CRITICAL.*\)/\o033[31m\1\o033[39m/' \
+#    -e 's/\(.*ERROR.*\)/\o033[31m\1\o033[39m/' \
+#    -e 's/\(.*Not enough.*\)/\o033[31m\1\o033[39m/' \
+#    -e 's/\(.*Too many.*\)/\o033[31m\1\o033[39m/' \
+#    -e 's/\(.*disabled,.*\)/\o033[33m\1\o033[39m/' \
+#    -e 's/\(.*down.*\)/\o033[33m\1\o033[39m/' \
+#    -e 's/\(.*failed: True.*\)/\o033[33m\1\o033[39m/' \
+#    -e 's/\(.*WARNING.*\)/\o033[33m\1\o033[39m/' \
+#    -e 's/\(.*status_code\: 400.*\)/\o033[33m\1\o033[39m/' \
+#    -e 's/\(.*Starting fence.*\)/\o033[33m\1\o033[39m/' \
+#    -e 's/\(\([1-9]\|[0-9]\) computes in maintenance\)/\o033[33m\1\o033[39m/' \
+#}
+
+check_consul_log_one_node() {
   ssh -o StrictHostKeyChecking=no $USER@$1 'echo -e "\033[0;35m$(date)\033[0m
 \033[0;35mLogs from: $(hostname)\033[0m
 \033[0;35mFor check this log: \033[0m
 \033[0;35mssh $(hostname) less /var/log/kolla/autoevacuate.log | less\033[0m"'
   ssh -o StrictHostKeyChecking=no $USER@$1 "sudo sh -c 'tail -f /var/log/kolla/autoevacuate.log'" | \
     sed --unbuffered \
+    -e 's/\([1-9][0-9]* computes in maintenance\)/\o033[33m\1\o033[39m/' \
     -e 's/\(.*Force off.*\)/\o033[31m\1\o033[39m/' \
     -e 's/\(.*Server.*\)/\o033[33m\1\o033[39m/' \
     -e 's/\(.*Evacuating instance.*\)/\o033[33m\1\o033[39m/' \
@@ -125,9 +150,8 @@ check_consul_log_one_node () {
     -e 's/\(.*down.*\)/\o033[33m\1\o033[39m/' \
     -e 's/\(.*failed: True.*\)/\o033[33m\1\o033[39m/' \
     -e 's/\(.*WARNING.*\)/\o033[33m\1\o033[39m/' \
-    -e 's/\(.*status_code\: 400.*\)/\o033[33m\1\o033[39m/' \
-    -e 's/\(.*Starting fence.*\)/\o033[33m\1\o033[39m/' \
-    -e 's/\(\([1-9]\|[0-9]\) computes in maintenance\)/\o033[33m\1\o033[39m/' \
+    -e 's/\(.*status_code: 400.*\)/\o033[33m\1\o033[39m/' \
+    -e 's/\(.*Starting fence.*\)/\o033[33m\1\o033[39m/'
 }
 
 check_log_on_all_ctrl () {
