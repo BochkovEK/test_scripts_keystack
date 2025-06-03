@@ -115,6 +115,7 @@ chack_consul_log_one_node () {
     sed --unbuffered \
     -e 's/\(\([1-9]\|\d\)\s+computes in maintenance\)/\o033[33m\1\o033[39m/' \
     -e 's/\([1-9][0-9]* computes in maintenance\)/\o033[33m\1\o033[39m/' \
+    -e 's/\([1-9]\|[0-9]\) computes in maintenance/\o033[33m&\o033[39m/' \
     -e 's/\(.*Force off.*\)/\o033[31m\1\o033[39m/' \
     -e 's/\(.*Server.*\)/\o033[33m\1\o033[39m/' \
     -e 's/\(.*Evacuating instance.*\)/\o033[33m\1\o033[39m/' \
