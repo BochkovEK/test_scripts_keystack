@@ -131,6 +131,7 @@ Check_openstack_cli () {
 #}
 
 check_consul_log_one_node() {
+  echo "!!!ONE node"
   ssh -o StrictHostKeyChecking=no $USER@$1 'echo -e "\033[0;35m$(date)\033[0m
 \033[0;35mLogs from: $(hostname)\033[0m
 \033[0;35mFor check this log: \033[0m
