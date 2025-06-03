@@ -55,12 +55,12 @@ check_all_interfaces() {
             error_flag=1
         fi
     done
+    echo "---------------------"
 
     if [ $error_flag -eq 1 ]; then
       echo -e "${yellow}[NOTICE] To try raiseup interface:
       ip link set <interface_name> up${normal}"
     fi
-    echo "---------------------"
     return $error_flag
 }
 
