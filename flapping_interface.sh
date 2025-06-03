@@ -40,8 +40,10 @@ fi
 # Функция для проверки статуса интерфейса
 check_interface_status() {
     local status
-    status=$(ip -o link show "$TS_INTERFACE_NAME" | awk '{print $9}')
-    if [[ "$status" == "UP" ]]; then
+#    status=$(ip -o link show "$TS_INTERFACE_NAME" | awk '{print $9}')
+    status=$(ip -o link show "$TS_INTERFACE_NAME" | grep -P "\sUP\s")
+#    if [[ "$status" == "UP" ]]; then
+     if [ -n "$status" ]; then
         echo -e "${green}Current status: $TS_INTERFACE_NAME is UP${normal}"
     else
         echo -e "${red}Current status: $TS_INTERFACE_NAME is DOWN${normal}"
