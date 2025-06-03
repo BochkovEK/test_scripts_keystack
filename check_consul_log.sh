@@ -49,8 +49,8 @@ while [ -n "$1" ]; do
       -u, user      set user for ssh access
 
       Example satart command:
-        bash $HOME/test_scripts_keystack/chack_consul_log.sh <ctrl_01> <check_period> <log last lines number>
-        bash $HOME/test_scripts_keystack/chack_consul_log.sh ebochkov-ks-sber-ctrl-01 10 25
+        bash $HOME/test_scripts_keystack/check_consul_log.sh <ctrl_01> <check_period> <log last lines number>
+        bash $HOME/test_scripts_keystack/check_consul_log.sh ebochkov-ks-sber-ctrl-01 10 25
 "
 #      -e,   -send_env       \"<ENV_NAME=env_value>\"
         exit 0
@@ -106,14 +106,13 @@ Check_openstack_cli () {
   fi
 }
 
-chack_consul_log_one_node () {
+check_consul_log_one_node () {
   ssh -o StrictHostKeyChecking=no $USER@$1 'echo -e "\033[0;35m$(date)\033[0m
 \033[0;35mLogs from: $(hostname)\033[0m
 \033[0;35mFor check this log: \033[0m
 \033[0;35mssh $(hostname) less /var/log/kolla/autoevacuate.log | less\033[0m"'
   ssh -o StrictHostKeyChecking=no $USER@$1 "sudo sh -c 'tail -f /var/log/kolla/autoevacuate.log'" | \
     sed --unbuffered \
-    -e 's/\(\([1-9]\|[0-9]\) computes in maintenance\)/\o033[33m\1\o033[39m/' \
     -e 's/\(.*Force off.*\)/\o033[31m\1\o033[39m/' \
     -e 's/\(.*Server.*\)/\o033[33m\1\o033[39m/' \
     -e 's/\(.*Evacuating instance.*\)/\o033[33m\1\o033[39m/' \
@@ -127,7 +126,8 @@ chack_consul_log_one_node () {
     -e 's/\(.*failed: True.*\)/\o033[33m\1\o033[39m/' \
     -e 's/\(.*WARNING.*\)/\o033[33m\1\o033[39m/' \
     -e 's/\(.*status_code\: 400.*\)/\o033[33m\1\o033[39m/' \
-    -e 's/\(.*Starting fence.*\)/\o033[33m\1\o033[39m/'
+    -e 's/\(.*Starting fence.*\)/\o033[33m\1\o033[39m/' \
+    -e 's/\(\([1-9]\|[0-9]\) computes in maintenance\)/\o033[33m\1\o033[39m/' \
 }
 
 check_log_on_all_ctrl () {
@@ -137,7 +137,7 @@ check_log_on_all_ctrl () {
 \033[0;35mLogs from: $(hostname)\033[0m
 \033[0;35mFor check this log: \033[0m
 \033[0;35mssh $(hostname) less /var/log/kolla/autoevacuate.log | less\033[0m"'
-    chack_consul_log_one_node $ctrl
+    check_consul_log_one_node $ctrl
   done
 }
 
@@ -196,5 +196,5 @@ if (( $i > 1 )); then
   check_log_on_all_ctrl
 else
   echo -e "${cyan}Check logs on $ctrl...${normal}"
-  chack_consul_log_one_node $ctrl
+  check_consul_log_one_node $ctrl
 fi
