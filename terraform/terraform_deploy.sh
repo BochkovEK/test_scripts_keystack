@@ -209,7 +209,8 @@ if ! bash $utils_dir/openstack/create_pub_network.sh; then
   yes_no_input=$(bash $utils_dir/yes_no_answer.sh)
 
   if [ ! "$yes_no_input" = "true" ]; then
-  exit 1
+    exit 1
+  fi
 fi
 
 echo -E "${green}
