@@ -113,7 +113,7 @@ chack_consul_log_one_node () {
 \033[0;35mssh $(hostname) less /var/log/kolla/autoevacuate.log | less\033[0m"'
   ssh -o StrictHostKeyChecking=no $USER@$1 "sudo sh -c 'tail -f /var/log/kolla/autoevacuate.log'" | \
     sed --unbuffered \
-    -e 's/\([1-9]\|[0-9]\) computes in maintenance/\o033[31m\1\o033[39m/' \
+    -e 's/\(\([1-9]\|[0-9]\) computes in maintenance\)/\o033[33m\1\o033[39m/' \
     -e 's/\(.*Force off.*\)/\o033[31m\1\o033[39m/' \
     -e 's/\(.*Server.*\)/\o033[33m\1\o033[39m/' \
     -e 's/\(.*Evacuating instance.*\)/\o033[33m\1\o033[39m/' \
