@@ -44,6 +44,7 @@ check_all_interfaces() {
     local interfaces=("$@")
     local error_flag=0
 
+    echo "---------------------"
     for interface in "${interfaces[@]}"; do
         check_interface_state "$interface"
         local state=$?
@@ -59,7 +60,7 @@ check_all_interfaces() {
       echo -e "${yellow}[NOTICE] To try raiseup interface:
       ip link set <interface_name> up${normal}"
     fi
-
+    echo "---------------------"
     return $error_flag
 }
 
