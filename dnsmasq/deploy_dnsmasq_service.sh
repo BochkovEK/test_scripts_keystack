@@ -149,7 +149,7 @@ done
 
 get_var () {
   echo "Get vars..."
-  if [ "$DONT_ASK" = false ]; then
+  if [ "$DONT_ASK" = false ] && [ "$HOST_EXIST" = false ]; then
     if [[ -z "${DNS_IP_MAPPING_FILE}" ]]; then
       read -rp "Enter dns ip mapping file [$DNS_IP_MAPPING_FILE]: " DNS_IP_MAPPING_FILE
     fi
