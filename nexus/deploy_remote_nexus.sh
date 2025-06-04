@@ -268,9 +268,12 @@ nexus_bootstrap () {
 
   #Change nginx conf
   echo "Changing nginx conf..."
-  sed -i "s/DOMAIN/$DOMAIN/g" $script_dir/nginx_https.conf
-  sed -i "s/LCM_NEXUS_NAME/$REMOTE_NEXUS_NAME/g" $script_dir/nginx_https.conf
-  #sed -i -e "s@OUTPUT_CERTS_DIR@$OUTPUT_CERTS_DIR@g" $script_dir/nginx_https.conf
+  if [ ! -f $script_dir/nginx_https.conf ]; then
+    cp $script_dir/nginx_https_init.conf  $script_dir/nginx_https.conf
+    sed -i "s/DOMAIN/$DOMAIN/g" $script_dir/nginx_https.conf
+    sed -i "s/LCM_NEXUS_NAME/$REMOTE_NEXUS_NAME/g" $script_dir/nginx_https.conf
+    #sed -i -e "s@OUTPUT_CERTS_DIR@$OUTPUT_CERTS_DIR@g" $script_dir/nginx_https.conf
+  fi
 }
 
 create_repos () {
