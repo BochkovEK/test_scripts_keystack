@@ -42,8 +42,9 @@ while [ -n "$1" ]; do
   case "$1" in
     --help) echo -E "
       Remote nexus deploy
-        1) Change certs_envs:
-          vi $HOME/test_scripts_keystack/self_signed_certs/certs_envs
+        1) Copy and change certs_envs_template from test_scripts_keystack/self_signed_certs/certs_envs_template:
+          cp $HOME/test_scripts_keystack/self_signed_certs/certs_envs_template ./certs_envs
+          vi ./certs_envs
         2) Deploy nexus:
           bash $HOME/test_scripts_keystack/nexus/deploy_remote_nexus.sh
         3) For installer.sh use remote nexus copy $HOME/certs to $HOME/installer/ on lcm:
