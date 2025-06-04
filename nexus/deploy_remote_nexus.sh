@@ -16,10 +16,10 @@
 
 #!!! docker exec -it nexus cat /nexus-data/admin.password
 
-green=`tput setaf 2`
-yellow=`tput setaf 3`
-red=`tput setaf 1`
-normal=`tput sgr0`
+green=$(tput setaf 2)
+yellow=$(tput setaf 3)
+red=$(tput setaf 1)
+normal=$(tput sgr0)
 
 self_signed_certs_folder="self_signed_certs"
 generate_self_signed_certs_script="generate_self_signed_certs.sh"
@@ -133,12 +133,25 @@ get_init_vars () {
   read -p "Press enter to continue: "
 }
 
-waiting_for_nexus_readiness () {
-  echo -n Waiting for Nexus readiness...
-  while [ "$(curl -isf --cacert "$CERTS_DIR"/root/ca.crt https://"$REMOTE_NEXUS_NAME"."$DOMAIN"/service/rest/v1/status | awk 'NR==1 {print $2}')"  != "200" ]; do
-    echo -n .; sleep 5
+#waiting_for_nexus_readiness () {
+#  echo -n Waiting for Nexus readiness...
+#  while [ "$(curl -isf --cacert "$CERTS_DIR"/root/ca.crt https://"$REMOTE_NEXUS_NAME"."$DOMAIN"/service/rest/v1/status | awk 'NR==1 {print $2}')"  != "200" ]; do
+#    echo -n .; sleep 5
+#  done
+#  echo .
+#  echo -e "${green}Nexus is Ready!${normal}"
+#
+#  echo -e "${yellow}\nTo get initial nexus admin password:${normal}"
+#  echo "docker exec -it nexus cat /nexus-data/admin.password"
+#  echo
+#}
+
+waiting_for_nexus_readiness() {
+  echo -n "Waiting for Nexus readiness..."
+  while [ "$(curl -isf --cacert "$CERTS_DIR/root/ca.crt" "https://$REMOTE_NEXUS_NAME.$DOMAIN/service/rest/v1/status" | awk 'NR==1 {print $2}')" != "200" ]; do
+    echo -n "."; sleep 5
   done
-  echo .
+  echo "."
   echo -e "${green}Nexus is Ready!${normal}"
 
   echo -e "${yellow}\nTo get initial nexus admin password:${normal}"
@@ -239,7 +252,7 @@ check_and_install_docker () {
   exit 1
 }
 
-nexus_bootstarp () {
+nexus_bootstrap () {
 
   check_and_install_docker
 
@@ -282,7 +295,7 @@ if [ "$certs_for_nexus_exists" = false ]; then
   fi
 fi
 
-nexus_bootstarp
+nexus_bootstrap
 check_started_containers
 #nexus_docker_up
 #waiting_for_nexus_readiness
