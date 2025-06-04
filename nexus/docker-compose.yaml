@@ -7,9 +7,9 @@ services:
   nginx:
     image: nginx
     container_name: nginx
-#    ports:
-#      - "80:80"
-#      - "443:443"
+    ports:
+      - "80:80"
+      - "443:443"
     volumes:
       - $HOME/test_scripts_keystack/nexus/nginx_https.conf:/etc/nginx/nginx.conf
       - $HOME/certs:/etc/certs
@@ -24,7 +24,7 @@ services:
     restart: always
     volumes:
       - "nexus-data:/sonatype-work"
-    ports:
-      - "8081:8081"
-      - "8085:8085"
-      - "5000:5000"
+#    ports:
+#      - "8081:8081"
+#      - "8085:8085"
+#      - "5000:5000"

@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# Example usage: bash ./nuttcp_logger.sh 10.224.54.80 -u -i1 -T10 -R 25m -f-drops
+# Example usage on a server: nuttcp -S
+# Example usage on a client: bash ./nuttcp_logger.sh 10.224.54.80 -u -i1 -T10 -R 25m -f-drops
 
 #-u    UDP protocol
 #-R    Rate limit (m|M)bps
