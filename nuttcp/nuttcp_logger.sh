@@ -42,7 +42,7 @@ fi
 shift  # Remove first argument (IP), pass remaining to nuttcp
 
 # Write test header
-echo "===== Test started at $(date) =====" >> "$LOG_FILE"
+echo "===== Test started at $(date) - Server: $SERVER =====" >> "$LOG_FILE"
 
 # Run nuttcp with parameters and log output
 nuttcp "$@" "$SERVER" | while read -r line; do
@@ -50,4 +50,4 @@ nuttcp "$@" "$SERVER" | while read -r line; do
 done
 
 # Write test footer
-echo "===== Test completed at $(date) =====" >> "$LOG_FILE"
+echo "===== Test completed at $(date) - Server: $SERVER =====" >> "$LOG_FILE"
