@@ -31,6 +31,7 @@ echo -e "\n========= Start ping to $IP at $(date '+%d/%m/%Y %H:%M:%S') =========
 
 while true; do
   if ping -c 2 $IP &> /dev/null; then
+    printf "%40s\n" "${green}There is a connection with $IP - success${normal}"
     printf "%40s\n" "${green}There is a connection with $IP - success${normal}" >> $PING_LOG_FILE
   else
     printf "%40s\n" "${red}No connection with $IP - error!${normal}"
