@@ -25,7 +25,7 @@ if ! validate_ip "$IP"; then
     exit 1
 fi
 
-[[ -z $PING_LOG_FILE ]] && PING_LOG_FILE=/tmp/ping_VM_$IP_$(date '+%Y-%m-%d').log
+[[ -z $PING_LOG_FILE ]] && PING_LOG_FILE="/tmp/ping_VM_${IP}_$(date '+%Y-%m-%d').log"
 
 echo -e "\n========= Start ping to $IP at $(date '+%d/%m/%Y %H:%M:%S') =========\n" >> $PING_LOG_FILE
 
