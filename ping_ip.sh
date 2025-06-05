@@ -31,13 +31,14 @@ echo -e "\n========= Start ping to $IP at $(date '+%d/%m/%Y %H:%M:%S') =========
 
 while true; do
   if ping -c 2 $IP &> /dev/null; then
-    printf "%40s\n" "${green}There is a connection with $IP - success${normal}"
+#    printf "%40s\n" "${green}There is a connection with $IP - success${normal}"
     printf "%40s\n" "${green}There is a connection with $IP - success${normal}" >> $PING_LOG_FILE
   else
-    printf "%40s\n" "${red}No connection with $IP - error!${normal}"
-    dt=$(date '+%d/%m/%Y %H:%M:%S')
-    echo $dt >> $script_dir/ping_states_with_$IP.log
-    echo "No connection with $IP - error!" >> $PING_LOG_FILE
+#    printf "%40s\n" "${red}No connection with $IP at $(date '+%d/%m/%Y %H:%M:%S') - error!${normal}"
+    printf "%40s\n" "${red}No connection with $IP at $(date '+%d/%m/%Y %H:%M:%S') - error!${normal}" >> $PING_LOG_FILE
+#    dt=$(date '+%d/%m/%Y %H:%M:%S')
+#    echo $dt >> $script_dir/ping_states_with_$IP.log
+#    echo "No connection with $IP - error!" >> $PING_LOG_FILE
   fi
   sleep 1
 done
