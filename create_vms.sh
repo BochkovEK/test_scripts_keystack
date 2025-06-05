@@ -201,19 +201,6 @@ error_output () {
   exit 1
 }
 
-## Check openrc file
-#check_and_source_openrc_file () {
-#    echo "Check openrc file and source it..."
-#    check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
-#    if [ -z "$check_openrc_file" ]; then
-#        echo -E "${yellow}openrc file not found in $OPENRC_PATH${normal}"
-#        echo "Try to get 'openrc' from Vault"
-#        printf "%s\n" "${red}openrc file not found in $OPENRC_PATH - ERROR!${normal}"
-#        exit 1
-#    fi
-#    source $OPENRC_PATH
-#    #export OS_PROJECT_NAME=$PROJECT
-#}
 
 check_and_source_openrc_file () {
 #  echo "check openrc"
@@ -377,12 +364,12 @@ check_project () {
   else
     printf "%s\n" "${green}User: \"$TEST_USER\" exist${normal}"
   fi
-  echo "Check for role: \"$ROLE\" in project: \"$PROJECT\""
+  echo "Check for role assignment: \"$ROLE\" for user: \"$TEST_USER\" in project: \"$PROJECT\""
   ROLE_IN_PROJECT=$(openstack role assignment list --user $TEST_USER --project $PROJECT --names|grep -E "$ROLE(.)+$TEST_USER(.)+$PROJECT")
   if [[ -z $ROLE_IN_PROJECT ]]; then
-    printf "%s\n" "${orange}Role: \"$ROLE\" does not exist in project: \"$PROJECT\"${normal}"
+    printf "%s\n" "${orange}Role: \"$ROLE\" is not assigned to user: \"$TEST_USER\" in project: \"$PROJECT\"${normal}"
     [[ ! $DONT_ASK = "true" ]] && {
-      echo "Сreate role: \"$ROLE\" in project: \"$PROJECT\"?";
+      echo "Assign the role: \"$ROLE\" to user: \"$TEST_USER\" in project: \"$PROJECT\"?";
       read -p "Press enter to continue: ";
       }
     echo "Сreating role: \"$ROLE\" in project..."

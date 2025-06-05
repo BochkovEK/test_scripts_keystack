@@ -77,8 +77,4 @@ runcmd:
   - systemctl daemon-reload
   - systemctl start disk_check.service
   - systemctl enable disk_check.service
-  - echo "Start iperf server on 5201"
-  - iperf3 -s -p 5201 --daemon --logfile /var/log/iperf3_port_1.log
-  - echo "Start iperf server on 5201"
-  - iperf3 -s -p 5203 --daemon --logfile /var/log/iperf3_port_3.log
   - echo "Custom cloud initialization commands completed!" >> /var/log/cloud-init-output.log
