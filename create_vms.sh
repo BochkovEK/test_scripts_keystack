@@ -372,7 +372,7 @@ check_project () {
       echo "Assign the role: \"$ROLE\" to user: \"$TEST_USER\" in project: \"$PROJECT\"?";
       read -p "Press enter to continue: ";
       }
-    echo "Сreating role: \"$ROLE\" in project..."
+    echo "Assign role: \"$ROLE\" to user: \"$TEST_USER\" in project \"$PROJECT\" ..."
     openstack role add --project $PROJECT --user $TEST_USER $ROLE
     #Add admin user to project to view it in horizon by admin user authorization
     openstack role add --project $PROJECT --user admin admin
