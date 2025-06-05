@@ -5,7 +5,7 @@
 
 #-u    UDP protocol
 #-R    Rate limit (m|M)bps
-#-T 10 Test duration (seconds)
+#-T 10 Test duration (seconds) or 1H (one hour)
 #-i 1  Interval (seconds between reports)
 
 default_log_file="nuttcp_$(date '+%Y-%m-%d').log"
