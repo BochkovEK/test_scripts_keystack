@@ -1,0 +1,855 @@
+# Отредактированный конфиг
+# Настройка K0s
+ssh_username: "kolla"
+fqdn_cp1: "ebochkov-installer-v2-lcm-01.vm.lab.itkey.com" #<имя региона>-lcm-01.vm.lab.itkey.com
+fqdn_cp2: "ebochkov-installer-v2-lcm-02.vm.lab.itkey.com" #<имя региона>-lcm-02.vm.lab.itkey.com
+fqdn_cp3: "ebochkov-installer-v2-lcm-03.vm.lab.itkey.com" #<имя региона>-lcm-03.vm.lab.itkey.com
+cp_vip: "10.224.160.5/27" # CIDR: k0s_vip/27
+keepalived_passwd: "8LJw251u" # Длина не более 8 символов
+loadbalancer_ip_pool: "10.224.160.6-10.224.160.6" # service_vip
+
+# Настройка Helm чартов
+nexus_pv_size: "50Gi"                # Размер volume под Nexus
+netbox_pv_size: "1Gi"                # Размер volume под Netbox
+netbox_postgresql_pv_size: "50Gi"    # Размер volume под БД Netbox
+gitlab_gitaly_pv_size: "50Gi"        # Размер volume под Gitlab gitaly
+gitlab_minio_pv_size: "10Gi"         # Размер volume под Gitlab minio
+gitlab_postgresql_pv_size: "50Gi"    # Размер volume под БД Gitlab
+domain_name: "ebochkov-installer-v2.vm.lab.itkey.com"      # Имя домена сервисов LCM (Gitlab, Netbox, Vault, Nexus)
+
+prometheus_metrics_retention: 10d    # Как долго храним метрики
+prometheus_pv_size: 50Gi             # Размер volume под prometheus
+
+# Включаем MTLS для  Gitlab, Netbox
+ingress_auth_tls_verify_client: "false"  # "true" или "false"
+
+#Глубина проверки сертификатов в цепочке от клиентского до корневого CA
+ingress_auth_tls_verify_depth: "3"
+
+# Настройки подключения к Active Directory
+ldap_enable: "true" # "true" или "false"
+ldap_host: "ldaps-lab.slavchenkov-keystack.vm.lab.itkey.com" # FQDN из SAN сертификата точки входа AD
+ldap_ca_cert_file: "ldaps.pem" # Публичный сертификат центра сертификации в PEM-формате; файл должен находиться рядом с конфигом
+ldap_bind_dn: "CN=ldap-ro,CN=Users,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
+ldap_user_search_basedn: "DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
+ldap_group_search_basedn: "OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
+ldap_reader_group_dn: "CN=preevostack_reader,OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
+ldap_auditor_group_dn: "CN=preevostack_security_admin,OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
+ldap_operator_group_dn: "CN=preevostack_support_admin,OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
+ldap_admin_group_dn: "CN=preevostack_infra_admin,OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
+
+k0sctl_version: "v0.24.0"
+helm_version: "v3.18.1"
+k0s_version: "v1.33.1+k0s.0"
+yq_version: "v4.45.4"
+velero_version: "v1.16.1"
+velero_plugin_for_aws_version: "v1.12.1"
+nerdctl_version: "v2.1.2"
+kind_version: "v0.29.0"
+
+repos:
+  - name: "rook-release"
+    remote: "https://charts.rook.io/release"
+  - name: "nexus3"
+    remote: "https://stevehipwell.github.io/helm-charts"
+  - name: "metallb"
+    remote: "oci://registry-1.docker.io/bitnamicharts/metallb"
+  - name: "nginx-ingress-controller"
+    remote: "oci://registry-1.docker.io/bitnamicharts/nginx-ingress-controller"
+  - name: "postgres-operator"
+    remote: "https://opensource.zalando.com/postgres-operator/charts/postgres-operator"
+  - name: "hashicorp"
+    remote: "https://helm.releases.hashicorp.com"
+  - name: "netbox"
+    remote: "oci://ghcr.io/netbox-community/netbox-chart/netbox"
+  - name: "gitlab"
+    remote: "https://charts.gitlab.io/"
+  - name: "redis-ha"
+    remote: "https://dandydeveloper.github.io/charts"
+  - name: "victoriametrics"
+    remote: "https://victoriametrics.github.io/helm-charts/"
+
+charts:
+  - name: "metallb"
+    install: true
+    repo: "metallb"
+    chart: "metallb-6.4.13.tgz"
+    version: "6.4.13"
+    namespace: "metallb-system"
+    order: "1"
+  - name: "rook-ceph"
+    install: true
+    repo: "rook-release"
+    chart: "rook-ceph-v1.17.2.tgz"
+    version: "v1.17.2"
+    namespace: "rook-ceph"
+    order: "1"
+    chart_values: |
+      csi:
+        kubeletDirPath: "/var/lib/k0s/kubelet"
+  - name: "rook-ceph-cluster"
+    install: true
+    repo: "rook-release"
+    chart: "rook-ceph-cluster-v1.17.2.tgz"
+    version: "v1.17.2"
+    namespace: "ceph-cluster"
+    order: "1"
+    chart_values: |
+      operatorNamespace: "rook-ceph"
+      toolbox:
+        enabled: true
+  - name: "nginx-ingress-controller"
+    install: true
+    repo: "nginx-ingress-controller"
+    chart: "nginx-ingress-controller-11.6.22.tgz"
+    version: "11.6.22"
+    namespace: "ingress-nginx"
+    order: "1"
+    chart_values: |
+      kind: DaemonSet
+      ingressClassResource:
+        default: true
+  - name: "postgres-operator"
+    install: true
+    repo: "postgres-operator"
+    chart: "postgres-operator-1.14.0.tgz"
+    version: "1.14.0"
+    namespace: "postgres-operator"
+    order: "1"
+  - name: "redis-ha"
+    install: true
+    repo: "redis-ha"
+    chart: "redis-ha-4.33.7.tgz"
+    version: "4.33.7"
+    namespace: "lcm-netbox"
+    order: "2"
+  - name: "redis-ha"
+    install: true
+    repo: "redis-ha"
+    chart: "redis-ha-4.33.7.tgz"
+    version: "4.33.7"
+    namespace: "lcm-gitlab"
+    order: "2"
+  - name: "vault"
+    install: true
+    repo: "hashicorp"
+    chart: "vault-0.30.0.tgz"
+    version: "0.30.0"
+    namespace: "lcm-vault"
+    order: "2"
+    custom_values: |
+      vault-unseal-secret:
+        name: "vault-unseal-keys"
+        key1: "unseal-key1"
+        key2: "unseal-key2"
+        key3: "unseal-key3"
+        key4: "unseal-key4"
+        key5: "unseal-key5"
+        initial-root-token: "root-token"
+    chart_values: |
+      server:
+        ingress:
+          enabled: true
+          ingressClassName: "nginx"
+          pathType: Prefix
+          activeService: true
+          hosts:
+            - host: vault.ebochkov-installer-v2.vm.lab.itkey.com
+          tls:
+            - secretName: vault-tls
+              hosts:
+                - vault.ebochkov-installer-v2.vm.lab.itkey.com
+        ha:
+          enabled: true
+          replicas: 3
+          raft:
+            enabled: true
+            setNodeId: true
+            config: |
+              ui = true
+              listener "tcp" {
+                tls_disable = 1
+                address = "[::]:8200"
+                cluster_address = "[::]:8201"
+              }
+              storage "raft" {
+                path = "/vault/data"
+                retry_join {
+                    leader_api_addr = "http://vault-0.vault-internal:8200"
+                }
+                retry_join {
+                    leader_api_addr = "http://vault-1.vault-internal:8200"
+                }
+                retry_join {
+                    leader_api_addr = "http://vault-2.vault-internal:8200"
+                }
+              }
+              service_registration "kubernetes" {}
+  - name: "nexus3"
+    install: true
+    repo: "nexus3"
+    chart: "nexus3-5.10.0.tgz"
+    version: "5.10.0"
+    namespace: "lcm-nexus"
+    order: "2"
+    custom_values: |
+      apt-hosted-repos:
+        k8s-secret: "nexus-apt-gpg-keys"
+        gpg-public-key: "public-key"
+        gpg-private-key: "private-key"
+    chart_values: |
+      rootPassword:
+        secret: nexus-admin-password
+        key: password
+      config:
+        enabled: true
+        job:
+          image:
+            repository: "docker.io/ferrer/k0s-jobs-override"
+            tag: "apline-1.32.3"
+        anonymous:
+          enabled: true
+          roles:
+            - nx-anonymous
+        repos:
+          - name: docker-sberlinux
+            format: yum
+            type: hosted
+            online: true
+            storage:
+              blobStoreName: default
+              strictContentTypeValidation: true
+              writePolicy: ALLOW_ONCE
+            yum:
+              repodataDepth: 0
+              deployPolicy: STRICT
+          - name: docker-ubuntu
+            format: apt
+            type: hosted
+            online: true
+            storage:
+              blobStoreName: default
+              strictContentTypeValidation: true
+              writePolicy: ALLOW_ONCE
+            apt:
+              distribution: jammy
+            aptSigning:
+              keypair: "string"
+              passphrase: "string"
+          - name: images
+            format: raw
+            type: hosted
+            online: true
+            storage:
+              blobStoreName: default
+              strictContentTypeValidation: false
+              writePolicy: ALLOW
+          - name: k-add
+            format: raw
+            type: hosted
+            online: true
+            storage:
+              blobStoreName: default
+              strictContentTypeValidation: false
+              writePolicy: ALLOW
+          - name: k-backup
+            format: raw
+            type: hosted
+            online: true
+            storage:
+              blobStoreName: default
+              strictContentTypeValidation: false
+              writePolicy: ALLOW
+          - name: k-images
+            format: docker
+            type: hosted
+            online: true
+            storage:
+              blobStoreName: default
+              strictContentTypeValidation: true
+              writePolicy: ALLOW_ONCE
+            docker:
+              v1Enabled: false
+              forceBasicAuth: true
+              httpPort: 5000
+          - name: k-pip
+            format: pypi
+            type: hosted
+            online: true
+            storage:
+              blobStoreName: default
+              strictContentTypeValidation: true
+              writePolicy: ALLOW_ONCE
+          - name: sberlinux
+            format: yum
+            type: hosted
+            online: true
+            storage:
+              blobStoreName: default
+              strictContentTypeValidation: true
+              writePolicy: ALLOW_ONCE
+            yum:
+              repodataDepth: 0
+              deployPolicy: STRICT
+          - name: ubuntu
+            format: apt
+            type: hosted
+            online: true
+            storage:
+              blobStoreName: default
+              strictContentTypeValidation: true
+              writePolicy: ALLOW_ONCE
+            apt:
+              distribution: jammy
+            aptSigning:
+              keypair: "string"
+              passphrase: "string"
+      ingress:
+        enabled: true
+        annotations:
+          nginx.ingress.kubernetes.io/proxy-body-size: "0"
+        ingressClassName: "nginx"
+        hosts:
+          - nexus.ebochkov-installer-v2.vm.lab.itkey.com
+        tls:
+          - hosts:
+              - nexus.ebochkov-installer-v2.vm.lab.itkey.com
+            secretName: nexus-tls
+          - hosts:
+              - docker.ebochkov-installer-v2.vm.lab.itkey.com
+            secretName: docker-tls
+      persistence:
+        enabled: true
+        storageClass: "ceph-filesystem"
+        accessMode: ReadWriteMany
+        size: "50Gi"
+      service:
+        additionalPorts:
+          - port: 5000
+            name: docker-group
+            containerPort: 5000
+            hosts:
+              - docker.ebochkov-installer-v2.vm.lab.itkey.com
+      tolerations:
+        - effect: NoExecute
+          key: node.kubernetes.io/unreachable
+          operator: Exists
+          tolerationSeconds: 30
+        - effect: NoExecute
+          key: node.kubernetes.io/not-ready
+          operator: Exists
+          tolerationSeconds: 300
+  - name: "netbox"
+    install: true
+    repo: "netbox"
+    chart: "netbox-6.0.23.tgz"
+    version: "6.0.23"
+    namespace: "lcm-netbox"
+    order: "2"
+    chart_values: |
+      replicaCount: 2
+      postgresql:
+        enabled: false
+      externalDatabase:
+        host: postgresql-cluster
+        port: 5432
+        database: netbox
+        username: netbox
+        existingSecretName: "netbox.postgresql-cluster.credentials.postgresql.acid.zalan.do"
+        existingSecretKey: password
+      valkey:
+        enabled: false
+      tasksDatabase:
+        database: 1
+        sentinels:
+          - redis-ha:26379
+        sentinelService: mymaster
+      cachingDatabase:
+        database: 1
+        sentinels:
+          - redis-ha:26379
+        sentinelService: mymaster
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/instance: netbox
+                  app.kubernetes.io/name: netbox
+                  app.kubernetes.io/component: netbox
+              topologyKey: kubernetes.io/hostname
+      customStartupProbe:
+        httpGet:
+          path: /status/applications/netbox/processes/running
+          port: nginx-status
+        initialDelaySeconds: 5
+        periodSeconds: 60
+        timeoutSeconds: 5
+        failureThreshold: 10
+        successThreshold: 1
+      resources:
+        requests:
+          cpu: "1.0"
+          memory: "3072Mi"
+          ephemeral-storage: "50Mi"
+        limits:
+          cpu: "6.0"
+          memory: "12288Mi"
+          ephemeral-storage: "2Gi"
+      ingress:
+        enabled: true
+        annotations:
+          nginx.ingress.kubernetes.io/auth-tls-secret: "lcm-netbox/ca-tls"
+          nginx.ingress.kubernetes.io/auth-tls-verify-client: "off"
+          nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
+        hosts:
+          - host: netbox.ebochkov-installer-v2.vm.lab.itkey.com
+            paths:
+              - /
+        tls:
+          - secretName: netbox-tls
+            hosts:
+              - netbox.ebochkov-installer-v2.vm.lab.itkey.com
+      persistence:
+        enabled: true
+        storageClass: "ceph-filesystem"
+        accessMode: ReadWriteMany
+        size: "1Gi"
+      existingSecret: "netbox-ldap"
+      remoteAuth:
+        enabled: true
+        backends:
+          - netbox.authentication.LDAPBackend
+        ldap:
+          serverUri: 'ldaps://ldaps-lab.slavchenkov-keystack.vm.lab.itkey.com'
+          startTls: false
+          ignoreCertErrors: false
+          caCertData: |
+            -----BEGIN CERTIFICATE-----
+            MIIERzCCAy+gAwIBAgIQEZFiXp5zUrNE0E4R/L4+pzANBgkqhkiG9w0BAQsFADCB
+            qTETMBEGCgmSJomT8ixkARkWA2NvbTEVMBMGCgmSJomT8ixkARkWBWl0a2V5MRMw
+            EQYKCZImiZPyLGQBGRYDbGFiMRIwEAYKCZImiZPyLGQBGRYCdm0xJDAiBgoJkiaJ
+            k/IsZAEZFhRzbGF2Y2hlbmtvdi1rZXlzdGFjazEsMCoGA1UEAxMjc2xhdmNoZW5r
+            b3Yta2V5c3RhY2stTERBUFMtTEFCLUNBLTEwHhcNMjQwODMwMTIxMjUyWhcNMjkw
+            ODMwMTIyMjUyWjCBqTETMBEGCgmSJomT8ixkARkWA2NvbTEVMBMGCgmSJomT8ixk
+            ARkWBWl0a2V5MRMwEQYKCZImiZPyLGQBGRYDbGFiMRIwEAYKCZImiZPyLGQBGRYC
+            dm0xJDAiBgoJkiaJk/IsZAEZFhRzbGF2Y2hlbmtvdi1rZXlzdGFjazEsMCoGA1UE
+            AxMjc2xhdmNoZW5rb3Yta2V5c3RhY2stTERBUFMtTEFCLUNBLTEwggEiMA0GCSqG
+            SIb3DQEBAQUAA4IBDwAwggEKAoIBAQCxCGGy/1L8hMPnyaP7MoHkun42SLFUOAG/
+            CdkcG9pgFeyk4Xt+GhojgfjQFkzz+apRoEthjLWBOcWoDHjZBSfdd265n0KdoR/2
+            tMooayWnYfRNz/WLEKIziUzVId3CNMO15uFd6a3fh6DnQ9jog5u9KAFK0DAW94lm
+            9UD4CHd5N8gbr8kDq96baIYq9aOklYiJDIApzhyKZ4ySzu+3Usad9mjyn4k3JTKj
+            robpZfadFxLh/eoWuawX2rH7Yz3l5xej0D9FB9xoNphnBXQykgvgjtUNfv1jpt4O
+            6gMm49kuedjako2tRVsrVLyyTRIJaMuICIUCzrfS720dFhSO/43BAgMBAAGjaTBn
+            MBMGCSsGAQQBgjcUAgQGHgQAQwBBMA4GA1UdDwEB/wQEAwIBhjAPBgNVHRMBAf8E
+            BTADAQH/MB0GA1UdDgQWBBR4U/XvkfXJGzGh47f74iryU/OA3zAQBgkrBgEEAYI3
+            FQEEAwIBADANBgkqhkiG9w0BAQsFAAOCAQEAVfTYH0WxSJHs3VLtZE6rk4dEtRi8
+            NqzVT0ilyw0KjwEtLTzLAHPKlEQMBkUaiuKWk6NJQdW7vDqv4IrhJv6oIjfu3B2W
+            La7FM4a7zsYm3V1ipYAXTXhLZTik87LdzaQ9Dthq7ta6lGwyWNImeDpztql0zyRm
+            aUqndpw0YilQZ9zNgFEYD46AvMmLYawwLfP0CDCMMPaIzw0lSeNRiX49mfa4LQIB
+            2YYqETRagUULdZSDBsEP/L2nlTm35KggRYQ/OIxHWMqJ+R/x+8mBjbBNTJP9sUY6
+            GsSFbFqsxzj7+R/Ge1bCJiKj6K3Ix/FGLERt9akl3YpnGl3opkw1vGAMug==
+            -----END CERTIFICATE-----
+          bindDn: 'CN=ldap-ro,CN=Users,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com'
+          bindPassword: "netbox-ldap"
+          userDnTemplate: null
+          userSearchBaseDn: 'DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com'
+          userSearchAttr: 'sAMAccountName'
+          groupSearchBaseDn: 'OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com'
+          groupSearchClass: 'group'
+          groupType: 'GroupOfNamesType'
+          requireGroupDn:
+            - 'CN=preevostack_reader,OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com'
+            - 'CN=preevostack_security_admin,OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com'
+            - 'CN=preevostack_infra_admin,OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com'
+          isAdminDn:
+            - 'CN=preevostack_infra_admin,OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com'
+          isSuperUserDn:
+            - 'CN=preevostack_infra_admin,OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com'
+          findGroupPerms: true
+          mirrorGroups: true
+          mirrorGroupsExcept: null
+          cacheTimeout: 3600
+          attrFirstName: 'givenName'
+          attrLastName: 'sn'
+          attrMail: 'mail'
+  - name: "gitlab"
+    install: true
+    repo: "gitlab"
+    chart: "gitlab-9.0.1.tgz"
+    version: "9.0.1"
+    namespace: "lcm-gitlab"
+    order: "2"
+    chart_values: |
+      global:
+        edition: ce
+        hosts:
+          domain: ebochkov-installer-v2.vm.lab.itkey.com
+        ingress:
+          class: nginx
+          configureCertmanager: false
+          tls:
+            external: true
+        kas:
+          enabled: false
+        psql:
+          password:
+            useSecret: true
+            secret: "gitlab.postgresql-cluster.credentials.postgresql.acid.zalan.do"
+            key: password
+          host: postgresql-cluster
+          port: 5432
+          username: gitlab
+          database: gitlabhq_production
+        redis:
+          auth:
+            enabled: false
+          host: mymaster
+          sentinels:
+            - host: redis-ha
+              port: 26379
+        appConfig:
+          terraformState:
+            enabled: true
+          enableUsagePing: false
+          packages:
+            enabled: false
+          ldap:
+            preventSignin: false
+            servers:
+              main:
+                label: 'LDAP'
+                host: 'ldaps-lab.slavchenkov-keystack.vm.lab.itkey.com'
+                port: 636
+                uid: 'sAMAccountName'
+                bind_dn: 'CN=ldap-ro,CN=Users,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com'
+                base: 'DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com'
+                password:
+                  secret: 'gitlab-ldap'
+                  key: 'ldap_bind_password'
+                encryption: 'simple_tls'
+                tls_options:
+                  ca_file: '/etc/ssl/certs/ldap-root-cert.pem'
+                  ssl_version: 'TLSv1_2'
+                timeout: 10
+                active_directory: true
+                user_filter: >
+                  (&(objectClass=user)
+                    (|
+                      (memberof=CN=preevostack_reader,OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com)
+                      (memberof=CN=preevostack_security_admin,OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com)
+                      (memberof=CN=preevostack_infra_admin,OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com)
+                    )
+                  )
+                lowercase_usernames: false
+                retry_empty_result_with_codes: [80]
+                allow_username_or_email_login: false
+                block_auto_created_users: false
+        certificates:
+          customCAs:
+            - secret: gitlab-custom-ca
+      nginx-ingress:
+        enabled: false
+        controller:
+          image:
+            digest: ""
+          admissionWebhooks:
+            patch:
+              image:
+                digest: ""
+        defaultBackend:
+          image:
+            digest: ""
+      certmanager:
+        install: false
+      prometheus:
+        install: false
+      redis:
+        install: false
+      postgresql:
+        install: false
+      gitlab-runner:
+        install: true
+        secrets:
+          - name: "ca-tls"
+            items:
+              - key: "ca.crt"
+                path: "ca.crt"
+          - name: "client-tls"
+            items:
+              - key: "client.crt"
+                path: "client.crt"
+              - key: "client.key"
+                path: "client.key"
+        runners:
+          privileged: true
+          config: |
+            [[runners]]
+              output_limit = 30720
+              request_concurrency = 30
+              tls-ca-file = "/secrets/ca.crt"
+              tls-cert-file = "/secrets/client.crt"
+              tls-key-file = "/secrets/client.key"
+              [runners.feature_flags]
+              FF_KUBERNETES_HONOR_ENTRYPOINT = true
+              [runners.kubernetes]
+              image = "ubuntu:22.04"
+            [[runners.kubernetes.volumes.secret]]
+              name = "ca-tls"
+              mount_path = "/etc/gitlab-runner/certs/"
+              {{- if .Values.global.minio.enabled }}
+              [runners.cache]
+                Type = "s3"
+                Path = "gitlab-runner"
+                Shared = true
+                [runners.cache.s3]
+                  ServerAddress = {{ include "gitlab-runner.cache-tpl.s3ServerAddress" . }}
+                  BucketName = "runner-cache"
+                  BucketLocation = "us-east-1"
+                  Insecure = false
+              {{ end }}
+        certsSecretName: gitlab-runner-tls
+      gitlab:
+        webservice:
+          ingress:
+            enabled: true
+            annotations:
+              nginx.ingress.kubernetes.io/auth-tls-secret: "lcm-gitlab/ca-tls"
+              nginx.ingress.kubernetes.io/auth-tls-verify-client: "off"
+              nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
+            tls:
+              secretName: gitlab-tls
+        gitaly:
+          persistence:
+            enabled: true
+            storageClass: "ceph-filesystem"
+            accessMode: ReadWriteMany
+            size: "50Gi"
+          tolerations:
+            - effect: NoExecute
+              key: node.kubernetes.io/unreachable
+              operator: Exists
+              tolerationSeconds: 30
+            - effect: NoExecute
+              key: node.kubernetes.io/not-ready
+              operator: Exists
+              tolerationSeconds: 300
+        gitlab-shell:
+          enabled: false
+      registry:
+        enabled: false
+      minio:
+        ingress:
+          tls:
+            secretName: minio-tls
+        image: "minio/minio"
+        imageTag: "RELEASE.2025-05-24T17-08-30Z"
+        minioMc:
+          image: minio/mc
+          tag: "RELEASE.2025-05-21T01-59-54Z"
+        persistence:
+          enabled: true
+          storageClass: "ceph-filesystem"
+          accessMode: ReadWriteMany
+          size: "10Gi"
+        tolerations:
+          - effect: NoExecute
+            key: node.kubernetes.io/unreachable
+            operator: Exists
+            tolerationSeconds: 30
+          - effect: NoExecute
+            key: node.kubernetes.io/not-ready
+            operator: Exists
+            tolerationSeconds: 300
+  - name: "vmks"
+    install: true
+    repo: "victoriametrics"
+    chart: "victoria-metrics-k8s-stack-0.49.0.tgz"
+    version: "0.49.0"
+    namespace: "monitoring"
+    order: "2"
+    chart_values: |
+      kube-state-metrics:
+        enabled: true
+        replicas: 2
+      victoria-metrics-operator:
+        replicaCount: 2
+      vmsingle:
+        enabled: false
+      vmcluster:
+        enabled: true
+        spec:
+          retentionPeriod: ""
+          replicationFactor: 2
+          vmstorage:
+            replicaCount: 2
+            storageDataPath: /vm-data
+            storage:
+              volumeClaimTemplate:
+                spec:
+                  resources:
+                    requests:
+                      storage: ""
+      vmselect:
+        enabled: true
+        replicaCount: 2
+        storage:
+          volumeClaimTemplate:
+            spec:
+              resources:
+                requests:
+                  storage: ""
+      vmagent:
+        enabled: true
+        spec:
+          replicaCount: 2
+      vmalert:
+        enabled: true
+        spec:
+          replicaCount: 2
+      alertmanager:
+        enabled: true
+        spec:
+          replicaCount: 2
+      defaultRules:
+        rules:
+          KubeControllerManagerDown:
+            spec:
+              expr: absent(apiserver_audit_event_total{job="kube-controller-manager"})
+          KubeSchedulerDown:
+            spec:
+              expr: absent(apiserver_audit_event_total{job="kube-scheduler"})
+      kubeControllerManager:
+        enabled: true
+        service:
+          enabled: false
+        vmScrape:
+          spec:
+            namespaceSelector:
+              matchNames:
+                - k0s-system
+            selector:
+              matchLabels:
+                app: k0s-observability
+                component: pushgateway
+                k0s.k0sproject.io/stack: metrics
+            endpoints:
+              - port: http
+                metricRelabelConfigs:
+                  - sourceLabels: [exported_job]
+                    targetLabel: job
+                    action: replace
+                  - sourceLabels: [exported_instance]
+                    targetLabel: instance
+                    action: replace
+      kubeEtcd:
+        enabled: true
+        service:
+          enabled: false
+        vmScrape:
+          spec:
+            namespaceSelector:
+              matchNames:
+                - k0s-system
+            selector:
+              matchLabels:
+                app: k0s-observability
+                component: pushgateway
+                k0s.k0sproject.io/stack: metrics
+            endpoints:
+              - port: http
+                metricRelabelConfigs:
+                  - sourceLabels: [exported_job]
+                    targetLabel: job
+                    action: replace
+                  - sourceLabels: [exported_instance]
+                    targetLabel: instance
+                    action: replace
+      kubeScheduler:
+        enabled: true
+        service:
+          enabled: false
+        vmScrape:
+          spec:
+            namespaceSelector:
+              matchNames:
+                - k0s-system
+            selector:
+              matchLabels:
+                app: k0s-observability
+                component: pushgateway
+                k0s.k0sproject.io/stack: metrics
+            endpoints:
+              - port: http
+                metricRelabelConfigs:
+                  - sourceLabels: [exported_job]
+                    targetLabel: job
+                    action: replace
+                  - sourceLabels: [exported_instance]
+                    targetLabel: instance
+                    action: replace
+      grafana:
+        replicas: 2
+        ingress:
+          enabled: true
+          annotations:
+            nginx.ingress.kubernetes.io/affinity: "cookie"
+          path: /
+          pathType: Prefix
+          hosts:
+            - grafana.ebochkov-installer-v2.vm.lab.itkey.com
+          tls:
+            - secretName: "grafana-tls"
+              hosts:
+                - grafana.ebochkov-installer-v2.vm.lab.itkey.com
+        env:
+          GF_DATABASE_TYPE: postgres
+          GF_DATABASE_HOST: postgresql-cluster
+          GF_DATABASE_NAME: grafana
+          GF_DATABASE_SSL_MODE: require
+        envValueFrom:
+          GF_DATABASE_USER:
+            secretKeyRef:
+              name: "grafana.postgresql-cluster.credentials.postgresql.acid.zalan.do"
+              key: username
+          GF_DATABASE_PASSWORD:
+            secretKeyRef:
+              name: "grafana.postgresql-cluster.credentials.postgresql.acid.zalan.do"
+              key: password
+        extraInitContainers:
+          - name: "load-vm-ds-plugin"
+            image: "docker.io/ferrer/vl-plugin-grafana:v0.16.3"
+            command: [ "/bin/sh" ]
+            workingDir: "/var/lib/grafana"
+            securityContext:
+              runAsUser: 472
+              runAsNonRoot: true
+              runAsGroup: 472
+            args:
+              - "-c"
+              - |
+                set -ex
+                mkdir -p /var/lib/grafana/plugins/
+                tar -xf /vl-plugin.tar.gz -C /var/lib/grafana/plugins/
+            volumeMounts:
+              - name: storage
+                mountPath: /var/lib/grafana
+        datasources:
+          datasources.yaml:
+            apiVersion: 1
+            datasources:
+            - name: VictoriaLogs
+              type: victoriametrics-logs-datasource
+              access: proxy
+              url: http://vlc-victoria-logs-cluster-vlselect:9471
+              isDefault: false
+  - name: "vlc"
+    install: true
+    repo: "victoriametrics"
+    chart: "victoria-logs-cluster-0.0.2.tgz"
+    version: "0.0.2"
+    namespace: "monitoring"
+    order: "2"
+    chart_values: |
+      vector:
+        enabled: true

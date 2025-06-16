@@ -58,6 +58,12 @@ gitlab_minio_pv_size: "10Gi"         # Размер volume под Gitlab minio
 gitlab_postgresql_pv_size: "50Gi"    # Размер volume под БД Gitlab
 domain_name: "ebochkov-installer-v2.vm.lab.itkey.com"      # Имя домена сервисов LCM (Gitlab, Netbox, Vault, Nexus)
 
+#Monitoring VictoriaMetrics
+vm_metrics_retention: "1"                # Как долго храним метрики. Установлено в 1 месяц См. https://docs.victoriametrics.com/victoriametrics/#retention
+vmstorage_pv_size: "50Gi"                # Размер volume под vmstorage
+vmselect_pv_size: "10Gi"                 # Размер volume под vmselect
+grafana_postgresql_pv_size: "5Gi"        # Размер volume под Grafana
+
 prometheus_metrics_retention: 10d    # Как долго храним метрики
 prometheus_pv_size: 50Gi             # Размер volume под prometheus
 
