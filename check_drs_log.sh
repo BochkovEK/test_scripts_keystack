@@ -6,6 +6,7 @@ nodes_type="ctrl"
 #check_openrc_script="check_openrc.sh"
 get_nodes_list_script="get_nodes_list.sh"
 drs_log_file_name="drs-api-error.log"
+default_user="root"
 
 #Colors
 green=$(tput setaf 2)
@@ -30,6 +31,7 @@ NC='\033[0m' # No Color
 [[ -z $NODE_NAME ]] && NODE_NAME=""
 [[ -z $DEBUG_STRING_ONLY ]] && DEBUG_STRING_ONLY="false"
 [[ -z $ALL_NODES ]] && ALL_NODES="false"
+[[ -z $USER ]] && USER="$default_user"
 #==============================
 
 # Define parameters
@@ -50,6 +52,7 @@ while [ -n "$1" ]; do
         -dso  -debug_string_only  output from logs debug string only (without parameters)
         -v,   -debug              enable debug output (without parameters)
         -all                      check logs on all ctrl nodes
+        -u, user                  set user for ssh access
 "
       exit 0
       break ;;
@@ -71,6 +74,11 @@ while [ -n "$1" ]; do
     -all) ALL_NODES="true"
       echo "Found the -all option, with parameter value $ALL_NODES"
       ;;
+    -u|-user) USER="$2"
+      USER_STR="-u $USER"
+      echo "Found the -user parameter with value $USER"
+      shift
+      ;;
     --) shift
       break ;;
     *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
@@ -82,13 +90,13 @@ read_logs () {
   echo -e "${CYAN}Drs $LOG_LAST_LINES_NUMBER lines logs from $1${NC}"
   if [ "$DEBUG_STRING_ONLY" = true ]; then
     echo -e "${ORANGE}DEBUG strings only${NC}"
-    ssh -o StrictHostKeyChecking=no $1 tail -f -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME|grep "DEBUG"
+    ssh -o StrictHostKeyChecking=no $USER_STR@$1 tail -f -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME|grep "DEBUG"
   else
-    ssh -o StrictHostKeyChecking=no $1 tail -f -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME
+    ssh -o StrictHostKeyChecking=no $USER_STR@$1 tail -f -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME
   fi
   echo -e "${BLUE}`date`${NC}"
   echo -e "For read all log on $1:"
-  echo -e "${ORANGE}ssh -t -o StrictHostKeyChecking=no $1 less $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME${NC}"
+  echo -e "${ORANGE}ssh -o StrictHostKeyChecking=no $USER_STR@$1 less $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME${NC}"
 }
 
 #periodic_read_logs () {
@@ -106,7 +114,7 @@ read_logs_from_all_ctrl () {
 }
 
 find_leader () {
-  ssh -o StrictHostKeyChecking=no $1 tail -${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME|grep -E 'leadership updated|becomes a leader'
+  ssh -o StrictHostKeyChecking=no $USER_STR@$1 tail -${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME|grep -E 'leadership updated|becomes a leader'
 }
 
 get_nodes_list () {

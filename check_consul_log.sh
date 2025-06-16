@@ -46,7 +46,7 @@ while [ -n "$1" ]; do
       -n,   -node_name        <node_name>
       -ctrl_list              <ctrl_list> example: -ctrl_list \"ctrl-01 ctrl-02 ctrl-02\"
       -all_ctrl               check logs on all ctrl nodes (without parameter)
-      -u, user      set user for ssh access
+      -u, user                set user for ssh access
 
       Example satart command:
         bash $HOME/test_scripts_keystack/check_consul_log.sh <ctrl_01> <check_period> <log last lines number>
