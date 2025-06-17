@@ -4,6 +4,7 @@
 #ssh-keygen -y -f job_key > job_key.pub
 
 ssh_sudo_user="kolla"
+ca_crt_path="$HOME/installer/mutiple-node/certs/ca.crt"
 env_file_name=".deploy_certs_env"
 
 # Determine the directory where the script is located
@@ -66,7 +67,7 @@ sed_init_config () {
 setup_certs() {
   echo "Configuring certificates..."
   for host in $srv; do
-    ssh $SSH_SUDO_USER@$host "sudo tee /etc/pki/ca-trust/source/anchors/ca.crt > /dev/null"
+    sudo sh -c "cat $ca_crt_path" |ssh $SSH_SUDO_USER@$host "sudo tee /etc/pki/ca-trust/source/anchors/ca.crt > /dev/null"
   done
   for host in $srv;do ssh $SSH_SUDO_USER@$host "sudo sh -c 'update-ca-trust'";done
 }
