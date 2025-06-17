@@ -71,7 +71,7 @@ while [ -n "$1" ]; do
       echo "Found the -all_ctrl option, with parameter value $ALL_CTRL"
       ;;
     -u|-user) USER="$2"
-      USER_STR="-u $USER"
+#      USER_STR="-u $USER"
       echo "Found the -user parameter with value $USER"
       shift
       ;;

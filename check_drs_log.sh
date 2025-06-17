@@ -75,7 +75,7 @@ while [ -n "$1" ]; do
       echo "Found the -all option, with parameter value $ALL_NODES"
       ;;
     -u|-user) USER="$2"
-      USER_STR="-u $USER"
+#      USER_STR="-u $USER"
       echo "Found the -user parameter with value $USER"
       shift
       ;;
@@ -90,13 +90,13 @@ read_logs () {
   echo -e "${CYAN}Drs $LOG_LAST_LINES_NUMBER lines logs from $1${NC}"
   if [ "$DEBUG_STRING_ONLY" = true ]; then
     echo -e "${ORANGE}DEBUG strings only${NC}"
-    ssh -o StrictHostKeyChecking=no $USER@$1 tail -f -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME|grep "DEBUG"
+    ssh -o StrictHostKeyChecking=no $USER@$1 "sudo sh -c 'tail -f -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME|grep \"DEBUG\"'"
   else
-    ssh -o StrictHostKeyChecking=no $USER@$1 tail -f -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME
+    ssh -o StrictHostKeyChecking=no $USER@$1 "sudo sh -c 'tail -f -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME'"
   fi
   echo -e "${BLUE}`date`${NC}"
   echo -e "For read all log on $1:"
-  echo -e "${ORANGE}ssh -o StrictHostKeyChecking=no $USER@$1 less $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME${NC}"
+  echo -e "${ORANGE}ssh -o StrictHostKeyChecking=no $USER@$1 \"sudo sh -c \'less $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME\'\"${NC}"
 }
 
 #periodic_read_logs () {
@@ -108,7 +108,7 @@ read_logs () {
 #}
 
 read_logs_from_all_ctrl () {
-  for host in $srv;do
+  for host in $NODES;do
     read_logs $host
   done
 }
