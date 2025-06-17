@@ -90,13 +90,13 @@ read_logs () {
   echo -e "${CYAN}Drs $LOG_LAST_LINES_NUMBER lines logs from $1${NC}"
   if [ "$DEBUG_STRING_ONLY" = true ]; then
     echo -e "${ORANGE}DEBUG strings only${NC}"
-    ssh -o StrictHostKeyChecking=no $USER_STR@$1 tail -f -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME|grep "DEBUG"
+    ssh -o StrictHostKeyChecking=no $USER@$1 tail -f -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME|grep "DEBUG"
   else
-    ssh -o StrictHostKeyChecking=no $USER_STR@$1 tail -f -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME
+    ssh -o StrictHostKeyChecking=no $USER@$1 tail -f -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME
   fi
   echo -e "${BLUE}`date`${NC}"
   echo -e "For read all log on $1:"
-  echo -e "${ORANGE}ssh -o StrictHostKeyChecking=no $USER_STR@$1 less $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME${NC}"
+  echo -e "${ORANGE}ssh -o StrictHostKeyChecking=no $USER@$1 less $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME${NC}"
 }
 
 #periodic_read_logs () {
@@ -114,7 +114,7 @@ read_logs_from_all_ctrl () {
 }
 
 find_leader () {
-  ssh -o StrictHostKeyChecking=no $USER_STR@$1 tail -${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME|grep -E 'leadership updated|becomes a leader'
+  ssh -o StrictHostKeyChecking=no $USER@$1 tail -${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME|grep -E 'leadership updated|becomes a leader'
 }
 
 get_nodes_list () {
