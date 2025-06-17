@@ -66,7 +66,7 @@ sed_init_config () {
 setup_certs() {
   echo "Configuring certificates..."
   for host in $srv; do
-    cat $script_dir/mutiple-node/certs/ca.crt | ssh $SSH_SUDO_USER@$host "sudo tee /etc/pki/ca-trust/source/anchors/ca.crt > /dev/null"
+    ssh $SSH_SUDO_USER@$host "sudo tee /etc/pki/ca-trust/source/anchors/ca.crt > /dev/null"
   done
   for host in $srv;do ssh $SSH_SUDO_USER@$host "sudo sh -c 'update-ca-trust'";done
 }
@@ -91,7 +91,7 @@ setup_public_key() {
   echo "Configuring gitlab job_key.pub..."
   if [[ -f "${script_dir}/job_key.pub" ]]; then
     for host in $srv; do
-      cat "$script_dir/job_key.pub" | ssh $SSH_SUDO_USER@$host "cat >> ~/.ssh/authorized_key"
+      cat $script_dir/job_key.pub | ssh $SSH_SUDO_USER@$host "cat >> ~/.ssh/authorized_keys"
     done
   else
     echo "[ERROR]: file 'job_key.pub' not exist in $script_dir/"
