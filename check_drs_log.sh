@@ -114,7 +114,7 @@ read_logs_from_all_ctrl () {
 }
 
 find_leader () {
-  ssh -o StrictHostKeyChecking=no $USER@$1 "sudo sh -c 'tail -${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME'|grep -E 'leadership updated|becomes a leader'"
+  ssh -o StrictHostKeyChecking=no $USER@$1 "sudo sh -c 'tail -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME'|grep -E 'leadership updated|becomes a leader'"
 }
 
 get_nodes_list () {
