@@ -286,7 +286,7 @@ for host in "${NODES[@]}"; do
       fi
     fi
   elif [[ $status == *"Permission denied"* ]] ; then
-    echo -e "${red}${status} - error! ${normal}"
+    echo -e "${red}\"${status}\" - error! ${normal}"
   else
     printf "%40s\n" "${red}No connection with $host - error!${normal}"
     echo -e "${red}The node may be turned off.${normal}\n"
