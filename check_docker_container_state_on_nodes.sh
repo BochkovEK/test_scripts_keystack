@@ -285,7 +285,7 @@ for host in "${NODES[@]}"; do
         check_required_container $host
       fi
     fi
-  elif [[ $status == "Permission denied"* ]] ; then
+  elif [[ $status == *"Permission denied"* ]] ; then
     printf "%40s\n" "${red}$status - error!${normal}"
   else
     printf "%40s\n" "${red}No connection with $host - error!${normal}"

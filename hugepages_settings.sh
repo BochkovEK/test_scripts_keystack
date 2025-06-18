@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# The script define
+# Run on hyper
 # Validate input argument
 if [ "$#" -ne 1 ] || ! [[ "$1" =~ ^[0-9]+$ ]]; then
     echo "Error: You must specify reserved memory in GB as argument" >&2
