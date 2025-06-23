@@ -92,7 +92,7 @@ comp_required_container_list=(
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $NODES_TYPE ]] && NODES_TYPE="all"
 [[ -z $NODE_NAME ]] && NODE_NAME=""
-[[ -z $SSH_USER ]] && SSH_USER=$default_ssh_user
+#[[ -z $SSH_USER ]] && SSH_USER=$default_ssh_user
 #======================
 
 
@@ -149,23 +149,6 @@ do
       shift
 done
 
-#error_output () {
-#  printf "%s\n" "${yellow}Docker container not checked on $NODES_TYPE nodes${normal}"
-#  printf "%s\n" "${red}$error_message - error${normal}"
-#  exit 1
-#}
-
-#check_connection () {
-#  for host in "${NODES[@]}"; do
-#    echo "host: $host"
-#    sleep 1
-#    if ping -c 2 $host &> /dev/null; then
-#        printf "%40s\n" "${green}There is a connection with $host - success${normal}"
-#    else
-#        printf "%40s\n" "${red}No connection with $IP - error!${normal}"
-#    fi
-#  done
-#}
 
 check_required_container () {
   echo -e "Check required container on $1"
@@ -215,6 +198,21 @@ get_nodes_list () {
     exit 1
   fi
 }
+
+if [[ -z "$SSH_USER" ]]; then
+  # 3. Try to determine via whoami (with error handling)
+  SSH_USER=$(whoami 2>/dev/null) || {
+    echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
+    # 4. Use default value
+    SSH_USER="$default_ssh_user"
+  }
+fi
+
+# Final value check
+if [[ -z "$SSH_USER" ]]; then
+  echo -e "${red}Error: Failed to determine user!${normal}" >&2
+  exit 1
+fi
 
 if [ -z "$NODE_NAME" ]; then
   get_nodes_list
