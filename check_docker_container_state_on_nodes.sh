@@ -199,6 +199,7 @@ get_nodes_list () {
   fi
 }
 
+
 if [[ -z "$SSH_USER" ]]; then
   # 3. Try to determine via whoami (with error handling)
   SSH_USER=$(whoami 2>/dev/null) || {
@@ -222,7 +223,6 @@ else
   done
 #  NODES=("$NODE_NAME")
 fi
-
 
 [[ "$CHECK_UNHEALTHY" = true  ]] && {
   UNHEALTHY="\(unhealthy\)";

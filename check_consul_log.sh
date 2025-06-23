@@ -9,14 +9,14 @@ green=$(tput setaf 2)
 red=$(tput setaf 1)
 violet=$(tput setaf 5)
 normal=$(tput sgr0)
-yallow=$(tput setaf 3)
+yellow=$(tput setaf 3)
 cyan=$(tput setaf 14)
 
 script_dir=$(dirname $0)
 utils_dir=$script_dir/utils
 check_openrc_script="check_openrc.sh"
 check_openstack_cli_script="check_openstack_cli.sh"
-default_user="root"
+default_ssh_user="root"
 
 [[ -z $LOG_LAST_LINES_NUMBER ]] && LOG_LAST_LINES_NUMBER=35
 #[[ -z $OUTPUT_PERIOD ]] && OUTPUT_PERIOD=10
@@ -25,7 +25,7 @@ default_user="root"
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
 [[ -z $CTRL_LIST ]] && CTRL_LIST=""
 [[ -z $ALL_CTRL ]] && ALL_CTRL="false"
-[[ -z $USER ]] && USER="$default_user"
+#[[ -z $USER ]] && USER="$default_user"
 #========================
 
 
@@ -70,9 +70,8 @@ while [ -n "$1" ]; do
     -all_ctrl) ALL_CTRL="true"
       echo "Found the -all_ctrl option, with parameter value $ALL_CTRL"
       ;;
-    -u|-user) USER="$2"
-#      USER_STR="-u $USER"
-      echo "Found the -user parameter with value $USER"
+    -u|-user) SSH_USER=$2
+      echo "Found the -user  with parameter value $SSH_USER"
       shift
       ;;
     --) shift
@@ -106,30 +105,6 @@ Check_openstack_cli () {
   fi
 }
 
-#check_consul_log_one_node () {
-#  ssh -o StrictHostKeyChecking=no $USER@$1 'echo -e "\033[0;35m$(date)\033[0m
-#\033[0;35mLogs from: $(hostname)\033[0m
-#\033[0;35mFor check this log: \033[0m
-#\033[0;35mssh $(hostname) less /var/log/kolla/autoevacuate.log | less\033[0m"'
-#  ssh -o StrictHostKeyChecking=no $USER@$1 "sudo sh -c 'tail -f /var/log/kolla/autoevacuate.log'" | \
-#    sed --unbuffered \
-#    -e 's/\(.*Force off.*\)/\o033[31m\1\o033[39m/' \
-#    -e 's/\(.*Server.*\)/\o033[33m\1\o033[39m/' \
-#    -e 's/\(.*Evacuating instance.*\)/\o033[33m\1\o033[39m/' \
-#    -e 's/\(.*IPMI "power off".*\)/\o033[31m\1\o033[39m/' \
-#    -e 's/\(.*CRITICAL.*\)/\o033[31m\1\o033[39m/' \
-#    -e 's/\(.*ERROR.*\)/\o033[31m\1\o033[39m/' \
-#    -e 's/\(.*Not enough.*\)/\o033[31m\1\o033[39m/' \
-#    -e 's/\(.*Too many.*\)/\o033[31m\1\o033[39m/' \
-#    -e 's/\(.*disabled,.*\)/\o033[33m\1\o033[39m/' \
-#    -e 's/\(.*down.*\)/\o033[33m\1\o033[39m/' \
-#    -e 's/\(.*failed: True.*\)/\o033[33m\1\o033[39m/' \
-#    -e 's/\(.*WARNING.*\)/\o033[33m\1\o033[39m/' \
-#    -e 's/\(.*status_code\: 400.*\)/\o033[33m\1\o033[39m/' \
-#    -e 's/\(.*Starting fence.*\)/\o033[33m\1\o033[39m/' \
-#    -e 's/\(\([1-9]\|[0-9]\) computes in maintenance\)/\o033[33m\1\o033[39m/' \
-#}
-
 check_consul_log_one_node() {
 #  echo "!!!ONE node"
   ssh -o StrictHostKeyChecking=no $USER@$1 'echo -e "\033[0;35m$(date)\033[0m
@@ -155,8 +130,6 @@ check_consul_log_one_node() {
     -e 's/\(.*Starting fence.*\)/\o033[33m\1\o033[39m/'
 }
 
-
-
 check_log_on_all_ctrl () {
   for ctrl in $NODE_NAME; do
     echo -e "${cyan}Check logs on $ctrl...${normal}"
@@ -168,6 +141,21 @@ check_log_on_all_ctrl () {
   done
 }
 
+
+if [[ -z "$SSH_USER" ]]; then
+  # 3. Try to determine via whoami (with error handling)
+  SSH_USER=$(whoami 2>/dev/null) || {
+    echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
+    # 4. Use default value
+    SSH_USER="$default_ssh_user"
+  }
+fi
+
+# Final value check
+if [[ -z "$SSH_USER" ]]; then
+  echo -e "${red}Error: Failed to determine user!${normal}" >&2
+  exit 1
+fi
 
 #check_openstack_cli
 Check_openstack_cli

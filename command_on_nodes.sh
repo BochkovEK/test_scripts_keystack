@@ -33,7 +33,7 @@ blue=$(tput setaf 4)
 [[ -z $PING ]] && PING="false"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $DONT_CHECK_CONN ]] && DONT_CHECK_CONN="false"
-[[ -z $SSH_USER ]] && SSH_USER=$default_ssh_user
+#[[ -z $SSH_USER ]] && SSH_USER=$default_ssh_user
 #======================
 
 #node_type_func () {
@@ -306,6 +306,21 @@ get_nodes_list () {
     exit 1
   fi
 }
+
+if [[ -z "$SSH_USER" ]]; then
+  # 3. Try to determine via whoami (with error handling)
+  SSH_USER=$(whoami 2>/dev/null) || {
+    echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
+    # 4. Use default value
+    SSH_USER="$default_ssh_user"
+  }
+fi
+
+# Final value check
+if [[ -z "$SSH_USER" ]]; then
+  echo -e "${red}Error: Failed to determine user!${normal}" >&2
+  exit 1
+fi
 
 get_nodes_list
 

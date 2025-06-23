@@ -6,7 +6,7 @@ nodes_type="ctrl"
 #check_openrc_script="check_openrc.sh"
 get_nodes_list_script="get_nodes_list.sh"
 drs_log_file_name="drs-api-error.log"
-default_user="root"
+default_ssh_user="root"
 
 #Colors
 green=$(tput setaf 2)
@@ -31,7 +31,7 @@ NC='\033[0m' # No Color
 [[ -z $NODE_NAME ]] && NODE_NAME=""
 [[ -z $DEBUG_STRING_ONLY ]] && DEBUG_STRING_ONLY="false"
 [[ -z $ALL_NODES ]] && ALL_NODES="false"
-[[ -z $USER ]] && USER="$default_user"
+#[[ -z $USER ]] && USER="$default_user"
 #==============================
 
 # Define parameters
@@ -74,9 +74,8 @@ while [ -n "$1" ]; do
     -all) ALL_NODES="true"
       echo "Found the -all option, with parameter value $ALL_NODES"
       ;;
-    -u|-user) USER="$2"
-#      USER_STR="-u $USER"
-      echo "Found the -user parameter with value $USER"
+    -u|-user) SSH_USER=$2
+      echo "Found the -user  with parameter value $SSH_USER"
       shift
       ;;
     --) shift
@@ -145,6 +144,20 @@ debug_echo () {
     $1"
 }
 
+if [[ -z "$SSH_USER" ]]; then
+  # 3. Try to determine via whoami (with error handling)
+  SSH_USER=$(whoami 2>/dev/null) || {
+    echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
+    # 4. Use default value
+    SSH_USER="$default_ssh_user"
+  }
+fi
+
+# Final value check
+if [[ -z "$SSH_USER" ]]; then
+  echo -e "${red}Error: Failed to determine user!${normal}" >&2
+  exit 1
+fi
 
 get_nodes_list
 
