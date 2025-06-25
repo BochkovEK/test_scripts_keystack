@@ -12,6 +12,7 @@
 #nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
 
 script_dir=$(dirname $0)
+script_name=$(basename "$0")
 utils_dir=$script_dir/utils
 get_nodes_list_script="get_nodes_list.sh"
 default_ssh_user="root"
@@ -188,7 +189,11 @@ get_nodes_list () {
   "
     error_in_NODES=$(echo $word|grep "ERROR")
     if [ -n "$error_in_NODES" ]; then
-      echo -e "${yellow}Node names could not be determined. Try running the script: bash ~/test_scripts_keystack/utils/get_nodes_list.sh -nt all${normal}"
+      echo -e "${yellow}Node names could not be determined.
+        Try:
+          bash ~/test_scripts_keystack/utils/get_nodes_list.sh -nt all
+          or
+          bash $script_dir/$script_name -nn \"<space-separated_list_of_hostnames>\"${normal}"
       echo -e "${red}Node names could not be determined - ERROR!${normal}"
       exit 1
     fi
