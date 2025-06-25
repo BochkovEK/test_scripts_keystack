@@ -197,8 +197,8 @@ start_command () {
     echo "Trying set power state \"on\" on $HOST_NAME"
     sent_launch_command=$(python_script_execute on)
     [ "$sent_launch_command" = "None" ] && { echo "The host: $HOST_NAME startup command has been successfully sent"; }
+    wait_for_ssh_connection
   fi
-  wait_for_ssh_connection
 }
 
 start_python_power_management_script () {
