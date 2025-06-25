@@ -4,11 +4,13 @@
 #  bash baremetal_power_management.sh ebochkov-ks-sber-comp-05 on
 
 edit_ha_config_script=edit_ha_config.sh
+default_ssh_user="root"
 
 #Colors
 green=$(tput setaf 2)
 red=$(tput setaf 1)
 violet=$(tput setaf 5)
+yellow=$(tput setaf 3)
 normal=$(tput sgr0)
 
 required_modules=(
@@ -29,6 +31,8 @@ script_dir=$(dirname $0)
 [[ -z $EDIT_HA_REGION_CONFIG ]] && EDIT_HA_REGION_CONFIG=$edit_ha_config_script
 [[ -z $BMC_SUFFIX ]] && BMC_SUFFIX=""
 #[[ -z $POSTFIX ]] && POSTFIX="rmi"
+[[ -z $SSH_TIMEOUT ]] && SSH_TIMEOUT=300
+[[ -z $SSH_INTERVAL ]] && SSH_INTERVAL=3
 #=============================================
 
 # Define parameters
@@ -45,13 +49,16 @@ do
   case "$1" in
   --help) echo -E "
     The power management script
-      -ip                   <ipmi_ip>       IPMI IP
-      -hv,    -host_name,   <host_name>     Host name for power management (ipmi)
-      -p,     -power_state  <power_state>   check, on, off, restart, shutdown
-      -v,     -debug        enabled debug output (without parameter)
-      -pswd,  -password     <password_for_idrac> idrac password
-      -u,     -user_name    <user_name_for_idrac> idrac username
-      -b,     -bmc_suffix   <bmc_suffix_for_impi> example cdm-bl-pca04-rmi (bmc_suffix = rmi)
+      -ip         <ipmi_ip>       IPMI IP
+      -hv,        -host_name,   <host_name>     Host name for power management (ipmi)
+      -p,         -power_state  <power_state>   check, on, off, restart, shutdown
+      -v,         -debug        enabled debug output (without parameter)
+      -pswd,      -password     <password_for_idrac> idrac password
+      -u,         -user_name    <user_name_for_idrac> idrac username
+      -b,         -bmc_suffix   <bmc_suffix_for_impi> example cdm-bl-pca04-rmi (bmc_suffix = rmi)
+      -ssh_user                 <ssh_user> for check ssh connection after startup node
+      -t,         -ssh_timeout  <ssh_timeout> timeout for ssh connection to node (sec)
+      -i,         -ssh_interval <ssh_interval> interval for check ssh connection to node (sec)
 
       Example to start script:
            bash baremetal_power_management.sh ebochkov-ks-sber-comp-05 check
@@ -82,6 +89,15 @@ do
   -b|-bmc_suffix) BMC_SUFFIX="$2"
     echo "Found the -bmc_suffix, with parameter value $BMC_SUFFIX"
     shift ;;
+  -ssh_user) SSH_USER="$2"
+    echo "Found the -ssh_user, with parameter value $SSH_USER"
+    shift ;;
+  -t|ssh_timeout) SSH_TIMEOUT="$2"
+    echo "Found the -ssh_timeout, with parameter value $SSH_TIMEOUT"
+    shift ;;
+  -i|ssh_interval) SSH_INTERVAL="$2"
+    echo "Found the -ssh_interval, with parameter value $SSH_INTERVAL"
+    shift ;;
   --) shift
       break ;;
   *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
@@ -97,6 +113,23 @@ done
 #    #echo $check_openrc_file
 #    [[ -z "$check_openrc_file" ]] && { echo "openrc file not found in $OPENRC_PATH"; exit 1; }
 #}
+
+define_ssh_user () {
+  if [[ -z "$SSH_USER" ]]; then
+  # 3. Try to determine via whoami (with error handling)
+  SSH_USER=$(whoami 2>/dev/null) || {
+    echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
+    # 4. Use default value
+    SSH_USER="$default_ssh_user"
+  }
+fi
+
+# Final value check
+if [[ -z "$SSH_USER" ]]; then
+  echo -e "${red}Error: Failed to determine user!${normal}" >&2
+  exit 1
+fi
+}
 
 check_connection_to_ipmi () {
   echo "Check connection to $BMC_HOST_NAME"
@@ -126,6 +159,48 @@ python_script_execute () {
   python3 $script_dir/redfish_manager.py $BMC_HOST_NAME $1 $USER_NAME $PASSWORD
 }
 
+wait_for_ssh_connection () {
+  echo "Waiting for SSH availability on $HOST_NAME..."
+
+  # SSH availability check loop
+  for (( i=0; i<$SSH_TIMEOUT; i+=$SSH_INTERVAL )); do
+    # Check port availability (using nc or ssh)
+    if nc -z -w 2 "$HOST_NAME" "$SSH_PORT" 2>/dev/null; then
+      echo "SSH is available!"
+      break
+    fi
+
+    echo "Attempt $((i/SSH_INTERVAL + 1)): SSH not yet available. Waiting $SSH_INTERVAL sec..."
+    sleep $SSH_INTERVAL
+  done
+
+  # Exit if timeout reached
+  if (( i >= SSH_TIMEOUT )); then
+    echo "Error: SSH on $HOST_NAME didn't become available within $SSH_TIMEOUT seconds!" >&2
+    exit 1
+  fi
+
+  ### Proceed with SSH commands if available ###
+  echo "Executing commands via SSH..."
+  ssh $SSH_USER@$HOST_NAME "ls -la"
+}
+
+start_command () {
+  actual_power_state=$(python_script_execute check| tail -n1)
+  echo "Actual ipmi satus: $actual_power_state"
+  if [ "$actual_power_state" = "PowerState.OFF" ]; then
+#          Check_openrc_file
+#          source $OPENRC_PATH
+    # The next two lines are commented out because the functionality of the consul has been changed 2024.2-rc-1
+#          echo "Trying set --disable-reason \"test disable\" to $HOST_NAME"
+#          openstack compute service set --disable --disable-reason "test disable" $HOST_NAME nova-compute
+    echo "Trying set power state \"on\" on $HOST_NAME"
+    sent_launch_command=$(python_script_execute on)
+    [ "$sent_launch_command" = "None" ] && { echo "The host: $HOST_NAME startup command has been successfully sent"; }
+  fi
+  wait_for_ssh_connection
+}
+
 start_python_power_management_script () {
     echo "Check power state parameter: $POWER_STATE..."
     if [ -n "$IPMI_IP" ]; then
@@ -151,18 +226,7 @@ start_python_power_management_script () {
         python_script_execute check
         ;;
       on|start)
-        actual_power_state=$(python_script_execute check| tail -n1)
-        echo "Actual ipmi satus: $actual_power_state"
-        if [ "$actual_power_state" = "PowerState.OFF" ]; then
-#          Check_openrc_file
-#          source $OPENRC_PATH
-          # The next two lines are commented out because the functionality of the consul has been changed 2024.2-rc-1
-#          echo "Trying set --disable-reason \"test disable\" to $HOST_NAME"
-#          openstack compute service set --disable --disable-reason "test disable" $HOST_NAME nova-compute
-          echo "Trying set power state \"on\" on $HOST_NAME"
-          sent_launch_command=$(python_script_execute on)
-          [ "$sent_launch_command" = "None" ] && { echo "The host: $HOST_NAME startup command has been successfully sent"; }
-        fi
+        start_command
         ;;
       off)
         actual_power_state=$(python_script_execute check| tail -n1)
@@ -188,7 +252,7 @@ start_python_power_management_script () {
     esac
 }
 
-
+define_ssh_user
 [ -z "$HOST_NAME" ] && [ -z "$IPMI_IP" ] && { echo "Host name or IP needed as env (HOST_NAME or IPMI_IP) or first start script parameter"; exit 1; }
 check_module_exist
 start_python_power_management_script
