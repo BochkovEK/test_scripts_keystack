@@ -108,7 +108,7 @@ do
     --help) echo -E "
       <container_name> as parameter
       -c, 	-container_name		<container_name>
-      -nt, 	-type_of_nodes		<type_of_nodes> 'ctrl', 'comp', 'net', 'all_without_network\awn'
+      -nt, 	-type_of_nodes		<type_of_nodes>: 'all', 'ctrl', 'comp', 'net', 'all_without_network\awn'
       -nn,  -node_name        <nodes_name_list> (exp: -nn \"cdm-bl-pca06 cdm-bl-pca07\")
       -check_unhealthy        check only unhealthy containers (without parameter)
       -u,   -user             <ssh_user>
@@ -188,7 +188,7 @@ get_nodes_list () {
   "
     error_in_NODES=$(echo $word|grep "ERROR")
     if [ -n "$error_in_NODES" ]; then
-      echo -e "${yellow}Node names could not be determined. Try running the script: bash ~/test_scripts_keystack/utils/get_nodes_list.sh -nt all${normal}"
+      echo -e "${yellow}Node names could not be determined. Try running the script: bash ~/test_scripts_keystack/utils/get_nodes_list.sh -nn \"<node_name_list>\"${normal}"
       echo -e "${red}Node names could not be determined - ERROR!${normal}"
       exit 1
     fi
