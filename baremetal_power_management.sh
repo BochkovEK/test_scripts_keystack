@@ -5,6 +5,7 @@
 
 edit_ha_config_script=edit_ha_config.sh
 default_ssh_user="root"
+default_ssh_port=22
 
 #Colors
 green=$(tput setaf 2)
@@ -33,6 +34,7 @@ script_dir=$(dirname $0)
 #[[ -z $POSTFIX ]] && POSTFIX="rmi"
 [[ -z $SSH_TIMEOUT ]] && SSH_TIMEOUT=300
 [[ -z $SSH_INTERVAL ]] && SSH_INTERVAL=3
+[[ -z $SSH_PORT ]] && SSH_PORT=$default_ssh_port
 #=============================================
 
 # Define parameters
@@ -195,8 +197,9 @@ start_command () {
 #          echo "Trying set --disable-reason \"test disable\" to $HOST_NAME"
 #          openstack compute service set --disable --disable-reason "test disable" $HOST_NAME nova-compute
     echo "Trying set power state \"on\" on $HOST_NAME"
-    sent_launch_command=$(python_script_execute on)
-    [ "$sent_launch_command" = "None" ] && { echo "The host: $HOST_NAME startup command has been successfully sent"; }
+    python_script_execute on
+#    sent_launch_command=$(python_script_execute on)
+#    [ "$sent_launch_command" = "None" ] && { echo "The host: $HOST_NAME startup command has been successfully sent"; }
     wait_for_ssh_connection
   fi
 }

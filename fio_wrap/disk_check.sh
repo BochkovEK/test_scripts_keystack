@@ -6,6 +6,8 @@ DISK="/dev/nvme0n1"                 # Disk to monitor (change to your device)
 TEST_DURATION="1s"                  # Duration of each fio test
 CHECK_INTERVAL="10"                 # Interval between checks (seconds)
 
+echo "==== Started at $(date +"%Y-%m-%d %T") ====" >> $LOG_FILE
+
 while true; do
     # Get current timestamp for logs
     TIMESTAMP=$(date +"%Y-%m-%d %T")

@@ -43,7 +43,9 @@ write_files:
       DISK="/dev/vda"
       TEST_DURATION="1s"
       CHECK_INTERVAL="5"
-
+      
+      echo "==== Started at $(date +"%Y-%m-%d %T") ====" >> $LOG_FILE
+      
       while true; do
           TIMESTAMP=$(date +"%Y-%m-%d %T")
           
