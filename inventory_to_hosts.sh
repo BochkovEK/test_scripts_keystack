@@ -128,12 +128,12 @@ done
 # Function to check and set variables
 check_and_set_variables() {
     # Check if environment variables exist
-    if [[ -z "${INVENTORY_PATH}" || \
-          -z "${OUTPUT_FILE_NAME}" || \
-          -z "${DOMAIN}" || \
-          -z "${REGION}" || \
-          -z "${INT_PREF}" || \
-          -z "${EXT_PREF}" \
+    if [[ -z "${INVENTORY_PATH}" ||
+          -z "${OUTPUT_FILE_NAME}" ||
+          -z "${DOMAIN}" ||
+          -z "${REGION}" ||
+          -z "${INT_PREF}" ||
+          -z "${EXT_PREF}"
         ]]; then
 
         # If variables are not set, check for $env_file_name file
@@ -200,12 +200,12 @@ check_and_set_variables() {
     fi
 
     # Verify that variables are now set
-    if [[ -z "${INVENTORY_PATH}" || \
-          -z "${OUTPUT_FILE_NAME}" || \
-          -z "${DOMAIN}" || \
-          -z "${REGION}" || \
-          -z "${INT_PREF}" || \
-          -z "${EXT_PREF}" \
+    if [[ -z "${INVENTORY_PATH}" ||
+          -z "${OUTPUT_FILE_PATH}" ||
+          -z "${DOMAIN}" ||
+          -z "${REGION}" ||
+          -z "${INT_PREF}" ||
+          -z "${EXT_PREF}"
         ]]; then
         echo -e "${red}Error: Required variables are not set - ERROR${normal}"
         exit 1
