@@ -10,9 +10,11 @@ env_file_name=".deploy_certs_env"
 gitlab_job_public_key="job_key.pub"
 #installer_root_folder="/installer"
 installer_distribution_folder="$HOME/installer"
+pip_conf="pip.conf"
+repo_conf="sberlinux-9.repo"
 required_file=(
-  "pip.conf"
-  "sberlinux-9.repo"
+  "${pip_conf}"
+  "${repo_conf}"
 )
 
 
@@ -137,7 +139,7 @@ setup_repo() {
   echo "Configuring repository..."
   sed_init_config
   for host in $srv; do
-    cat $script_dir/sberlinux-9.repo | ssh $SSH_SUDO_USER@$host "sudo tee /etc/yum.repos.d/sberlinux.repo > /dev/null"
+    cat ${INSTALLER_DISTRIBUTION_FOLDER}/${repo_conf} | ssh $SSH_SUDO_USER@$host "sudo tee /etc/yum.repos.d/sberlinux.repo > /dev/null"
   done
   for host in $srv;do ssh $SSH_SUDO_USER@$host "sudo sh -c 'yum -y update'";done
 }
@@ -145,7 +147,7 @@ setup_repo() {
 setup_pip_repo() {
   echo "Configuring PIP repository..."
   for host in $srv; do
-    cat $script_dir/pip.conf | ssh $SSH_SUDO_USER@$host "sudo tee /etc/pip.conf > /dev/null"
+    cat ${INSTALLER_DISTRIBUTION_FOLDER}/$pip_conf | ssh $SSH_SUDO_USER@$host "sudo tee /etc/$pip_conf > /dev/null"
   done
 }
 
