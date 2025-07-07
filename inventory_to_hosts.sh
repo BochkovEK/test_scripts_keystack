@@ -10,6 +10,7 @@ internal_prefix="int"
 external_prefix="ext"
 region_name="ebochkov"
 domain_name="test.domain"
+gitlab_short_name="ks-lcm"
 parse_inventory_script="parse_inventory.py"
 inventory_file_name="inventory"
 output_file_name="hosts_add_strings"
@@ -162,6 +163,11 @@ check_and_set_variables() {
         while [[ -z "${REGION}" ]]; do
           read -rp "Enter region name [$region_name]: " REGION
           REGION=${REGION:-"$region_name"}
+        done
+
+        while [[ -z "${GITLAB_SHORT_NAME}" ]]; do
+          read -rp "Enter gitlab short name [$gitlab_short_name]: " GITLAB_SHORT_NAME
+          GITLAB_SHORT_NAME=${GITLAB_SHORT_NAME:-"$gitlab_short_name"}
         done
 
         while [[ -z "${INT_PREF}" ]]; do
