@@ -14,7 +14,11 @@ script_dir=$(dirname "$(readlink -f "$0")")
 # Function to check and set variables
 check_and_set_variables() {
     # Check if environment variables exist
-    if [[ -z "${NEXUS_FQDN}" || -z "${HOSTS_LIST}" || -z "${SSH_SUDO_USER}" ]] || -z "${CA_CRT_PATH}"; then
+    if [[ -z "${NEXUS_FQDN}" ||
+          -z "${HOSTS_LIST}" ||
+          -z "${SSH_SUDO_USER}" ||
+          -z "${CA_CRT_PATH}"
+       ]]; then
         # If variables are not set, check for $env_file_name file
         if [[ -f "${script_dir}/$env_file_name" ]]; then
             # Load variables from file
