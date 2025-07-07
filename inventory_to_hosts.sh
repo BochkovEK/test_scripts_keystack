@@ -109,21 +109,21 @@ do
         shift
 done
 
-if [ -z "$INVENTORY_PATH" ]; then
-  if [ -z "$1" ]; then
-    echo -e "${red}The path to the inventory file path must be passed as an argument or by '-i' key - ERROR${normal}"
-    exit 1
-  fi
-else
-  cat $INVENTORY_PATH
-  if [ ! -f "$INVENTORY_PATH" ]; then
-#    echo $INVENTORY_PATH
-    echo -e "${yellow}Inventory file $INVENTORY_PATH not found - WARNING${normal}"
-    echo -e "Create it or specify -i key, or environment var 'INVENTORY_PATH' ${normal}"
-    echo -e "${red}The script cannot be executed - ERROR${normal}"
-    exit 1
-  fi
-fi
+#if [ -z "$INVENTORY_PATH" ]; then
+#  if [ -z "$1" ]; then
+#    echo -e "${red}The path to the inventory file path must be passed as an argument or by '-i' key - ERROR${normal}"
+#    exit 1
+#  fi
+#else
+#  cat $INVENTORY_PATH
+#  if [ ! -f "$INVENTORY_PATH" ]; then
+##    echo $INVENTORY_PATH
+#    echo -e "${yellow}Inventory file $INVENTORY_PATH not found - WARNING${normal}"
+#    echo -e "Create it or specify -i key, or environment var 'INVENTORY_PATH' ${normal}"
+#    echo -e "${red}The script cannot be executed - ERROR${normal}"
+#    exit 1
+#  fi
+#fi
 
 # Function to check and set variables
 check_and_set_variables() {
