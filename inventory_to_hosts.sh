@@ -223,6 +223,7 @@ python_script_execute () {
   export OUTPUT_FILE_PATH=$OUTPUT_FILE_PATH
   export DOMAIN=$DOMAIN
   export REGION=$REGION
+  export GITLAB_SHORT_NAME=$GITLAB_SHORT_NAME
   export INT_PREF=$INT_PREF
   export EXT_PREF=$EXT_PREF
 
