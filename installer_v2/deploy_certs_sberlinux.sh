@@ -1,11 +1,19 @@
 #!/bin/bash
 
-# To gen job_key.pub
+# To gen job_key.pub from job_key from vault
 #ssh-keygen -y -f job_key > job_key.pub
 
 ssh_sudo_user="kolla"
-ca_crt_path="$HOME/installer/mutiple-node/certs/ca.crt"
+ca_crt_file="mutiple-node/certs/ca.crt"
 env_file_name=".deploy_certs_env"
+#gitlab_public_key_path="config/gitlab_key.pub"
+gitlab_job_public_key="job_key.pub"
+#installer_root_folder="/installer"
+installer_distribution_folder="$HOME/installer"
+required_file=(
+  "pip.conf"
+  "sberlinux-9.repo"
+)
 
 
 # Determine the directory where the script is located
@@ -14,9 +22,12 @@ script_dir=$(dirname "$(readlink -f "$0")")
 # Function to check and set variables
 check_and_set_variables() {
     # Check if environment variables exist
-    if [[ -z "${NEXUS_FQDN}" ||
-          -z "${HOSTS_LIST}" ||
+    if [[
           -z "${SSH_SUDO_USER}" ||
+          -z "${HOSTS_LIST}" ||
+          -z "${INSTALLER_DISTRIBUTION_FOLDER}" ||
+          -z "${GITLAB_JOB_PUBLIC_KEY_PATH}" ||
+          -z "${NEXUS_FQDN}" ||
           -z "${CA_CRT_PATH}"
        ]]; then
         # If variables are not set, check for $env_file_name file
@@ -32,10 +43,6 @@ check_and_set_variables() {
           SSH_SUDO_USER=${SSH_SUDO_USER:-"$ssh_sudo_user"}
         done
 
-        while [[ -z "${NEXUS_FQDN}" ]]; do
-          read -p "Enter Nexus service FQDN: " NEXUS_FQDN
-        done
-
         while [[ -z "${HOSTS_LIST}" ]]; do
           HOSTS_LIST=$(cat /etc/hosts | grep -E "ctrl|comp|net-" | awk '{print $1}')
           if [[ -z "${HOSTS_LIST}" ]]; then
@@ -43,27 +50,47 @@ check_and_set_variables() {
           fi
         done
 
+        while [[ -z "${INSTALLER_DISTRIBUTION_FOLDER}" ]]; do
+          read -rp "Enter installer distribution folder [$installer_distribution_folder]: " INSTALLER_DISTRIBUTION_FOLDER
+          INSTALLER_DISTRIBUTION_FOLDER=${INSTALLER_DISTRIBUTION_FOLDER:-"$installer_distribution_folder"}
+        done
+
+        while [[ -z "${GITLAB_JOB_PUBLIC_KEY_PATH}" ]]; do
+          read -rp "Enter gitlab job public key [$installer_distribution_folder/$gitlab_job_public_key]: " GITLAB_JOB_PUBLIC_KEY_PATH
+          GITLAB_JOB_PUBLIC_KEY_PATH=${GITLAB_JOB_PUBLIC_KEY_PATH:-"$installer_distribution_folder/$gitlab_job_public_key"}
+        done
+
+        while [[ -z "${NEXUS_FQDN}" ]]; do
+          read -p "Enter Nexus service FQDN: " NEXUS_FQDN
+        done
+
         while [[ -z "${CA_CRT_PATH}" ]]; do
-          read -rp "Enter CA cert path [$ca_crt_path]: " CA_CRT_PATH
-          CA_CRT_PATH=${CA_CRT_PATH:-"$ca_crt_path"}
+          read -rp "Enter CA cert path [$installer_distribution_folder/$ca_crt_file]: " CA_CRT_PATH
+          CA_CRT_PATH=${CA_CRT_PATH:-"$installer_distribution_folder/$ca_crt_file"}
         done
 
         # Save variables to file
-        echo "export SSH_SUDO_USER=\"${SSH_SUDO_USER}\"" > "${script_dir}/$env_file_name"
+        echo > "${script_dir}/$env_file_name"
         {
-          echo "export NEXUS_FQDN=\"${NEXUS_FQDN}\"";
+          echo "export SSH_SUDO_USER=\"${SSH_SUDO_USER}\"";
           echo "export HOSTS_LIST=\"${HOSTS_LIST}\"";
+          echo "export INSTALLER_DISTRIBUTION_FOLDER=\"${INSTALLER_DISTRIBUTION_FOLDER}\"";
+          echo "export GITLAB_JOB_PUBLIC_KEY_PATH=\"${GITLAB_JOB_PUBLIC_KEY_PATH}\"";
+          echo "export NEXUS_FQDN=\"${NEXUS_FQDN}\"";
           echo "export CA_CRT_PATH=\"${CA_CRT_PATH}\"";
         } >> "${script_dir}/$env_file_name"
     fi
 
     # Verify that variables are now set
-    if [[ -z "${NEXUS_FQDN}" ||
-          -z "${HOSTS_LIST}" ||
+    if [[
           -z "${SSH_SUDO_USER}" ||
+          -z "${HOSTS_LIST}" ||
+          -z "${INSTALLER_DISTRIBUTION_FOLDER}" ||
+          -z "${GITLAB_JOB_PUBLIC_KEY_PATH}" ||
+          -z "${NEXUS_FQDN}" ||
           -z "${CA_CRT_PATH}"
        ]]; then
-        echo "Error: Required variables NEXUS_FQDN and HOSTS_LIST are not set."
+        echo "Error: Required variables are not set."
         exit 1
     fi
 }
@@ -71,20 +98,26 @@ check_and_set_variables() {
 # SED init configuration
 sed_init_config () {
   #source /installer/config/settings
+
+  for file in "${required_file[@]}"; do
+    if [ ! -f ${INSTALLER_DISTRIBUTION_FOLDER}/$file ]; then
+      echo "Error: Required file $file not exists in ${INSTALLER_DISTRIBUTION_FOLDER}/ "
+      exit 1
+    fi
+  done
   echo "Sed repos templates..."
-  sed -i "s/NEXUS_FQDN/$NEXUS_FQDN/g" "${script_dir}/pip.conf"
-  sed -i "s/NEXUS_FQDN/$NEXUS_FQDN/g" "${script_dir}/sberlinux-9.repo"
-  echo "cat pip.conf:"
-  cat "${script_dir}/pip.conf"
-  echo "cat sberlinux-9.repo:"
-  cat "${script_dir}/sberlinux-9.repo"
+  for file in "${required_file[@]}"; do
+    sed -i "s/NEXUS_FQDN/$NEXUS_FQDN/g" ${INSTALLER_DISTRIBUTION_FOLDER}/$file
+    echo "cat $file:"
+    cat ${INSTALLER_DISTRIBUTION_FOLDER}/$file
+  done
 }
 
 # Functions for each mode
 setup_certs() {
   echo "Configuring certificates..."
   for host in $srv; do
-    sudo sh -c "cat $ca_crt_path" |ssh $SSH_SUDO_USER@$host "sudo tee /etc/pki/ca-trust/source/anchors/ca.crt > /dev/null"
+    sudo sh -c "cat $CA_CRT_PATH" |ssh $SSH_SUDO_USER@$host "sudo tee /etc/pki/ca-trust/source/anchors/ca.crt > /dev/null"
   done
   for host in $srv;do ssh $SSH_SUDO_USER@$host "sudo sh -c 'update-ca-trust'";done
 }
@@ -105,14 +138,18 @@ setup_pip_repo() {
   done
 }
 
+send_gitlab_job_public_key_to_nodes () {
+  for host in $HOSTS_LIST; do
+    cat $1 | ssh $SSH_SUDO_USER@$host "cat >> ~/.ssh/authorized_keys"
+  done
+}
+
 setup_public_key() {
   echo "Configuring gitlab job_key.pub..."
-  if [[ -f "${script_dir}/job_key.pub" ]]; then
-    for host in $srv; do
-      cat $script_dir/job_key.pub | ssh $SSH_SUDO_USER@$host "cat >> ~/.ssh/authorized_keys"
-    done
+  if [[ -f "${GITLAB_JOB_PUBLIC_KEY_PATH}" ]]; then
+      send_gitlab_job_public_key_to_nodes $GITLAB_JOB_PUBLIC_KEY_PATH
   else
-    echo "[ERROR]: file 'job_key.pub' not exist in $script_dir/"
+    echo "[ERROR]: file '$GITLAB_JOB_PUBLIC_KEY_PATH' not exist"
   fi
 }
 
@@ -149,7 +186,7 @@ check_and_set_variables
 echo "SSH_SUDO_USER: ${SSH_SUDO_USER}"
 echo "NEXUS_FQDN: ${NEXUS_FQDN}"
 echo "HOSTS_LIST:
-  ${HOSTS_LIST}"
+${HOSTS_LIST}"
 
 srv=$HOSTS_LIST
 
