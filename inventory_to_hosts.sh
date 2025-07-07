@@ -189,6 +189,7 @@ check_and_set_variables() {
     if [ "$TS_DEBUG" = true ]; then
       echo "
   [DEBUG]:
+    INVENTORY_PATH: $INVENTORY_PATH
     OUTPUT_FILE: $OUTPUT_FILE_PATH
     DOMAIN: $DOMAIN
     REGION: $REGION
@@ -228,11 +229,18 @@ add_to_hosts () {
     echo "
   [DEBUG]:
     add_strings_already_exists: $add_strings_already_exists
-    \$script_dir/\$OUTPUT_FILE_NAME: $script_dir/$OUTPUT_FILE_NAME
+    OUTPUT_OUTPUT_FILE_PATH: $OUTPUT_OUTPUT_FILE_PATH
   "
     read -p "Press enter to continue: "
   fi
   if [ -z "$add_strings_already_exists" ]; then
+    if [ "$TS_DEBUG" = true ]; then
+      echo "
+  [DEBUG]:
+    The lines from the file $OUTPUT_FILE_PATH will be added to the file /etc/hosts.
+  "
+      read -p "Press enter to continue: "
+    fi
     echo $ADD_STRINGS >> /etc/hosts
     cat $script_dir/$OUTPUT_FILE_NAME >> /etc/hosts
   fi
