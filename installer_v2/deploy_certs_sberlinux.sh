@@ -113,6 +113,17 @@ sed_init_config () {
   done
 }
 
+check_ssh_connection() {
+  for host in $srv; do
+    if ssh -q -o BatchMode=yes -o ConnectTimeout=5 "$SSH_SUDO_USER@$host" exit; then
+      echo "SSH connection to $host successful"
+    else
+      echo "SSH connection to $host failed" >&2
+      exit 1
+    fi
+  done
+}
+
 # Functions for each mode
 setup_certs() {
   echo "Configuring certificates..."
@@ -195,6 +206,8 @@ ${HOSTS_LIST}
 srv=$HOSTS_LIST
 
 read -p "Press enter to continue: "
+
+check_ssh_connection
 
 # Execute selected functions
 if $RUN_CERTS; then setup_certs; fi
