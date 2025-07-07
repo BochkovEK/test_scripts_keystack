@@ -115,7 +115,7 @@ sed_init_config () {
 
 check_ssh_connection() {
   for host in $srv; do
-    if ssh -q -o BatchMode=yes -o ConnectTimeout=5 "$SSH_SUDO_USER@$host" exit; then
+    if ssh -q -o "StrictHostKeyChecking=no" -o BatchMode=yes -o ConnectTimeout=5 "$SSH_SUDO_USER@$host" exit; then
       echo "SSH connection to $host successful"
     else
       echo "SSH connection to $host failed" >&2
