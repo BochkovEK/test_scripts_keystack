@@ -229,9 +229,8 @@ add_to_hosts () {
     echo "
   [DEBUG]:
     add_strings_already_exists: $add_strings_already_exists
-    OUTPUT_OUTPUT_FILE_PATH: $OUTPUT_OUTPUT_FILE_PATH
+    OUTPUT_FILE_PATH: $OUTPUT_FILE_PATH
   "
-    read -p "Press enter to continue: "
   fi
   if [ -z "$add_strings_already_exists" ]; then
     if [ "$TS_DEBUG" = true ]; then
