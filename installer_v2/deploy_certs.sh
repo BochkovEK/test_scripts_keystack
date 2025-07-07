@@ -148,7 +148,8 @@ check_and_set_variables
 # Display variable values for verification
 echo "SSH_SUDO_USER: ${SSH_SUDO_USER}"
 echo "NEXUS_FQDN: ${NEXUS_FQDN}"
-echo "HOSTS_LIST: ${HOSTS_LIST}"
+echo "HOSTS_LIST:
+  ${HOSTS_LIST}"
 
 srv=$HOSTS_LIST
 
