@@ -56,8 +56,8 @@ check_and_set_variables() {
         done
 
         while [[ -z "${GITLAB_JOB_PUBLIC_KEY_PATH}" ]]; do
-          read -rp "Enter gitlab job public key [$installer_distribution_folder/$gitlab_job_public_key]: " GITLAB_JOB_PUBLIC_KEY_PATH
-          GITLAB_JOB_PUBLIC_KEY_PATH=${GITLAB_JOB_PUBLIC_KEY_PATH:-"$installer_distribution_folder/$gitlab_job_public_key"}
+          read -rp "Enter gitlab job public key [$INSTALLER_DISTRIBUTION_FOLDER/$gitlab_job_public_key]: " GITLAB_JOB_PUBLIC_KEY_PATH
+          GITLAB_JOB_PUBLIC_KEY_PATH=${GITLAB_JOB_PUBLIC_KEY_PATH:-"$INSTALLER_DISTRIBUTION_FOLDER/$gitlab_job_public_key"}
         done
 
         while [[ -z "${NEXUS_FQDN}" ]]; do
