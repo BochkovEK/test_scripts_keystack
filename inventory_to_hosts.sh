@@ -242,6 +242,8 @@ add_to_hosts () {
     fi
     echo $ADD_STRINGS >> /etc/hosts
     cat $OUTPUT_FILE_PATH >> /etc/hosts
+    echo "/etc/hosts:"
+    cat /etc/hosts
   fi
 }
 
