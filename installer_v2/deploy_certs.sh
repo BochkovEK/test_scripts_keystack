@@ -14,10 +14,10 @@ script_dir=$(dirname "$(readlink -f "$0")")
 # Function to check and set variables
 check_and_set_variables() {
     # Check if environment variables exist
-    if [[ -z "${NEXUS_FQDN}" ||
-          -z "${HOSTS_LIST}" ||
-          -z "${SSH_SUDO_USER}" ||
-          -z "${CA_CRT_PATH}"
+    if [[ -z "${NEXUS_FQDN}" || \
+          -z "${HOSTS_LIST}" || \
+          -z "${SSH_SUDO_USER}" || \
+          -z "${CA_CRT_PATH}" \
        ]]; then
         # If variables are not set, check for $env_file_name file
         if [[ -f "${script_dir}/$env_file_name" ]]; then
@@ -58,7 +58,11 @@ check_and_set_variables() {
     fi
 
     # Verify that variables are now set
-    if [[ -z "${NEXUS_FQDN}" || -z "${HOSTS_LIST}" || -z "${SSH_SUDO_USER}" ]]; then
+    if [[ -z "${NEXUS_FQDN}" || \
+          -z "${HOSTS_LIST}" || \
+          -z "${SSH_SUDO_USER}" || \
+          -z "${CA_CRT_PATH}" \
+       ]]; then
         echo "Error: Required variables NEXUS_FQDN and HOSTS_LIST are not set."
         exit 1
     fi
