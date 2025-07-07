@@ -111,7 +111,7 @@ done
 
 if [ -z "$INVENTORY_PATH" ]; then
   if [ -z "$1" ]; then
-    echo -e "${red}The path to the inventory file must be passed as an argument - ERROR${normal}"
+    echo -e "${red}The path to the inventory file path must be passed as an argument or by '-i' key - ERROR${normal}"
     exit 1
   fi
 else
