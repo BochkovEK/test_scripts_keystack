@@ -7,13 +7,14 @@ ssh_sudo_user="kolla"
 ca_crt_path="$HOME/installer/mutiple-node/certs/ca.crt"
 env_file_name=".deploy_certs_env"
 
+
 # Determine the directory where the script is located
 script_dir=$(dirname "$(readlink -f "$0")")
 
 # Function to check and set variables
 check_and_set_variables() {
     # Check if environment variables exist
-    if [[ -z "${NEXUS_FQDN}" || -z "${HOSTS_LIST}" || -z "${SSH_SUDO_USER}" ]]; then
+    if [[ -z "${NEXUS_FQDN}" || -z "${HOSTS_LIST}" || -z "${SSH_SUDO_USER}" ]] || -z "${CA_CRT_PATH}"; then
         # If variables are not set, check for $env_file_name file
         if [[ -f "${script_dir}/$env_file_name" ]]; then
             # Load variables from file
@@ -38,10 +39,18 @@ check_and_set_variables() {
           fi
         done
 
+        while [[ -z "${CA_CRT_PATH}" ]]; do
+          read -rp "Enter CA cert path [$ca_crt_path]: " CA_CRT_PATH
+          CA_CRT_PATH=${CA_CRT_PATH:-"$ca_crt_path"}
+        done
+
         # Save variables to file
         echo "export SSH_SUDO_USER=\"${SSH_SUDO_USER}\"" > "${script_dir}/$env_file_name"
-        echo "export NEXUS_FQDN=\"${NEXUS_FQDN}\"" >> "${script_dir}/$env_file_name"
-        echo "export HOSTS_LIST=\"${HOSTS_LIST}\"" >> "${script_dir}/$env_file_name"
+        {
+          echo "export NEXUS_FQDN=\"${NEXUS_FQDN}\"";
+          echo "export HOSTS_LIST=\"${HOSTS_LIST}\"";
+          echo "export CA_CRT_PATH=\"${CA_CRT_PATH}\"";
+        } >> "${script_dir}/$env_file_name"
     fi
 
     # Verify that variables are now set

@@ -134,44 +134,51 @@ AZs = {
 server_groups = {}
 #==================
 
-variable list:
-VM:
+#variable list:
+#VM:
+VMs = {
     <vm_name> = {
-        image_name
+        vm_qty     = <vms_quantity>
+        image_name = "<image_name>"
         flavor {
             vcpus = <vcpus>
             ram   = <ram_in_MB>
         }
-    )
-    flavor_name = {
-        vcpus       = <vCPUs>
-        ram         = <in_MB>
-        extra_specs = "<string>"
+
+        flavor_name = {
+            vcpus       = <vCPUs>
+            ram         = <in_MB>
+            extra_specs = "<string>"
+        }
+        keypair_name                        = "<keypair_name>"
+        security_groups                     = [] #list
+        az_hint                                 = "<az_name>:<hyper_name>"
+        network_name                        = "<network_name>"
+        boot_volume_size                    = <size> (default_volume_size = 5)
+        boot_volume_delete_on_termination   = "true\false" (default "true")
+        disks           = [
+          {
+            boot_index = <boot_index>
+            size = <size>
+          },
+        ]
+        metadata = {}
+        user_data =
+            #or string:
+                <<-EOT
+                #cloud-config
+                hostname: my-vm
+                EOT
+            #or template:
+                { template_file = "templates/cloud-init-2.yaml" }
+        }
     }
-    keypair_name                        = "<keypair_name>"
-    security_groups                     = [] #list
-az_hint                                 = "<az_name>:<hyper_name>"
-    network_name                        = "<network_name>"
-    boot_volume_size                    = <size> (default_volume_size = 5)
-    boot_volume_delete_on_termination   = "true\false" (default "true")
-    disks           = [
-      {
-        boot_index = <boot_index>
-        size = <size>
-        device_name = "<device_name>" (exp: vdb)
-      },
-    ]
-    metadata = {}
-    user_data =
-        #or string:
-            <<-EOT
-            #cloud-config
-            hostname: my-vm
-            EOT
-        #or template:
-            { template_file = "templates/cloud-init-2.yaml" }
-AZ:
+}
+
+#AZ:
+AZs = {
     <aggr_name> = {
         az_name    = "az_name" #(exp: "az_1")
         hosts_list = [ "<list_hosts>" ]
+    }
 }
