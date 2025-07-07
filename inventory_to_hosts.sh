@@ -186,6 +186,18 @@ check_and_set_variables() {
         } >> "${script_dir}/$env_file_name"
     fi
 
+    if [ "$TS_DEBUG" = true ]; then
+      echo "
+  [DEBUG]:
+    OUTPUT_FILE: $OUTPUT_FILE_PATH
+    DOMAIN: $DOMAIN
+    REGION: $REGION
+    INT_PREF: $INT_PREF
+    EXT_PREF: $EXT_PREF
+      "
+    read -p "Press enter to continue: "
+    fi
+
     # Verify that variables are now set
     if [[ -z "${INVENTORY_PATH}" ||
           -z "${OUTPUT_FILE_NAME}" ||
@@ -194,7 +206,7 @@ check_and_set_variables() {
           -z "${INT_PREF}" ||
           -z "${EXT_PREF}"
         ]]; then
-        echo "Error: Required variables NEXUS_FQDN and HOSTS_LIST are not set."
+        echo -e "${red}Error: Required variables are not set - ERROR${normal}"
         exit 1
     fi
 }
@@ -206,17 +218,7 @@ python_script_execute () {
   export REGION=$REGION
   export INT_PREF=$INT_PREF
   export EXT_PREF=$EXT_PREF
-  if [ "$TS_DEBUG" = true ]; then
-    echo "
-  [DEBUG]:
-    OUTPUT_FILE: $OUTPUT_FILE_PATH
-    DOMAIN: $DOMAIN
-    REGION: $REGION
-    INT_PREF: $INT_PREF
-    EXT_PREF: $EXT_PREF
-  "
-    read -p "Press enter to continue: "
-  fi
+
   python3 $script_dir/$parse_inventory_script $INVENTORY_PATH
 }
 
