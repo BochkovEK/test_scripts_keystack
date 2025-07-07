@@ -241,7 +241,7 @@ add_to_hosts () {
       read -p "Press enter to continue: "
     fi
     echo $ADD_STRINGS >> /etc/hosts
-    cat $OUTPUT_FILE_OUTPUT_FILE_PATH >> /etc/hosts
+    cat $OUTPUT_FILE_PATH >> /etc/hosts
   fi
 }
 
