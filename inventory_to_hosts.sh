@@ -187,6 +187,7 @@ check_and_set_variables() {
           echo "export OUTPUT_FILE_PATH=\"${OUTPUT_FILE_PATH}\"";
           echo "export DOMAIN=\"${DOMAIN}\"";
           echo "export REGION=\"${REGION}\"";
+          echo "export GITLAB_SHORT_NAME=\"${GITLAB_SHORT_NAME}\"";
           echo "export INT_PREF=\"${INT_PREF}\"";
           echo "export EXT_PREF=\"${EXT_PREF}\"";
         } >> "${script_dir}/$env_file_name"

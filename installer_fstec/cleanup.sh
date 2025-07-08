@@ -28,9 +28,9 @@ fi
 
 cd ~ || exit
 
-docker compose -f $CFG_HOME/netbox-compose.yml down
-docker compose -f $CFG_HOME/compose.yaml down
-docker system prune -f
-docker volume prune -f
+podman compose -f $CFG_HOME/netbox-compose.yml down
+podman compose -f $CFG_HOME/compose.yaml down
+podman system prune -f
+podman volume prune -f
 
 rm -rf $INSTALL_HOME

@@ -712,6 +712,7 @@ $DOCKER_COMPOSE_COMMAND -f $CFG_HOME/compose.yaml up -d
 
 ##project_k netbox start
 $DOCKER_COMPOSE_COMMAND -f $CFG_HOME/netbox-compose.yml up -d
+chmod -R a+w $NETBOX_HOME/redis
 #podman-integrity update_each_file /etc/containers
 #sleep 5
 #for container in $(podman ps -qa); do podman-integrity update_container $container && podman-integrity validate_container $container; done
