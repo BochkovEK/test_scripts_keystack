@@ -2,7 +2,7 @@ name: netbox
 services:
   postgres:
     container_name: netbox-postgres
-    image: $NEXUS_FQDN/project_k/lcm/postgres:ks2025.1-rc8-sberlinux
+    image: repo.itkey.com/project_k/lcm/postgres:ks2025.1-rc8-sberlinux
     env_file: $NETBOX_HOME/env/postgres.env
     restart: unless-stopped
     privileged: True
@@ -41,7 +41,7 @@ services:
   netbox: &netbox
     container_name: netbox
     hostname: $NETBOX_NAME.$DOMAIN
-    image: $NEXUS_FQDN/project_k/lcm/netbox:ks2025.1-rc8-sberlinux
+    image: repo.itkey.com/project_k/lcm/netbox:ks2025.1-rc8-sberlinux
     depends_on:
       - postgres
       - redis

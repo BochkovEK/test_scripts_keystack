@@ -298,7 +298,7 @@ if [ ! -d $INIT_INSTALLER_FOLDER ]; then
 fi
 if [ ! -d "$HOME/installer_backup" ]; then
   echo "Create backup folder..."
-  cp -r ~/installer ~/installer_backup
+  cp -r $INIT_INSTALLER_FOLDER $INIT_INSTALLER_BACKUP_FOLDER
 fi
 
 select_config_file
