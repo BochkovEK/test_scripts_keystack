@@ -57,7 +57,7 @@ def write_file(path_to_file, strings):
             is_lcm_node = re.search(lcm_pattern, last_word)
             if is_lcm_node:
                 short_name = f"{last_word.split('-')[-2]}-{last_word.split('-')[-1]}"
-                file.write(line + f" {short_name} lcm-nexus.{domain} netbox.{domain} {gitlab_short_name}.{domain} vault.{domain}\n")
+                file.write(line + f" {short_name} lcm-nexus.{region}.{domain} netbox.{region}.{domain} {gitlab_short_name}.{region}.{domain} vault.{region}.{domain}\n")
             else:
                 short_name = f"{last_word.split('-')[-2]}-{last_word.split('-')[-1]}"
                 file.write(line + f" {short_name}\n")
