@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 
 # The script generate selfsigned wildcard from domain
 # env list:
