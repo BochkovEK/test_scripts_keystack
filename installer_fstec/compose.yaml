@@ -1,0 +1,139 @@
+services:
+  nexus:
+    container_name: nexus
+    hostname: $NEXUS_NAME.$DOMAIN
+    image: $NEXUS_FQDN/project_k/lcm/nexus3:$RELEASE
+    restart: always
+    volumes:
+      - $NEXUS_HOME:/nexus-data
+    networks:
+      - installer-network
+  vault:
+    container_name: vault
+    hostname: $VAULT_NAME.$DOMAIN
+    image: $NEXUS_FQDN/project_k/lcm/vault:$RELEASE
+    environment:
+      VAULT_ADDR: https://$VAULT_NAME.$DOMAIN
+    restart: always
+    volumes:
+      - $VAULT_HOME/file:/vault/file
+      - $VAULT_HOME/config:/vault/config
+      - $VAULT_HOME/logs:/vault/logs
+      - /etc/pki/ca-trust/source/anchors:/etc/pki/ca-trust/source/anchors
+      - /etc/hosts:/etc/hosts
+    cap_add:
+      - IPC_LOCK
+    entrypoint: vault server -config=/vault/config/vault.json
+    networks:
+      - installer-network
+  gitlab:
+    container_name: gitlab
+    hostname: $GITLAB_NAME.$DOMAIN
+    image: $NEXUS_FQDN/project_k/lcm/gitlab:$RELEASE
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        prometheus['enable'] = false
+        prometheus_monitoring['enable'] = false
+        gitlab_rails['databases']['ci']['enable'] = false
+        gitlab_rails['usage_ping_enabled'] = false
+        external_url 'https://$GITLAB_NAME.$DOMAIN/'
+        gitlab_rails['monitoring_whitelist'] = ['0.0.0.0/0']
+        gitlab_rails['initial_shared_runners_registration_token'] = File.read('/run/secrets/runner_token').gsub("\n", "")
+        gitlab_rails['lfs_enabled'] = true
+        letsencrypt['enable'] = false
+        nginx['redirect_http_to_https'] = true
+        nginx['ssl_certificate'] = "/run/secrets/gitlab.pem"
+        nginx['ssl_certificate_key'] = "/run/secrets/gitlab.key"
+        puma['worker_processes'] = 4
+        puma['per_worker_max_memory_mb'] = 1024
+        gitlab_rails['ldap_enabled'] = LDAP_USE
+        gitlab_rails['ldap_servers'] = {
+          'main' => {
+            'label' => 'LDAP',
+            'host' => 'LDAP-SERVER-URI',
+            'port' => 636,
+            'bind_dn' => 'LDAP-BIND-DN',
+            'password' => 'LDAP-BIND-PASSWORD',
+            'uid' => 'sAMAccountName',
+            'encryption' => 'simple_tls',
+            'tls_options' => {
+              'ca_file' => '/etc/gitlab/trusted-certs/ldaps.pem',
+              'ssl_version' => 'TLSv1_2'
+            },
+            'timeout' => 10,
+            'active_directory' => true,
+            'user_filter' => '(&(objectClass=user)(|(memberof=LDAP-READER-GROUP-DN)(memberof=LDAP-AUDITOR-GROUP-DN)(memberof=LDAP-OPERATOR-GROUP)(memberof=LDAP-ADMIN-GROUP-DN)))',
+            'base' => 'LDAP-USER-SEARCH-BASEDN',
+            'lowercase_usernames' => 'false',
+            'retry_empty_result_with_codes' => [80],
+            'allow_username_or_email_login' => false,
+            'block_auto_created_users' => false
+          }
+        }
+    ports:
+      - "2204:22"
+    secrets:
+      - source: gitlab.runner.token
+        target: runner_token
+      - source: gitlab.ssl.cert
+        target: gitlab.pem
+      - source: gitlab.ssl.key
+        target: gitlab.key
+    volumes:
+      - $GITLAB_HOME/config:/etc/gitlab
+      - $GITLAB_HOME/logs:/var/log/gitlab
+      - $GITLAB_HOME/data:/var/opt/gitlab
+      - /etc/pki/ca-trust/source/anchors:/etc/pki/ca-trust/source/anchors
+    cap_add:
+      - ALL
+    healthcheck:
+      test: ["CMD", "gitlab-ctl", "status"]
+      interval: 60s
+      timeout: 30s
+      retries: 20
+    restart: always
+    shm_size: 256m
+    networks:
+      - installer-network
+  gitlab-runner:
+    container_name: gitlab-runner
+    image: $NEXUS_FQDN/project_k/lcm/gitlab-runner:$RELEASE
+    secrets:
+      - source: gitlab.runner.token
+        target: runner_token
+    volumes:
+      - $GITLAB_RUNNER_HOME:/etc/gitlab-runner
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /root/.docker/config.json:/root/.docker/config.json
+    cap_add:
+      - ALL
+    restart: always
+    depends_on:
+      - gitlab
+    networks:
+      - installer-network
+  nginx:
+    container_name: nginx
+    hostname: $DOMAIN
+    image: $NEXUS_FQDN/project_k/lcm/nginx:$RELEASE
+    restart: always
+    volumes:
+      - $INSTALL_HOME/data/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - $INSTALL_HOME/data/nginx/conf.d/certs:/etc/nginx/conf.d/certs
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - installer-network
+
+networks:
+  installer-network:
+    driver: bridge
+    name: installer
+secrets:
+  gitlab.runner.token:
+    file: $CFG_HOME/gitlab_runner_token
+  gitlab.ssl.cert:
+    file: $CA_HOME/cert/chain-$GITLAB_NAME.pem
+  gitlab.ssl.key:
+    file: $CA_HOME/cert/$GITLAB_NAME.key

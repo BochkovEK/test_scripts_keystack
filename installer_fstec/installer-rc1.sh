@@ -5,14 +5,14 @@ set -x
 # Originally written by Alexey Malashin  #
 #             - = 2024 =-                #
 #----------------------------------------#
-DOCKER_COMMAND='podman'
-DOCKER_COMPOSE_COMMAND='podman compose'
+
+DOCKER_COMPOSE_COMMAND='docker compose'
 
 # check os release
 os=unknown
 [[ -f /etc/os-release ]] && os=$({ . /etc/os-release; echo ${ID,,}; })
 
-[[ "$os" == "ditmosos-kolchak" ]] && { DOCKER_COMPOSE_COMMAND='docker compose'; }
+[[ "$os" == "ditmosos-kolchak" ]] && { DOCKER_COMPOSE_COMMAND='docker-compose'; }
 
 # check for elevated privileges
 if ((${EUID:-0} || "$(id -u)")); then
@@ -509,17 +509,17 @@ fi
 if [ -f nexus-$RELEASE.tar ]; then
   echo "Nexus image exist => loading"
   podman-integrity update_each_file /etc/containers
-  $DOCKER_COMMAND load -i nexus-$RELEASE.tar
+  docker load -i nexus-$RELEASE.tar
   for image in $(podman images -qa); do podman-integrity update_image $image; done
-  $DOCKER_COMMAND tag $ITKEY_REPO_FQDN/project_k/lcm/nexus3:$RELEASE $NEXUS_FQDN/project_k/lcm/nexus3:$RELEASE
+  docker tag $ITKEY_REPO_FQDN/project_k/lcm/nexus3:$RELEASE $NEXUS_FQDN/project_k/lcm/nexus3:$RELEASE
 fi
 
 if [ -f nginx-$RELEASE.tar ]; then
   echo "Nginx image exist => loading"
   podman-integrity update_each_file /etc/containers
-  $DOCKER_COMMAND load -i nginx-$RELEASE.tar
+  docker load -i nginx-$RELEASE.tar
   for image in $(podman images -qa); do podman-integrity update_image $image; done
-  $DOCKER_COMMAND tag $ITKEY_REPO_FQDN/project_k/lcm/nginx:$RELEASE $NEXUS_FQDN/project_k/lcm/nginx:$RELEASE
+  docker tag $ITKEY_REPO_FQDN/project_k/lcm/nginx:$RELEASE $NEXUS_FQDN/project_k/lcm/nginx:$RELEASE
 fi
 
 ##########################
@@ -581,7 +581,7 @@ cp docker_auth.json /root/.docker/config.json
 sed -i "s/NEXUS_FQDN/$NEXUS_FQDN/g" /root/.docker/config.json
 chmod 600 /root/.docker/config.json
 if [[ $CLIENT_NEXUS == "y" ]]; then
-  $DOCKER_COMMAND login $NEXUS_FQDN -u $NEXUS_USER -p $NEXUS_PASSWORD
+  docker login $NEXUS_FQDN -u $NEXUS_USER -p $NEXUS_PASSWORD
 fi
 
 # copy pip.conf
@@ -631,7 +631,8 @@ podman-integrity update_each_file /etc/containers
 sleep 5
 for container in $(podman ps -qa); do podman-integrity update_container $container; done
 
-$DOCKER_COMMAND restart nexus nginx
+docker restart nexus
+docker restart nginx
 
 # check for nexus readiness
 echo -n Waiting for Nexus readiness
@@ -686,12 +687,12 @@ upload_nexus &
 #Nexus LCM images
 function upload_lcm_nexus {
 if [ -f keystack-$RELEASE-lcm-images.tar ]; then
-  $DOCKER_COMMAND load -i keystack-$RELEASE-lcm-images.tar
+  docker load -i keystack-$RELEASE-lcm-images.tar
   for image in $(cat keystack-$RELEASE-lcm-images.txt); do
-    echo $image | sed "s/$ITKEY_REPO_FQDN/$NEXUS_FQDN/" | xargs -I{} $DOCKER_COMMAND tag $image {};
-    echo $image | sed "s/$ITKEY_REPO_FQDN/$NEXUS_FQDN/" | xargs -I{} $DOCKER_COMMAND push {};
-    echo $image | xargs -I{} $DOCKER_COMMAND image rm -f {};
-    $DOCKER_COMMAND images | grep $NEXUS_FQDN | awk '{print $1 ":" $2 }' | grep -v lcm | grep -v kolla-ansible | xargs -I{} $DOCKER_COMMAND image rm -f {};
+    echo $image | sed "s/$ITKEY_REPO_FQDN/$NEXUS_FQDN/" | xargs -I{} docker tag $image {};
+    echo $image | sed "s/$ITKEY_REPO_FQDN/$NEXUS_FQDN/" | xargs -I{} docker push {};
+    echo $image | xargs -I{} docker image rm -f {};
+    docker images | grep $NEXUS_FQDN | awk '{print $1 ":" $2 }' | grep -v lcm | grep -v kolla-ansible | xargs -I{} docker image rm -f {};
   done
 fi
 }
@@ -731,7 +732,7 @@ done
 echo .
 echo GitLab is Ready!
 
-gitlab_root_password=$(podman exec gitlab grep 'Password:' /etc/gitlab/initial_root_password | awk '{print $2}')
+gitlab_root_password=$(docker exec gitlab grep 'Password:' /etc/gitlab/initial_root_password | awk '{print $2}')
 if [[ $LDAP_USE == "y" ]]; then
   $DOCKER_COMPOSE_COMMAND -f $CFG_HOME/compose.yaml exec gitlab /bin/bash -c 'echo -e "main:\n  password: '\'$LDAP_BIND_PASSWORD\''\n  bind_dn: '\'$LDAP_BIND_DN\''" | gitlab-rake gitlab:ldap:secret:write'
   sed -i "/bind_dn/d" $CFG_HOME/compose.yaml
@@ -750,17 +751,17 @@ fi
 #Nexus images
 function upload_docker_nexus {
 if [ -f keystack-$RELEASE-docker-images.tar ]; then
-  $DOCKER_COMMAND load -i keystack-$RELEASE-docker-images.tar
+  docker load -i keystack-$RELEASE-docker-images.tar
   for image in $(cat keystack-$RELEASE-docker-images.txt); do
     if [[ $image =~ "kolla-ansible" ]]; then
-      echo $image | sed "s/$ITKEY_REPO_FQDN/$NEXUS_FQDN/" | sed "s/\-$BASE$//" | xargs -I{} $DOCKER_COMMAND tag $image {};
-      echo $image | sed "s/$ITKEY_REPO_FQDN/$NEXUS_FQDN/" | sed "s/\-$BASE$//" | xargs -I{} $DOCKER_COMMAND push {};
-      echo $image | xargs -I{} $DOCKER_COMMAND image rm -f {};
+      echo $image | sed "s/$ITKEY_REPO_FQDN/$NEXUS_FQDN/" | sed "s/\-$BASE$//" | xargs -I{} docker tag $image {};
+      echo $image | sed "s/$ITKEY_REPO_FQDN/$NEXUS_FQDN/" | sed "s/\-$BASE$//" | xargs -I{} docker push {};
+      echo $image | xargs -I{} docker image rm -f {};
     else
-      echo $image | sed "s/$ITKEY_REPO_FQDN/$NEXUS_FQDN/" | xargs -I{} $DOCKER_COMMAND tag $image {};
-      echo $image | sed "s/$ITKEY_REPO_FQDN/$NEXUS_FQDN/" | xargs -I{} $DOCKER_COMMAND push {};
-      echo $image | xargs -I{} $DOCKER_COMMAND image rm -f {};
-      $DOCKER_COMMAND images | grep $NEXUS_FQDN | awk '{print $1 ":" $2 }' | grep -v lcm | grep -v kolla-ansible | xargs -I{} $DOCKER_COMMAND image rm -f {};
+      echo $image | sed "s/$ITKEY_REPO_FQDN/$NEXUS_FQDN/" | xargs -I{} docker tag $image {};
+      echo $image | sed "s/$ITKEY_REPO_FQDN/$NEXUS_FQDN/" | xargs -I{} docker push {};
+      echo $image | xargs -I{} docker image rm -f {};
+      docker images | grep $NEXUS_FQDN | awk '{print $1 ":" $2 }' | grep -v lcm | grep -v kolla-ansible | xargs -I{} docker image rm -f {};
     fi
   done
 fi
@@ -949,12 +950,12 @@ if [[ $LDAP_USE == "y" ]]; then
       end
     ")
     if [ -n "$existing_pat" ]; then
-        $DOCKER_COMMAND exec gitlab gitlab-rails runner "
+        docker exec gitlab gitlab-rails runner "
             user = User.find_by(username: 'root')
             token = user.personal_access_tokens.find_by(id: $existing_pat)
             token.destroy if token"
     fi
-    PAT=$($DOCKER_COMMAND exec gitlab gitlab-rails runner "
+    PAT=$(docker exec gitlab gitlab-rails runner "
       require 'securerandom'
       user = User.find_by(username: 'root')
       token_plain = SecureRandom.hex(20)
