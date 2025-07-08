@@ -178,7 +178,7 @@ get_init_vars () {
     CERTS_DIR:          $CERTS_DIR
     OUTPUT_CERTS_DIR:   $OUTPUT_CERTS_DIR
     DOMAIN:             $DOMAIN
-    REGION:        $REGION
+    REGION:             $REGION
     INTERNAL_FQDN:      $INTERNAL_FQDN
     INTERNAL_VIP:       $INTERNAL_VIP
     EXTERNAL_FQDN:      $EXTERNAL_FQDN
