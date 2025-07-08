@@ -243,7 +243,7 @@ generate_ca_certs () {
     openssl req -new -subj "/C=RU/ST=Msk/L=Moscow/O=ITKey/OU=KeyStack/CN=*.$DOMAIN" \
       -key $CERTS_DIR/certs/cert.key -out $CERTS_DIR/certs/cert.csr
 
-    export SAN=DNS:$DOMAIN,DNS:*$REGION.$DOMAIN,IP:$CA_IP
+    export SAN=DNS:$REGION.$DOMAIN,DNS:*$REGION.$DOMAIN,IP:$CA_IP
 
     openssl x509 -req -in $CERTS_DIR/certs/cert.csr \
       -extfile $script_dir/cert.cnf -CA $CERTS_DIR/root/ca.crt \
