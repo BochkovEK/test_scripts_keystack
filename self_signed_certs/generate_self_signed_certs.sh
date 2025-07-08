@@ -104,16 +104,16 @@ get_init_vars () {
   export DOMAIN=${DOMAIN:-"test.domain"}
 
   # get region name
-  if [[ -z "${REGION_NAME}" ]]; then
-    read -rp "Enter region name [ebochkov]: " REGION_NAME
+  if [[ -z "${REGION}" ]]; then
+    read -rp "Enter region name [ebochkov]: " REGION
   fi
-  export REGION_NAME=${REGION_NAME:-"ebochkov"}
+  export REGION=${REGION:-"ebochkov"}
 
   # get internal fqdn name
   if [[ -z "${INTERNAL_FQDN}" ]]; then
-    read -rp "Enter internal FQDN [int.$REGION_NAME.$DOMAIN]: " INTERNAL_FQDN
+    read -rp "Enter internal FQDN [internal.$REGION.$DOMAIN]: " INTERNAL_FQDN
   fi
-  export INTERNAL_FQDN=${INTERNAL_FQDN:-"int.$REGION_NAME.$DOMAIN"}
+  export INTERNAL_FQDN=${INTERNAL_FQDN:-"internal.$REGION.$DOMAIN"}
 
   # get internal VIP name
   if [[ -z "${INTERNAL_VIP}" ]]; then
@@ -123,9 +123,9 @@ get_init_vars () {
 
   # get external fqdn name
   if [[ -z "${EXTERNAL_FQDN}" ]]; then
-    read -rp "Enter external FQDN [ext.$REGION_NAME.$DOMAIN]: " EXTERNAL_FQDN
+    read -rp "Enter external FQDN [external.$REGION.$DOMAIN]: " EXTERNAL_FQDN
   fi
-  export EXTERNAL_FQDN=${EXTERNAL_FQDN:-"ext.$REGION_NAME.$DOMAIN"}
+  export EXTERNAL_FQDN=${EXTERNAL_FQDN:-"external.$REGION.$DOMAIN"}
 
   # get external VIP name
   if [[ -z "${EXTERNAL_VIP}" ]]; then
@@ -178,7 +178,7 @@ get_init_vars () {
     CERTS_DIR:          $CERTS_DIR
     OUTPUT_CERTS_DIR:   $OUTPUT_CERTS_DIR
     DOMAIN:             $DOMAIN
-    REGION_NAME:        $REGION_NAME
+    REGION:        $REGION
     INTERNAL_FQDN:      $INTERNAL_FQDN
     INTERNAL_VIP:       $INTERNAL_VIP
     EXTERNAL_FQDN:      $EXTERNAL_FQDN
@@ -194,11 +194,11 @@ get_init_vars () {
 #  read -p "Press enter to continue: "
 
   #Export envs...
-  cat > $script_dir/certs_envs <<-END
+  cat > $script_dir/.certs_envs <<-END
   export CERTS_DIR=$CERTS_DIR
   export OUTPUT_CERTS_DIR=$OUTPUT_CERTS_DIR
   export DOMAIN=$DOMAIN
-  export REGION_NAME=$REGION_NAME
+  export REGION=$REGION
   export INTERNAL_FQDN=$INTERNAL_FQDN
   export INTERNAL_VIP=$INTERNAL_VIP
   export EXTERNAL_FQDN=$EXTERNAL_FQDN

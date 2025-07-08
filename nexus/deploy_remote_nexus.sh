@@ -23,6 +23,8 @@ normal=$(tput sgr0)
 
 self_signed_certs_folder="self_signed_certs"
 generate_self_signed_certs_script="generate_self_signed_certs.sh"
+default_domain="vm.lab.itkey.com"
+default_region="stand-name"
 required_containers_list=(
 "nginx"
 "nexus"
@@ -96,11 +98,17 @@ get_init_vars () {
   fi
   export REMOTE_NEXUS_NAME=${REMOTE_NEXUS_NAME:-"remote-nexus"}
 
+# get region name
+  if [[ -z "${REGION}" ]]; then
+    read -rp "Enter region name [$default_region]: " REGION
+  fi
+  export REGION=${REGION:-"$default_region"}
+
 # get domain name
   if [[ -z "${DOMAIN}" ]]; then
-    read -rp "Enter certs output folder for installer [test.domain]: " DOMAIN
+    read -rp "Enter root domain [$default_domain]: " DOMAIN
   fi
-  export DOMAIN=${DOMAIN:-"test.domain"}
+  export DOMAIN=${DOMAIN:-"$default_domain"}
 
 # get Central Authentication Service folder
   if [[ -z "${CERTS_DIR}" ]]; then
@@ -126,6 +134,7 @@ get_init_vars () {
     parent_dir:         $parent_dir
     REMOTE_NEXUS_IP:    $REMOTE_NEXUS_IP
     REMOTE_NEXUS_NAME:  $REMOTE_NEXUS_NAME
+    REGION:             $REGION
     DOMAIN:             $DOMAIN
     CERTS_DIR:          $CERTS_DIR
     KEYSTACK_RELEASE:   $KEYSTACK_RELEASE
