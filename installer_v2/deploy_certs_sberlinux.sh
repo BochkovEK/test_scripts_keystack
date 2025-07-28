@@ -16,10 +16,9 @@ required_file=(
   "${pip_conf}"
   "${repo_conf}"
 )
-
-
 # Determine the directory where the script is located
 script_dir=$(dirname "$(readlink -f "$0")")
+
 
 # Function to check and set variables
 check_and_set_variables() {

@@ -2,42 +2,26 @@ lcm_mgmt_ip=$(ip a|grep mgmt|grep inet|grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1
   |awk '{p=index($1,"/");print substr($1,0,p-1)}')
 
 export KS_INSTALL_LCM_IP=$lcm_mgmt_ip
-
 #Enter the home dir for the installation [/installer]:
 export KS_INSTALL_HOME=""
-
-#Enter the IP address of this machine [$ip]:
-#export KS_INSTALL_LCM_IP=""
-
 #Use remote\existing Artifactory y/n [n]:
 export KS_CLIENT_NEXUS=""
-
 #Enter the remote\existing Artifactory FQDN for the KeyStack:
 export KS_CLIENT_NEXUS_NAME=""
-
 #Enter the remote\existing Artifactory user name:
 export KS_CLIENT_NEXUS_ADMIN=""
-
 #Enter the remote\existing Artifactory password(at least 8 characters):
 export KS_CLIENT_NEXUS_PASSWORD=""
-
-#---LDAPS---
 export KS_LDAP_USE="n"
-
 #Enter the LCM root domain for the KeyStack [demo.local]:
-export KS_INSTALL_DOMAIN="qa-stable-sberlinux.vm.lab.itkey.com"
-
+export KS_INSTALL_DOMAIN=""
 #Enter the LCM Nexus domain name for the KeyStack [nexus]:
 export KS_NEXUS_NAME="nexus"
-
 #Enter the LCM Gitlab domain name for the KeyStack [ks-lcm]:
 export KS_GITLAB_NAME="ks-lcm"
-
 #Enter the LCM Vault domain name for the KeyStack [vault]:
 export KS_VAULT_NAME="vault"
-
 #Enter the LCM Netbox domain name for the KeyStack [netbox]:
 export KS_NETBOX_NAME="netbox"
-
 #Generate Self-signed certificates for KeyStack LCM services y/n [y]:
 export KS_SELF_SIG="y"
