@@ -24,6 +24,7 @@
 script_dir=$(dirname $0)
 utils_dir=$script_dir/utils
 check_openrc_script="check_openrc.sh"
+envs_file_name=".envs_create_vms"
 
 #Colors
 green=$(tput setaf 2)
@@ -92,75 +93,80 @@ while [ -n "$1" ]; do
     "
       exit 0
       break ;;
-          -t|-timeout) TIMEOUT_BEFORE_NEXT_CREATION="$2"
-            echo "Found the -timeout <time_out_between_VM_create> option, with parameter value $TIMEOUT_BEFORE_NEXT_CREATION"
+    -t|-timeout) timeout_before_next_creation="$2"
+      echo "Found the -timeout <time_out_between_VM_create> option, with parameter value $timeout_before_next_creation"
+#      TIMEOUT_BEFORE_NEXT_CREATION=$timeout_before_next_creation
       shift ;;
     -q|-qty) qty="$2"
       echo "Found the -qty <number_of_VMs> option, with parameter value $qty"
-      VM_QTY=$qty
+#      VM_QTY=$qty
       shift ;;
     -i|-image) image="$2"
       echo "Found the -image <image_name> option, with parameter value $image"
-      IMAGE=$image
+#      IMAGE=$image
       shift ;;
     -f|-flavor) flavor="$2"
       echo "Found the -flavor <falvor_name> option, with parameter value $flavor"
-      FLAVOR=$flavor
+#      FLAVOR=$flavor
       shift;;
     -k|-key) key_name="$2"
       echo "Found the -key_name <key_name> option, with parameter value $key_name"
-      KEY_NAME=$key_name
+#      KEY_NAME=$key_name
       shift;;
-    -nk|no_key) NO_KEY="true"
-      echo "Found the -no_name option, with parameter value $NO_KEY"
+    -nk|no_key) no_key="true"
+      echo "Found the -no_name option, with parameter value $no_key"
       ;;
     -hv|-hypervisor) hyper_name="$2"
       echo "Found the -hyper_name <hypervisor_name> option, with parameter value $hyper_name"
-      HYPERVISOR_HOSTNAME=$hyper_name
+#      HYPERVISOR_HOSTNAME=$hyper_name
       shift ;;
     -p|-project) project="$2"
       echo "Found the -project <project_id> option, with parameter value $project"
-      PROJECT=$project
+#      PROJECT=$project
       shift ;;
     -net|-network) network="$2"
       echo "Found the -network <network_name> option, with parameter value $network"
-      NETWORK=$network
+#      NETWORK=$network
       shift ;;
     -v|volume_size) volume_size="$2"
       echo "Found the -volume_size <volume_size_in_GB> option, with parameter value $volume_size"
-      VOLUME_SIZE=$volume_size
+#      VOLUME_SIZE=$volume_size
       shift ;;
     -orc|-openrc_path) openrc_path="$2"
       echo "Found the -openrc_path <openrc_path> option, with parameter value $openrc_path"
-      OPENRC_PATH=$openrc_path
+#      OPENRC_PATH=$openrc_path
       shift ;;
     -n|-name) name="$2"
       echo "Found the -name <vm_base_name> option, with parameter value $name"
-      VM_BASE_NAME=$name
+#      VM_BASE_NAME=$name
       shift ;;
-    -dont_check_osc) CHECK_OPENSTACK="false"
+    -dont_check_osc) check_openstack="false"
       echo "Found the -dont_check_osc. Openstack cli check disabled"
+#      CHECK_OPENSTACK=$check_openstack
       ;;
-    -dont_check) DONT_CHECK="true"
+    -dont_check) dont_check="true"
       echo "Found the -dont_check. Resource availability checks are disabled"
+#      DONT_CHECK=$dont_check
       ;;
-    -da|-dont_ask) DONT_ASK=true
+    -da|-dont_ask) dont_ask="true"
       echo "Found the -dont_ask. All actions will be performed automatically"
+#      DONT_ASK=$dont_ask
       ;;
     -b|-batch) batch=true
       echo "Found the -batch. VMs will be created without a timeout"
-      BATCH=$batch
+#      BATCH=$batch
       ;;
     -add) add_key="$2"
       echo "Found the -add <add command key> option, with parameter value $add_key"
-      ADD_KEY=$add_key
+#      ADD_KEY=$add_key
       shift ;;
     -wait) wait_for_created="$2"
       echo "Found the -wait <true/false> option, with parameter value $wait_for_created"
-      WAIT_FOR_CREATED=$wait_for_created
+#      WAIT_FOR_CREATED=$wait_for_created
       shift ;;
-    -debug) TS_DEBUG="true"
-            echo "Found the -debug, with parameter value $TS_DEBUG"
+    -debug) ts_debug="true"
+      echo "Found the -debug, with parameter value $ts_debug"
+#      TS_DEBUG=$ts_debug
       ;;
     --) shift
       break ;;
@@ -201,6 +207,40 @@ error_output () {
   exit 1
 }
 
+
+# Check envs file
+check_and_source_envs_file () {
+    echo "Check envs file and source it..."
+    check_envs_file=$(ls -f $script_dir/$envs_file_name 2>/dev/null)
+    if [ -n "$check_envs_file" ]; then
+        source $script_dir/$envs_file_name
+    fi
+#    source $OPENRC
+    #export OS_PROJECT_NAME=$PROJECT
+}
+
+assign_vars_from_startup_keys () {
+  [[ -n $timeout_before_next_creation ]] && TIMEOUT_BEFORE_NEXT_CREATION=$timeout_before_next_creation
+  [[ -n $qty ]] && VM_QTY=$qty
+  [[ -n $image ]] && IMAGE=$image
+  [[ -n $flavor ]] && FLAVOR=$flavor
+  [[ -n $key ]] && KEY_NAME=$key_name
+  [[ -n $flavor ]] && FLAVOR=$flavor
+  [[ -n $no_key ]] && NO_KEY=$no_key
+  [[ -n $hyper_name ]] && HYPERVISOR_HOSTNAME=$hyper_name
+  [[ -n $project ]] && PROJECT=$project
+  [[ -n $network ]] && NETWORK=$network
+  [[ -n $volume_size ]] && VOLUME_SIZE=$volume_size
+  [[ -n $openrc_path ]] && OPENRC_PATH=$openrc_path
+  [[ -n $name ]] && VM_BASE_NAME=$name
+  [[ -n $check_openstack ]] && CHECK_OPENSTACK=$check_openstack
+  [[ -n $dont_check ]] && DONT_CHECK=$dont_check
+  [[ -n $dont_ask ]] && DONT_ASK=$dont_ask
+  [[ -n $batch ]] && BATCH=$batch
+  [[ -n $add_key ]] && ADD_KEY=$add_key
+  [[ -n $wait_for_created ]] && WAIT_FOR_CREATED=$wait_for_created
+  [[ -n $ts_debug ]] && TS_DEBUG=$ts_debug
+}
 
 check_and_source_openrc_file () {
 #  echo "check openrc"
@@ -292,6 +332,27 @@ VMs will be created with the following parameters:
         "
 
     [[ ! $DONT_ASK = "true" ]] && { read -p "Press enter to continue: "; }
+  cat <<EOF > "$script_dir/$envs_file_name"
+export OPENRC_PATH='$OPENRC_PATH'
+export VM_BASE_NAME='$VM_BASE_NAME'
+export VM_QTY='$VM_QTY'
+export IMAGE='$IMAGE'
+export FLAVOR='$FLAVOR'
+export SECURITY_GR='$SECURITY_GR'
+export SECURITY_GR_ID='$SECURITY_GR_ID'
+export KEY_NAME='$key_name_init_param'
+export PROJECT='$PROJECT'
+export TEST_USER='$TEST_USER'
+export ROLE='$ROLE'
+export HYPERVISOR_HOSTNAME='$HYPERVISOR_HOSTNAME'
+export NETWORK='$NETWORK'
+export VOLUME_SIZE='$VOLUME_SIZE'
+export API_VERSION='$API_VERSION'
+export ADD_KEY='$ADD_KEY'
+export BATCH='$BATCH'
+export TS_DEBUG='$TS_DEBUG'
+export WAIT_FOR_CREATED='$WAIT_FOR_CREATED'
+EOF
 }
 
 #Check Hypervizor
@@ -817,6 +878,9 @@ create_vms () {
   fi
 }
 
+
+check_and_source_envs_file
+assign_vars_from_startup_keys
 output_of_initial_parameters
 
 #check_openstack_cli
