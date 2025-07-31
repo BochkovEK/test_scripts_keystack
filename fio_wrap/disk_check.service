@@ -1,0 +1,15 @@
+# /etc/systemd/system/disk_check.service
+[Unit]
+Description=Continuous disk health monitoring via fio  # Service description
+After=network.target                                  # Start after network is ready
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/disk_check.sh                # Path to monitoring script
+Restart=always                                        # Auto-restart if crashed
+StandardOutput=syslog                                 # Redirect stdout to syslog
+StandardError=syslog                                  # Redirect stderr to syslog
+SyslogIdentifier=disk_check                           # Unique tag for logs
+
+[Install]
+WantedBy=multi-user.target                            # Enable for multi-user mode

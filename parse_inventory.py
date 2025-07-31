@@ -4,7 +4,7 @@ import re
 
 # the script work by inventory_to_hosts.sh
 
-node_pattern = "-lcm-|-comp-|-cmpt-|-ctrl-|-net-"
+node_pattern = "-lcm-|-comp-|-cmpt-|-ctrl-|-net-|-add_vm-"
 lcm_pattern = "lcm-01"
 kolla_internal_address = "kolla_internal_address"
 external_floating = "external_floating"
@@ -12,9 +12,10 @@ ansible_host = "ansible_host"
 path_to_inventory = sys.argv[1]
 internal_prefix = os.environ['INT_PREF']
 external_prefix = os.environ['EXT_PREF']
-output_file = os.environ['OUTPUT_FILE']
+output_file = os.environ['OUTPUT_FILE_PATH']
 region = os.environ['REGION']
 domain = os.environ['DOMAIN']
+gitlab_short_name = os.environ['GITLAB_SHORT_NAME']
 hosts_string = []
 
 # print(os.environ['DOMAIN'])
@@ -40,7 +41,7 @@ def parse_inventory(path):
                 print(string)
             if external_floating in word:
                 ip = word.split('=')[1]
-                string = f"{ip} {external_prefix}.{region}.{domain}"
+                string = f"{ip} {external_prefix}.{region}.{domain} backend.{external_prefix}.{region}.{domain}"
                 print(string)
             if string and string not in hosts_string:
                 hosts_string.append(string)
@@ -56,7 +57,7 @@ def write_file(path_to_file, strings):
             is_lcm_node = re.search(lcm_pattern, last_word)
             if is_lcm_node:
                 short_name = f"{last_word.split('-')[-2]}-{last_word.split('-')[-1]}"
-                file.write(line + f" {short_name} lcm-nexus.{domain} netbox.{domain} gitlab.{domain} vault.{domain}\n")
+                file.write(line + f" {short_name} lcm-nexus.{region}.{domain} netbox.{region}.{domain} {gitlab_short_name}.{region}.{domain} vault.{region}.{domain}\n")
             else:
                 short_name = f"{last_word.split('-')[-2]}-{last_word.split('-')[-1]}"
                 file.write(line + f" {short_name}\n")

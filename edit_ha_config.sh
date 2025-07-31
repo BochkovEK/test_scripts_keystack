@@ -12,6 +12,7 @@ script_name=$(basename "$0")
 utils_dir="$script_dir/utils"
 check_openrc_script="check_openrc.sh"
 get_nodes_list_script="get_nodes_list.sh"
+default_user="root"
 #install_package_script="install_package.sh"
 
 #Colors
@@ -35,6 +36,8 @@ yellow=$(tput setaf 3)
 [[ -z $CONF_NAME ]] && CONF_NAME=$conf_name
 [[ -z $OS_REGION_NAME ]] && OS_REGION_NAME=""
 [[ -z $GET_CONFIG_PATH ]] && GET_CONFIG_PATH="false"
+[[ -z $USER ]] && USER="$default_user"
+
 
 #[[ -z "${1}" ]] && { echo "Alive threshold value required as parameter script"; exit 1; }
 
@@ -59,6 +62,7 @@ do
         -push         push consul config from $script_dir/$test_node_conf_dir to all ctrl nodes
         -check        only check option
         -l, legacy    edit legacy consul region config; work with -push, -pull, -check keys
+        -u, user      set user for ssh access
 
       Note:
         In case of legacy versions of consul, to change the config you need to:
@@ -105,6 +109,11 @@ do
     -l|-legacy) LEGACY_CONF="true"
       echo "Found the -legacy, parameter set $LEGACY_CONF"
       ;;
+    -u|-user) USER="$2"
+      USER_STR="-u $USER"
+      echo "Found the -user parameter with value $USER"
+      shift
+      ;;
     --) shift
       break ;;
     *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
@@ -146,7 +155,7 @@ check_and_source_openrc_file () {
 
 cat_conf () {
   echo "Cat all $service_name configs..."
-  bash $script_dir/command_on_nodes.sh -nt $nodes_type -c "echo \"cat $conf_dir/$CONF_NAME\"; cat $conf_dir/$CONF_NAME"
+  bash $script_dir/command_on_nodes.sh $USER_STR -nt $nodes_type -c "sudo sh -c 'echo \"cat $conf_dir/$CONF_NAME\"; cat $conf_dir/$CONF_NAME'"
 }
 
 #pull_conf () {
@@ -170,7 +179,8 @@ pull_conf () {
 
 
   echo "Сopying $service_name conf from ${NODES[0]}:$conf_dir/$CONF_NAME"
-  scp -o StrictHostKeyChecking=no ${NODES[0]}:$conf_dir/$CONF_NAME $script_dir/$test_node_conf_dir
+  ssh -o StrictHostKeyChecking=no $USER@${NODES[0]} "sudo cat $conf_dir/$CONF_NAME" > $script_dir/$test_node_conf_dir/${CONF_NAME}
+#  scp -o StrictHostKeyChecking=no $USER@${NODES[0]}:$conf_dir/$CONF_NAME $script_dir/$test_node_conf_dir
   [ ! -f $script_dir/$test_node_conf_dir/${CONF_NAME}_backup ] && { cp $script_dir/$test_node_conf_dir/${CONF_NAME} $script_dir/$test_node_conf_dir/${CONF_NAME}_backup; }
   echo -e "
 To edit the config:
@@ -207,7 +217,9 @@ push_conf () {
       sed -i --regexp-extended "s/consul_host(\s+|)=\s+[0-9]+.[0-9]+.[0-9]+.[0-9]+/consul_host = $ip/" \
         $script_dir/$test_node_conf_dir/$CONF_NAME
       echo "Push consul conf to $node:$conf_dir/$CONF_NAME"
-      scp -o StrictHostKeyChecking=no $script_dir/$test_node_conf_dir/$CONF_NAME $node:$conf_dir/$CONF_NAME
+#      scp -o StrictHostKeyChecking=no $script_dir/$test_node_conf_dir/$CONF_NAME $USER@$node:$conf_dir/$CONF_NAME
+      scp -o StrictHostKeyChecking=no $script_dir/$test_node_conf_dir/$CONF_NAME $USER@$node:/tmp/$CONF_NAME
+      ssh -o StrictHostKeyChecking=no $USER@$node "sudo mv /tmp/$CONF_NAME $conf_dir/$CONF_NAME"
     else
       echo -e "${red}ip could not be define from hostname: $node - ERROR${normal}"
       exit 1
@@ -329,7 +341,7 @@ fi
 [ "$PULL" = true ] && { pull_conf; exit 0; }
 [ "$PUSH" = true ] && { push_conf; conf_changed=true; }
 cat_conf
-[ -n "$conf_changed" ] && { echo "Restart consul containers..."; bash $script_dir/command_on_nodes.sh -nt ctrl -c "docker restart consul"; }
+[ -n "$conf_changed" ] && { echo "Restart consul containers..."; bash $script_dir/command_on_nodes.sh $USER_STR -nt ctrl -c "docker restart consul"; }
 #[ -n "$NOVA_FENCING" ] && change_nova_fencing $NOVA_FENCING
 #[ -n "$IPMI_FENCING" ] && change_ipmi_fencing $IPMI_FENCING
 #[ -n "$DEAD_THRSHOLD" ] && change_dead_threshold $DEAD_THRSHOLD

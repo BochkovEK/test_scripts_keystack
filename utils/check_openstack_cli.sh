@@ -1,5 +1,14 @@
 #The Script check openstack cli or install openstack cli
 
+# check in stands nexus
+# https://nexus.qa-stable-sberlinux.vm.lab.itkey.com/#browse/browse:k-pip
+
+# Example install from public installation:
+# export FROM_PUBLIC=true
+# bash ~/test_scripts_keystack/utils/check_openstack_cli.sh
+
+public_repo="https://pypi.org/simple/"
+
 #Colors:
 green=$(tput setaf 2)
 red=$(tput setaf 1)
@@ -10,6 +19,7 @@ yellow=$(tput setaf 3)
 [[ -z $OSC_VERSION ]] && OSC_VERSION="6.6.1"
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
 [[ -z $DONT_INSTALL ]] && DONT_INSTALL="true"
+[[ -z $FROM_PUBLIC ]] && FROM_PUBLIC="false"
 
 
 osc_version_string="==$OSC_VERSION"
@@ -47,10 +57,13 @@ check_openstack_cli () {
     fi
     if [ "$yes_no_input" = "true" ]; then
       [[ -f /etc/os-release ]] && os=$({ . /etc/os-release; echo ${ID,,}; })
+      if [ "$FROM_PUBLIC" = "true" ]; then
+        from_public="-i $public_repo"
+      fi
       case $os in
         sberlinux)
           yum install -y python3-pip
-          python3 -m pip install -i https://pypi.org/simple/ python-openstackclient$osc_version_string
+          python3 -m pip install $from_public python-openstackclient$osc_version_string
 #          python3 -m pip install openstackclient
           path_sting_in_bashrc=$(cat $HOME/.bashrc|grep 'export PATH=\$PATH:/usr/local/bin')
           if [ -f /usr/local/bin/openstack ]; then
@@ -66,7 +79,7 @@ check_openstack_cli () {
           fi
           ;;
         ubuntu)
-          python3 -m pip install -i https://pypi.org/simple/ python-openstackclient$osc_version_string
+          python3 -m pip install $from_public python-openstackclient$osc_version_string
           check_command openstack
             if [ -z $command_exist ]; then
               printf "%s\n" "${red}Openstack cli failed to install - ERROR${normal}"

@@ -39,13 +39,13 @@ export KS_LDAP_ADMIN_GROUP_DN="CN=preevostack_infra_admin,OU=Keystack,OU=Applica
 #---------------------------------------
 
 #Enter the LCM root domain for the KeyStack [demo.local]:
-export KS_INSTALL_DOMAIN="test.domain"
+export KS_INSTALL_DOMAIN="qa-stable-ubuntu.vm.lab.itkey.com"
 
 #Enter the LCM Nexus domain name for the KeyStack [nexus]:
-export KS_NEXUS_NAME="lcm-nexus"
+export KS_NEXUS_NAME="nexus"
 
 #Enter the LCM Gitlab domain name for the KeyStack [ks-lcm]:
-export KS_GITLAB_NAME="gitlab"
+export KS_GITLAB_NAME="ks-lcm"
 
 #Enter the LCM Vault domain name for the KeyStack [vault]:
 export KS_VAULT_NAME="vault"

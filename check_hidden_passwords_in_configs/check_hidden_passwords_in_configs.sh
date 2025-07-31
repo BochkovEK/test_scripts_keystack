@@ -28,6 +28,7 @@ White='\033[0;37m'        # White
 script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
+default_ssh_user="root"
 
 command_on_nodes_script_name="../command_on_nodes.sh"
 
@@ -84,6 +85,7 @@ prometheus_exporters_config_list=(
 [[ -z $CHECK_ALL ]] && CHECK_ALL="true"
 [[ -z $CONFIG_PATH ]] && CONFIG_PATH=""
 [[ -z $ENV_CONFIG_LIST ]] && ENV_CONFIG_LIST=""
+[[ -z $SSH_USER ]] && SSH_USER=$default_ssh_user
 #[[ -z $DEBUG ]] && DEBUG="false"
 
 # Define parameters
@@ -104,6 +106,7 @@ while [ -n "$1" ]; do
       -cl, -config_list             check configs list
       -c, -config <config_path>     check specify config (exp: -c /etc/kolla/adminui-backend/adminui-backend-osloconf.conf)
       -e, -env_config_list          use config list from env file (for different KS release; exp: -e .config_list_for_ks2024.3)
+      -u, -user                     <ssh_user>
 "
       exit 0
       break ;;
@@ -127,6 +130,9 @@ while [ -n "$1" ]; do
     -e|-env_config_list) ENV_CONFIG_LIST=$2
       echo "Found the -env_config_list. Use env confilg list file $ENV_CONFIG_LIST"
       shift ;;
+   -u|-user) SSH_USER=$2
+      echo "Found the -user with value $SSH_USER"
+      shift ;;
     -cl|-config_list) CONFIG_LIST="true"
       echo "Found the -config_list. Check configs list"
       ;;
@@ -146,7 +152,7 @@ fi
 
 read_conf () {
   echo -E "${cyan}Check file $2 exists on $1${normal}"
-  bash $script_dir/$command_on_nodes_script_name -nt $1 -c "ls -f $2" |
+  bash $script_dir/$command_on_nodes_script_name -nt $1 -u $SSH_USER -c "sudo sh -c 'ls $2'" |
     sed --unbuffered \
       -e 's/\(.*No such file or directory.*\)/\o033[31m\1\o033[39m/'
 #    -e 's/\(.*No such file or directory.*\)/\o033[31m\1 \o033[39m/'
@@ -155,7 +161,7 @@ read_conf () {
       #ok\o033[39m/'
   if [ "$3" = castellan ]; then
     echo -E "${cyan}Check castellan strings...${normal}"
-    bash $script_dir/$command_on_nodes_script_name -nt $1 -c "cat $2 | grep -E 'wsrep_sst_auth|auth-pass|requirepass|masterauth|db_uri|vault_secret|password_hash|with secret| password |\"password\"\:|password\:\s|_pass\"|password =|\[castellan_configsource\]'| \
+    bash $script_dir/$command_on_nodes_script_name -u $SSH_USER -nt $1 -c "sudo sh -c 'cat $2' | grep -E 'wsrep_sst_auth|auth-pass|requirepass|masterauth|db_uri|vault_secret|password_hash|with secret| password |\"password\"\:|password\:\s|_pass\"|password =|\[castellan_configsource\]'| \
       sed --unbuffered \
         -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - [ok: castellan group exists]\o033[39m/'\
         -e 's/\(.*password_hash.*\)/\o033[32m ...pass..._hash... - [ok: pass hash exists]\o033[39m/'\
@@ -171,7 +177,7 @@ read_conf () {
 #        -e 's/\(.*wsrep_sst_auth.*)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
   fi
   if [ "$4" = cat ]; then
-    bash $script_dir/$command_on_nodes_script_name -nt $1 -c "cat $2"
+    bash $script_dir/$command_on_nodes_script_name -u $SSH_USER -nt $1 -c "cat $2"
   fi
 
 }
@@ -326,3 +332,11 @@ fi
 if [ "$CHECK_PROMETH" = true ] || [ "$CHECK_ALL" = true ]; then
   Check_hidden_passwords_in_prometheus_exporters
 fi
+
+~/installer/deploy_lab_certs_repo_ubuntu.sh
+source /installer/config/settings
+sed -i "s/NEXUS_FQDN/$NEXUS_FQDN/g" pip.conf
+sed -i "s/NEXUS_FQDN/$NEXUS_FQDN/g" sources.list
+KEY=$(cat $INSTALL_HOME/config/gitlab_key.pub)
+# if no hosts in hosts use srv="host1 host2 host3"
+srv=$(cat /etc/hosts | grep -E "ctrl|comp|lcm|net-" | awk '{print $1}')

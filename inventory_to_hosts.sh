@@ -5,10 +5,12 @@
 # bash ~/test_scripts_keystack/inventory_to_hosts.sh <path_to_inventory_file>
 # output "hosts_add_strings"
 
-internal_prefix="int"
-external_prefix="ext"
-region_name="ebochkov"
-domain_name="test.domain"
+env_file_name=".inventory_to_hosts_env"
+internal_prefix="internal"
+external_prefix="external"
+region_name="stand-name"
+domain_name="vm.lab.itkey.com"
+gitlab_short_name="ks-lcm"
 parse_inventory_script="parse_inventory.py"
 inventory_file_name="inventory"
 output_file_name="hosts_add_strings"
@@ -24,13 +26,15 @@ script_dir=$(dirname $0)
 
 #[[ -z $DONT_ASK ]] && DONT_ASK="false"
 #[[ -z $EDIT_HOSTS_FILE ]] && EDIT_HOSTS_FILE="false"
-[[ -z $INVENTORY_PATH ]] && INVENTORY_PATH=$script_dir/$inventory_file_name
-[[ -z $OUTPUT_FILE_NAME ]] && OUTPUT_FILE_NAME=$output_file_name
-[[ -z $DOMAIN ]] && DOMAIN=$domain_name
-[[ -z $REGION ]] && REGION=$region_name
-[[ -z $INT_PREF ]] && INT_PREF=$internal_prefix
-[[ -z $EXT_PREF ]] && EXT_PREF=$external_prefix
+
+#[[ -z $INVENTORY_PATH ]] && INVENTORY_PATH=$script_dir/$inventory_file_name
+#[[ -z $OUTPUT_FILE_NAME ]] && OUTPUT_FILE_NAME=$output_file_name
+#[[ -z $DOMAIN ]] && DOMAIN=$domain_name
+#[[ -z $REGION ]] && REGION=$region_name
+#[[ -z $INT_PREF ]] && INT_PREF=$internal_prefix
+#[[ -z $EXT_PREF ]] && EXT_PREF=$external_prefix
 [[ -z $ADD_STRINGS ]] && ADD_STRINGS=$add_strings
+[[ -z $TS_DEBUG ]] && TS_DEBUG=false
 
 while [ -n "$1" ]
 do
@@ -64,6 +68,9 @@ do
         -ext_pref) EXT_PREF=$2
           echo "Found the -ext_pref option, with parameter value $EXT_PREF"
           shift
+          ;;
+        -v|-debug) TS_DEBUG=true
+          echo "Found the -debug option, with parameter value true"
           ;;
         --help) echo -E "
         The script parse inventory file to create $OUTPUT_FILE file like 'hosts' or add strings to hosts
@@ -103,52 +110,151 @@ do
         shift
 done
 
-if [ -z "$INVENTORY_PATH" ]; then
-  if [ -z "$1" ]; then
-    echo -e "${red}The path to the inventory file must be passed as an argument - ERROR${normal}"
-    exit 1
-  fi
-else
-  cat $INVENTORY_PATH
-  if [ ! -f "$INVENTORY_PATH" ]; then
-#    echo $INVENTORY_PATH
-    echo -e "${yellow}Inventory file $INVENTORY_PATH not found - WARNING${normal}"
-    echo -e "Create it or specify -i key, or environment var 'INVENTORY_PATH' ${normal}"
-    echo -e "${red}The script cannot be executed - ERROR${normal}"
-    exit 1
-  fi
-fi
+#if [ -z "$INVENTORY_PATH" ]; then
+#  if [ -z "$1" ]; then
+#    echo -e "${red}The path to the inventory file path must be passed as an argument or by '-i' key - ERROR${normal}"
+#    exit 1
+#  fi
+#else
+#  cat $INVENTORY_PATH
+#  if [ ! -f "$INVENTORY_PATH" ]; then
+##    echo $INVENTORY_PATH
+#    echo -e "${yellow}Inventory file $INVENTORY_PATH not found - WARNING${normal}"
+#    echo -e "Create it or specify -i key, or environment var 'INVENTORY_PATH' ${normal}"
+#    echo -e "${red}The script cannot be executed - ERROR${normal}"
+#    exit 1
+#  fi
+#fi
+
+# Function to check and set variables
+check_and_set_variables() {
+    # Check if environment variables exist
+    if [[ -z "${INVENTORY_PATH}" ||
+          -z "${OUTPUT_FILE_NAME}" ||
+          -z "${DOMAIN}" ||
+          -z "${REGION}" ||
+          -z "${INT_PREF}" ||
+          -z "${EXT_PREF}"
+        ]]; then
+
+        # If variables are not set, check for $env_file_name file
+        if [[ -f "${script_dir}/$env_file_name" ]]; then
+            # Load variables from file
+            source "${script_dir}/${env_file_name}"
+        fi
+        # Prompt user for input
+        echo "Required environment variables are not set."
+
+        while [[ -z "${INVENTORY_PATH}" ]]; do
+          read -rp "Enter inventory file path [$script_dir/$inventory_file_name]: " INVENTORY_PATH
+          INVENTORY_PATH=${INVENTORY_PATH:-"$script_dir/$inventory_file_name"}
+        done
+
+        while [[ -z "${OUTPUT_FILE_PATH}" ]]; do
+          read -rp "Enter output file path [$script_dir/$output_file_name]: " OUTPUT_FILE_PATH
+          OUTPUT_FILE_PATH=${OUTPUT_FILE_PATH:-"$script_dir/$output_file_name"}
+        done
+
+        while [[ -z "${DOMAIN}" ]]; do
+          read -rp "Enter domain [$domain_name]: " DOMAIN
+          DOMAIN=${DOMAIN:-"$domain_name"}
+        done
+
+        while [[ -z "${REGION}" ]]; do
+          read -rp "Enter region name [$region_name]: " REGION
+          REGION=${REGION:-"$region_name"}
+        done
+
+        while [[ -z "${GITLAB_SHORT_NAME}" ]]; do
+          read -rp "Enter gitlab short name [$gitlab_short_name]: " GITLAB_SHORT_NAME
+          GITLAB_SHORT_NAME=${GITLAB_SHORT_NAME:-"$gitlab_short_name"}
+        done
+
+        while [[ -z "${INT_PREF}" ]]; do
+          read -rp "Enter internal VIP prefix [$internal_prefix]: " INT_PREF
+          INT_PREF=${INT_PREF:-"$internal_prefix"}
+        done
+
+         while [[ -z "${EXT_PREF}" ]]; do
+          read -rp "Enter external VIP prefix [$external_prefix]: " EXT_PREF
+          EXT_PREF=${EXT_PREF:-"$external_prefix"}
+        done
+
+        # Save variables to file
+        echo > "${script_dir}/$env_file_name"
+        {
+          echo "export INVENTORY_PATH=\"${INVENTORY_PATH}\"";
+          echo "export OUTPUT_FILE_PATH=\"${OUTPUT_FILE_PATH}\"";
+          echo "export DOMAIN=\"${DOMAIN}\"";
+          echo "export REGION=\"${REGION}\"";
+          echo "export GITLAB_SHORT_NAME=\"${GITLAB_SHORT_NAME}\"";
+          echo "export INT_PREF=\"${INT_PREF}\"";
+          echo "export EXT_PREF=\"${EXT_PREF}\"";
+        } >> "${script_dir}/$env_file_name"
+    fi
+
+    if [ "$TS_DEBUG" = true ]; then
+      echo "
+  [DEBUG]:
+    INVENTORY_PATH: $INVENTORY_PATH
+    OUTPUT_FILE: $OUTPUT_FILE_PATH
+    DOMAIN: $DOMAIN
+    REGION: $REGION
+    INT_PREF: $INT_PREF
+    EXT_PREF: $EXT_PREF
+      "
+    read -p "Press enter to continue: "
+    fi
+
+    # Verify that variables are now set
+    if [[ -z "${INVENTORY_PATH}" ||
+          -z "${OUTPUT_FILE_PATH}" ||
+          -z "${DOMAIN}" ||
+          -z "${REGION}" ||
+          -z "${INT_PREF}" ||
+          -z "${EXT_PREF}"
+        ]]; then
+        echo -e "${red}Error: Required variables are not set - ERROR${normal}"
+        exit 1
+    fi
+}
 
 python_script_execute () {
   echo "Start parse $INVENTORY_PATH to hosts strings"
-  export OUTPUT_FILE=$script_dir/$OUTPUT_FILE_NAME
+  export OUTPUT_FILE_PATH=$OUTPUT_FILE_PATH
   export DOMAIN=$DOMAIN
   export REGION=$REGION
+  export GITLAB_SHORT_NAME=$GITLAB_SHORT_NAME
   export INT_PREF=$INT_PREF
   export EXT_PREF=$EXT_PREF
-  echo "
-  [DEBUG]:
-  OUTPUT_FILE: $script_dir/$OUTPUT_FILE_NAME
-  DOMAIN: $DOMAIN
-  REGION: $REGION
-  INT_PREF: $INT_PREF
-  EXT_PREF: $EXT_PREF
-  "
+
   python3 $script_dir/$parse_inventory_script $INVENTORY_PATH
 }
 
 add_to_hosts () {
   add_strings_already_exists=$(cat /etc/hosts | grep "$ADD_STRINGS")
-  echo "
+  if [ "$TS_DEBUG" = true ]; then
+    echo "
   [DEBUG]:
-  add_strings_already_exists: $add_strings_already_exists
-  \$script_dir/\$OUTPUT_FILE_NAME: $script_dir/$OUTPUT_FILE_NAME
+    add_strings_already_exists: $add_strings_already_exists
+    OUTPUT_FILE_PATH: $OUTPUT_FILE_PATH
   "
+  fi
   if [ -z "$add_strings_already_exists" ]; then
+    if [ "$TS_DEBUG" = true ]; then
+      echo "
+  [DEBUG]:
+    The lines from the file $OUTPUT_FILE_PATH will be added to the file /etc/hosts.
+  "
+      read -p "Press enter to continue: "
+    fi
     echo $ADD_STRINGS >> /etc/hosts
-    cat $script_dir/$OUTPUT_FILE_NAME >> /etc/hosts
+    cat $OUTPUT_FILE_PATH >> /etc/hosts
+    echo "/etc/hosts:"
+    cat /etc/hosts
   fi
 }
 
+check_and_set_variables
 python_script_execute
 add_to_hosts

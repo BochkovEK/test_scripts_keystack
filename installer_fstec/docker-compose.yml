@@ -1,0 +1,98 @@
+name: netbox
+services:
+  postgres:
+    container_name: netbox-postgres
+    image: repo.itkey.com/project_k/lcm/postgres:ks2025.1-rc8-sberlinux
+    env_file: $NETBOX_HOME/env/postgres.env
+    restart: unless-stopped
+    privileged: True
+    volumes:
+      - $NETBOX_HOME/postgres:/var/lib/postgresql/data
+      - $CFG_HOME/netbox.dump:/docker-entrypoint-initdb.d/netbox.sql
+    networks:
+      - installer-network
+  redis:
+    container_name: netbox-redis
+    image: $NEXUS_FQDN/project_k/lcm/redis:$RELEASE
+    command:
+      - sh
+      - -c # this is to evaluate the $REDIS_PASSWORD from the env
+      - redis-server --appendonly yes --requirepass $$REDIS_PASSWORD ## $$ because of docker-compose
+    env_file: $NETBOX_HOME/env/redis.env
+    restart: unless-stopped
+    privileged: True
+    volumes:
+      - $NETBOX_HOME/redis:/data
+    networks:
+      - installer-network
+  redis-cache:
+    container_name: netbox-redis-cache
+    image: $NEXUS_FQDN/project_k/lcm/redis:$RELEASE
+    command:
+      - sh
+      - -c # this is to evaluate the $REDIS_PASSWORD from the env
+      - redis-server --requirepass $$REDIS_PASSWORD ## $$ because of docker-compose
+    env_file: $NETBOX_HOME/env/redis-cache.env
+    restart: unless-stopped
+    volumes:
+      - $NETBOX_HOME/redis-cache:/data
+    networks:
+      - installer-network
+  netbox: &netbox
+    container_name: netbox
+    hostname: $NETBOX_NAME.$DOMAIN
+    image: repo.itkey.com/project_k/lcm/netbox:ks2025.1-rc8-sberlinux
+    depends_on:
+      - postgres
+      - redis
+      - redis-cache
+    env_file: $NETBOX_HOME/env/netbox.env
+    restart: unless-stopped
+    user: 'unit:root'
+    healthcheck:
+      start_period: 60s
+      interval: 60s
+      timeout: 30s
+      retries: 20
+      test: "curl -f http://localhost:8080/api/ || exit 1"
+    volumes:
+      - $NETBOX_HOME/netbox/configuration:/etc/netbox/config:z,ro
+      - $NETBOX_HOME/netbox/media:/opt/netbox/netbox/media:z,rw
+      - $NETBOX_HOME/netbox/reports:/opt/netbox/netbox/reports:z,rw
+      - $NETBOX_HOME/netbox/scripts:/opt/netbox/netbox/scripts:z,rw
+    networks:
+      - installer-network
+  netbox-worker:
+    <<: *netbox
+    container_name: netbox-worker
+    restart: unless-stopped
+    depends_on:
+      netbox:
+        condition: service_healthy
+    command:
+      - /opt/netbox/venv/bin/python
+      - /opt/netbox/netbox/manage.py
+      - rqworker
+    healthcheck:
+      start_period: 20s
+      timeout: 3s
+      interval: 15s
+      test: "ps -aux | grep -v grep | grep -q rqworker || exit 1"
+  netbox-housekeeping:
+    <<: *netbox
+    container_name: netbox-housekeeping
+    restart: unless-stopped
+    depends_on:
+      netbox:
+        condition: service_healthy
+    command:
+      - /opt/netbox/housekeeping.sh
+    healthcheck:
+      start_period: 20s
+      timeout: 3s
+      interval: 15s
+      test: "ps -aux | grep -v grep | grep -q housekeeping || exit 1"
+networks:
+  installer-network:
+    name: installer
+    external: true

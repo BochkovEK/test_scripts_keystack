@@ -16,13 +16,15 @@
 
 #!!! docker exec -it nexus cat /nexus-data/admin.password
 
-green=`tput setaf 2`
-yellow=`tput setaf 3`
-red=`tput setaf 1`
-normal=`tput sgr0`
+green=$(tput setaf 2)
+yellow=$(tput setaf 3)
+red=$(tput setaf 1)
+normal=$(tput sgr0)
 
 self_signed_certs_folder="self_signed_certs"
 generate_self_signed_certs_script="generate_self_signed_certs.sh"
+default_domain="vm.lab.itkey.com"
+default_region="stand-name"
 required_containers_list=(
 "nginx"
 "nexus"
@@ -42,8 +44,9 @@ while [ -n "$1" ]; do
   case "$1" in
     --help) echo -E "
       Remote nexus deploy
-        1) Change certs_envs:
-          vi $HOME/test_scripts_keystack/self_signed_certs/certs_envs
+        1) Copy and change certs_envs_template from test_scripts_keystack/self_signed_certs/certs_envs_template:
+          cp $HOME/test_scripts_keystack/self_signed_certs/certs_envs_template ./certs_envs
+          vi ./certs_envs
         2) Deploy nexus:
           bash $HOME/test_scripts_keystack/nexus/deploy_remote_nexus.sh
         3) For installer.sh use remote nexus copy $HOME/certs to $HOME/installer/ on lcm:
@@ -95,11 +98,17 @@ get_init_vars () {
   fi
   export REMOTE_NEXUS_NAME=${REMOTE_NEXUS_NAME:-"remote-nexus"}
 
+# get region name
+  if [[ -z "${REGION}" ]]; then
+    read -rp "Enter region name [$default_region]: " REGION
+  fi
+  export REGION=${REGION:-"$default_region"}
+
 # get domain name
   if [[ -z "${DOMAIN}" ]]; then
-    read -rp "Enter certs output folder for installer [test.domain]: " DOMAIN
+    read -rp "Enter root domain [$default_domain]: " DOMAIN
   fi
-  export DOMAIN=${DOMAIN:-"test.domain"}
+  export DOMAIN=${DOMAIN:-"$default_domain"}
 
 # get Central Authentication Service folder
   if [[ -z "${CERTS_DIR}" ]]; then
@@ -125,6 +134,7 @@ get_init_vars () {
     parent_dir:         $parent_dir
     REMOTE_NEXUS_IP:    $REMOTE_NEXUS_IP
     REMOTE_NEXUS_NAME:  $REMOTE_NEXUS_NAME
+    REGION:             $REGION
     DOMAIN:             $DOMAIN
     CERTS_DIR:          $CERTS_DIR
     KEYSTACK_RELEASE:   $KEYSTACK_RELEASE
@@ -132,12 +142,25 @@ get_init_vars () {
   read -p "Press enter to continue: "
 }
 
-waiting_for_nexus_readiness () {
-  echo -n Waiting for Nexus readiness...
-  while [ "$(curl -isf --cacert "$CERTS_DIR"/root/ca.crt https://"$REMOTE_NEXUS_NAME"."$DOMAIN"/service/rest/v1/status | awk 'NR==1 {print $2}')"  != "200" ]; do
-    echo -n .; sleep 5
+#waiting_for_nexus_readiness () {
+#  echo -n Waiting for Nexus readiness...
+#  while [ "$(curl -isf --cacert "$CERTS_DIR"/root/ca.crt https://"$REMOTE_NEXUS_NAME"."$DOMAIN"/service/rest/v1/status | awk 'NR==1 {print $2}')"  != "200" ]; do
+#    echo -n .; sleep 5
+#  done
+#  echo .
+#  echo -e "${green}Nexus is Ready!${normal}"
+#
+#  echo -e "${yellow}\nTo get initial nexus admin password:${normal}"
+#  echo "docker exec -it nexus cat /nexus-data/admin.password"
+#  echo
+#}
+
+waiting_for_nexus_readiness() {
+  echo -n "Waiting for Nexus readiness..."
+  while [ "$(curl -isf --cacert "$CERTS_DIR/root/ca.crt" "https://$REMOTE_NEXUS_NAME.$DOMAIN/service/rest/v1/status" | awk 'NR==1 {print $2}')" != "200" ]; do
+    echo -n "."; sleep 5
   done
-  echo .
+  echo "."
   echo -e "${green}Nexus is Ready!${normal}"
 
   echo -e "${yellow}\nTo get initial nexus admin password:${normal}"
@@ -238,7 +261,7 @@ check_and_install_docker () {
   exit 1
 }
 
-nexus_bootstarp () {
+nexus_bootstrap () {
 
   check_and_install_docker
 
@@ -254,9 +277,13 @@ nexus_bootstarp () {
 
   #Change nginx conf
   echo "Changing nginx conf..."
-  sed -i "s/DOMAIN/$DOMAIN/g" $script_dir/nginx_https.conf
-  sed -i "s/LCM_NEXUS_NAME/$REMOTE_NEXUS_NAME/g" $script_dir/nginx_https.conf
-  #sed -i -e "s@OUTPUT_CERTS_DIR@$OUTPUT_CERTS_DIR@g" $script_dir/nginx_https.conf
+  if [ ! -f $script_dir/nginx_https.conf ]; then
+    cp $script_dir/nginx_https_init.conf  $script_dir/nginx_https.conf
+    sed -i "s/DOMAIN/$DOMAIN/g" $script_dir/nginx_https.conf
+    sed -i "s/REGION/$REGION/g" $script_dir/nginx_https.conf
+    sed -i "s/LCM_NEXUS_NAME/$REMOTE_NEXUS_NAME/g" $script_dir/nginx_https.conf
+    #sed -i -e "s@OUTPUT_CERTS_DIR@$OUTPUT_CERTS_DIR@g" $script_dir/nginx_https.conf
+  fi
 }
 
 create_repos () {
@@ -281,7 +308,7 @@ if [ "$certs_for_nexus_exists" = false ]; then
   fi
 fi
 
-nexus_bootstarp
+nexus_bootstrap
 check_started_containers
 #nexus_docker_up
 #waiting_for_nexus_readiness

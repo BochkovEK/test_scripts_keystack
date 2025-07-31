@@ -9,6 +9,7 @@
 script_dir=$(dirname $0)
 utils_dir=$script_dir/utils
 get_nodes_list_script="get_nodes_list.sh"
+default_ssh_user="root"
 
 #comp_pattern="\-comp\-.."
 ##$"
@@ -28,10 +29,11 @@ blue=$(tput setaf 4)
 [[ -z $COMMAND ]] && COMMAND="ls -la"
 [[ -z $SENDENV ]] && SENDENV=""
 [[ -z $NODES ]] && NODES=()
-[[ -z $NODES_TYPE ]] && NODES_TYPE=""
+[[ -z $NODES_TYPE ]] && NODES_TYPE="all"
 [[ -z $PING ]] && PING="false"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $DONT_CHECK_CONN ]] && DONT_CHECK_CONN="false"
+#[[ -z $SSH_USER ]] && SSH_USER=$default_ssh_user
 #======================
 
 #node_type_func () {
@@ -66,12 +68,13 @@ while [ -n "$1" ]; do
       ip and name nodes list needed in /etc/hosts
 
       -c,   -command        \"<command>\"
-      -nt,  -type_of_nodes  <type_of_nodes> 'ctrl', 'comp', 'net'
+      -nt,  -type_of_nodes  <type_of_nodes> 'ctrl', 'comp', 'net', 'all', 'all_without_network\awn'
       -nn,  -node_name      <node_name\ip> example: -nn \"ebochkov-keystack-comp-01 ebochkov-keystack-comp-02\"
+      -u,   -user           <ssh_user>
       -p,   -ping           ping before execution command
       -debug                debug mode
       Remove all containers on all nodes:
-        bash command_on_nodes.sh -c 'docker stop $(docker ps -a -q)'
+        bash command_on_nodes.sh -c 'docker stop \$(docker ps -a -q)'
         bash command_on_nodes.sh -c 'docker system prune -af'
         bash command_on_nodes.sh -c 'docker volume prune -af'
 "
@@ -91,6 +94,10 @@ while [ -n "$1" ]; do
     -nt|-type_of_nodes) NODES_TYPE=$2
       echo "Found the -type_of_nodes, with parameter value $NODES_TYPE"
       shift ;;
+    -u|-user) SSH_USER=$2
+      echo "Found the -user  with parameter value $SSH_USER"
+      shift
+      ;;
     -nn|-node_name)
       for i in $2; do NODES+=("$i"); done
       echo "Found the -nn option, with parameter value ${NODES[*]}"
@@ -134,23 +141,23 @@ check_connection () {
 }
 
 start_commands_on_nodes () {
-  if [ "$DEBUG" = true ]; then
+  if [ "$TS_DEBUG" = true ]; then
     echo -e "
   [DEBUG]
-  NODES:
-    "
+  NODES:"
     for host in "${NODES[@]}"; do
       echo $host
     done
   fi
-  if [[ -z ${NODES[0]} ]]; then
+#  if [[ -z ${NODES[0]} ]]; then
+  if [ "${#NODES[@]}" -eq 0 ]; then
     error_message="Failed to access to $NODES_TYPE"
     error_output
     exit 1
   fi
   for host in "${NODES[@]}"; do
     echo -E "${blue}Start command on ${host}${normal}"
-    ssh -o StrictHostKeyChecking=no -t $SENDENV "$host" ${COMMAND}
+    ssh -o StrictHostKeyChecking=no -t $SENDENV $SSH_USER@$host "sudo ${COMMAND}"
 #    ssh -o StrictHostKeyChecking=no -t $host << EOF
 #$COMMAND
 #EOF
@@ -194,11 +201,11 @@ yes_no_answer () {
 
 check_ping () {
   if ping -c 2 $1 &> /dev/null; then
-    printf "%40s\n" "${green}There is a connection with $1 - success${normal}"
+    printf "%40s\n" "${green}There is a ping with $1 - success${normal}"
 #    NODES+=("$1")
     sleep 1
   else
-    printf "%40s\n" "${red}No connection with $1${normal}"
+    printf "%40s\n" "${red}No ping with $1${normal}"
     connection_problem="true"
     delete=$1
     NODES=( "${NODES[@]/$delete}" )
@@ -300,10 +307,25 @@ get_nodes_list () {
   fi
 }
 
+if [[ -z "$SSH_USER" ]]; then
+  # 3. Try to determine via whoami (with error handling)
+  SSH_USER=$(whoami 2>/dev/null) || {
+    echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
+    # 4. Use default value
+    SSH_USER="$default_ssh_user"
+  }
+fi
+
+# Final value check
+if [[ -z "$SSH_USER" ]]; then
+  echo -e "${red}Error: Failed to determine user!${normal}" >&2
+  exit 1
+fi
+
 get_nodes_list
 
 if [ "$DONT_CHECK_CONN" = false ]; then
-  echo "Check connection to $NODES_TYPE"
+  echo "Check: ping to $NODES_TYPE"
   for node in "${NODES[@]}"; do
     check_ping $node
   done

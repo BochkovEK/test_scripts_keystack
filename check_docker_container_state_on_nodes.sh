@@ -12,8 +12,10 @@
 #nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
 
 script_dir=$(dirname $0)
+script_name=$(basename "$0")
 utils_dir=$script_dir/utils
 get_nodes_list_script="get_nodes_list.sh"
+default_ssh_user="root"
 
 #Colors
 green=$(tput setaf 2)
@@ -52,6 +54,7 @@ ctrl_required_container_list=(
   "prometheus_openstack_exporter"
   "prometheus_alertmanager"
   "prometheus_memcached_exporter"
+  "prometheus_rabbitmq_exporter"
   "prometheus_mysqld_exporter"
   "prometheus_node_exporter"
   "prometheus_server"
@@ -81,7 +84,7 @@ comp_required_container_list=(
 #   monitoring
 # "prometheus_blackbox_exporter" not required on comp
 
-required_container_list=()
+#required_container_list=()
 
 [[ -z $CONTAINER_NAME ]] && CONTAINER_NAME=""
 [[ -z $NODES ]] && NODES=()
@@ -90,6 +93,7 @@ required_container_list=()
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $NODES_TYPE ]] && NODES_TYPE="all"
 [[ -z $NODE_NAME ]] && NODE_NAME=""
+#[[ -z $SSH_USER ]] && SSH_USER=$default_ssh_user
 #======================
 
 
@@ -105,24 +109,33 @@ do
     --help) echo -E "
       <container_name> as parameter
       -c, 	-container_name		<container_name>
-      -nt, 	-type_of_nodes		<type_of_nodes> 'ctrl', 'comp', 'net'
-      -nn,  -node_name        <node_name>
+      -nt, 	-type_of_nodes		<type_of_nodes>: 'all', 'ctrl', 'comp', 'net', 'all_without_network\awn'
+      -nn,  -node_name        <nodes_name_list> (exp: -nn \"cdm-bl-pca06 cdm-bl-pca07\")
       -check_unhealthy        check only unhealthy containers (without parameter)
+      -u,   -user             <ssh_user>
       -debug                  enable debug output (without parameter)
 "
       exit 0
-      break ;;
+      break
+      ;;
 	  -c|-container_name) CONTAINER_NAME="$2"
 	    echo "Found the -container_name <container_name> option, with parameter value $CONTAINER_NAME"
-      shift ;;
+      shift
+      ;;
     -nt|-type_of_nodes) NODES_TYPE=$2
       echo "Found the -type_of_nodes  with parameter value $NODES_TYPE"
 #      note_type_func "$2"
-      shift ;;
+      shift
+      ;;
     -nn|-node_name) NODE_NAME=$2
       echo "Found the -node_name  with parameter value $NODE_NAME"
 #      note_type_func "$2"
-      shift ;;
+      shift
+      ;;
+    -u|-user) SSH_USER=$2
+      echo "Found the -user  with parameter value $SSH_USER"
+      shift
+      ;;
     -check_unhealthy) CHECK_UNHEALTHY="true"
       echo "Found the -check_unhealthy  with parameter value $CHECK_UNHEALTHY"
       ;;
@@ -130,36 +143,20 @@ do
       echo "Found the -debug with parameter value $TS_DEBUG"
       ;;
     --) shift
-      break ;;
+      break
+      ;;
     *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
       esac
       shift
 done
 
-#error_output () {
-#  printf "%s\n" "${yellow}Docker container not checked on $NODES_TYPE nodes${normal}"
-#  printf "%s\n" "${red}$error_message - error${normal}"
-#  exit 1
-#}
-
-#check_connection () {
-#  for host in "${NODES[@]}"; do
-#    echo "host: $host"
-#    sleep 1
-#    if ping -c 2 $host &> /dev/null; then
-#        printf "%40s\n" "${green}There is a connection with $host - success${normal}"
-#    else
-#        printf "%40s\n" "${red}No connection with $IP - error!${normal}"
-#    fi
-#  done
-#}
 
 check_required_container () {
-
-  container_name_on_lcm=$(ssh -o StrictHostKeyChecking=no $host 'docker ps --format "{{.Names}}" --filter status=running')
+  echo -e "Check required container on $1"
+  container_name_on_node=$(ssh -o StrictHostKeyChecking=no $SSH_USER@$1 'sudo docker ps --format "{{.Names}}" --filter status=running')
   for container_requaired in "${required_containers_list[@]}"; do
     container_exist="false"
-    for container in $container_name_on_lcm; do
+    for container in $container_name_on_node; do
       if [ "$container" = "$container_requaired" ]; then
         container_exist="true"
       fi
@@ -167,7 +164,7 @@ check_required_container () {
     if [ "$container_exist" = "true" ]; then
       container_exist="true"
     else
-      echo -e "${red}Container $container_requaired not exists - ERROR${normal}"
+      echo -e "${red}Container $container_requaired not running - ERROR${normal}"
     fi
   done
 }
@@ -192,7 +189,11 @@ get_nodes_list () {
   "
     error_in_NODES=$(echo $word|grep "ERROR")
     if [ -n "$error_in_NODES" ]; then
-      echo -e "${yellow}Node names could not be determined. Try running the script: bash ~/test_scripts_keystack/utils/get_nodes_list.sh -nt all${normal}"
+      echo -e "${yellow}Node names could not be determined.
+        Try:
+          bash ~/test_scripts_keystack/utils/get_nodes_list.sh -nt all
+          or
+          bash $script_dir/$script_name -nn \"<space-separated_list_of_hostnames>\"${normal}"
       echo -e "${red}Node names could not be determined - ERROR!${normal}"
       exit 1
     fi
@@ -203,12 +204,30 @@ get_nodes_list () {
   fi
 }
 
+
+if [[ -z "$SSH_USER" ]]; then
+  # 3. Try to determine via whoami (with error handling)
+  SSH_USER=$(whoami 2>/dev/null) || {
+    echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
+    # 4. Use default value
+    SSH_USER="$default_ssh_user"
+  }
+fi
+
+# Final value check
+if [[ -z "$SSH_USER" ]]; then
+  echo -e "${red}Error: Failed to determine user!${normal}" >&2
+  exit 1
+fi
+
 if [ -z "$NODE_NAME" ]; then
   get_nodes_list
 else
-  NODES=("$NODE_NAME")
+  for word in $NODE_NAME; do
+    NODES+=("$word")
+  done
+#  NODES=("$NODE_NAME")
 fi
-
 
 [[ "$CHECK_UNHEALTHY" = true  ]] && {
   UNHEALTHY="\(unhealthy\)";
@@ -226,12 +245,12 @@ fi
 
 for host in "${NODES[@]}"; do
   if [ -z $CONTAINER_NAME ]; then
-    echo -e "${cyan}Check container on ${host}${normal}"
+    echo -e "${cyan}Check containers on ${host}${normal}"
   else
     echo "Check container (CONTAINER_NAME: $CONTAINER_NAME) on ${host}"
     grep_string="|grep $CONTAINER_NAME"
   fi
-  status=$(ssh -o "StrictHostKeyChecking=no" -o BatchMode=yes -o ConnectTimeout=5 $host echo ok 2>&1)
+  status=$(ssh -o "StrictHostKeyChecking=no" -o BatchMode=yes -o ConnectTimeout=5 $SSH_USER@$host echo ok 2>&1)
 
   if [[ $status == ok ]] ; then
 
@@ -239,9 +258,10 @@ for host in "${NODES[@]}"; do
     printf "%40s\n" "There is a connection with $host - ok!"
 
 #    ssh -o StrictHostKeyChecking=no $host docker ps $grep_string \
-    ssh -o StrictHostKeyChecking=no $host docker ps $grep_string \
+    ssh -o StrictHostKeyChecking=no $SSH_USER@$host "sudo docker ps -a $grep_string \
       |sed --unbuffered \
         -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
+        -e 's/\(.*Exited.*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*second.*\)/\o033[33m\1\o033[39m/' \
         -e 's/\(.*Less than.*\)/\o033[33m\1\o033[39m/' \
         -e 's/\(.*(healthy).*\)/\o033[92m\1\o033[39m/' \
@@ -252,26 +272,25 @@ for host in "${NODES[@]}"; do
         -e 's/\(.*hours.*\)/\o033[92m\1\o033[39m/' \
         -e 's/\(.*starting).*\)/\o033[33m\1\o033[39m/'\
         -e 's/\(.*restarting.*\)/\o033[31m\1\o033[39m/'
-
-#        -e 's/\(.*Up.*\)/\o033[92m\1\o033[39m/' \
-    echo -e "Check required container on ${host}"
+        "
 
     is_ctrl=$(echo $host|grep ctrl)
     if [ -n "$is_ctrl" ]; then
       if [ -z $CONTAINER_NAME ]; then
         required_containers_list=( "${ctrl_required_container_list[@]}" )
-        check_required_container
+        check_required_container $host
       fi
     fi
     is_comp=$(echo $host|grep -E "comp|cmpt")
     if [ -n "$is_comp" ]; then
       if [ -z $CONTAINER_NAME ]; then
         required_containers_list=( "${comp_required_container_list[@]}" )
-        check_required_container
+        check_required_container $host
       fi
     fi
-  elif [[ $status == "Permission denied"* ]] ; then
-    printf "%40s\n" "${red}$status - error!${normal}"
+  elif [[ $status == *"Permission denied"* ]] ; then
+    echo -e "${red}Error: ${normal}"
+    echo -e "${red}\t${status}${normal}"
   else
     printf "%40s\n" "${red}No connection with $host - error!${normal}"
     echo -e "${red}The node may be turned off.${normal}\n"

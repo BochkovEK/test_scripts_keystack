@@ -12,12 +12,15 @@ variable "default_flavor_name" {
 }
 
 variable "default_flavor" {
-#  description = "Default flavor name"
+  #  description = "Default flavor name"
   default = {
-    vcpus = 2
-    ram   = 2048
+    vcpus       = 2
+    ram         = 2048
+    extra_specs = {
+    }
   }
 }
+#    "hw:mem_page_size" = "large"
 
 variable "default_disks" {
   description = "Default disks"
@@ -79,26 +82,10 @@ variable "default_metadata" {
   }
 }
 
-#variable "default_server_group_id" {
-#  description = "Default server group id"
-#  default     = ""
-#}
-
-# server_group = {
-#   name = "affinity_group"
-#   policies = []
-# }
-
-
 variable "VMs" {
   description = "VMs list source"
   default = {}
 }
-
-#variable "AZs" {
-#  description = "AZs list source"
-#  default = {}
-#}
 
 # user_data = "#cloud-config\nhostname: instance_1.example.com\nfqdn: instance_1.example.com"
 variable "default_user_data" {

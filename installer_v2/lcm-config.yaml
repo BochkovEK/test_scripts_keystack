@@ -1,0 +1,86 @@
+# Исходное состояние
+# Настройка K0s
+ssh_username: "cloud-user" # kolla
+fqdn_cp1: "cp-1.testdomain.local" #<имя региона>-lcm-01.vm.lab.itkey.com
+fqdn_cp2: "cp-2.testdomain.local" #<имя региона>-lcm-02.vm.lab.itkey.com
+fqdn_cp3: "cp-3.testdomain.local" #<имя региона>-lcm-03.vm.lab.itkey.com
+cp_vip: "172.16.130.10/24" # CIDR: k0s_vip/27
+keepalived_passwd: "8LJw251u" # Длина не более 8 символов
+loadbalancer_ip_pool: "10.120.120.240-10.120.120.240" # service_vip
+
+# Настройка Helm чартов
+nexus_pv_size: "50Gi"                # Размер volume под Nexus
+netbox_pv_size: "1Gi"                # Размер volume под Netbox
+netbox_postgresql_pv_size: "50Gi"    # Размер volume под БД Netbox
+gitlab_gitaly_pv_size: "50Gi"        # Размер volume под Gitlab gitaly
+gitlab_minio_pv_size: "10Gi"         # Размер volume под Gitlab minio
+gitlab_postgresql_pv_size: "50Gi"    # Размер volume под БД Gitlab
+domain_name: "testdomain.local"      # Имя домена сервисов LCM (Gitlab, Netbox, Vault, Nexus)
+
+prometheus_metrics_retention: 10d    # Как долго храним метрики
+prometheus_pv_size: 50Gi             # Размер volume под prometheus
+
+# Включаем MTLS для  Gitlab, Netbox
+ingress_auth_tls_verify_client: "false"  # "true" или "false"
+
+#Глубина проверки сертификатов в цепочке от клиентского до корневого CA
+ingress_auth_tls_verify_depth: "3"
+
+# Настройки подключения к Active Directory
+ldap_enable: "false" # "true" или "false"
+ldap_host: "dc-01.domain.loc" # FQDN из SAN сертификата точки входа AD
+ldap_ca_cert_file: "ldap-root-cert.crt" # Публичный сертификат центра сертификации в PEM-формате
+ldap_bind_dn: "CN=test,CN=Users,DC=domain,DC=loc"
+ldap_user_search_basedn: "CN=Users,DC=domain,DC=loc"
+ldap_group_search_basedn: "CN=Users,DC=domain,DC=loc"
+ldap_reader_group_dn: "CN=Администраторы домена,CN=Users,DC=domain,DC=loc"
+ldap_auditor_group_dn: "CN=Администраторы домена,CN=Users,DC=domain,DC=loc"
+ldap_operator_group_dn: "CN=Администраторы домена,CN=Users,DC=domain,DC=loc"
+ldap_admin_group_dn: "CN=Администраторы домена,CN=Users,DC=domain,DC=loc"
+
+#========================================
+# Отредактированный конфиг
+# Настройка K0s
+ssh_username: "kolla"
+fqdn_cp1: "ebochkov-installer-v2-lcm-01.vm.lab.itkey.com" #<имя региона>-lcm-01.vm.lab.itkey.com
+fqdn_cp2: "ebochkov-installer-v2-lcm-02.vm.lab.itkey.com" #<имя региона>-lcm-02.vm.lab.itkey.com
+fqdn_cp3: "ebochkov-installer-v2-lcm-03.vm.lab.itkey.com" #<имя региона>-lcm-03.vm.lab.itkey.com
+cp_vip: "10.224.160.5/27" # CIDR: k0s_vip/27
+keepalived_passwd: "8LJw251u" # Длина не более 8 символов
+loadbalancer_ip_pool: "10.224.160.6-10.224.160.6" # service_vip
+
+# Настройка Helm чартов
+nexus_pv_size: "50Gi"                # Размер volume под Nexus
+netbox_pv_size: "1Gi"                # Размер volume под Netbox
+netbox_postgresql_pv_size: "50Gi"    # Размер volume под БД Netbox
+gitlab_gitaly_pv_size: "50Gi"        # Размер volume под Gitlab gitaly
+gitlab_minio_pv_size: "10Gi"         # Размер volume под Gitlab minio
+gitlab_postgresql_pv_size: "50Gi"    # Размер volume под БД Gitlab
+domain_name: "ebochkov-installer-v2.vm.lab.itkey.com"      # Имя домена сервисов LCM (Gitlab, Netbox, Vault, Nexus)
+
+#Monitoring VictoriaMetrics
+vm_metrics_retention: "1"                # Как долго храним метрики. Установлено в 1 месяц См. https://docs.victoriametrics.com/victoriametrics/#retention
+vmstorage_pv_size: "50Gi"                # Размер volume под vmstorage
+vmselect_pv_size: "10Gi"                 # Размер volume под vmselect
+grafana_postgresql_pv_size: "5Gi"        # Размер volume под Grafana
+
+prometheus_metrics_retention: 10d    # Как долго храним метрики
+prometheus_pv_size: 50Gi             # Размер volume под prometheus
+
+# Включаем MTLS для  Gitlab, Netbox
+ingress_auth_tls_verify_client: "false"  # "true" или "false"
+
+#Глубина проверки сертификатов в цепочке от клиентского до корневого CA
+ingress_auth_tls_verify_depth: "3"
+
+# Настройки подключения к Active Directory
+ldap_enable: "true" # "true" или "false"
+ldap_host: "ldaps-lab.slavchenkov-keystack.vm.lab.itkey.com" # FQDN из SAN сертификата точки входа AD
+ldap_ca_cert_file: "ldaps.pem" # Публичный сертификат центра сертификации в PEM-формате; файл должен находиться рядом с конфигом
+ldap_bind_dn: "CN=ldap-ro,CN=Users,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
+ldap_user_search_basedn: "DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
+ldap_group_search_basedn: "OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
+ldap_reader_group_dn: "CN=preevostack_reader,OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
+ldap_auditor_group_dn: "CN=preevostack_security_admin,OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
+ldap_operator_group_dn: "CN=preevostack_support_admin,OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
+ldap_admin_group_dn: "CN=preevostack_infra_admin,OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
