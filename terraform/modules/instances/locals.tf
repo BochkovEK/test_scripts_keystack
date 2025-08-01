@@ -27,13 +27,13 @@ locals {
             ),
             # else use string or default empty string
             instance.user_data, var.default_user_data)
-        server_group_type = try(
-          lookup(instance, "server_group", null) != null ? "new" :
-          lookup(instance, "server_group_uuid", null) != null ? "existing" :
-          null,
-          null
-        )
-#        server_group_type = try(instance.server_group != null ? "new" : instance.server_group_uuid != null ? "existing" : null, null)
+#        server_group_type = try(
+#          lookup(instance, "server_group", null) != null ? "new" :
+#          lookup(instance, "server_group_uuid", null) != null ? "existing" :
+#          null,
+#          null
+#        )
+        server_group_type = try(instance.server_group != null ? "new" : instance.server_group_uuid != null ? "existing" : null, null)
 #        server_group_policy = try(instance.server_group.policy, null)
       }
     ]
