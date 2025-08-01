@@ -31,7 +31,7 @@ resource "openstack_compute_instance_v2" "vm" {
 #      group = each.value.server_group_type == "existing" ? data.openstack_compute_servergroup_v2.existing_group[each.value.server_group_name].id : openstack_compute_servergroup_v2.vm_group[each.value.base_name].id
 #    }
     content {
-      group = each.value.server_group_type == "new" ? openstack_compute_servergroup_v2.vm_group[each.value.base_name].id : each.value.server_group_name
+      group = each.value.server_group_type == "new" ? openstack_compute_servergroup_v2.vm_group[each.value.base_name].id : each.value.server_group_uuid
     }
   }
 
