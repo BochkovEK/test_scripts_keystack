@@ -39,8 +39,11 @@ locals {
   }
 }
 
-output "debug" {
-  value = instance.server_group_type
-#  sensitive = true # если переменные содержат sensitive данные
+output "server_group_types" {
+  value = {
+    for inst in local.instances :
+    inst.name => inst.server_group_type
+  }
+  description = "Server group types for all instances"
 }
 
