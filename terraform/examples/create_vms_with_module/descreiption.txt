@@ -7,8 +7,8 @@
 #VM:
 VMs = {
     <vm_name> = {
-        vm_qty                              = <vms_quantity>
-        image_name                          = "<image_name>"
+        vm_qty                              = <vms_quantity> # required
+        image_name                          = "<image_name>" # default "cirros-0.6.2-x86_64-disk.img"
         flavor_name                         = "<existing_flavor_name>"
         # or create new flavor
         flavor                              = {
@@ -16,18 +16,19 @@ VMs = {
             ram         = <RAM>     # !!! The value is specified in megabytes (MB; example: 4096 (4Gb))
             extra_specs = "<string>"
         }
-        keypair_name                        = "<existing_keypair_name>"
-        security_groups                     = [] #list
-        server_group_uuid                   = "<existing_server_group_name>
+        # If flavor is not specified, it will be created with the following parameters: 2 vCPUs, 2 GB RAM
+        keypair_name                        = "<existing_keypair_name>" # or it will be created ("terraform_keypair") from ~/test_scripts_keystack/key_test.pub
+        security_groups                     = [] # list, or it will be created with SSH and ICMP rules
+        server_group_uuid                   = "<existing_server_group_UUID> # !!! UUID not a name
         # or create new server group
         server_group                        = {
-            name   = "web-anti-affinity-group"
-            policy = "anti-affinity" # one of ['anti-affinity', 'affinity', 'soft-anti-affinity', 'soft-affinity']
+            name   = "<server_group_name>"
+            policy = "<policy>" # one of ['anti-affinity', 'affinity', 'soft-anti-affinity', 'soft-affinity']
         }
         az_hint                             = "<az_name>:<hyper_name>"
-        network_name                        = "<network_name>"
-        boot_volume_size                    = <size> (default_volume_size = 5)
-        boot_volume_delete_on_termination   = "true\false" (default "true")
+        network_name                        = "<network_name>" # default "pub_net"
+        boot_volume_size                    = <size> # default 5 GB
+        boot_volume_delete_on_termination   = "true\false" # default "true"
         disks           = [
           {
             boot_index = <boot_index>
