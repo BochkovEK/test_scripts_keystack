@@ -11,8 +11,8 @@ locals {
         flavor_name                       = try(instance.flavor_name, var.default_flavor_name)
         keypair_name                      = try(instance.keypair_name, null) #var.default_key_pair_name)
         security_groups                   = try(instance.security_groups, null) #var.default_security_groups)
-        server_group_uuid                 = try(instance.server_group_uuid, null)
-        server_group                      = try(instance.server_group, null)
+#        server_group_uuid                 = try(instance.server_group_uuid, null)
+#        server_group                      = try(instance.server_group, null)
         az_hint                           = try(instance.az_hint, null)
         scheduler_hints                   = try(instance.scheduler_hints, null)
         network_name                      = try(instance.network_name, var.default_network_name)
@@ -27,7 +27,7 @@ locals {
             ),
             # else use string or default empty string
             instance.user_data, var.default_user_data)
-        server_group_type = instance.server_group != null ? "new" : instance.server_group_uuid != null ? "existing" : null
+        server_group_type = try(instance.server_group != null ? "new" : instance.server_group_uuid != null ? "existing" : null, null)
 #        server_group_policy = try(instance.server_group.policy, null)
       }
     ]
