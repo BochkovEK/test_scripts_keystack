@@ -1,3 +1,14 @@
+# Создаем серверные группы (если они указаны в конфигурации)
+resource "openstack_compute_servergroup_v2" "vm_group" {
+  for_each = {
+    for vm_key, vm in var.VMs : vm_key => vm.server_group
+    if try(vm.server_group, null) != null
+  }
+
+  name     = each.value.name
+  policies = [each.value.policy]
+}
+
 resource "openstack_compute_instance_v2" "vm" {
   for_each     = { for k, v in local.instances : v.name => v
 #  if try(v.image_name, null) != null
@@ -13,15 +24,23 @@ resource "openstack_compute_instance_v2" "vm" {
   metadata                    = each.value.metadata
   user_data                   = each.value.user_data
 
+#  dynamic "scheduler_hints" {
+#    for_each = each.value.scheduler_hints != null ? [each.value.scheduler_hints] : []
+#    content {
+#      group             = lookup(scheduler_hints.value, "group", null)
+#      different_host    = lookup(scheduler_hints.value, "different_host", null)
+#      same_host         = lookup(scheduler_hints.value, "same_host", null)
+#      query             = lookup(scheduler_hints.value, "query", null)
+#      target_cell       = lookup(scheduler_hints.value, "target_cell", null)
+#      build_near_host_ip = lookup(scheduler_hints.value, "build_near_host_ip", null)
+#    }
+#  }
+
+  # Динамически добавляем scheduler_hints если есть server_group
   dynamic "scheduler_hints" {
-    for_each = each.value.scheduler_hints != null ? [each.value.scheduler_hints] : []
+    for_each = each.value.server_group != null ? [1] : []
     content {
-      group             = lookup(scheduler_hints.value, "group", null)
-      different_host    = lookup(scheduler_hints.value, "different_host", null)
-      same_host         = lookup(scheduler_hints.value, "same_host", null)
-      query             = lookup(scheduler_hints.value, "query", null)
-      target_cell       = lookup(scheduler_hints.value, "target_cell", null)
-      build_near_host_ip = lookup(scheduler_hints.value, "build_near_host_ip", null)
+      group = openstack_compute_servergroup_v2.group[each.value.base_name].id
     }
   }
 

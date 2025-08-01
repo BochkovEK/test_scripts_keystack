@@ -28,5 +28,10 @@ locals {
   }
   ]
   ])
+    # Вычисляем какие server groups нужно создать
+  server_groups = {
+    for vm_key, vm in var.VMs : vm_key => vm.server_group
+    if try(vm.server_group, null) != null
+  }
 }
 

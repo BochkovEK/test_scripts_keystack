@@ -1,6 +1,60 @@
-#Create VMs by json like this:
+# Create VMs by config in module folder
+# Config name <name>.auto.tfvars
+# Config-json like this:
+#==================
+
+#variable list:
+#VM:
+VMs = {
+    <vm_name> = {
+        vm_qty                              = <vms_quantity>
+        image_name                          = "<image_name>"
+        flavor                              = {
+            vcpus       = <vCPUs>
+            ram         = <RAM>     # !!! The value is specified in megabytes (MB; example: 4096 (4Gb))
+            extra_specs = "<string>"
+        }
+        flavor_name                         = "<existing_flavor_name>"
+        keypair_name                        = "<keypair_name>"
+        security_groups                     = [] #list
+        az_hint                             = "<az_name>:<hyper_name>"
+        network_name                        = "<network_name>"
+        boot_volume_size                    = <size> (default_volume_size = 5)
+        boot_volume_delete_on_termination   = "true\false" (default "true")
+        disks           = [
+          {
+            boot_index = <boot_index>
+            size = <size>
+          },
+        ]
+        metadata = {}
+        user_data =
+            #or string:
+                <<-EOT
+                #cloud-config
+                hostname: my-vm
+                EOT
+            #or template:
+                { template_file = "templates/cloud-init-2.yaml" }
+        }
+    }
+}
+
+#AZ:
+AZs = {
+    <aggr_name> = {
+        az_name    = "az_name" #(exp: "az_1")
+        hosts_list = [ "<list_hosts>" ]
+    }
+}
+
+# Server groups
+server_groups = {
+}
+
+
 #------------
-#simple example
+# simple example:
 # VMs
 VMs = {
   TEST_VM = {
@@ -15,7 +69,7 @@ VMs = {
 AZs = {}
 server_groups = {}
 #------------
-# exemple 1
+# exemple 1:
 # VMs
 VMs = {
   TEST_DRS = {
@@ -56,7 +110,7 @@ AZs = {
 
 server_groups = {}
 #------------
-# exemple 2
+# exemple 2:
 # VMs
 VMs = {
   vm_1 = {
@@ -100,7 +154,7 @@ AZs = {
   }
 }
 #------------
-# exemple 3
+# exemple 3:
 # VMs
 VMs = {
   TEST_VM = {
@@ -132,50 +186,4 @@ AZs = {
 
 # Server groups
 server_groups = {
-}
-#==================
-
-#variable list:
-#VM:
-VMs = {
-    <vm_name> = {
-        vm_qty     = <vms_quantity>
-        image_name = "<image_name>"
-        flavor     = {
-            vcpus       = <vCPUs>
-            ram         = <RAM>     # !!! The value is specified in megabytes (MB; example: 4096 (4Gb))
-            extra_specs = "<string>"
-        }
-        flavor_name                         = "<flavor_name>"
-        keypair_name                        = "<keypair_name>"
-        security_groups                     = [] #list
-        az_hint                             = "<az_name>:<hyper_name>"
-        network_name                        = "<network_name>"
-        boot_volume_size                    = <size> (default_volume_size = 5)
-        boot_volume_delete_on_termination   = "true\false" (default "true")
-        disks           = [
-          {
-            boot_index = <boot_index>
-            size = <size>
-          },
-        ]
-        metadata = {}
-        user_data =
-            #or string:
-                <<-EOT
-                #cloud-config
-                hostname: my-vm
-                EOT
-            #or template:
-                { template_file = "templates/cloud-init-2.yaml" }
-        }
-    }
-}
-
-#AZ:
-AZs = {
-    <aggr_name> = {
-        az_name    = "az_name" #(exp: "az_1")
-        hosts_list = [ "<list_hosts>" ]
-    }
 }
