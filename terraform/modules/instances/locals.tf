@@ -27,7 +27,7 @@ locals {
             # else use string or default empty string
             instance.user_data, var.default_user_data)
         # Определяем тип группы (null | existing | new)
-        server_group_type = server_group != null ? "new" : instance.server_group_name != null ? "existing" : null, null)
+        server_group_type = try(instance.server_group_name != null ? "existing" : "new", null)
         # Параметры группы
         server_group_name  = try(instance.server_group.name, instance.server_group_name, null)
         server_group_policy = try(instance.server_group.policy, null)
