@@ -26,21 +26,13 @@ locals {
             ),
             # else use string or default empty string
             instance.user_data, var.default_user_data)
-        # Определяем тип группы (null | existing | new)
         server_group_type = try(instance.server_group_name != null ? "existing" : "new", null)
-        # Параметры группы
         server_group_name  = try(instance.server_group.name, instance.server_group_name, null)
         server_group_policy = try(instance.server_group.policy, null)
       }
     ]
   ])
-#    # Вычисляем какие server groups нужно создать
-#  server_groups = {
-#    for vm_key, vm in var.VMs : vm_key => vm.server_group
-#    if try(vm.server_group, null) != null
-#  }
 
-    # Группы для создания (только с group_type = "new")
     groups_to_create = {
     for vm_key, vm in var.VMs : vm_key => vm.server_group
     if try(vm.server_group, null) != null

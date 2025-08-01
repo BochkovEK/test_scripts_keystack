@@ -9,6 +9,17 @@ resource "openstack_compute_servergroup_v2" "vm_group" {
   policies = [each.value.policy]
 }
 
+# Data source для существующих групп
+data "openstack_compute_servergroup_v2" "existing_group" {
+  for_each = {
+    for inst in local.instances :
+    inst.server_group_name => inst
+    if inst.server_group_type == "existing"
+  }
+
+  name = each.value.server_group_name
+}
+
 resource "openstack_compute_instance_v2" "vm" {
   for_each     = { for k, v in local.instances : v.name => v
 #  if try(v.image_name, null) != null
@@ -24,25 +35,6 @@ resource "openstack_compute_instance_v2" "vm" {
   metadata                    = each.value.metadata
   user_data                   = each.value.user_data
 
-#  dynamic "scheduler_hints" {
-#    for_each = each.value.scheduler_hints != null ? [each.value.scheduler_hints] : []
-#    content {
-#      group             = lookup(scheduler_hints.value, "group", null)
-#      different_host    = lookup(scheduler_hints.value, "different_host", null)
-#      same_host         = lookup(scheduler_hints.value, "same_host", null)
-#      query             = lookup(scheduler_hints.value, "query", null)
-#      target_cell       = lookup(scheduler_hints.value, "target_cell", null)
-#      build_near_host_ip = lookup(scheduler_hints.value, "build_near_host_ip", null)
-#    }
-#  }
-
-#  # Динамически добавляем scheduler_hints если есть server_group
-#  dynamic "scheduler_hints" {
-#    for_each = each.value.server_group != null ? [1] : []
-#    content {
-#      group = openstack_compute_servergroup_v2.vm_group[each.value.base_name].id
-#    }
-  # Динамические scheduler_hints для всех вариантов
   dynamic "scheduler_hints" {
     for_each = each.value.server_group_type != null ? [1] : []
 
