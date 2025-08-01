@@ -40,7 +40,7 @@ resource "openstack_compute_instance_v2" "vm" {
   dynamic "scheduler_hints" {
     for_each = each.value.server_group != null ? [1] : []
     content {
-      group = openstack_compute_servergroup_v2.group[each.value.base_name].id
+      group = openstack_compute_servergroup_v2.vm_group[each.value.base_name].id
     }
   }
 
