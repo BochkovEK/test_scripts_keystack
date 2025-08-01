@@ -9,15 +9,17 @@ VMs = {
     <vm_name> = {
         vm_qty                              = <vms_quantity>
         image_name                          = "<image_name>"
+        flavor_name                         = "<existing_flavor_name>"
+        # or create new flavor
         flavor                              = {
             vcpus       = <vCPUs>
             ram         = <RAM>     # !!! The value is specified in megabytes (MB; example: 4096 (4Gb))
             extra_specs = "<string>"
         }
-        flavor_name                         = "<existing_flavor_name>"
         keypair_name                        = "<existing_keypair_name>"
         security_groups                     = [] #list
-        server_group_name                   = "<existing_server_group_name>
+        server_group_uuid                   = "<existing_server_group_name>
+        # or create new server group
         server_group                        = {
             name   = "web-anti-affinity-group"
             policy = "anti-affinity" # one of ['anti-affinity', 'affinity', 'soft-anti-affinity', 'soft-affinity']
@@ -53,8 +55,7 @@ AZs = {
     }
 }
 
-
-#------------
+#==============================================
 # simple example:
 # VMs
 VMs = {
