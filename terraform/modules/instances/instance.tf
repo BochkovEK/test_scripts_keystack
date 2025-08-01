@@ -44,7 +44,7 @@ resource "openstack_compute_instance_v2" "vm" {
 #    }
   # Динамические scheduler_hints для всех вариантов
   dynamic "scheduler_hints" {
-    for_each = each.value.group_type != null ? [1] : []
+    for_each = each.value.server_group_type != null ? [1] : []
 
     content {
       group = each.value.server_group_type == "new" ? openstack_compute_servergroup_v2.vm_group[each.value.base_name].id : each.value.server_group_name
