@@ -131,7 +131,8 @@ AZs = {
 }
 
 # Server groups
-server_groups = {}
+server_groups = {
+}
 #==================
 
 #variable list:
@@ -140,19 +141,15 @@ VMs = {
     <vm_name> = {
         vm_qty     = <vms_quantity>
         image_name = "<image_name>"
-        flavor {
-            vcpus = <vcpus>
-            ram   = <ram_in_MB>
-        }
-
-        flavor_name = {
+        flavor     = {
             vcpus       = <vCPUs>
-            ram         = <in_MB>
+            ram         = <RAM>     # !!! The value is specified in megabytes (MB; example: 4096 (4Gb))
             extra_specs = "<string>"
         }
+        flavor_name                         = "<flavor_name>"
         keypair_name                        = "<keypair_name>"
         security_groups                     = [] #list
-        az_hint                                 = "<az_name>:<hyper_name>"
+        az_hint                             = "<az_name>:<hyper_name>"
         network_name                        = "<network_name>"
         boot_volume_size                    = <size> (default_volume_size = 5)
         boot_volume_delete_on_termination   = "true\false" (default "true")

@@ -12,6 +12,7 @@ locals {
     keypair_name                      = try(instance.keypair_name, null) #var.default_key_pair_name)
     security_groups                   = try(instance.security_groups, null) #var.default_security_groups)
     az_hint                           = try(instance.az_hint, null)
+    scheduler_hints                   = try(instance.scheduler_hints, null)
     network_name                      = try(instance.network_name, var.default_network_name)
     boot_volume_size                  = try(instance.boot_volume_size, var.default_volume_size)
     boot_volume_delete_on_termination = try(instance.boot_volume_delete_on_termination, var.default_delete_on_termination)

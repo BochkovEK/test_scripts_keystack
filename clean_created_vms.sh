@@ -134,7 +134,8 @@ Delete the following VMs?:
 }
 
 clean_volumes () {
-  echo "Delete Volumes..."
+  echo -E "
+Delete Volumes..."
 #  openstack volume list --project $PROJECT|grep -E 'available|in-use' | tee /tmp/$tmp_output
 #  ls -f /tmp/$tmp_output
 #  if [ ! $? -eq 0 ]; then

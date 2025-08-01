@@ -188,7 +188,7 @@ if [ -z $IMAGE ]; then
   echo "Execute curl command:"
   echo "curl -X 'GET' 'https://repo.itkey.com/service/rest/v1/search?repository=images&name=*' -H 'accept: application/json'| jq '.items[]|.name'"
   curl -X 'GET' 'https://repo.itkey.com/service/rest/v1/search?repository=images&name=*' -H 'accept: application/json'| jq '.items[]|.name'
-  error_message="You mast define image name as start parameter script"
+  error_message="You must define image name as start parameter script"
   error_output
 fi
 

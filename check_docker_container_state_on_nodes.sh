@@ -1,6 +1,5 @@
 #!/bin/bash
 
-#!!! Проверка всех контов но анхелси и рестарт
 #The scrip check container state on nodes or node
 
 # example nodes list define

@@ -25,6 +25,10 @@ script_dir=$(dirname $0)
 utils_dir=$script_dir/utils
 check_openrc_script="check_openrc.sh"
 envs_file_name=".envs_create_vms"
+utils_dir=$script_dir/utils
+create_pub_network_script="openstack/create_pub_network.sh"
+create_image_script_script="openstack/create_image.sh"
+
 
 #Colors
 green=$(tput setaf 2)
@@ -521,71 +525,72 @@ check_network () {
       yes_no_question="Do you want to try to create $NETWORK [Yes]:"
       yes_no_answer
       if [ "$yes_no_input" = "true" ]; then
-        CIDR=$(ip r|grep "dev external proto kernel scope"| awk '{print $1}');
-        last_digit=$(echo $CIDR | sed --regexp-extended 's/([0-9]+\.[0-9]+\.[0-9]+\.)|(\/[0-9]+)//g');
-        left_side=$(echo $CIDR | sed --regexp-extended 's/([0-9]+\/[0-9]+)//g');
-        GATEWAY=$left_side$(expr $last_digit + 1);
-        echo "CIDR: $CIDR, GATEWAY: $GATEWAY"
-        if [ -n "$CIDR" ] && [ -n "$GATEWAY" ]; then
-          mask_pub_net=$(echo "${CIDR##*/}")
-          if [ "$mask_pub_net" = "27" ]; then
-            case "$last_digit" in
-              0)
-                start_pub_net_ip="${left_side}10"
-                end_pub_net_ip="${left_side}30"
-                ;;
-              32)
-                start_pub_net_ip="${left_side}40"
-                end_pub_net_ip="${left_side}62"
-                ;;
-              64)
-                start_pub_net_ip="${left_side}70"
-                end_pub_net_ip="${left_side}94"
-                ;;
-              96)
-                start_pub_net_ip="${left_side}100"
-                end_pub_net_ip="${left_side}126"
-                ;;
-              128)
-                start_pub_net_ip="${left_side}140"
-                end_pub_net_ip="${left_side}158"
-                ;;
-              160)
-                start_pub_net_ip="${left_side}170"
-                end_pub_net_ip="${left_side}190"
-                ;;
-              192)
-                start_pub_net_ip="${left_side}200"
-                end_pub_net_ip="${left_side}222"
-                ;;
-              224)
-                start_pub_net_ip="${left_side}230"
-                end_pub_net_ip="${left_side}254"
-                ;;
-            esac
-            openstack network create \
-              --external \
-              --share \
-              --provider-network-type flat \
-              --provider-physical-network physnet1 \
-              $NETWORK
-            openstack subnet create \
-              --subnet-range $CIDR \
-              --network pub_net \
-              --dhcp \
-              --gateway $GATEWAY \
-              --allocation-pool start=$start_pub_net_ip,end=$end_pub_net_ip \
-              $NETWORK
-          else
-            warning_message="Script can't create network for $mask_pub_net mask"
-            error_message="Network $NETWORK does not exist"
-            error_output
-          fi
-        else
-          warning_message="Script can't define CIDR or GATEWAY on this node. Try use the script on lcm or jump node"
-          error_message="Network $NETWORK does not exist"
-          error_output
-        fi
+#        CIDR=$(ip r|grep "dev external proto kernel scope"| awk '{print $1}');
+#        last_digit=$(echo $CIDR | sed --regexp-extended 's/([0-9]+\.[0-9]+\.[0-9]+\.)|(\/[0-9]+)//g');
+#        left_side=$(echo $CIDR | sed --regexp-extended 's/([0-9]+\/[0-9]+)//g');
+#        GATEWAY=$left_side$(expr $last_digit + 1);
+#        echo "CIDR: $CIDR, GATEWAY: $GATEWAY"
+#        if [ -n "$CIDR" ] && [ -n "$GATEWAY" ]; then
+#          mask_pub_net=$(echo "${CIDR##*/}")
+#          if [ "$mask_pub_net" = "27" ]; then
+#            case "$last_digit" in
+#              0)
+#                start_pub_net_ip="${left_side}10"
+#                end_pub_net_ip="${left_side}30"
+#                ;;
+#              32)
+#                start_pub_net_ip="${left_side}40"
+#                end_pub_net_ip="${left_side}62"
+#                ;;
+#              64)
+#                start_pub_net_ip="${left_side}70"
+#                end_pub_net_ip="${left_side}94"
+#                ;;
+#              96)
+#                start_pub_net_ip="${left_side}100"
+#                end_pub_net_ip="${left_side}126"
+#                ;;
+#              128)
+#                start_pub_net_ip="${left_side}140"
+#                end_pub_net_ip="${left_side}158"
+#                ;;
+#              160)
+#                start_pub_net_ip="${left_side}170"
+#                end_pub_net_ip="${left_side}190"
+#                ;;
+#              192)
+#                start_pub_net_ip="${left_side}200"
+#                end_pub_net_ip="${left_side}222"
+#                ;;
+#              224)
+#                start_pub_net_ip="${left_side}230"
+#                end_pub_net_ip="${left_side}254"
+#                ;;
+#            esac
+#            openstack network create \
+#              --external \
+#              --share \
+#              --provider-network-type flat \
+#              --provider-physical-network physnet1 \
+#              $NETWORK
+#            openstack subnet create \
+#              --subnet-range $CIDR \
+#              --network pub_net \
+#              --dhcp \
+#              --gateway $GATEWAY \
+#              --allocation-pool start=$start_pub_net_ip,end=$end_pub_net_ip \
+#              $NETWORK
+#          else
+#            warning_message="Script can't create network for $mask_pub_net mask"
+#            error_message="Network $NETWORK does not exist"
+#            error_output
+#          fi
+#        else
+#          warning_message="Script can't define CIDR or GATEWAY on this node. Try use the script on lcm or jump node"
+#          error_message="Network $NETWORK does not exist"
+#          error_output
+#        fi
+        bash $utils_dir/$create_pub_network_script
       else
         error_message="Network $NETWORK does not exist"
         error_output
@@ -604,25 +609,26 @@ check_network () {
 create_image () {
   [[ ! $DONT_ASK = "true" ]] && { echo "Try to download image: \"$1\" and add to openstack?";
     read -p "Press enter to continue: "; }
-  check_wget
-  echo "Creating image \"$1\" in project \"$PROJECT\"..."
-  [ -f $script_dir/"$1" ] && echo "File $script_dir/$1 exist." \
-  || { echo "File $script_dir/$1 does not exist. Try to download it..."; \
-  wget https://repo.itkey.com/repository/images/"$1" -O $script_dir/"$1"; }
-  image_exists_in_openstack
-  if [ "$1" = "$CIRROS_IMAGE_NAME" ]; then
-    min_disk=1
-  else
-    min_disk=5
-  fi
-  openstack image create "$1" \
-    --disk-format qcow2 \
-    --min-disk $min_disk \
-    --container-format bare \
-    --public \
-    --file $script_dir/"$1"
-
-  IMAGE=$1
+  bash $utils_dir/$create_image_script_script $1
+#  check_wget
+#  echo "Creating image \"$1\" in project \"$PROJECT\"..."
+#  [ -f $script_dir/"$1" ] && echo "File $script_dir/$1 exist." \
+#  || { echo "File $script_dir/$1 does not exist. Try to download it..."; \
+#  wget https://repo.itkey.com/repository/images/"$1" -O $script_dir/"$1"; }
+#  image_exists_in_openstack
+#  if [ "$1" = "$CIRROS_IMAGE_NAME" ]; then
+#    min_disk=1
+#  else
+#    min_disk=5
+#  fi
+#  openstack image create "$1" \
+#    --disk-format qcow2 \
+#    --min-disk $min_disk \
+#    --container-format bare \
+#    --public \
+#    --file $script_dir/"$1"
+#
+#  IMAGE=$1
 }
 
 image_exists_in_openstack () {

@@ -13,7 +13,19 @@ resource "openstack_compute_instance_v2" "vm" {
   metadata                    = each.value.metadata
   user_data                   = each.value.user_data
 
- block_device {
+  dynamic "scheduler_hints" {
+    for_each = each.value.scheduler_hints != null ? [each.value.scheduler_hints] : []
+    content {
+      group             = lookup(scheduler_hints.value, "group", null)
+      different_host    = lookup(scheduler_hints.value, "different_host", null)
+      same_host         = lookup(scheduler_hints.value, "same_host", null)
+      query             = lookup(scheduler_hints.value, "query", null)
+      target_cell       = lookup(scheduler_hints.value, "target_cell", null)
+      build_near_host_ip = lookup(scheduler_hints.value, "build_near_host_ip", null)
+    }
+  }
+
+  block_device {
 #    uuid                  = openstack_blockstorage_volume_v3.fc_hdd_sda[count.index].id
 #    name         = "fc_hdd_boot"
     uuid                  = data.openstack_images_image_v2.image_id[each.key].id
@@ -25,7 +37,7 @@ resource "openstack_compute_instance_v2" "vm" {
 #    device_name           = "/dev/vda"
   }
 
-dynamic block_device {
+  dynamic block_device {
     for_each = [for volume in each.value.disks: {
 #      for_each = {}
 #      for key, value in var.volume : key
@@ -41,7 +53,7 @@ dynamic block_device {
         destination_type      = "volume"
         delete_on_termination = block_device.value.delete_on_termination
     }
- }
+  }
 
   network {
     name = each.value.network_name
