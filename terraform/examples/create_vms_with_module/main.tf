@@ -22,3 +22,7 @@ module "AZs" {
     source = "../../modules/aggregate"
     AZs    = var.AZs
 }
+
+output "server_group_types" {
+  value = module.VMs.server_group_types
+}
