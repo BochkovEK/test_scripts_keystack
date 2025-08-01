@@ -48,8 +48,7 @@ resource "openstack_compute_instance_v2" "vm" {
 
     content {
       group = each.value.group_type == "new" ?
-              openstack_compute_servergroup_v2.vm_group[each.value.base_name].id :
-              each.value.server_group_name
+              openstack_compute_servergroup_v2.vm_group[each.value.base_name].id : each.value.server_group_name
     }
   }
 
