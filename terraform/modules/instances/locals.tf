@@ -39,3 +39,8 @@ locals {
   }
 }
 
+output "debug" {
+  value = instance.server_group_type
+#  sensitive = true # если переменные содержат sensitive данные
+}
+
