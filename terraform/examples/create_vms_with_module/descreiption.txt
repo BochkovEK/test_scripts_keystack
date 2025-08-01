@@ -1,7 +1,7 @@
 # Create VMs by config in module folder
 # Config name <name>.auto.tfvars
 # Config-json like this:
-#==================
+#==============================================
 
 #variable list:
 #VM:
@@ -15,8 +15,13 @@ VMs = {
             extra_specs = "<string>"
         }
         flavor_name                         = "<existing_flavor_name>"
-        keypair_name                        = "<keypair_name>"
+        keypair_name                        = "<existing_keypair_name>"
         security_groups                     = [] #list
+        server_group_name                   = "<existing_server_group_name>
+        server_group                        = {
+            name   = "web-anti-affinity-group"
+            policy = "anti-affinity" # one of ['anti-affinity', 'affinity', 'soft-anti-affinity', 'soft-affinity']
+        }
         az_hint                             = "<az_name>:<hyper_name>"
         network_name                        = "<network_name>"
         boot_volume_size                    = <size> (default_volume_size = 5)
@@ -48,10 +53,6 @@ AZs = {
     }
 }
 
-# Server groups
-server_groups = {
-}
-
 
 #------------
 # simple example:
@@ -66,8 +67,6 @@ VMs = {
     vm_qty          = 4
   }
 }
-AZs = {}
-server_groups = {}
 #------------
 # exemple 1:
 # VMs

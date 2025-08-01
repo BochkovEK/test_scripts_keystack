@@ -36,11 +36,20 @@ resource "openstack_compute_instance_v2" "vm" {
 #    }
 #  }
 
-  # Динамически добавляем scheduler_hints если есть server_group
+#  # Динамически добавляем scheduler_hints если есть server_group
+#  dynamic "scheduler_hints" {
+#    for_each = each.value.server_group != null ? [1] : []
+#    content {
+#      group = openstack_compute_servergroup_v2.vm_group[each.value.base_name].id
+#    }
+  # Динамические scheduler_hints для всех вариантов
   dynamic "scheduler_hints" {
-    for_each = each.value.server_group != null ? [1] : []
+    for_each = each.value.group_type != null ? [1] : []
+
     content {
-      group = openstack_compute_servergroup_v2.vm_group[each.value.base_name].id
+      group = each.value.group_type == "new" ?
+              openstack_compute_servergroup_v2.vm_group[each.value.base_name].id :
+              each.value.server_group_name
     }
   }
 
