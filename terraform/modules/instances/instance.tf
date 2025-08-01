@@ -9,17 +9,6 @@ resource "openstack_compute_servergroup_v2" "vm_group" {
   policies = [each.value.policy]
 }
 
-# Data source для существующих групп
-data "openstack_compute_servergroup_v2" "existing_group" {
-  for_each = {
-    for inst in local.instances :
-    inst.server_group_name => inst
-    if inst.server_group_type == "existing"
-  }
-
-  name = each.value.server_group_name
-}
-
 resource "openstack_compute_instance_v2" "vm" {
   for_each     = { for k, v in local.instances : v.name => v
 #  if try(v.image_name, null) != null
@@ -38,12 +27,12 @@ resource "openstack_compute_instance_v2" "vm" {
   dynamic "scheduler_hints" {
     for_each = each.value.server_group_type != null ? [1] : []
 
-    content {
-      group = each.value.server_group_type == "existing" ? data.openstack_compute_servergroup_v2.existing_group[each.value.server_group_name].id : openstack_compute_servergroup_v2.vm_group[each.value.base_name].id
-    }
 #    content {
-#      group = each.value.server_group_type == "new" ? openstack_compute_servergroup_v2.vm_group[each.value.base_name].id : each.value.server_group_name
+#      group = each.value.server_group_type == "existing" ? data.openstack_compute_servergroup_v2.existing_group[each.value.server_group_name].id : openstack_compute_servergroup_v2.vm_group[each.value.base_name].id
 #    }
+    content {
+      group = each.value.server_group_type == "new" ? openstack_compute_servergroup_v2.vm_group[each.value.base_name].id : each.value.server_group_name
+    }
   }
 
   block_device {
