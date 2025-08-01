@@ -93,10 +93,10 @@ variable "default_user_data" {
   default = ""
 }
 
-validation {
-  condition = alltrue([
-    for k, v in var.VMs :
-      v.server_group == null || v.server_group_name == null
-  ])
-  error_message = "Cannot specify both server_group and server_group_name for the same VM"
-}
+#validation {
+#  condition = alltrue([
+#    for k, v in var.VMs :
+#      v.server_group == null || v.server_group_name == null
+#  ])
+#  error_message = "Cannot specify both server_group and server_group_name for the same VM"
+#}
