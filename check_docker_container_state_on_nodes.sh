@@ -114,6 +114,7 @@ do
       -nn,  -node_name        <nodes_name_list> (exp: -nn \"cdm-bl-pca06 cdm-bl-pca07\")
       -check_unhealthy        check only unhealthy containers (without parameter)
       -u,   -user             <ssh_user>
+      -de,  -docker_engine    <docker_engine: docker\podman>
       -debug                  enable debug output (without parameter)
 "
       exit 0
