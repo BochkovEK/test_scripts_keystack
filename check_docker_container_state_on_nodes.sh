@@ -137,6 +137,10 @@ do
       echo "Found the -docker_engine with parameter value $DOCKER_ENGINE"
       shift
       ;;
+    -u|-user) SSH_USER=$2
+      echo "Found the -user with parameter value $SSH_USER"
+      shift
+      ;;
     -check_unhealthy) CHECK_UNHEALTHY="true"
       echo "Found the -check_unhealthy  with parameter value $CHECK_UNHEALTHY"
       ;;
