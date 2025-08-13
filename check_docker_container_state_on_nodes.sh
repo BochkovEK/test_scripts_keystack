@@ -15,6 +15,7 @@ script_name=$(basename "$0")
 utils_dir=$script_dir/utils
 get_nodes_list_script="get_nodes_list.sh"
 default_ssh_user="root"
+default_docker_engine="docker"
 
 #Colors
 green=$(tput setaf 2)
@@ -92,7 +93,8 @@ comp_required_container_list=(
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $NODES_TYPE ]] && NODES_TYPE="all"
 [[ -z $NODE_NAME ]] && NODE_NAME=""
-#[[ -z $SSH_USER ]] && SSH_USER=$default_ssh_user
+[[ -z $DOCKER_ENGINE ]] && DOCKER_ENGINE=$default_docker_engine
+#[[ -z $SSH_USER ]] && SSH_USER=$default_ssh_user # !!! replaced by the logic described below
 #======================
 
 
@@ -131,8 +133,8 @@ do
 #      note_type_func "$2"
       shift
       ;;
-    -u|-user) SSH_USER=$2
-      echo "Found the -user  with parameter value $SSH_USER"
+    -de|-docker_engine) DOCKER_ENGINE=$2
+      echo "Found the -docker_engine with parameter value $DOCKER_ENGINE"
       shift
       ;;
     -check_unhealthy) CHECK_UNHEALTHY="true"
@@ -152,7 +154,7 @@ done
 
 check_required_container () {
   echo -e "Check required container on $1"
-  container_name_on_node=$(ssh -o StrictHostKeyChecking=no $SSH_USER@$1 'sudo docker ps --format "{{.Names}}" --filter status=running')
+  container_name_on_node=$(ssh -o StrictHostKeyChecking=no $SSH_USER@$1 'sudo \$DOCKER_ENGINE ps --format "{{.Names}}" --filter status=running')
   for container_requaired in "${required_containers_list[@]}"; do
     container_exist="false"
     for container in $container_name_on_node; do
@@ -205,10 +207,10 @@ get_nodes_list () {
 
 
 if [[ -z "$SSH_USER" ]]; then
-  # 3. Try to determine via whoami (with error handling)
+  # Try to determine via whoami (with error handling)
   SSH_USER=$(whoami 2>/dev/null) || {
     echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
-    # 4. Use default value
+    # Use default value
     SSH_USER="$default_ssh_user"
   }
 fi
@@ -257,7 +259,7 @@ for host in "${NODES[@]}"; do
     printf "%40s\n" "There is a connection with $host - ok!"
 
 #    ssh -o StrictHostKeyChecking=no $host docker ps $grep_string \
-    ssh -o StrictHostKeyChecking=no $SSH_USER@$host "sudo docker ps -a $grep_string \
+    ssh -o StrictHostKeyChecking=no $SSH_USER@$host "sudo $DOCKER_ENGINE ps -a $grep_string \
       |sed --unbuffered \
         -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*Exited.*\)/\o033[31m\1\o033[39m/' \
