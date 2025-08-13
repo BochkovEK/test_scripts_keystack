@@ -160,7 +160,8 @@ done
 check_required_container () {
   echo -e "Check required container on $1"
 #  container_name_on_node=$(ssh -o StrictHostKeyChecking=no $SSH_USER@$1 'sudo \$DOCKER_ENGINE ps --format "{{.Names}}" --filter status=running')
-  container_name_on_node=$(ssh -o StrictHostKeyChecking=no "$SSH_USER@$1" "sudo \$DOCKER_ENGINE ps --format '{{.Names}}' --filter status=running")
+#  container_name_on_node=$(ssh -o StrictHostKeyChecking=no "$SSH_USER@$1" "sudo \$DOCKER_ENGINE ps --format '{{.Names}}' --filter status=running")
+  container_name_on_node=$(ssh -o StrictHostKeyChecking=no "$SSH_USER@$1" "bash -c 'sudo \$DOCKER_ENGINE ps --format \"{{.Names}}\" --filter status=running'")
   echo $container_name_on_node
   for container_requaired in "${required_containers_list[@]}"; do
     container_exist="false"
