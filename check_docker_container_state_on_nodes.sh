@@ -162,10 +162,13 @@ check_required_container () {
 #  container_name_on_node=$(ssh -o StrictHostKeyChecking=no $SSH_USER@$1 'sudo \$DOCKER_ENGINE ps --format "{{.Names}}" --filter status=running')
 #  container_name_on_node=$(ssh -o StrictHostKeyChecking=no "$SSH_USER@$1" "sudo \$DOCKER_ENGINE ps --format '{{.Names}}' --filter status=running")
   container_name_on_node=$(ssh -o StrictHostKeyChecking=no -t $SSH_USER@$1 "sudo $DOCKER_ENGINE ps --format '{{.Names}}' --filter status=running")
-  echo $container_name_on_node
+#  echo $container_name_on_node
   for container_requaired in "${required_containers_list[@]}"; do
     container_exist="false"
     for container in $container_name_on_node; do
+      [ "$TS_DEBUG" = true ] && echo -e "
+[DEBUG]: container_name: $container
+"
       if [ "$container" = "$container_requaired" ]; then
         container_exist="true"
       fi
