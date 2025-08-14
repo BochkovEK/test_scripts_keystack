@@ -167,7 +167,8 @@ check_required_container () {
     container_exist="false"
     for container in $container_name_on_node; do
       [ "$TS_DEBUG" = true ] && echo -e "
-[DEBUG]: container_name: $container
+[DEBUG]:  container_name:         $container
+          container_name_on_node: $container_name_on_node
 "
       if [ "$container" = "$container_requaired" ]; then
         container_exist="true"
