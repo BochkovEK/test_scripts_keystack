@@ -159,12 +159,12 @@ def replace_config_values(config_content, inventory_data):
         )
 
     # 6) Замена блока Active Directory
-    ad_block_pattern = r'# Настройки подключения к Active Directory.*?(?=#|\Z)'
+    ad_block_pattern = r'# Настройки подключения к Active Directory.*?(?=^#|\Z)'
     config_content = re.sub(
         ad_block_pattern,
         f'# Настройки подключения к Active Directory\n{ACTIVE_DIRECTORY_STRINGS}\n\n',
         config_content,
-        flags=re.DOTALL
+        flags=re.DOTALL | re.MULTILINE
     )
 
     return config_content
