@@ -106,12 +106,12 @@ def replace_config_values(config_content, inventory_data):
         config_content
     )
 
-    # 2) Замена fqdn_cp на имена узлов из группы [k0s]
+    # 2) Замена fqdn_cp на имена узлов из группы [k0s] с добавлением домена
     k0s_nodes = inventory_data['groups'].get('k0s', [])
     for i, node in enumerate(k0s_nodes, 1):
         config_content = re.sub(
             rf'fqdn_cp{i}:\s*".*?"',
-            f'fqdn_cp{i}: "{node["name"]}"',
+            f'fqdn_cp{i}: "{node["name"]}.{CORP_DOMAIN}"',
             config_content
         )
 
