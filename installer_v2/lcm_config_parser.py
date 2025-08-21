@@ -10,12 +10,18 @@ DEFAULT_INVENTORY = 'inventory'
 SSH_USER = "kolla"
 DEFAULT_CONFIG = f'/home/{SSH_USER}/installer/mutiple-node/lcm-config.yaml'
 CORP_DOMAIN = "vm.lab.itkey.com"
-ACTIVE_DIRECTORY_STRINGS = """ad_domain: "corp.domain.com"
-ad_username: "admin"
-ad_password: "password"
-ad_servers: "dc1.corp.domain.com,dc2.corp.domain.com"
-ad_ou: "OU=Servers,DC=corp,DC=domain,DC=com"
-ad_join: true"""
+ACTIVE_DIRECTORY_STRINGS = """
+ldap_enable: "true" # "true" или "false"
+ldap_host: "ldaps-lab.slavchenkov-keystack.vm.lab.itkey.com" # FQDN из SAN сертификата точки входа AD
+ldap_ca_cert_file: "ldaps.pem" # Публичный сертификат центра сертификации в PEM-формате; файл должен находиться рядом с конфигом
+ldap_bind_dn: "CN=ldap-ro,CN=Users,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
+ldap_user_search_basedn: "DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
+ldap_group_search_basedn: "OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
+ldap_reader_group_dn: "CN=preevostack_reader,OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
+ldap_auditor_group_dn: "CN=preevostack_security_admin,OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
+ldap_operator_group_dn: "CN=preevostack_support_admin,OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
+ldap_admin_group_dn: "CN=preevostack_infra_admin,OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
+"""
 
 
 def create_backup(config_path):
