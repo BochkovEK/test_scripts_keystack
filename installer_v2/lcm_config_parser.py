@@ -7,7 +7,7 @@ from datetime import datetime
 
 # Константы по умолчанию
 DEFAULT_INVENTORY = 'inventory'
-DEFAULT_CONFIG = 'config.yml'
+DEFAULT_CONFIG = '~/installer/mutiple-node/lcm-config.yaml'
 SSH_USER = "kolla"
 CORP_DOMAIN = "vm.lab.itkey.com"
 ACTIVE_DIRECTORY_STRINGS = """ad_domain: "corp.domain.com"
