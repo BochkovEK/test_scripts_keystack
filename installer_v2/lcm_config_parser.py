@@ -1,7 +1,7 @@
 # Description
 # vi ~/test_scripts_keystack/inventory # Create inventory from output 'vms' stage
 # cd ~/test_scripts_keystack/
-# python ./installer_v2/lcm_config_parser.py
+# python ./installer_v2/lcm_config_parser.py <with_key_if_needed>
 
 import configparser
 import re
@@ -61,6 +61,9 @@ def parse_arguments():
                         help=f'Путь к конфигурационному файлу (по умолчанию: {DEFAULT_CONFIG})')
     parser.add_argument('--output', '-o',
                         help='Путь для выходного файла (по умолчанию: перезапись исходного конфига)')
+    parser.add_argument('--ssh-user', '-u',
+                        default=SSH_USER,
+                        help=f'Пользователь SSH (по умолчанию: {SSH_USER})')
     parser.add_argument('--no-backup', action='store_true',
                         help='Не создавать бэкап файла')
 
@@ -192,6 +195,9 @@ def main():
         # Определяем путь для выходного файла
         output_file = args.output if args.output else args.config
 
+        # Определяем ssh пользователя
+        ssh_user = args.ssh_user if args.ssh_user else SSH_USER
+
         # Создаем бэкап если не указан --no-backup и если мы перезаписываем исходный файл
         if not args.no_backup and output_file == args.config:
             backup_path = create_backup(args.config)
@@ -219,7 +225,7 @@ def main():
 
         # Показываем изменения
         print("\nОсновные изменения:")
-        print(f"  ssh_username: -> {SSH_USER}")
+        print(f"  ssh_username: -> {ssh_user}")
         if 'k0s' in inventory_data['groups']:
             for i, node in enumerate(inventory_data['groups']['k0s'], 1):
                 print(f"  fqdn_cp{i}: -> {node['name']}")
