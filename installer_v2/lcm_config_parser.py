@@ -1,3 +1,8 @@
+# Description
+# vi ~/test_scripts_keystack/inventory # Create inventory from output 'vms' stage
+# cd ~/test_scripts_keystack/
+# python ./installer_v2/lcm_config_parser.py
+
 import configparser
 import re
 import argparse
