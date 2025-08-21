@@ -65,35 +65,38 @@ CIRROS_IMAGE_NAME="cirros-0.6.3-x86_64-disk.img"
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $WAIT_FOR_CREATED ]] && WAIT_FOR_CREATED="true"
+[[ -z $USE_ENV_FILE ]] && USE_ENV_FILE="false"
 #======================
 
 while [ -n "$1" ]; do
   case "$1" in
     --help) echo -E "
-    -orc          -openrc_path  <openrc_path>
-    -q,           -qty          <number_of_VMs>
-    -i,           -image        <image_name>
-                                The script can try to download and upload cirros and ubuntu images.
-                                For this you need to define -i cirros\ubuntu
-    -f,           -flavor       <flavor_name>
-    -k,           -key          <key_name>
-    -nk           -no_key       disable key pair (without parameter)
-    -hv,          -hypervisor   <hypervisor_name>
-    -net,         -network      <network_name>
-    -v,           -volume_size  <volume_size_in_GB>
-    -n,           -name         <vm_base_name>
-    -p,           -project      <project_id>
-    -t                          <time_out_between_VM_create>
-    -dont_check_osc             disable check openstack cli (without parameter)
-    -dont_check                 disable resource availability checks (without value)
-    -da,          -dont_ask     all actions will be performed automatically (without value)
-    -add                        <add command key>
-                                Examples:
-                                  -add \"--availability-zone \$az_name\"
-                                  -add \"--hint group=\$anti_aff_gr\"
-    -b            -batch        creating VMs without a timeout (without value)
-    -debug                      enabled debug output (without parameter)
-    -wait                       wait for vms created <true\false>
+    -orc          -openrc_path    <openrc_path>
+    -q,           -qty            <number_of_VMs>
+    -i,           -image          <image_name>
+                                  The script can try to download and upload cirros and ubuntu images.
+                                  For this you need to define -i cirros\ubuntu
+    -f,           -flavor         <flavor_name>
+    -k,           -key            <key_name>
+    -nk           -no_key         disable key pair (without parameter)
+    -hv,          -hypervisor     <hypervisor_name>
+    -net,         -network        <network_name>
+    -v,           -volume_size    <volume_size_in_GB>
+    -n,           -name           <vm_base_name>
+    -p,           -project        <project_id>
+    -t                            <time_out_between_VM_create>
+    -dont_check_osc               disable check openstack cli (without parameter)
+    -dont_check                   disable resource availability checks (without value)
+    -da,          -dont_ask       all actions will be performed automatically (without value)
+    -add                          <add command key>
+                                  Examples:
+                                    -add \"--availability-zone \$az_name\"
+                                    -add \"--hint group=\$anti_aff_gr\"
+    -b            -batch          creating VMs without a timeout (without value)
+    -debug                        enabled debug output (without parameter)
+    -wait                         wait for vms created <true\false>
+    -uef          -use_env_file   use env file $envs_file_name variables by default
+    NOTE: After each run of this script, a file \'$envs_file_name\' with input variables is created. Subsequent runs use these variables by default.
     "
       exit 0
       break ;;
@@ -155,6 +158,9 @@ while [ -n "$1" ]; do
     -da|-dont_ask) dont_ask="true"
       echo "Found the -dont_ask. All actions will be performed automatically"
 #      DONT_ASK=$dont_ask
+      ;;
+    -uef|-use_env_file) USE_ENV_FILE="true"
+      echo "Found the -use_env_file. use env file $envs_file_name variables by default"
       ;;
     -b|-batch) batch=true
       echo "Found the -batch. VMs will be created without a timeout"
@@ -884,8 +890,9 @@ create_vms () {
   fi
 }
 
-
-check_and_source_envs_file
+if [ $USE_ENV_FILE = "true" ]; then
+  check_and_source_envs_file
+fi
 assign_vars_from_startup_keys
 output_of_initial_parameters
 
