@@ -181,6 +181,15 @@ def main():
         if not os.path.exists(args.config):
             raise FileNotFoundError(f"Конфигурационный файл не найден: {args.config}")
 
+        # Определяем путь для выходного файла
+        output_file = args.output if args.output else args.config
+
+        # Создаем бэкап если не указан --no-backup и если мы перезаписываем исходный файл
+        if not args.no_backup and output_file == args.config:
+            backup_path = create_backup(args.config)
+            if not backup_path:
+                print("Предупреждение: не удалось создать бэкап, продолжение без бэкапа")
+
         # Парсим inventory
         print(f"Чтение inventory: {args.inventory}")
         inventory_data = parse_inventory(args.inventory)
@@ -192,15 +201,6 @@ def main():
 
         # Заменяем значения
         updated_config = replace_config_values(config_content, inventory_data)
-
-        # Определяем путь для выходного файла
-        output_file = args.output if args.output else args.config
-
-        # Создаем бэкап если не указан --no-backup и если мы перезаписываем исходный файл
-        if not args.no_backup and output_file == args.config:
-            backup_path = create_backup(args.config)
-            if not backup_path:
-                print("Предупреждение: не удалось создать бэкап, продолжение без бэкапа")
 
         # Сохраняем результат
         print(f"Сохранение результата в: {output_file}")
