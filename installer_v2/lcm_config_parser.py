@@ -3,7 +3,7 @@ import re
 import argparse
 import os
 import shutil
-from datetime import datetime
+# from datetime import datetime
 
 # Константы по умолчанию
 DEFAULT_INVENTORY = 'inventory'
@@ -25,13 +25,16 @@ ldap_admin_group_dn: "CN=preevostack_infra_admin,OU=Keystack,OU=Applications,DC=
 
 
 def create_backup(config_path):
-    """Создает бэкап файла конфигурации с timestamp"""
-
-    backup_path = f"{config_path}_backup"
-    if not os.path.exists(backup_path):
+    """Создает бэкап файла конфигурации только если его нет"""
+    if not os.path.exists(config_path):
         return None
 
-    # timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_path = f"{config_path}_backup"
+
+    # Проверяем, существует ли уже бэкап
+    if os.path.exists(backup_path):
+        print(f"Бэкап уже существует: {backup_path}")
+        return backup_path
 
     try:
         shutil.copy2(config_path, backup_path)
