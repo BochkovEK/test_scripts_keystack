@@ -26,11 +26,12 @@ ldap_admin_group_dn: "CN=preevostack_infra_admin,OU=Keystack,OU=Applications,DC=
 
 def create_backup(config_path):
     """Создает бэкап файла конфигурации с timestamp"""
-    if not os.path.exists(config_path):
+
+    backup_path = f"{config_path}_backup"
+    if not os.path.exists(backup_path):
         return None
 
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    backup_path = f"{config_path}_backup_{timestamp}"
+    # timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     try:
         shutil.copy2(config_path, backup_path)
