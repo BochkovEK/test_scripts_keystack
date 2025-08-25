@@ -1,7 +1,7 @@
 # Description
 # vi ~/test_scripts_keystack/inventory # Create inventory from output 'vms' stage
 # cd ~/test_scripts_keystack/
-# python ./installer_v2/lcm_config_parser.py <with_key_if_needed>
+# python ./installer_v2/lcm_config_parser.py <with_key_if_needed(parse_arguments)>
 
 import configparser
 import re
