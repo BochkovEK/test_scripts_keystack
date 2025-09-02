@@ -23,6 +23,7 @@ openstack_utils=$utils_dir/openstack
 check_openrc_script="check_openrc.sh"
 check_openstack_cli_script="check_openstack_cli.sh"
 install_package_script="install_package.sh"
+default_ssh_user="root"
 
 edit_ha_region_config_script="edit_ha_config.sh"
 
@@ -32,6 +33,7 @@ edit_ha_region_config_script="edit_ha_config.sh"
 [[ -z $REGION ]] && REGION="region-ps"
 [[ -z $CHECK_IPMI ]] && CHECK_IPMI="true"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
+#[[ -z $SSH_USER ]] && SSH_USER=$default_ssh_user
 
 #======================
 
@@ -50,6 +52,7 @@ do
         -o,     -openrc             <path_openrc_file>
         -r,     -region             <region_name>
         -dtr,   -dont_try_to_rise   If nova is not active on some nodes, then there will be no attempt to rise it (without parameter)
+        -u,     -ssh_user           <ssh_user>
         -ipmi                       enabled check connection from controls to compute impi (without parameter)
         -v,     -debug              enabled debug output (without parameter)
 
@@ -240,7 +243,7 @@ Check_connection_to_ipmi () {
   [ -z "$nova_state_list" ] && nova_state_list=$(openstack compute service list)
   [ -z "$ctrl_nodes" ] && ctrl_nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
   [ -z "$nova_state_list" ] && comp_nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
-  suffix_output=$(bash $script_dir/$edit_ha_region_config_script suffix)
+  suffix_output=$(bash $script_dir/$edit_ha_region_config_script -u $SSH_USER)
   suffix=$(echo "$suffix_output" | tail -n1)
   echo "BMC_SUFFIX: $suffix"
 
@@ -410,14 +413,22 @@ $comp_nodes
   for i in $ctrl_nodes; do ctrl_node_array+=("$i"); done
 }
 
-#clear
-##check_openstack_cli
-#if [[ $CHECK_OPENSTACK = "true" ]]; then
-#  if ! bash $utils_dir/check_openstack_cli.sh; then
-#    echo -e "\033[31mFailed to check openstack cli - error\033[0m"
-#    exit 1
-#  fi
-#fi
+
+if [[ -z "$SSH_USER" ]]; then
+  # 3. Try to determine via whoami (with error handling)
+  SSH_USER=$(whoami 2>/dev/null) || {
+    echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
+    # 4. Use default value
+    SSH_USER="$default_ssh_user"
+  }
+fi
+
+# Final value check
+if [[ -z "$SSH_USER" ]]; then
+  echo -e "${red}Error: Failed to determine user!${normal}" >&2
+  exit 1
+fi
+
 Check_openstack_cli
 Check_and_source_openrc_file
 #Check_host_command

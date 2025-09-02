@@ -63,6 +63,7 @@ do
         -check        only check option
         -l, legacy    edit legacy consul region config; work with -push, -pull, -check keys
         -u, user      set user for ssh access
+        -suffix       get suffix
 
       Note:
         In case of legacy versions of consul, to change the config you need to:
@@ -109,9 +110,12 @@ do
     -l|-legacy) LEGACY_CONF="true"
       echo "Found the -legacy, parameter set $LEGACY_CONF"
       ;;
-    -u|-user) USER="$2"
-      USER_STR="-u $USER"
-      echo "Found the -user parameter with value $USER"
+    -suffix) CHECK_SUFFIX="true"
+      echo "Found the -suffix, parameter set $CHECK_SUFFIX"
+      ;;
+    -u|-user) SSH_USER="$2"
+#      USER_STR="-u $USER"
+      echo "Found the -user parameter with value $SSH_USER"
       shift
       ;;
     --) shift
@@ -155,7 +159,7 @@ check_and_source_openrc_file () {
 
 cat_conf () {
   echo "Cat all $service_name configs..."
-  bash $script_dir/command_on_nodes.sh $USER_STR -nt $nodes_type -c "sudo sh -c 'echo \"cat $conf_dir/$CONF_NAME\"; cat $conf_dir/$CONF_NAME'"
+  bash $script_dir/command_on_nodes.sh -u $SSH_USER -nt $nodes_type -c "sudo sh -c 'echo \"cat $conf_dir/$CONF_NAME\"; cat $conf_dir/$CONF_NAME'"
 }
 
 #pull_conf () {
@@ -181,7 +185,7 @@ pull_conf () {
   node_name="${NODES[0]%%:*}"  # get the part before the first ':'
   node_ip="${NODES[0]#*:}"     # get the part after the first ':'
   echo "Сopying $service_name conf from ${node_name}:$conf_dir/$CONF_NAME"
-  ssh -o StrictHostKeyChecking=no $USER@$node_ip "sudo cat $conf_dir/$CONF_NAME" > $script_dir/$test_node_conf_dir/${CONF_NAME}
+  ssh -o StrictHostKeyChecking=no $SSH_USER@$node_ip "sudo cat $conf_dir/$CONF_NAME" > $script_dir/$test_node_conf_dir/${CONF_NAME}
 #  scp -o StrictHostKeyChecking=no $USER@${NODES[0]}:$conf_dir/$CONF_NAME $script_dir/$test_node_conf_dir
   [ ! -f $script_dir/$test_node_conf_dir/${CONF_NAME}_backup ] && { cp $script_dir/$test_node_conf_dir/${CONF_NAME} $script_dir/$test_node_conf_dir/${CONF_NAME}_backup; }
   echo -e "
@@ -343,7 +347,7 @@ fi
 [ "$PULL" = true ] && { pull_conf; exit 0; }
 [ "$PUSH" = true ] && { push_conf; conf_changed=true; }
 cat_conf
-[ -n "$conf_changed" ] && { echo "Restart consul containers..."; bash $script_dir/command_on_nodes.sh $USER_STR -nt ctrl -c "docker restart consul"; }
+[ -n "$conf_changed" ] && { echo "Restart consul containers..."; bash $script_dir/command_on_nodes.sh -u $SSH_USER -nt ctrl -c "docker restart consul"; }
 #[ -n "$NOVA_FENCING" ] && change_nova_fencing $NOVA_FENCING
 #[ -n "$IPMI_FENCING" ] && change_ipmi_fencing $IPMI_FENCING
 #[ -n "$DEAD_THRSHOLD" ] && change_dead_threshold $DEAD_THRSHOLD
