@@ -6,7 +6,7 @@
 
 script_dir=$(dirname $0)
 utils_dir=$script_dir
-check_openrc_script="check_openrc.sh"
+#check_openrc_script="check_openrc.sh"
 default_hosts_path="/etc/hosts"
 check_openstack_cli_script="check_openstack_cli.sh"
 
@@ -15,17 +15,17 @@ comp_pattern="comp\-..(\s|$)"
 ctrl_pattern="ctrl\-..(\s|$)"
 #$"
 net_pattern="net\-..(\s|$)"
-comp_compute_service_pattern="(nova-compute)"
-ctrl_compute_service_pattern="(nova-scheduler)"
+#comp_compute_service_pattern="(nova-compute)"
+#ctrl_compute_service_pattern="(nova-scheduler)"
 #net_pattern="\-net\-.."
 #$"
 
 #Colors
-green=$(tput setaf 2)
+#green=$(tput setaf 2)
 red=$(tput setaf 1)
-violet=$(tput setaf 5)
+#violet=$(tput setaf 5)
 normal=$(tput sgr0)
-yellow=$(tput setaf 3)
+#yellow=$(tput setaf 3)
 
 [[ -z $NODES_TYPE ]] && NODES_TYPE="all"
 [[ -z $NODES_NAME ]] && NODES_NAME=""
@@ -104,17 +104,17 @@ check_openstack_cli () {
   fi
 }
 
-check_and_source_openrc_file () {
-#  echo "check openrc"
-  if bash $utils_dir/$check_openrc_script &> /dev/null; then
-#  if bash $utils_dir/$check_openrc_script 2>&1; then
-    openrc_file=$(bash $utils_dir/$check_openrc_script)
-    source $openrc_file
-#  else
-#    bash $utils_dir/$check_openrc_script
-#    exit 1
-  fi
-}
+#check_and_source_openrc_file () {
+##  echo "check openrc"
+#  if bash $utils_dir/$check_openrc_script &> /dev/null; then
+##  if bash $utils_dir/$check_openrc_script 2>&1; then
+#    openrc_file=$(bash $utils_dir/$check_openrc_script)
+#    source $openrc_file
+##  else
+##    bash $utils_dir/$check_openrc_script
+##    exit 1
+#  fi
+#}
 
 # Function to find IP in hosts file
 find_in_hosts_file() {
@@ -138,7 +138,7 @@ resolve_hostname_to_ips () {
 
         if [ -n "$ip" ]; then
 #            echo "baz"
-            NODES[$i]="$ip"
+            NODES[$i]="$host:$ip"
         else
             echo "Warning: failed to resolve $host" >&2
             NODES[$i]="unresolved:$host"
@@ -172,33 +172,33 @@ parse_hosts() {
     fi
 }
 
-get_list_from_compute_service () {
-  nova_state_list=$(openstack compute service list)
-  if [ -z "$nova_state_list" ];then
-   [ "$TS_DEBUG" = true ] && echo -e "
-[DEBUG]
-${yellow}Failed - openstack compute service is empty${normal}
-   "
-    parse_hosts
-  else
-    nodes=$(echo "$nova_state_list" | grep -E $grep_from_compute_service | awk '{print $6}')
-    if [[ -z $nodes ]];then
-      [ "$TS_DEBUG" = true ] && echo -e "
-      [DEBUG]
-      ${yellow}Failed to find $grep_from_compute_service in compute service list${normal}
-      "
-    else
-      echo $nodes
-    fi
-  fi
-}
+#get_list_from_compute_service () {
+#  nova_state_list=$(openstack compute service list)
+#  if [ -z "$nova_state_list" ];then
+#   [ "$TS_DEBUG" = true ] && echo -e "
+#[DEBUG]
+#${yellow}Failed - openstack compute service is empty${normal}
+#   "
+#    parse_hosts
+#  else
+#    nodes=$(echo "$nova_state_list" | grep -E $grep_from_compute_service | awk '{print $6}')
+#    if [[ -z $nodes ]];then
+#      [ "$TS_DEBUG" = true ] && echo -e "
+#      [DEBUG]
+#      ${yellow}Failed to find $grep_from_compute_service in compute service list${normal}
+#      "
+#    else
+#      echo $nodes
+#    fi
+#  fi
+#}
 
 define_node_type () {
   case "$1" in
     ctrl)
       NODES_TYPE=ctrl
       nodes_to_find=$ctrl_pattern
-      grep_from_compute_service=$ctrl_compute_service_pattern
+#      grep_from_compute_service=$ctrl_compute_service_pattern
       [ "$TS_DEBUG" = true ] && echo -e "
 NODES_TYPE: $NODES_TYPE
 nodes_to_find: $nodes_to_find
@@ -209,7 +209,7 @@ nodes_to_find: $nodes_to_find
     comp|cmpt)
       NODES_TYPE=comp
       nodes_to_find=$comp_pattern
-      grep_from_compute_service=$comp_compute_service_pattern
+#      grep_from_compute_service=$comp_compute_service_pattern
       [ "$TS_DEBUG" = true ] && echo -e "
 NODES_TYPE: $NODES_TYPE
 nodes_to_find: $nodes_to_find
@@ -217,17 +217,17 @@ nodes_to_find: $nodes_to_find
 #      get_list_from_compute_service
       parse_hosts
       ;;
-    awn|all_without_network)
-      NODES_TYPE=all_without_network
-      nodes_to_find="$comp_pattern|$ctrl_pattern"
-      grep_from_compute_service="$comp_compute_service_pattern|$ctrl_compute_service_pattern"
-      [ "$TS_DEBUG" = true ] && echo -e "
-NODES_TYPE: $NODES_TYPE
-nodes_to_find: $nodes_to_find
-      "
-#      get_list_from_compute_service
-      parse_hosts
-      ;;
+#    awn|all_without_network)
+#      NODES_TYPE=all_without_network
+#      nodes_to_find="$comp_pattern|$ctrl_pattern"
+#      grep_from_compute_service="$comp_compute_service_pattern|$ctrl_compute_service_pattern"
+#      [ "$TS_DEBUG" = true ] && echo -e "
+#NODES_TYPE: $NODES_TYPE
+#nodes_to_find: $nodes_to_find
+#      "
+##      get_list_from_compute_service
+#      parse_hosts
+#      ;;
     net)
       NODES_TYPE=net
       nodes_to_find=$net_pattern

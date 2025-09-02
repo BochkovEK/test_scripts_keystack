@@ -336,8 +336,9 @@ fi
 get_nodes_list
 
 if [ "$DONT_CHECK_CONN" = false ]; then
-  echo "Check: ping to $NODES_TYPE"
+#  echo "Check: ping to $NODES_TYPE"
   for node in "${NODES[@]}"; do
+    echo "Check: ping to $node"
     check_ping $node
   done
 fi
