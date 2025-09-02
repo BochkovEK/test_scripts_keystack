@@ -7,6 +7,7 @@
 script_dir=$(dirname $0)
 utils_dir=$script_dir
 check_openrc_script="check_openrc.sh"
+default_hosts_path="/etc/hosts"
 check_openstack_cli_script="check_openstack_cli.sh"
 
 comp_pattern="comp\-..(\s|$)"
@@ -29,6 +30,7 @@ yellow=$(tput setaf 3)
 [[ -z $NODES_TYPE ]] && NODES_TYPE="all"
 [[ -z $PING ]] && PING="false"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
+[[ -z $TS_HOSTS_PATH ]] && TS_HOSTS_PATH=$default_hosts_path
 #[[ -z $WITHOUT_NETWORK_NODES ]] && WITHOUT_NETWORK_NODES="false"
 
 #======================
@@ -42,9 +44,10 @@ count=1
 while [ -n "$1" ]; do
   case "$1" in
     --help) echo -E "
-      ip and name nodes list needed in /etc/hosts
+      ip and name nodes list needed in 'hosts' file (define by -h key, or by env TS_HOSTS_PATH; hosts path by default: $default_hosts_path)
 
       -nt,  -type_of_nodes          <type_of_nodes> 'ctrl', 'comp', 'net', 'all', 'all_without_network\awn'
+      -h,   -hosts_path             <path_to_hosts_file>
       -debug                        debug mode (without parameter)
 "
 #      -wnn, -without_network_nodes  if the region does not have a network node (without parameter)
@@ -63,6 +66,11 @@ while [ -n "$1" ]; do
     -nt|-type_of_nodes) NODES_TYPE=$2
       [ "$TS_DEBUG" = true ] && echo -e "
       Found the -type_of_nodes with parameter value $NODES_TYPE
+      "
+      shift ;;
+    -h|-hosts_path) TS_HOSTS_PATH=$2
+      [ "$TS_DEBUG" = true ] && echo -e "
+      Found the -hosts_path with parameter value $TS_HOSTS_PATH
       "
       shift ;;
     --) shift
@@ -104,10 +112,10 @@ check_and_source_openrc_file () {
 
 parse_hosts () {
   [ "$TS_DEBUG" = true ] && echo -e "
-  Parse /etc/hosts to find pattern: $nodes_to_find
+  Parse $TS_HOSTS_PATH to find pattern: $nodes_to_find
   "
 #  node_type_func $NODES_TYPE
-  [[ -z ${NODES[0]} ]] && { srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}'); for i in $srv; do NODES+=("$i"); done; }
+  [[ -z ${NODES[0]} ]] && { srv=$(cat $TS_HOSTS_PATH | grep -E ${nodes_to_find} | awk '{print $2}'); for i in $srv; do NODES+=("$i"); done; }
   if [ "$TS_DEBUG" = true ]; then
     echo -e "
     [DEBUG]
@@ -126,7 +134,7 @@ parse_hosts () {
   fi
   echo "${NODES[*]}"
   if [ -z "${NODES[*]}" ]; then
-    echo -e "${red}Failed to determine node $NODES_TYPE list from /etc/hosts - ERROR!${normal}"
+    echo -e "${red}Failed to determine node $NODES_TYPE list from $TS_HOSTS_PATH - ERROR!${normal}"
     exit 1
   fi
 }
