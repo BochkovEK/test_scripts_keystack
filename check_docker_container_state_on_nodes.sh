@@ -14,18 +14,18 @@ script_dir=$(dirname $0)
 script_name=$(basename "$0")
 utils_dir=$script_dir/utils
 get_nodes_list_script="get_nodes_list.sh"
-command_on_nodes_script="command_on_nodes.sh"
+#command_on_nodes_script="command_on_nodes.sh"
 default_ssh_user="root"
 default_docker_engine="docker"
 
 #Colors
-green=$(tput setaf 2)
+#green=$(tput setaf 2)
 red=$(tput setaf 1)
-violet=$(tput setaf 5)
-magenta=$(tput setaf 200)
+#violet=$(tput setaf 5)
+#magenta=$(tput setaf 200)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
-cyan=$(tput setaf 6)
+#cyan=$(tput setaf 6)
 
 ctrl_required_container_list=(
   "keystone"
@@ -347,14 +347,14 @@ for node_pair in ${NODES}; do
         -e 's/\(.*restarting.*\)/\o033[31m\1\o033[39m/'
         "
 
-    is_ctrl=$(echo $host|grep ctrl)
+    is_ctrl=$(echo $node_name|grep ctrl)
     if [ -n "$is_ctrl" ]; then
       if [ -z $CONTAINER_NAME ]; then
         required_containers_list=( "${ctrl_required_container_list[@]}" )
         check_required_container $node_ip
       fi
     fi
-    is_comp=$(echo $host|grep -E "comp|cmpt")
+    is_comp=$(echo $node_name|grep -E "comp|cmpt")
     if [ -n "$is_comp" ]; then
       if [ -z $CONTAINER_NAME ]; then
         required_containers_list=( "${comp_required_container_list[@]}" )
