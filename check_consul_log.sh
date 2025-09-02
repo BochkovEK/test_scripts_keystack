@@ -240,6 +240,8 @@ Check_and_source_openrc_file
       $ctrl_nodes_list\' nodes${normal}"
 #        else
     fi
+  else
+    CTRL_LIST=$ctrl_nodes_list
   fi
 #fi
 
