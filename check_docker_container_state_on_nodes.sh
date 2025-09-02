@@ -12,8 +12,8 @@
 
 script_dir=$(dirname $0)
 script_name=$(basename "$0")
-#utils_dir=$script_dir/utils
-#get_nodes_list_script="get_nodes_list.sh"
+utils_dir=$script_dir/utils
+get_nodes_list_script="get_nodes_list.sh"
 command_on_nodes_script="command_on_nodes.sh"
 default_ssh_user="root"
 default_docker_engine="docker"
@@ -93,7 +93,7 @@ comp_required_container_list=(
 [[ -z $NODES_TYPE ]] && NODES_TYPE=""
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $NODES_TYPE ]] && NODES_TYPE="all"
-[[ -z $NODE_NAME ]] && NODE_NAME=""
+[[ -z $NODES_NAME ]] && NODES_NAME=""
 [[ -z $DOCKER_ENGINE ]] && DOCKER_ENGINE=$default_docker_engine
 #[[ -z $SSH_USER ]] && SSH_USER=$default_ssh_user # !!! replaced by the logic described below
 #======================
@@ -128,8 +128,8 @@ do
 #      note_type_func "$2"
       shift
       ;;
-    -nn|-node_name) NODE_NAME=$2
-      echo "Found the -node_name  with parameter value $NODE_NAME"
+    -nn|-node_name) NODES_NAME=$2
+      echo "Found the -node_name  with parameter value $NODES_NAME"
 #      note_type_func "$2"
       shift
       ;;
@@ -191,9 +191,44 @@ check_required_container () {
   done
 }
 
+#get_nodes_list () {
+#  if [ -z "${NODES[*]}" ]; then
+#    nodes=$(bash $utils_dir/$get_nodes_list_script -nt $NODES_TYPE)
+#  fi
+##  node=$(cat /etc/hosts | grep -m 1 -E ${nodes_pattern} | awk '{print $2}')
+#  [ "$TS_DEBUG" = true ] && echo -e "
+#  [DEBUG]: \"\$node\": $node\n
+#  "
+#  for node in $nodes; do NODES+=("$node"); done
+#  [ "$TS_DEBUG" = true ] && echo -e "
+#  [DEBUG]: \"\$NODES\": ${NODES[*]}
+#  "
+#  #check error
+#  for word in "${NODES[@]}"; do
+#    [ "$TS_DEBUG" = true ] && echo -e "
+#  [DEBUG]:
+#    word in NODES: $word
+#  "
+#    error_in_NODES=$(echo $word|grep "ERROR")
+#    if [ -n "$error_in_NODES" ]; then
+#      echo -e "${yellow}Node names could not be determined.
+#        Try:
+#          bash ~/test_scripts_keystack/utils/get_nodes_list.sh -nt all
+#          or
+#          bash $script_dir/$script_name -nn \"<space-separated_list_of_hostnames>\"${normal}"
+#      echo -e "${red}Node names could not be determined - ERROR!${normal}"
+#      exit 1
+#    fi
+#  done
+#  if [ -z "${NODES[*]}" ]; then
+#    echo -e "${red}Failed to determine node list - ERROR!${normal}"
+#    exit 1
+#  fi
+#}
+
 get_nodes_list () {
   if [ -z "${NODES[*]}" ]; then
-    nodes=$(bash $utils_dir/$get_nodes_list_script -nt $NODES_TYPE)
+    nodes=$(bash $utils_dir/$get_nodes_list_script "-$1" "$2")
   fi
 #  node=$(cat /etc/hosts | grep -m 1 -E ${nodes_pattern} | awk '{print $2}')
   [ "$TS_DEBUG" = true ] && echo -e "
@@ -203,29 +238,13 @@ get_nodes_list () {
   [ "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]: \"\$NODES\": ${NODES[*]}
   "
-  #check error
-  for word in "${NODES[@]}"; do
-    [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]:
-    word in NODES: $word
-  "
-    error_in_NODES=$(echo $word|grep "ERROR")
-    if [ -n "$error_in_NODES" ]; then
-      echo -e "${yellow}Node names could not be determined.
-        Try:
-          bash ~/test_scripts_keystack/utils/get_nodes_list.sh -nt all
-          or
-          bash $script_dir/$script_name -nn \"<space-separated_list_of_hostnames>\"${normal}"
-      echo -e "${red}Node names could not be determined - ERROR!${normal}"
-      exit 1
-    fi
-  done
+  echo -e "${NODES[*]}"
+
   if [ -z "${NODES[*]}" ]; then
-    echo -e "${red}Failed to determine node list - ERROR!${normal}"
+    echo -e "${red}Failed to determine node list - ERROR${normal}"
     exit 1
   fi
 }
-
 
 if [[ -z "$SSH_USER" ]]; then
   # Try to determine via whoami (with error handling)
@@ -243,13 +262,13 @@ if [[ -z "$SSH_USER" ]]; then
   exit 1
 fi
 
-#if [ -z "$NODE_NAME" ]; then
+#if [ -z "$NODES_NAME" ]; then
 #  get_nodes_list
 #else
-#  for word in $NODE_NAME; do
+#  for word in $NODES_NAME; do
 #    NODES+=("$word")
 #  done
-##  NODES=("$NODE_NAME")
+##  NODES=("$NODES_NAME")
 #fi
 
 #[[ "$CHECK_UNHEALTHY" = true  ]] && {
@@ -283,12 +302,37 @@ fi
 
 #    ssh -o StrictHostKeyChecking=no $host docker ps $grep_string \
 
-export NODES_TYPE=$NODES_TYPE
-export NODE_NAME=$NODE_NAME
-export SSH_USER=$SSH_USER
-export TS_DEBUG=$TS_DEBUG
+#export NODES_TYPE=$NODES_TYPE
+#export NODES_NAME=$NODES_NAME
+#export SSH_USER=$SSH_USER
+#export TS_DEBUG=$TS_DEBUG
 
-bash $script_dir/$command_on_nodes_script -c "sudo $DOCKER_ENGINE ps -a" |sed --unbuffered \
+#bash $script_dir/$command_on_nodes_script -c "sudo $DOCKER_ENGINE ps -a" |sed --unbuffered \
+#        -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
+#        -e 's/\(.*Exited.*\)/\o033[31m\1\o033[39m/' \
+#        -e 's/\(.*second.*\)/\o033[33m\1\o033[39m/' \
+#        -e 's/\(.*Less than.*\)/\o033[33m\1\o033[39m/' \
+#        -e 's/\(.*(healthy).*\)/\o033[92m\1\o033[39m/' \
+#        -e 's/\(.*days.*\)/\o033[92m\1\o033[39m/' \
+#        -e 's/\(.*About an hour.*\)/\o033[92m\1\o033[39m/' \
+#        -e 's/\(.*minutes.*\)/\o033[92m\1\o033[39m/' \
+#        -e 's/\(.*weeks.*\)/\o033[92m\1\o033[39m/' \
+#        -e 's/\(.*hours.*\)/\o033[92m\1\o033[39m/' \
+#        -e 's/\(.*starting).*\)/\o033[33m\1\o033[39m/'\
+#        -e 's/\(.*restarting.*\)/\o033[31m\1\o033[39m/'
+
+if [ -z $NODES_NAME ]; then
+  NODES=$(get_nodes_list nt $NODES_TYPE)
+else
+  NODES=$(get_nodes_list nn $NODES_NAME)
+fi
+
+for node_pair in ${NODES}; do
+    # Split the string into name and IP using ':' as delimiter
+    node_name="${node_pair%%:*}"  # get the part before the first ':'
+    node_ip="${node_pair#*:}"     # get the part after the first ':'
+    ssh -o StrictHostKeyChecking=no $SSH_USER@$node_ip "sudo $DOCKER_ENGINE ps -a \
+      |sed --unbuffered \
         -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*Exited.*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*second.*\)/\o033[33m\1\o033[39m/' \
@@ -301,25 +345,22 @@ bash $script_dir/$command_on_nodes_script -c "sudo $DOCKER_ENGINE ps -a" |sed --
         -e 's/\(.*hours.*\)/\o033[92m\1\o033[39m/' \
         -e 's/\(.*starting).*\)/\o033[33m\1\o033[39m/'\
         -e 's/\(.*restarting.*\)/\o033[31m\1\o033[39m/'
-#    ssh -o StrictHostKeyChecking=no $SSH_USER@$host "sudo $DOCKER_ENGINE ps -a \
-#      |sed --unbuffered \
+        "
 
-#        "
-
-#    is_ctrl=$(echo $host|grep ctrl)
-#    if [ -n "$is_ctrl" ]; then
-#      if [ -z $CONTAINER_NAME ]; then
-#        required_containers_list=( "${ctrl_required_container_list[@]}" )
-#        check_required_container $host
-#      fi
-#    fi
-#    is_comp=$(echo $host|grep -E "comp|cmpt")
-#    if [ -n "$is_comp" ]; then
-#      if [ -z $CONTAINER_NAME ]; then
-#        required_containers_list=( "${comp_required_container_list[@]}" )
-#        check_required_container $host
-#      fi
-#    fi
+    is_ctrl=$(echo $host|grep ctrl)
+    if [ -n "$is_ctrl" ]; then
+      if [ -z $CONTAINER_NAME ]; then
+        required_containers_list=( "${ctrl_required_container_list[@]}" )
+        check_required_container $node_ip
+      fi
+    fi
+    is_comp=$(echo $host|grep -E "comp|cmpt")
+    if [ -n "$is_comp" ]; then
+      if [ -z $CONTAINER_NAME ]; then
+        required_containers_list=( "${comp_required_container_list[@]}" )
+        check_required_container $node_ip
+      fi
+    fi
 #  elif [[ $status == *"Permission denied"* ]] ; then
 #    echo -e "${red}Error: ${normal}"
 #    echo -e "${red}\t${status}${normal}"
@@ -327,4 +368,4 @@ bash $script_dir/$command_on_nodes_script -c "sudo $DOCKER_ENGINE ps -a" |sed --
 #    printf "%40s\n" "${red}No connection with $host - error!${normal}"
 #    echo -e "${red}The node may be turned off.${normal}\n"
 #  fi
-#done
+done

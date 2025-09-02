@@ -5,9 +5,9 @@
 # The check period is determined by the OUTPUT_PERIOD variable. This variable can be set as the second parameter when running the script
 
 #Colors
-green=$(tput setaf 2)
+#green=$(tput setaf 2)
 red=$(tput setaf 1)
-violet=$(tput setaf 5)
+#violet=$(tput setaf 5)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
 cyan=$(tput setaf 14)
@@ -15,8 +15,8 @@ cyan=$(tput setaf 14)
 script_dir=$(dirname $0)
 utils_dir=$script_dir/utils
 nodes_type="ctrl"
-check_openrc_script="check_openrc.sh"
-check_openstack_cli_script="check_openstack_cli.sh"
+#check_openrc_script="check_openrc.sh"
+#check_openstack_cli_script="check_openstack_cli.sh"
 get_nodes_list_script="get_nodes_list.sh"
 default_ssh_user="root"
 
