@@ -178,8 +178,10 @@ pull_conf () {
   [ ! -d $script_dir/$test_node_conf_dir ] && { mkdir -p $script_dir/$test_node_conf_dir; }
 
 
-  echo "Сopying $service_name conf from ${NODES[0]}:$conf_dir/$CONF_NAME"
-  ssh -o StrictHostKeyChecking=no $USER@${NODES[0]} "sudo cat $conf_dir/$CONF_NAME" > $script_dir/$test_node_conf_dir/${CONF_NAME}
+  node_name="${NODES[0]%%:*}"  # get the part before the first ':'
+  node_ip="${NODES[0]#*:}"     # get the part after the first ':'
+  echo "Сopying $service_name conf from ${node_name}:$conf_dir/$CONF_NAME"
+  ssh -o StrictHostKeyChecking=no $USER@$node_ip "sudo cat $conf_dir/$CONF_NAME" > $script_dir/$test_node_conf_dir/${CONF_NAME}
 #  scp -o StrictHostKeyChecking=no $USER@${NODES[0]}:$conf_dir/$CONF_NAME $script_dir/$test_node_conf_dir
   [ ! -f $script_dir/$test_node_conf_dir/${CONF_NAME}_backup ] && { cp $script_dir/$test_node_conf_dir/${CONF_NAME} $script_dir/$test_node_conf_dir/${CONF_NAME}_backup; }
   echo -e "
@@ -309,7 +311,7 @@ check_bmc_suffix () {
   ${service_name}_conf_dir: $conf_dir
   "
 
-  [ ! -f $script_dir/$test_node_conf_dir/$CONF_NAME ] && { echo "Config exists in: $script_dir/$test_node_conf_dir/$CONF_NAME"; pull_conf; }
+  [ ! -f $script_dir/$test_node_conf_dir/$CONF_NAME ] && { echo "Config does not exists in: $script_dir/$test_node_conf_dir/$CONF_NAME"; pull_conf; }
   [ "$TS_DEBUG" = true ] && { echo -e "[DEBUG]\n"; ls -la $script_dir; }
   [ ! -f $script_dir/$test_node_conf_dir/$CONF_NAME ] && { echo "Config not found"; exit 1; }
   suffix_string_raw=$(cat $script_dir/$test_node_conf_dir/$CONF_NAME|grep 'suffix')
