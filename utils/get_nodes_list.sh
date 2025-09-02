@@ -129,6 +129,7 @@ resolve_hostname_to_ips () {
     # Resolve hostnames to IPs
     echo "${NODES[*]}"
     for i in "${!NODES[@]}"; do
+        echo "i: $i"
         local host="${NODES[$i]}"
         local ip=$(dig +short "$host" 2>/dev/null | head -n1)
 
@@ -257,12 +258,6 @@ check_and_source_openrc_file
 if [ -n "$NODES_NAME" ]; then
   echo "NODE_NAME: $NODES_NAME"
   NODES=($NODES_NAME)
-#  NODES=()
-#  for hostname in $NODES_NAME; do
-#    echo "hostname: $hostname"
-#    NODES+=("$hosname")
-#    echo "${NODES[@]}"
-#  done
   resolve_hostname_to_ips
   exit 0
 fi
