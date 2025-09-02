@@ -119,7 +119,7 @@ check_and_source_openrc_file () {
 # Function to find IP in hosts file
 find_in_hosts_file() {
     local hostname=$1
-    echo $TS_HOSTS_PATH
+#    echo $TS_HOSTS_PATH
     [ -f "$TS_HOSTS_PATH" ] || { echo "file $TS_HOSTS_PATH does not exist"; return 1; }
     echo "bar"
     grep -w "$hostname" "$TS_HOSTS_PATH" | awk '{print $1}' | head -n1
@@ -127,7 +127,7 @@ find_in_hosts_file() {
 
 resolve_hostname_to_ips () {
     # Resolve hostnames to IPs
-    echo "${NODES[*]}"
+#    echo "${NODES[*]}"
     for i in "${!NODES[@]}"; do
 #        echo "i: $i"
         local host="${NODES[$i]}"
@@ -148,7 +148,7 @@ resolve_hostname_to_ips () {
             NODES[$i]="unresolved:$host"
         fi
     done
-    echo "${NODES[@]}"
+    echo "${NODES[*]}"
 }
 
 # Main function to parse hosts and resolve to IP
@@ -259,7 +259,7 @@ nodes_to_find: $nodes_to_find
 }
 
 
-check_and_source_openrc_file
+#check_and_source_openrc_file
 if [ -n "$NODES_NAME" ]; then
   echo "NODE_NAME: $NODES_NAME"
   NODES=($NODES_NAME)
