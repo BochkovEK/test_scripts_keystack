@@ -324,7 +324,8 @@ fi
 if [ -z "$NODES_NAME" ]; then
   NODES=$(get_nodes_list nt $NODES_TYPE)
 else
-  NODES=$(get_nodes_list nn $NODES_NAME)
+  NODES_ARR=("${NODES_NAME[@]}")
+  NODES=$(get_nodes_list nn $NODES_ARR)
   echo $NODES
 fi
 
