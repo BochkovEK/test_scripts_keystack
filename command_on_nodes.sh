@@ -29,6 +29,7 @@ blue=$(tput setaf 4)
 [[ -z $COMMAND ]] && COMMAND="ls -la"
 [[ -z $SENDENV ]] && SENDENV=""
 [[ -z $NODES ]] && NODES=()
+[[ -z $NODES_NAME ]] && NODES_NAME=""
 [[ -z $NODES_TYPE ]] && NODES_TYPE="all"
 [[ -z $PING ]] && PING="false"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
@@ -98,9 +99,9 @@ while [ -n "$1" ]; do
       echo "Found the -user  with parameter value $SSH_USER"
       shift
       ;;
-    -nn|-node_name)
-      for i in $2; do NODES+=("$i"); done
-      echo "Found the -nn option, with parameter value ${NODES[*]}"
+    -nn|-node_name) NODES_NAME=$2
+#      for i in $2; do NODES+=("$i"); done
+      echo "Found the -nn option, with parameter value $NODES_NAME"
       shift ;;
     -p|-ping)
       PING="true"
@@ -284,23 +285,33 @@ get_nodes_list () {
     \"\$NODES\": ${NODES[*]}
   "
   if [ -z "${NODES[*]}" ]; then
-    nodes=$(bash $utils_dir/$get_nodes_list_script -nt $NODES_TYPE)
-  fi
-  if echo $nodes| grep "ERROR"; then
+    if [ -n "$NODES_NAME" ]; then
+      nodes=$(bash $utils_dir/$get_nodes_list_script -nt $NODES_TYPE -nn $NODES_NAME)
+    else
+      nodes=$(bash $utils_dir/$get_nodes_list_script -nt $NODES_TYPE)
+    fi
+    if echo $nodes| grep "ERROR"; then
 #    echo -e "$nodes"
-    exit 1
+      exit 1
+    else
+      for node in $nodes; do NODES+=("$node"); done
+    fi
   fi
+  [ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]: \"\$NODES\": ${NODES[*]}
+  "
+
 #  node=$(cat /etc/hosts | grep -m 1 -E ${nodes_pattern} | awk '{print $2}')
 #  [ "$TS_DEBUG" = true ] && echo -e "
 #  [DEBUG]: \"\$node\": $node\n
 #  "
-  for node in $nodes; do NODES+=("$node"); done
-  [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]: \"\$NODES\": ${NODES[*]}
-  "
-  echo -e "
-  NODES: ${NODES[*]}
-  "
+#  for node in $nodes; do NODES+=("$node"); done
+#  [ "$TS_DEBUG" = true ] && echo -e "
+#  [DEBUG]: \"\$NODES\": ${NODES[*]}
+#  "
+#  echo -e "
+#  NODES: ${NODES[*]}
+#  "
   if [ -z "${NODES[*]}" ]; then
     echo -e "${red}Failed to determine node list - ERROR${normal}"
     exit 1
