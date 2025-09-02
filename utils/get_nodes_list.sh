@@ -262,7 +262,7 @@ if [ -n "$NODES_NAME" ]; then
   echo "NODE_NAME: $NODES_NAME"
   NODES=($NODES_NAME)
   resolve_hostname_to_ips
-  echo "${NODES[*]}"
+  echo "${NODES[@]}"
   exit 0
 fi
 define_node_type $NODES_TYPE
