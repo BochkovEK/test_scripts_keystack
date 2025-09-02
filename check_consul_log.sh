@@ -227,14 +227,14 @@ Check_and_source_openrc_file
       node_ip="${ctrl#*:}"     # get the part after the first ':'
       leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no $SSH_USER@$node_ip "sudo $DOCKER_ENGINE exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
       if [ -n "${leader_ctrl_node}" ]; then
-        NODE_NAME=$leader_ctrl_node
-        echo "Leader consul node is $NODE_NAME"
+        CTRL_LIST=$leader_ctrl_node
+        echo "Leader consul node is $CTRL_LIST"
         break
       fi
     done
     if [ -z "${leader_ctrl_node}" ]; then
 #    NODE_NAME=$leader_ctrl_node
-      NODE_NAME=$ctrl_nodes_list
+      CTRL_LIST=$ctrl_nodes_list
 #    echo "Leader consul node is $NODE_NAME"
       echo -e "${yallow}Leader node not found. Check logs on all ctrl nodes${normal}
       $ctrl_nodes_list\' nodes${normal}"
@@ -243,10 +243,11 @@ Check_and_source_openrc_file
   fi
 #fi
 
-echo -e "Consul logs from $NODE_NAME node"
+echo -e "Consul logs from $CTRL_LIST node"
 #echo -e "Output period check: $OUTPUT_PERIOD sec"
 
 i=0
+#ctrl_nodes_list=$(get_nodes_list nt )
 for ctrl in $CTRL_LIST; do
   i=$(( $i + 1 ))
 done
