@@ -110,46 +110,51 @@ check_and_source_openrc_file () {
   fi
 }
 
-parse_hosts () {
-  [ "$TS_DEBUG" = true ] && echo -e "
-  Parse $TS_HOSTS_PATH to find pattern: $nodes_to_find
-  "
-#  node_type_func $NODES_TYPE
-  [[ -z ${NODES[0]} ]] && { srv=$(cat $TS_HOSTS_PATH | grep -E ${nodes_to_find} | awk '{print $2}'); for i in $srv; do NODES+=("$i"); done; }
-  if [ "$TS_DEBUG" = true ]; then
-    echo -e "
-    [DEBUG]
-    NODES:
-    "
-    for host in "${NODES[@]}"; do
-      [ "$TS_DEBUG" = true ] && echo -e "
-      [DEBUG]
-      host: $host
-      "
+# Function to find IP in hosts file
+find_in_hosts_file() {
+    local hostname=$1
+    [ -f "$TS_HOSTS_PATH" ] || return 1
+    grep -w "$hostname" "$TS_HOSTS_PATH" | awk '{print $1}' | head -n1
+}
+
+# Main function to parse hosts and resolve to IP
+parse_hosts() {
+    [ "$TS_DEBUG" = true ] && echo "Parsing $TS_HOSTS_PATH for pattern: $nodes_to_find"
+
+    # Populate NODES array if empty
+    if [ ${#NODES[@]} -eq 0 ]; then
+        while read -r line; do
+            NODES+=("$line")
+        done < <(grep -E "$nodes_to_find" "$TS_HOSTS_PATH" | awk '{print $2}')
+    fi
+
+    # Debug output
+    [ "$TS_DEBUG" = true ] && printf "NODES: %s\n" "${NODES[*]}"
+
+    # Resolve hostnames to IPs
+    for i in "${!NODES[@]}"; do
+        local host="${NODES[$i]}"
+        local ip=$(dig +short "$host" 2>/dev/null | head -n1)
+
+        if [ -z "$ip" ]; then
+            ip=$(find_in_hosts_file "$host")
+        fi
+
+        if [ -n "$ip" ]; then
+            NODES[$i]="$ip"
+        else
+            echo "Warning: failed to resolve $host" >&2
+            NODES[$i]="unresolved:$host"
+        fi
     done
-    [ "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG]
-    NODES_TYPE: $NODES_TYPE
-    "
-  fi
-  #  echo "${NODES[*]}"
 
-  for i in "${!NODES[@]}"; do
-      IP=$(dig +short "${NODES[$i]}" | head -n1)
-      if [ -n "$IP" ]; then
-          NODES[$i]="$IP"
-      else
-          # Если не удалось resolve, оставляем оригинальное имя
-          echo "Warning: не удалось resolve ${NODES[$i]}" >&2
-      fi
-  done
+    echo "${NODES[*]}"
 
-  echo "${NODES[*]}"
-
-  if [ -z "${NODES[*]}" ]; then
-    echo -e "${red}Failed to determine node $NODES_TYPE list from $TS_HOSTS_PATH - ERROR!${normal}"
-    exit 1
-  fi
+    # Check if we have any valid nodes
+    if [ ${#NODES[@]} -eq 0 ]; then
+        echo "Failed to determine node list from $TS_HOSTS_PATH" >&2
+        exit 1
+    fi
 }
 
 get_list_from_compute_service () {
@@ -183,7 +188,8 @@ define_node_type () {
 NODES_TYPE: $NODES_TYPE
 nodes_to_find: $nodes_to_find
       "
-      get_list_from_compute_service
+#      get_list_from_compute_service
+      parse_hosts
       ;;
     comp|cmpt)
       NODES_TYPE=comp
@@ -193,7 +199,8 @@ nodes_to_find: $nodes_to_find
 NODES_TYPE: $NODES_TYPE
 nodes_to_find: $nodes_to_find
       "
-      get_list_from_compute_service
+#      get_list_from_compute_service
+      parse_hosts
       ;;
     awn|all_without_network)
       NODES_TYPE=all_without_network
@@ -203,7 +210,8 @@ nodes_to_find: $nodes_to_find
 NODES_TYPE: $NODES_TYPE
 nodes_to_find: $nodes_to_find
       "
-      get_list_from_compute_service
+#      get_list_from_compute_service
+      parse_hosts
       ;;
     net)
       NODES_TYPE=net

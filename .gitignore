@@ -11,4 +11,5 @@
 ./test_text_file.txt
 ./output.txt
 ./*-rc*.py
+./utils/*-rc*.sh
 foo*
