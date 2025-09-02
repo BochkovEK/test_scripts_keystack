@@ -255,7 +255,8 @@ nodes_to_find: $nodes_to_find
 
 check_and_source_openrc_file
 if [ -n "$NODES_NAME" ]; then
-  echo "i am here"
+  echo "NODE_NAME: $NODES_NAME"
+  NODES=()
   for hostname in $NODES_NAME; do
     NODES+=("$hosname")
     echo "${NODES[*]}"
