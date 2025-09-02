@@ -77,6 +77,9 @@ do
   -v|-debug) TS_DEBUG="true"
 	  echo "Found the -debug, with parameter value $TS_DEBUG"
     ;;
+  -u|-user) SSH_USER=$2
+	  echo "Found the -user, with parameter value $SSH_USER"
+    ;;
   -ipmi) CHECK_IPMI="true"
 	  echo "Found the -ipmi, with parameter value $CHECK_IPMI"
     ;;
