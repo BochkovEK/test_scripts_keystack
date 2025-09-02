@@ -212,6 +212,7 @@ Check_and_source_openrc_file
     fi
   else
     ctrl_nodes_list=$(get_nodes_list nn $CTRL_LIST)
+    echo $ctrl_nodes_list
   fi
   for i in $ctrl_nodes_list; do nova_ctrl_arr+=("$i"); done
 #    echo $ALL_CTRL
