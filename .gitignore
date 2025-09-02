@@ -10,4 +10,5 @@
 /.idea/deployment.xml
 ./test_text_file.txt
 ./output.txt
+./*-rc*.py
 foo*
