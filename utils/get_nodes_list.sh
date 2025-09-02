@@ -134,6 +134,7 @@ resolve_hostname_to_ips () {
         local ip=$(dig +short "$host" 2>/dev/null | head -n1)
 
         if [ -z "$ip" ]; then
+            echo "dig dont do that"
             ip=$(find_in_hosts_file "$host")
         fi
 
