@@ -21,7 +21,7 @@ default_ssh_user="root"
 #Colors
 green=$(tput setaf 2)
 red=$(tput setaf 1)
-violet=$(tput setaf 5)
+#violet=$(tput setaf 5)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
 blue=$(tput setaf 4)
@@ -33,7 +33,7 @@ blue=$(tput setaf 4)
 [[ -z $NODES_TYPE ]] && NODES_TYPE="all"
 [[ -z $PING ]] && PING="false"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
-[[ -z $DONT_CHECK_CONN ]] && DONT_CHECK_CONN="false"
+[[ -z $DONT_CHECK_CONN ]] && DONT_CHECK_CONN="true"
 #[[ -z $SSH_USER ]] && SSH_USER=$default_ssh_user
 #======================
 
@@ -73,6 +73,7 @@ while [ -n "$1" ]; do
       -nn,  -node_name      <node_name\ip> example: -nn \"ebochkov-keystack-comp-01 ebochkov-keystack-comp-02\"
       -u,   -user           <ssh_user>
       -p,   -ping           ping before execution command
+      -check_conn           check connection before executing commands (without parameter)
       -debug                debug mode
       Remove all containers on all nodes:
         bash command_on_nodes.sh -c 'docker stop \$(docker ps -a -q)'
@@ -109,6 +110,9 @@ while [ -n "$1" ]; do
       ;;
     -debug) TS_DEBUG="true"
       echo "Found the -debug parameter"
+      ;;
+    -check_conn) DONT_CHECK_CONN="false"
+      echo "Found the -check_conn parameter"
       ;;
     --) shift
       break ;;
