@@ -132,7 +132,20 @@ parse_hosts () {
     NODES_TYPE: $NODES_TYPE
     "
   fi
+  #  echo "${NODES[*]}"
+
+  for i in "${!NODES[@]}"; do
+      IP=$(dig +short "${NODES[$i]}" | head -n1)
+      if [ -n "$IP" ]; then
+          NODES[$i]="$IP"
+      else
+          # Если не удалось resolve, оставляем оригинальное имя
+          echo "Warning: не удалось resolve ${NODES[$i]}" >&2
+      fi
+  done
+
   echo "${NODES[*]}"
+
   if [ -z "${NODES[*]}" ]; then
     echo -e "${red}Failed to determine node $NODES_TYPE list from $TS_HOSTS_PATH - ERROR!${normal}"
     exit 1
