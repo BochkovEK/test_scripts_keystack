@@ -171,9 +171,8 @@ get_nodes_list () {
   [ "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]: \"\$NODES\": ${NODES[*]}
   "
-#  echo -e "
-#  NODES: ${NODES[*]}
-#  "
+  echo -e "${NODES[*]}"
+
   if [ -z "${NODES[*]}" ]; then
     echo -e "${red}Failed to determine node list - ERROR${normal}"
     exit 1
