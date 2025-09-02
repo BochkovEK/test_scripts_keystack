@@ -135,8 +135,8 @@ resolve_hostname_to_ips () {
 
         if [ -z "$ip" ]; then
             echo "dig dont do that"
-            find_in_hosts_file "$host"
-#            ip=$(find_in_hosts_file "$host")
+#            find_in_hosts_file "$host"
+            ip=$(find_in_hosts_file "$host")
         fi
 
         if [ -n "$ip" ]; then
@@ -262,6 +262,7 @@ if [ -n "$NODES_NAME" ]; then
   echo "NODE_NAME: $NODES_NAME"
   NODES=($NODES_NAME)
   resolve_hostname_to_ips
+  echo "${NODES[*]}"
   exit 0
 fi
 define_node_type $NODES_TYPE
