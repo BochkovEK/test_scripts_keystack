@@ -120,6 +120,7 @@ check_and_source_openrc_file () {
 find_in_hosts_file() {
     local hostname=$1
     [ -f "$TS_HOSTS_PATH" ] || return 1
+    echo "bar"
     grep -w "$hostname" "$TS_HOSTS_PATH" | awk '{print $1}' | head -n1
 }
 
