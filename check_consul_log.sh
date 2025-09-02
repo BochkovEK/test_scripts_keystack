@@ -155,7 +155,7 @@ check_log_on_all_ctrl () {
 \033[0;35mLogs from: $(hostname)\033[0m
 \033[0;35mFor check this log: \033[0m
 \033[0;35mssh $(hostname) less /var/log/kolla/autoevacuate.log | less\033[0m"'
-    check_consul_log_one_node $ctrl
+    check_consul_log_one_node $node_name
   done
 }
 
