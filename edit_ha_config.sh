@@ -36,7 +36,7 @@ yellow=$(tput setaf 3)
 [[ -z $CONF_NAME ]] && CONF_NAME=$conf_name
 [[ -z $OS_REGION_NAME ]] && OS_REGION_NAME=""
 [[ -z $GET_CONFIG_PATH ]] && GET_CONFIG_PATH="false"
-[[ -z $USER ]] && USER="$default_user"
+#[[ -z $USER ]] && USER="$default_user"
 
 
 #[[ -z "${1}" ]] && { echo "Alive threshold value required as parameter script"; exit 1; }
@@ -330,6 +330,21 @@ check_bmc_suffix () {
 get_config_path () {
   echo $conf_dir/$CONF_NAME
 }
+
+if [[ -z "$SSH_USER" ]]; then
+  # 3. Try to determine via whoami (with error handling)
+  SSH_USER=$(whoami 2>/dev/null) || {
+    echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
+    # 4. Use default value
+    SSH_USER="$default_ssh_user"
+  }
+fi
+
+# Final value check
+if [[ -z "$SSH_USER" ]]; then
+  echo -e "${red}Error: Failed to determine user!${normal}" >&2
+  exit 1
+fi
 
 get_nodes_list
 
