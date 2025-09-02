@@ -325,6 +325,7 @@ if [ -z "$NODES_NAME" ]; then
   NODES=$(get_nodes_list nt $NODES_TYPE)
 else
   NODES=$(get_nodes_list nn $NODES_NAME)
+  echo $NODES
 fi
 
 for node_pair in ${NODES}; do
