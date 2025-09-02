@@ -263,7 +263,8 @@ NODE_NAME: $NODES_NAME
 #  NODES=("${NODES_NAME}")
 #  NODES=($NODES_NAME)
 #  NODES=("${NODES_NAME[*]}")
-  IFS=' ' read -ra NODES <<< "$NODES_NAME"
+#  IFS=' ' read -ra NODES <<< "$NODES_NAME"
+  for i in $NODES_NAME; do NODES+=("$i"); done
   resolve_hostname_to_ips
   exit 0
 fi
