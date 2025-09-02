@@ -241,6 +241,9 @@ Check_and_source_openrc_file
 #        else
     fi
   else
+    echo -e "Check logs on all ctrl nodes${normal}
+      $ctrl_nodes_list\' nodes${normal}"
+#        else
     CTRL_LIST=$ctrl_nodes_list
   fi
 #fi
