@@ -57,8 +57,8 @@ do
           echo "Found the -inventory option, with parameter value $INVENTORY_PATH"
           shift
           ;;
-        -o|-output_file) OUTPUT_FILE=$2
-          echo "Found the -output_file option, with parameter value $OUTPUT_FILE"
+        -o|-output_file) OUTPUT_FILE_PATH=$2
+          echo "Found the -output_file option, with parameter value $OUTPUT_FILE_PATH"
           shift
           ;;
         -int_pref) INT_PREF=$2
@@ -73,7 +73,7 @@ do
           echo "Found the -debug option, with parameter value true"
           ;;
         --help) echo -E "
-        The script parse inventory file to create $OUTPUT_FILE file like 'hosts' or add strings to hosts
+        The script parse inventory file to create $OUTPUT_FILE_PATH file like 'hosts' or add strings to hosts
         'inventory' file like this:
           kolla_internal_address=10.224.138.67
           external_floating=10.224.138.68
