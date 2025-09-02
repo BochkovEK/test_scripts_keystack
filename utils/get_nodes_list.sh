@@ -127,7 +127,7 @@ find_in_hosts_file() {
 
 resolve_hostname_to_ips () {
     # Resolve hostnames to IPs
-    echo "foo"
+    echo "${NODES[*]}"
     for i in "${!NODES[@]}"; do
         local host="${NODES[$i]}"
         local ip=$(dig +short "$host" 2>/dev/null | head -n1)
