@@ -152,13 +152,16 @@ start_commands_on_nodes () {
   fi
 #  if [[ -z ${NODES[0]} ]]; then
   if [ "${#NODES[@]}" -eq 0 ]; then
-    error_message="Failed to access to $NODES_TYPE"
+    error_message="Failed to compile the list of nodes ($NODES_TYPE)"
     error_output
     exit 1
   fi
   for host in "${NODES[@]}"; do
-    echo -E "${blue}Start command on ${host}${normal}"
-    ssh -o StrictHostKeyChecking=no -t $SENDENV $SSH_USER@$host "$SUDOUSER_COMMAND ${COMMAND}"
+    # Split the string into name and IP using ':' as delimiter
+    node_name="${node_pair%%:*}"  # get the part before the first ':'
+    node_ip="${node_pair#*:}"     # get the part after the first ':'
+    echo -E "${blue}Start command on ${node_name}${normal}"
+    ssh -o StrictHostKeyChecking=no -t $SENDENV $SSH_USER@$node_ip "$SUDOUSER_COMMAND ${COMMAND}"
 #    ssh -o StrictHostKeyChecking=no -t $host << EOF
 #$COMMAND
 #EOF
@@ -336,11 +339,14 @@ fi
 get_nodes_list
 
 if [ "$DONT_CHECK_CONN" = false ]; then
-#  echo "Check: ping to $NODES_TYPE"
-  for node in "${NODES[@]}"; do
-    echo "Check: ping to $node"
-    check_ping $node
-  done
+    for node_pair in "${NODES[@]}"; do
+        # Split the string into name and IP using ':' as delimiter
+        node_name="${node_pair%%:*}"  # get the part before the first ':'
+        node_ip="${node_pair#*:}"     # get the part after the first ':'
+
+        echo "Check: ping to $node_name ($node_ip)"
+        check_ping "$node_ip"
+    done
 fi
 
 if [ "$connection_problem" = true ]; then
