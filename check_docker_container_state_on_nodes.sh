@@ -322,10 +322,10 @@ fi
 #        -e 's/\(.*restarting.*\)/\o033[31m\1\o033[39m/'
 
 if [ -z "$NODES_NAME" ]; then
-  NODES=$(get_nodes_list nt $NODES_TYPE)
+  NODES=$(get_nodes_list nt "$NODES_TYPE")
 else
-  NODES_ARR=("${NODES_NAME[@]}")
-  NODES=$(get_nodes_list nn $NODES_ARR)
+#  NODES_ARR=("${NODES_NAME[@]}")
+  NODES=$(get_nodes_list nn "$NODES_NAME")
   echo $NODES
 fi
 
