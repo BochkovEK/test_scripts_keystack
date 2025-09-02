@@ -140,7 +140,8 @@ resolve_hostname_to_ips () {
         if [ -n "$ip" ]; then
             NODES[$i]="$ip"
         else
-            echo "Warning: failed to resolve $host" >&2
+            echo "Warning: failed to resolve $host"
+             #>&2
             NODES[$i]="unresolved:$host"
         fi
     done
