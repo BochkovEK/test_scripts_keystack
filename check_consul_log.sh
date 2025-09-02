@@ -14,13 +14,15 @@ cyan=$(tput setaf 14)
 
 script_dir=$(dirname $0)
 utils_dir=$script_dir/utils
+nodes_type="ctrl"
 check_openrc_script="check_openrc.sh"
 check_openstack_cli_script="check_openstack_cli.sh"
+get_nodes_list_script="get_nodes_list.sh"
 default_ssh_user="root"
 
 [[ -z $LOG_LAST_LINES_NUMBER ]] && LOG_LAST_LINES_NUMBER=35
 #[[ -z $OUTPUT_PERIOD ]] && OUTPUT_PERIOD=10
-[[ -z $NODE_NAME ]] && NODE_NAME=""
+#[[ -z $NODE_NAME ]] && NODE_NAME=""
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
 [[ -z $CTRL_LIST ]] && CTRL_LIST=""
@@ -33,9 +35,10 @@ default_ssh_user="root"
 # Define parameters
 define_parameters () {
 #  echo foo
-  [ "$count" = 1 ] && [[ -n $1 ]] && { NODE_NAME=$1; echo "Node name parameter found with value $NODE_NAME"; }
-  [ "$count" = 2 ] && [[ -n $1 ]] && { OUTPUT_PERIOD=$1; echo "Check period parameter found with value $OUTPUT_PERIOD"; }
-  [ "$count" = 3 ] && [[ -n $1 ]] && { LOG_LAST_LINES_NUMBER=$1; echo "log last lines number parameter found with value $LOG_LAST_LINES_NUMBER"; }
+  [ "$count" = 1 ] && [[ -n $1 ]] && { echo; }
+#    NODE_NAME=$1; echo "Node name parameter found with value $NODE_NAME"; }
+#  [ "$count" = 2 ] && [[ -n $1 ]] && { OUTPUT_PERIOD=$1; echo "Check period parameter found with value $OUTPUT_PERIOD"; }
+#  [ "$count" = 3 ] && [[ -n $1 ]] && { LOG_LAST_LINES_NUMBER=$1; echo "log last lines number parameter found with value $LOG_LAST_LINES_NUMBER"; }
 }
 
 count=1
@@ -60,9 +63,7 @@ while [ -n "$1" ]; do
     -ln|-line_numbers) LOG_LAST_LINES_NUMBER="$2"
       echo "Found the -line_numbers option, with parameter value $LOG_LAST_LINES_NUMBER"
       shift ;;
-    -n|-node_name) NODE_NAME="$2"
-      echo "Found the -node_name option, with parameter value $NODE_NAME"
-      shift ;;
+
 #    -o|-output_period) OUTPUT_PERIOD="$2"
 #      echo "Found the -output_period option, with parameter value $OUTPUT_PERIOD"
 #      shift ;;
@@ -86,6 +87,10 @@ while [ -n "$1" ]; do
     esac
     shift
 done
+
+#    -n|-node_name) NODE_NAME="$2"
+#      echo "Found the -node_name option, with parameter value $NODE_NAME"
+#      shift ;;
 
 # Check openrc file
 Check_and_source_openrc_file () {
@@ -113,11 +118,14 @@ Check_openstack_cli () {
 
 check_consul_log_one_node() {
 #  echo "!!!ONE node"
-  ssh -o StrictHostKeyChecking=no $USER@$1 'echo -e "\033[0;35m$(date)\033[0m
+  ctrl=$(get_nodes_list nn $1)
+  node_name="${ctrl%%:*}"  # get the part before the first ':'
+  node_ip="${ctrl#*:}"     # get the part after the first ':'
+  ssh -o StrictHostKeyChecking=no $SSH_USER@$node_ip 'echo -e "\033[0;35m$(date)\033[0m
 \033[0;35mLogs from: $(hostname)\033[0m
 \033[0;35mFor check this log: \033[0m
 \033[0;35mssh $(hostname) less /var/log/kolla/autoevacuate.log | less\033[0m"'
-  ssh -o StrictHostKeyChecking=no $USER@$1 "sudo sh -c 'tail -f /var/log/kolla/autoevacuate.log'" | \
+  ssh -o StrictHostKeyChecking=no $SSH_USER@$node_ip "sudo sh -c 'tail -f /var/log/kolla/autoevacuate.log'" | \
     sed --unbuffered \
     -e 's/\([1-9][0-9]* computes in maintenance\)/\o033[33m\1\o033[39m/' \
     -e 's/\(.*Force off.*\)/\o033[31m\1\o033[39m/' \
@@ -137,9 +145,12 @@ check_consul_log_one_node() {
 }
 
 check_log_on_all_ctrl () {
-  for ctrl in $NODE_NAME; do
-    echo -e "${cyan}Check logs on $ctrl...${normal}"
-    ssh -o StrictHostKeyChecking=no $USER@$ctrl 'echo -e "\033[0;35m$(date)\033[0m
+  ctrl_nodes_list=$(get_nodes_list nt ctrl)
+  for ctrl in $ctrl_nodes_list; do
+    node_name="${ctrl%%:*}"  # get the part before the first ':'
+    node_ip="${ctrl#*:}"     # get the part after the first ':'
+    echo -e "${cyan}Check logs on $node_name...${normal}"
+    ssh -o StrictHostKeyChecking=no $SSH_USER@$node_ip 'echo -e "\033[0;35m$(date)\033[0m
 \033[0;35mLogs from: $(hostname)\033[0m
 \033[0;35mFor check this log: \033[0m
 \033[0;35mssh $(hostname) less /var/log/kolla/autoevacuate.log | less\033[0m"'
@@ -147,6 +158,26 @@ check_log_on_all_ctrl () {
   done
 }
 
+get_nodes_list () {
+  if [ -z "${NODES[*]}" ]; then
+    nodes=$(bash $utils_dir/$get_nodes_list_script -$1 $2)
+  fi
+#  node=$(cat /etc/hosts | grep -m 1 -E ${nodes_pattern} | awk '{print $2}')
+  [ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]: \"\$node\": $node\n
+  "
+  for node in $nodes; do NODES+=("$node"); done
+  [ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]: \"\$NODES\": ${NODES[*]}
+  "
+  echo -e "
+  NODES: ${NODES[*]}
+  "
+  if [ -z "${NODES[*]}" ]; then
+    echo -e "${red}Failed to determine node list - ERROR${normal}"
+    exit 1
+  fi
+}
 
 if [[ -z "$SSH_USER" ]]; then
   # 3. Try to determine via whoami (with error handling)
@@ -168,10 +199,11 @@ Check_openstack_cli
 # Check openrc file
 Check_and_source_openrc_file
 
-if [ -z "${NODE_NAME}" ]; then
+#if [ -z "${NODE_NAME}" ]; then
   if [ -z "${CTRL_LIST}" ]; then
-    nova_state_list=$(openstack compute service list)
-    ctrl_nodes_list=$(echo "$nova_state_list" | grep -E "nova-scheduler" | awk '{print $6}')
+#    nova_state_list=$(openstack compute service list)
+#    ctrl_nodes_list=$(echo "$nova_state_list" | grep -E "nova-scheduler" | awk '{print $6}')
+    ctrl_nodes_list=$(get_nodes_list nt ctrl)
     if [ -z "${ctrl_nodes_list}" ]; then
       echo -e "${yallow}Failed to determine node control list${normal}"
       echo -e "Try passing the list of node controls via the key \'-ctrl_list\' (read --help)"
@@ -179,7 +211,7 @@ if [ -z "${NODE_NAME}" ]; then
       exit 1
     fi
   else
-    ctrl_nodes_list=$CTRL_LIST
+    ctrl_nodes_list=$(get_nodes_list nn $CTRL_LIST)
   fi
   for i in $ctrl_nodes_list; do nova_ctrl_arr+=("$i"); done
 #    echo $ALL_CTRL
@@ -188,7 +220,9 @@ if [ -z "${NODE_NAME}" ]; then
     echo "Attempt to identify a leader in the consul cluster and read logs..."
     for ctrl in "${nova_ctrl_arr[@]}"; do
 #   first_ctrl_node=${nova_ctrl_arr[0]}
-      leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no $USER@$ctrl "$DOCKER_ENGINE exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
+      node_name="${ctrl%%:*}"  # get the part before the first ':'
+      node_ip="${ctrl#*:}"     # get the part after the first ':'
+      leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no $SSH_USER@$node_ip "$DOCKER_ENGINE exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
       if [ -n "${leader_ctrl_node}" ]; then
         NODE_NAME=$leader_ctrl_node
         echo "Leader consul node is $NODE_NAME"
@@ -204,13 +238,13 @@ if [ -z "${NODE_NAME}" ]; then
 #        else
     fi
   fi
-fi
+#fi
 
 echo -e "Consul logs from $NODE_NAME node"
 #echo -e "Output period check: $OUTPUT_PERIOD sec"
 
 i=0
-for ctrl in $NODE_NAME; do
+for ctrl in $CTRL_LIST; do
   i=$(( $i + 1 ))
 done
 if (( $i > 1 )); then
