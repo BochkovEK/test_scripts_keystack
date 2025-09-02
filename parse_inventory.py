@@ -77,28 +77,37 @@ def parse_inventory(path):
                 if hostname and hostname not in hosts_by_group[current_group]:
                     hosts_by_group[current_group].append(hostname)
 
-            # Process variables with IP addresses
+            # Process variables with IP addresses (only for non-group entries)
+            # This prevents duplication with group-based entries
             words = line.split()
             for word in words:
                 string = ""
-                if ansible_host in word:
+                if ansible_host in word and current_group not in hosts_by_group:
                     ip = word.split('=')[1]
                     string = f"{ip} {words[0]}"
-                    print(string)
+                    print(f"Found variable entry: {string}")
                 if kolla_internal_address in word:
                     ip = word.split('=')[1]
                     string = f"{ip} {internal_prefix}.{region}.{domain}"
-                    print(string)
+                    print(f"Found kolla internal: {string}")
                 if external_floating in word:
                     ip = word.split('=')[1]
                     string = f"{ip} {external_prefix}.{region}.{domain} backend.{external_prefix}.{region}.{domain}"
-                    print(string)
+                    print(f"Found external floating: {string}")
                 if string and string not in hosts_string:
                     hosts_string.append(string)
 
 
 def get_ip_for_host(hostname, inventory_path):
     """Get IP address from inventory file or via DNS resolution"""
+    # First check if hostname already exists in hosts_string (from variable parsing)
+    for entry in hosts_string:
+        if hostname in entry:
+            ip = entry.split()[0]
+            print(f"Found existing IP for {hostname}: {ip}")
+            return ip
+
+    # If not found in hosts_string, try to extract from inventory
     ip_from_inventory = None
 
     try:
@@ -140,7 +149,7 @@ def generate_host_entries():
             ip = get_ip_for_host(hostname, path_to_inventory)
             if ip:
                 # Extract number from hostname (assuming name-XX.domain.com format)
-                host_number_match = re.search(r'name-(\d+)', hostname)
+                host_number_match = re.search(r'(\d+)', hostname)
                 if host_number_match:
                     host_number = host_number_match.group(1)
                     short_name = f"{prefix}-{host_number}"
@@ -148,7 +157,7 @@ def generate_host_entries():
                     entries.append(entry)
                 else:
                     # Alternative if different hostname format
-                    short_name = f"{prefix}-{hostname.split('.')[0]}"
+                    short_name = f"{prefix}-{hostname.split('.')[0].replace('domain_name-', '')}"
                     entry = f"{ip} {hostname} {short_name}"
                     entries.append(entry)
             else:
@@ -163,13 +172,13 @@ def generate_host_entries():
 def write_file(path_to_file, strings):
     """Write host entries to output file with simplified hostnames"""
     with open(path_to_file, "w") as file:
-        # Group entries by type for better readability
+        # First write group-based entries
         control_entries = [s for s in strings if 'ctrl-' in s]
         network_entries = [s for s in strings if 'net-' in s]
         compute_entries = [s for s in strings if 'comp-' in s]
         other_entries = [s for s in strings if not any(x in s for x in ['ctrl-', 'net-', 'comp-'])]
 
-        # Write entries with group separation
+        # Write group entries with separation
         if control_entries:
             file.write("# Control nodes\n")
             for entry in control_entries:
@@ -188,28 +197,33 @@ def write_file(path_to_file, strings):
                 file.write(entry + "\n")
             file.write("\n")
 
-        if other_entries:
-            file.write("# Other nodes\n")
-            for entry in other_entries:
-                file.write(entry + "\n")
-            file.write("\n")
+        # Then write variable-based entries (only non-duplicates)
+        file.write("# Additional entries from variables\n")
+        written_entries = set(strings)  # Track already written entries
 
-        # Process additional host strings from inventory variables
         for line in hosts_string:
-            last_word = line.split()[-1]
-            is_node_string = re.search(node_pattern, last_word)
-            if is_node_string:
-                is_lcm_node = re.search(lcm_pattern, last_word)
-                if is_lcm_node:
-                    # Extract simple hostname for LCM node
-                    short_name = f"{last_word.split('-')[-2]}-{last_word.split('-')[-1]}"
-                    file.write(line + f" {short_name}\n")
+            # Skip entries that are already in group-based output
+            skip_entry = False
+            for written_entry in written_entries:
+                if line.split()[0] == written_entry.split()[0]:  # Compare by IP
+                    skip_entry = True
+                    break
+
+            if not skip_entry:
+                last_word = line.split()[-1]
+                is_node_string = re.search(node_pattern, last_word)
+                if is_node_string:
+                    is_lcm_node = re.search(lcm_pattern, last_word)
+                    if is_lcm_node:
+                        # Extract simple hostname for LCM node
+                        short_name = f"{last_word.split('-')[-2]}-{last_word.split('-')[-1]}"
+                        file.write(line + f" {short_name}\n")
+                    else:
+                        # Extract simple hostname for other nodes
+                        short_name = f"{last_word.split('-')[-2]}-{last_word.split('-')[-1]}"
+                        file.write(line + f" {short_name}\n")
                 else:
-                    # Extract simple hostname for other nodes
-                    short_name = f"{last_word.split('-')[-2]}-{last_word.split('-')[-1]}"
-                    file.write(line + f" {short_name}\n")
-            else:
-                file.write(line + "\n")
+                    file.write(line + "\n")
 
 
 # Main execution logic
@@ -217,6 +231,7 @@ if __name__ == "__main__":
     try:
         parse_inventory(path_to_inventory)
         print(f"Parsed groups: {[k for k, v in hosts_by_group.items() if v]}")
+        print(f"Found variable entries: {len(hosts_string)}")
 
         host_entries = generate_host_entries()
         write_file(output_file, host_entries)
