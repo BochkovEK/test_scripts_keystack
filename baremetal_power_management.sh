@@ -10,14 +10,14 @@ default_ssh_port=22
 #Colors
 green=$(tput setaf 2)
 red=$(tput setaf 1)
-violet=$(tput setaf 5)
+#violet=$(tput setaf 5)
 yellow=$(tput setaf 3)
 normal=$(tput sgr0)
 
 required_modules=(
             #foo
             "sushy"
-            "sys"
+#            "sys"
 )
 
 script_dir=$(dirname $0)
