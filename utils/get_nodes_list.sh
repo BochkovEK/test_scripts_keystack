@@ -92,17 +92,17 @@ while [ -n "$1" ]; do
   shift
 done
 
-check_openstack_cli () {
-#  echo "check"
-  export DONT_ASK=true
-  export DONT_INSTALL=true
-  if bash $utils_dir/$check_openstack_cli_script &> /dev/null; then
-#    pass
-    check_and_source_openrc_file
-#    get_list_from_compute_service
-#    exit 0
-  fi
-}
+#check_openstack_cli () {
+##  echo "check"
+#  export DONT_ASK=true
+#  export DONT_INSTALL=true
+#  if bash $utils_dir/$check_openstack_cli_script &> /dev/null; then
+##    pass
+#    check_and_source_openrc_file
+##    get_list_from_compute_service
+##    exit 0
+#  fi
+#}
 
 #check_and_source_openrc_file () {
 ##  echo "check openrc"
@@ -163,7 +163,7 @@ parse_hosts() {
 
     resolve_hostname_to_ips
 
-    echo "${NODES[*]}"
+#    echo "${NODES[*]}"
 
     # Check if we have any valid nodes
     if [ ${#NODES[@]} -eq 0 ]; then
