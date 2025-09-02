@@ -121,7 +121,7 @@ find_in_hosts_file() {
     local hostname=$1
 #    echo $TS_HOSTS_PATH
     [ -f "$TS_HOSTS_PATH" ] || { echo "file $TS_HOSTS_PATH does not exist"; return 1; }
-    echo "bar"
+#    echo "bar"
     grep -w "$hostname" "$TS_HOSTS_PATH" | awk '{print $1}' | head -n1
 }
 
