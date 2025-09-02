@@ -155,11 +155,11 @@ check_log_on_all_ctrl () {
   for ctrl in $ctrl_nodes_list; do
     node_name="${ctrl%%:*}"  # get the part before the first ':'
     node_ip="${ctrl#*:}"     # get the part after the first ':'
-    echo -e "${cyan}Check logs on $node_name...${normal}"
-    ssh -o StrictHostKeyChecking=no $SSH_USER@$node_ip 'echo -e "\033[0;35m$(date)\033[0m
-\033[0;35mLogs from: $(hostname)\033[0m
-\033[0;35mFor check this log: \033[0m
-\033[0;35mssh $(hostname) less /var/log/kolla/autoevacuate.log | less\033[0m"'
+#    echo -e "${cyan}Check logs on $node_name...${normal}"
+#    ssh -o StrictHostKeyChecking=no $SSH_USER@$node_ip 'echo -e "\033[0;35m$(date)\033[0m
+#\033[0;35mLogs from: $(hostname)\033[0m
+#\033[0;35mFor check this log: \033[0m
+#\033[0;35mssh $(hostname) less /var/log/kolla/autoevacuate.log | less\033[0m"'
     check_consul_log_one_node $node_name
   done
 }
