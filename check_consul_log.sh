@@ -92,32 +92,37 @@ done
 #      echo "Found the -node_name option, with parameter value $NODE_NAME"
 #      shift ;;
 
-# Check openrc file
-Check_and_source_openrc_file () {
-  echo -e "${violet}Check openrc file...${normal}"
-  if bash $utils_dir/$check_openrc_script &> /dev/null; then
-    openrc_file=$(bash $utils_dir/$check_openrc_script)
-    echo -e "${green}$openrc_file file exist - success${normal}"
-    source $openrc_file
-  else
-    bash $utils_dir/$check_openrc_script
-    echo -e "${red}openrc file not found in $openrc_file${normal} - ERROR"
-    exit 1
-  fi
-}
-
-# Сheck openstack cli
-Check_openstack_cli () {
-  if [[ $CHECK_OPENSTACK = "true" ]]; then
-    if ! bash $utils_dir/$check_openstack_cli_script; then
-#      echo -e "${red}Failed to check openstack cli - ERROR${normal}"
-      exit 1
-    fi
-  fi
-}
+## Check openrc file
+#Check_and_source_openrc_file () {
+#  echo -e "${violet}Check openrc file...${normal}"
+#  if bash $utils_dir/$check_openrc_script &> /dev/null; then
+#    openrc_file=$(bash $utils_dir/$check_openrc_script)
+#    echo -e "${green}$openrc_file file exist - success${normal}"
+#    source $openrc_file
+#  else
+#    bash $utils_dir/$check_openrc_script
+#    echo -e "${red}openrc file not found in $openrc_file${normal} - ERROR"
+#    exit 1
+#  fi
+#}
+#
+## Сheck openstack cli
+#Check_openstack_cli () {
+#  if [[ $CHECK_OPENSTACK = "true" ]]; then
+#    if ! bash $utils_dir/$check_openstack_cli_script; then
+##      echo -e "${red}Failed to check openstack cli - ERROR${normal}"
+#      exit 1
+#    fi
+#  fi
+#}
 
 check_consul_log_one_node() {
 #  echo "!!!ONE node"
+  if [ ! "$ALL_CTRL" = true ]; then
+    tail_string="-f"
+  else
+    tail_string="-n $LOG_LAST_LINES_NUMBER"
+  fi
   ctrl=$(get_nodes_list nn $1)
   echo $ctrl
   node_name="${ctrl%%:*}"  # get the part before the first ':'
@@ -126,7 +131,7 @@ check_consul_log_one_node() {
 \033[0;35mLogs from: $(hostname)\033[0m
 \033[0;35mFor check this log: \033[0m
 \033[0;35mssh $(hostname) less /var/log/kolla/autoevacuate.log | less\033[0m"'
-  ssh -o StrictHostKeyChecking=no $SSH_USER@$node_ip "sudo sh -c 'tail -f /var/log/kolla/autoevacuate.log'" | \
+  ssh -o StrictHostKeyChecking=no $SSH_USER@$node_ip "sudo sh -c 'tail $tail_string /var/log/kolla/autoevacuate.log'" | \
     sed --unbuffered \
     -e 's/\([1-9][0-9]* computes in maintenance\)/\o033[33m\1\o033[39m/' \
     -e 's/\(.*Force off.*\)/\o033[31m\1\o033[39m/' \
