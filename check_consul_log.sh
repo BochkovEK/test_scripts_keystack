@@ -119,6 +119,7 @@ Check_openstack_cli () {
 check_consul_log_one_node() {
 #  echo "!!!ONE node"
   ctrl=$(get_nodes_list nn $1)
+  echo $ctrl
   node_name="${ctrl%%:*}"  # get the part before the first ':'
   node_ip="${ctrl#*:}"     # get the part after the first ':'
   ssh -o StrictHostKeyChecking=no $SSH_USER@$node_ip 'echo -e "\033[0;35m$(date)\033[0m
