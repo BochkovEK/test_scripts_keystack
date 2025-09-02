@@ -258,6 +258,7 @@ if [ -n "$NODES_NAME" ]; then
   echo "i am here"
   for hostname in $NODES_NAME; do
     NODES+=("$hosname")
+    echo "${NODES[*]}"
   done
   resolve_hostname_to_ips
   exit 0
