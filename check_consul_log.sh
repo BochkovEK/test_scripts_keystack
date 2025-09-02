@@ -26,6 +26,7 @@ default_ssh_user="root"
 [[ -z $CTRL_LIST ]] && CTRL_LIST=""
 [[ -z $ALL_CTRL ]] && ALL_CTRL="false"
 #[[ -z $USER ]] && USER="$default_user"
+[[ -z $DOCKER_ENGINE ]] && DOCKER_ENGINE="docker"
 #========================
 
 
@@ -46,7 +47,8 @@ while [ -n "$1" ]; do
       -n,   -node_name        <node_name>
       -ctrl_list              <ctrl_list> example: -ctrl_list \"ctrl-01 ctrl-02 ctrl-02\"
       -all_ctrl               check logs on all ctrl nodes (without parameter)
-      -u, user                set user for ssh access
+      -u,   -user             set user for ssh access
+      -de,  -docker_engine    <docker_engine> (docker\podman)
 
       Example satart command:
         bash $HOME/test_scripts_keystack/check_consul_log.sh <ctrl_01> <check_period> <log last lines number>
@@ -72,6 +74,10 @@ while [ -n "$1" ]; do
       ;;
     -u|-user) SSH_USER=$2
       echo "Found the -user  with parameter value $SSH_USER"
+      shift
+      ;;
+    -de|-docker_engine) DOCKER_ENGINE=$2
+      echo "Found the -docker_engine with parameter value $DOCKER_ENGINE"
       shift
       ;;
     --) shift
@@ -182,7 +188,7 @@ if [ -z "${NODE_NAME}" ]; then
     echo "Attempt to identify a leader in the consul cluster and read logs..."
     for ctrl in "${nova_ctrl_arr[@]}"; do
 #   first_ctrl_node=${nova_ctrl_arr[0]}
-      leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no $USER@$ctrl "docker exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
+      leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no $USER@$ctrl "$DOCKER_ENGINE exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
       if [ -n "${leader_ctrl_node}" ]; then
         NODE_NAME=$leader_ctrl_node
         echo "Leader consul node is $NODE_NAME"
