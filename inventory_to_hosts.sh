@@ -130,7 +130,7 @@ done
 check_and_set_variables() {
     # Check if environment variables exist
     if [[ -z "${INVENTORY_PATH}" ||
-          -z "${OUTPUT_FILE_NAME}" ||
+          -z "${OUTPUT_FILE_PATH}" ||
           -z "${DOMAIN}" ||
           -z "${REGION}" ||
           -z "${INT_PREF}" ||
