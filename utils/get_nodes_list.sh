@@ -242,8 +242,8 @@ nodes_to_find: $nodes_to_find
       NODES_TYPE=all
       nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
       [ "$TS_DEBUG" = true ] && echo -e "
-      NODES_TYPE: $NODES_TYPE
-      nodes_to_find: $nodes_to_find
+NODES_TYPE: $NODES_TYPE
+nodes_to_find: $nodes_to_find
       "
       parse_hosts
       ;;
@@ -257,10 +257,13 @@ nodes_to_find: $nodes_to_find
 
 #check_and_source_openrc_file
 if [ -n "$NODES_NAME" ]; then
-  echo "NODE_NAME: $NODES_NAME"
+  [ "$TS_DEBUG" = true ] && echo -e "
+NODE_NAME: $NODES_NAME
+"
 #  NODES=("${NODES_NAME}")
 #  NODES=($NODES_NAME)
-  NODES=("${NODES_NAME[*]}")
+#  NODES=("${NODES_NAME[*]}")
+  IFS=' ' read -ra NODES <<< "$NODES_NAME"
   resolve_hostname_to_ips
   exit 0
 fi
