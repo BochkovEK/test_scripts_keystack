@@ -321,7 +321,7 @@ fi
 #        -e 's/\(.*starting).*\)/\o033[33m\1\o033[39m/'\
 #        -e 's/\(.*restarting.*\)/\o033[31m\1\o033[39m/'
 
-if [ -z $NODES_NAME ]; then
+if [ -z "$NODES_NAME" ]; then
   NODES=$(get_nodes_list nt $NODES_TYPE)
 else
   NODES=$(get_nodes_list nn $NODES_NAME)
