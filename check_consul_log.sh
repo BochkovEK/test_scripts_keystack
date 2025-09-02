@@ -204,6 +204,7 @@ Check_and_source_openrc_file
 #    nova_state_list=$(openstack compute service list)
 #    ctrl_nodes_list=$(echo "$nova_state_list" | grep -E "nova-scheduler" | awk '{print $6}')
     ctrl_nodes_list=$(get_nodes_list nt ctrl)
+    echo $ctrl_nodes_list
     if [ -z "${ctrl_nodes_list}" ]; then
       echo -e "${yallow}Failed to determine node control list${normal}"
       echo -e "Try passing the list of node controls via the key \'-ctrl_list\' (read --help)"
