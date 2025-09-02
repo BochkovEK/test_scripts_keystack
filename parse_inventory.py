@@ -78,14 +78,13 @@ def parse_inventory(path):
                     hosts_by_group[current_group].append(hostname)
 
             # Process variables with IP addresses (only for non-group entries)
-            # This prevents duplication with group-based entries
             words = line.split()
             for word in words:
                 string = ""
-                if ansible_host in word and current_group not in hosts_by_group:
+                if ansible_host in word:
                     ip = word.split('=')[1]
                     string = f"{ip} {words[0]}"
-                    print(f"Found variable entry: {string}")
+                    print(f"Found ansible_host entry: {string}")
                 if kolla_internal_address in word:
                     ip = word.split('=')[1]
                     string = f"{ip} {internal_prefix}.{region}.{domain}"
@@ -176,7 +175,8 @@ def write_file(path_to_file, strings):
         control_entries = [s for s in strings if 'ctrl-' in s]
         network_entries = [s for s in strings if 'net-' in s]
         compute_entries = [s for s in strings if 'comp-' in s]
-        other_entries = [s for s in strings if not any(x in s for x in ['ctrl-', 'net-', 'comp-'])]
+        lcm_entries = [s for s in strings if 'lcm-' in s]
+        other_entries = [s for s in strings if not any(x in s for x in ['ctrl-', 'net-', 'comp-', 'lcm-'])]
 
         # Write group entries with separation
         if control_entries:
@@ -197,33 +197,47 @@ def write_file(path_to_file, strings):
                 file.write(entry + "\n")
             file.write("\n")
 
+        if lcm_entries:
+            file.write("# LCM nodes\n")
+            for entry in lcm_entries:
+                file.write(entry + "\n")
+            file.write("\n")
+
         # Then write variable-based entries (only non-duplicates)
         file.write("# Additional entries from variables\n")
-        written_entries = set(strings)  # Track already written entries
+        written_ips = set()
+
+        # Track IPs from group entries to avoid duplicates
+        for entry in strings:
+            ip = entry.split()[0]
+            written_ips.add(ip)
 
         for line in hosts_string:
-            # Skip entries that are already in group-based output
-            skip_entry = False
-            for written_entry in written_entries:
-                if line.split()[0] == written_entry.split()[0]:  # Compare by IP
-                    skip_entry = True
-                    break
+            line_ip = line.split()[0]
 
-            if not skip_entry:
-                last_word = line.split()[-1]
-                is_node_string = re.search(node_pattern, last_word)
-                if is_node_string:
-                    is_lcm_node = re.search(lcm_pattern, last_word)
-                    if is_lcm_node:
-                        # Extract simple hostname for LCM node
-                        short_name = f"{last_word.split('-')[-2]}-{last_word.split('-')[-1]}"
-                        file.write(line + f" {short_name}\n")
-                    else:
-                        # Extract simple hostname for other nodes
-                        short_name = f"{last_word.split('-')[-2]}-{last_word.split('-')[-1]}"
-                        file.write(line + f" {short_name}\n")
+            # Skip entries that are already in group-based output
+            if line_ip in written_ips:
+                print(f"Skipping duplicate entry: {line}")
+                continue
+
+            last_word = line.split()[-1]
+            is_node_string = re.search(node_pattern, last_word)
+
+            if is_node_string:
+                is_lcm_node = re.search(lcm_pattern, last_word)
+                if is_lcm_node:
+                    # Extract simple hostname for LCM node and add service names
+                    short_name = f"{last_word.split('-')[-2]}-{last_word.split('-')[-1]}"
+                    file.write(
+                        line + f" {short_name} lcm-nexus.{region}.{domain} netbox.{region}.{domain} {gitlab_short_name}.{region}.{domain} vault.{region}.{domain}\n")
                 else:
-                    file.write(line + "\n")
+                    # Extract simple hostname for other nodes
+                    short_name = f"{last_word.split('-')[-2]}-{last_word.split('-')[-1]}"
+                    file.write(line + f" {short_name}\n")
+            else:
+                file.write(line + "\n")
+
+            written_ips.add(line_ip)
 
 
 # Main execution logic
