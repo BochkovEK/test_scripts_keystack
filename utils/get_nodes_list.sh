@@ -28,6 +28,7 @@ normal=$(tput sgr0)
 yellow=$(tput setaf 3)
 
 [[ -z $NODES_TYPE ]] && NODES_TYPE="all"
+[[ -z $NODES_NAME ]] && NODES_NAME=""
 [[ -z $PING ]] && PING="false"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $TS_HOSTS_PATH ]] && TS_HOSTS_PATH=$default_hosts_path
@@ -66,6 +67,11 @@ while [ -n "$1" ]; do
     -nt|-type_of_nodes) NODES_TYPE=$2
       [ "$TS_DEBUG" = true ] && echo -e "
       Found the -type_of_nodes with parameter value $NODES_TYPE
+      "
+      shift ;;
+    -nn|-nodes_name) NODES_NAME=$2
+      [ "$TS_DEBUG" = true ] && echo -e "
+      Found the -nodes_name with parameter value $NODES_NAME
       "
       shift ;;
     -h|-hosts_path) TS_HOSTS_PATH=$2
@@ -117,20 +123,7 @@ find_in_hosts_file() {
     grep -w "$hostname" "$TS_HOSTS_PATH" | awk '{print $1}' | head -n1
 }
 
-# Main function to parse hosts and resolve to IP
-parse_hosts() {
-    [ "$TS_DEBUG" = true ] && echo "Parsing $TS_HOSTS_PATH for pattern: $nodes_to_find"
-
-    # Populate NODES array if empty
-    if [ ${#NODES[@]} -eq 0 ]; then
-        while read -r line; do
-            NODES+=("$line")
-        done < <(grep -E "$nodes_to_find" "$TS_HOSTS_PATH" | awk '{print $2}')
-    fi
-
-    # Debug output
-    [ "$TS_DEBUG" = true ] && printf "NODES: %s\n" "${NODES[*]}"
-
+resolve_hostname_to_ips () {
     # Resolve hostnames to IPs
     for i in "${!NODES[@]}"; do
         local host="${NODES[$i]}"
@@ -147,6 +140,23 @@ parse_hosts() {
             NODES[$i]="unresolved:$host"
         fi
     done
+}
+
+# Main function to parse hosts and resolve to IP
+parse_hosts() {
+    [ "$TS_DEBUG" = true ] && echo "Parsing $TS_HOSTS_PATH for pattern: $nodes_to_find"
+
+    # Populate NODES array if empty
+    if [ ${#NODES[@]} -eq 0 ]; then
+        while read -r line; do
+            NODES+=("$line")
+        done < <(grep -E "$nodes_to_find" "$TS_HOSTS_PATH" | awk '{print $2}')
+    fi
+
+    # Debug output
+    [ "$TS_DEBUG" = true ] && printf "NODES: %s\n" "${NODES[*]}"
+
+    resolve_hostname_to_ips
 
     echo "${NODES[*]}"
 
@@ -241,6 +251,13 @@ nodes_to_find: $nodes_to_find
 
 
 check_and_source_openrc_file
+if [ -n "$NODES_NAME" ]; then
+  for hostname in $NODES_NAME; do
+    NODES+=("$hosname")
+  done
+  resolve_hostname_to_ips
+  exit 0
+fi
 define_node_type $NODES_TYPE
 #node_type_func
 #check_openstack_cli
