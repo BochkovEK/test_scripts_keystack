@@ -121,7 +121,6 @@ find_in_hosts_file() {
     local hostname=$1
 #    echo $TS_HOSTS_PATH
     [ -f "$TS_HOSTS_PATH" ] || { echo "file $TS_HOSTS_PATH does not exist"; return 1; }
-#    echo "bar"
     grep -w "$hostname" "$TS_HOSTS_PATH" | awk '{print $1}' | head -n1
 }
 
@@ -134,8 +133,6 @@ resolve_hostname_to_ips () {
         local ip=$(dig +short "$host" 2>/dev/null | head -n1)
 
         if [ -z "$ip" ]; then
-#            echo "dig dont do that"
-#            find_in_hosts_file "$host"
             ip=$(find_in_hosts_file "$host")
         fi
 
@@ -264,12 +261,9 @@ if [ -n "$NODES_NAME" ]; then
   echo "NODE_NAME: $NODES_NAME"
   NODES=($NODES_NAME)
   resolve_hostname_to_ips
-  echo "${NODES[@]}"
   exit 0
 fi
 define_node_type $NODES_TYPE
-#node_type_func
-#check_openstack_cli
 
 
 
