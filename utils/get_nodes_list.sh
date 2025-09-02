@@ -129,17 +129,18 @@ resolve_hostname_to_ips () {
     # Resolve hostnames to IPs
     echo "${NODES[*]}"
     for i in "${!NODES[@]}"; do
-        echo "i: $i"
+#        echo "i: $i"
         local host="${NODES[$i]}"
         local ip=$(dig +short "$host" 2>/dev/null | head -n1)
 
         if [ -z "$ip" ]; then
-            echo "dig dont do that"
+#            echo "dig dont do that"
 #            find_in_hosts_file "$host"
             ip=$(find_in_hosts_file "$host")
         fi
 
         if [ -n "$ip" ]; then
+            echo "baz"
             NODES[$i]="$ip"
         else
             echo "Warning: failed to resolve $host"
@@ -147,6 +148,7 @@ resolve_hostname_to_ips () {
             NODES[$i]="unresolved:$host"
         fi
     done
+    echo "${NODES[@]}"
 }
 
 # Main function to parse hosts and resolve to IP
