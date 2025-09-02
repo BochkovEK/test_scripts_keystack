@@ -142,6 +142,7 @@ check_connection () {
 }
 
 start_commands_on_nodes () {
+#  echo "Start command on nodes..."
   if [ "$TS_DEBUG" = true ]; then
     echo -e "
   [DEBUG]
@@ -156,7 +157,7 @@ start_commands_on_nodes () {
     error_output
     exit 1
   fi
-  for host in "${NODES[@]}"; do
+  for node_pair in "${NODES[@]}"; do
     # Split the string into name and IP using ':' as delimiter
     node_name="${node_pair%%:*}"  # get the part before the first ':'
     node_ip="${node_pair#*:}"     # get the part after the first ':'
