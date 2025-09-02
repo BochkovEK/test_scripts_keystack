@@ -256,12 +256,13 @@ nodes_to_find: $nodes_to_find
 check_and_source_openrc_file
 if [ -n "$NODES_NAME" ]; then
   echo "NODE_NAME: $NODES_NAME"
-  NODES=()
-  for hostname in $NODES_NAME; do
-    echo "hostname: $hostname"
-    NODES+=("$hosname")
-    echo "${NODES[*]}"
-  done
+  NODES=($NODES_NAME)
+#  NODES=()
+#  for hostname in $NODES_NAME; do
+#    echo "hostname: $hostname"
+#    NODES+=("$hosname")
+#    echo "${NODES[@]}"
+#  done
   resolve_hostname_to_ips
   exit 0
 fi
