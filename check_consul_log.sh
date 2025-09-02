@@ -204,7 +204,7 @@ Check_and_source_openrc_file
 #    nova_state_list=$(openstack compute service list)
 #    ctrl_nodes_list=$(echo "$nova_state_list" | grep -E "nova-scheduler" | awk '{print $6}')
     ctrl_nodes_list=$(get_nodes_list nt ctrl)
-    echo foo
+#    echo foo
     echo $ctrl_nodes_list
     if [ -z "${ctrl_nodes_list}" ]; then
       echo -e "${yallow}Failed to determine node control list${normal}"
@@ -225,7 +225,7 @@ Check_and_source_openrc_file
 #   first_ctrl_node=${nova_ctrl_arr[0]}
       node_name="${ctrl%%:*}"  # get the part before the first ':'
       node_ip="${ctrl#*:}"     # get the part after the first ':'
-      leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no $SSH_USER@$node_ip "$DOCKER_ENGINE exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
+      leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no $SSH_USER@$node_ip "sudo $DOCKER_ENGINE exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
       if [ -n "${leader_ctrl_node}" ]; then
         NODE_NAME=$leader_ctrl_node
         echo "Leader consul node is $NODE_NAME"
