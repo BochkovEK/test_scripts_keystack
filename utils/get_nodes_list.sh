@@ -135,7 +135,8 @@ resolve_hostname_to_ips () {
 
         if [ -z "$ip" ]; then
             echo "dig dont do that"
-            ip=$(find_in_hosts_file "$host")
+            find_in_hosts_file "$host"
+#            ip=$(find_in_hosts_file "$host")
         fi
 
         if [ -n "$ip" ]; then
