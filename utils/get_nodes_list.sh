@@ -119,8 +119,7 @@ check_and_source_openrc_file () {
 # Function to find IP in hosts file
 find_in_hosts_file() {
     local hostname=$1
-    [ -f "$TS_HOSTS_PATH" ] || echo baz
-    #return 1
+    [ -f "$TS_HOSTS_PATH" ] || { echo "file $TS_HOSTS_PATH does not exist"; return 1; }
     echo "bar"
     grep -w "$hostname" "$TS_HOSTS_PATH" | awk '{print $1}' | head -n1
 }
