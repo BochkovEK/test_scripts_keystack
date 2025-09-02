@@ -260,7 +260,7 @@ if [ -n "$NODES_NAME" ]; then
   echo "NODE_NAME: $NODES_NAME"
 #  NODES=("${NODES_NAME}")
 #  NODES=($NODES_NAME)
-  NODES=("${NODES_NAME[@]}")
+  NODES=("${NODES_NAME[*]}")
   resolve_hostname_to_ips
   exit 0
 fi
