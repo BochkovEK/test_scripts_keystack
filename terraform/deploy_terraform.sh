@@ -79,7 +79,7 @@ install_terraform () {
 "
   if [ "$yes_no_input" = "true" ]; then
     if [ ! -f $script_dir/$terraform_binary_name ]; then
-      curl -o $script_dir/ $repo/$terraform_binary_name
+      curl -o $script_dir/terraform $repo/$terraform_binary_name
     fi
     chmod 777 $script_dir/$terraform_binary_name
 #    mv $script_dir/$terraform_binary_name /usr/local/bin/terraform
@@ -194,7 +194,7 @@ for image_name in "${public_images_list[@]}"; do
   image_source=$(echo "${image_name%/*}")
 #  echo $image_source $image_name_cut
 #  exit 1
-  export IMAGE_SOURCE=$image_source/
+  export IMAGE_SOURCE=$image_source
   if ! bash $utils_dir/openstack/create_image.sh $image_name_cut; then
     exit 1
   fi
