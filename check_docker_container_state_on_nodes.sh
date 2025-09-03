@@ -360,6 +360,7 @@ for node_pair in ${NODES}; do
         "
 
     is_ctrl=$(get_nodes_list "return_type" "$node_name")
+    echo "is_ctrl: $is_ctrl"
     [ "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]:
   \"\$is_ctrl\": $is_ctrl\n
