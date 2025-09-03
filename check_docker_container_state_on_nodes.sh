@@ -228,6 +228,7 @@ check_required_container () {
 
 get_nodes_list () {
 #  [ "$TS_DEBUG" = true ] && echo -e "get_nodes_list starting..."
+  NODES=()
   nodes=$(bash $utils_dir/$get_nodes_list_script "-$1" "$2")
 #  if [ -z "${NODES[*]}" ]; then
 #    echo in get_nodes_list 1
