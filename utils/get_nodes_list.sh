@@ -32,6 +32,7 @@ normal=$(tput sgr0)
 [[ -z $PING ]] && PING="false"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $TS_HOSTS_PATH ]] && TS_HOSTS_PATH=$default_hosts_path
+[[ -z $RETURN_TYPE ]] && RETURN_TYPE="false"
 #[[ -z $WITHOUT_NETWORK_NODES ]] && WITHOUT_NETWORK_NODES="false"
 
 #======================
@@ -49,6 +50,7 @@ while [ -n "$1" ]; do
 
       -nt,  -type_of_nodes          <type_of_nodes> 'ctrl', 'comp', 'net', 'all', 'all_without_network\awn'
       -h,   -hosts_path             <path_to_hosts_file>
+      -return_type                  <node_name> output node type
       -debug                        debug mode (without parameter)
 "
 #      -wnn, -without_network_nodes  if the region does not have a network node (without parameter)
@@ -72,6 +74,11 @@ while [ -n "$1" ]; do
     -nn|-nodes_name) NODES_NAME=$2
       [ "$TS_DEBUG" = true ] && echo -e "
       Found the -nodes_name with parameter value $NODES_NAME
+      "
+      shift ;;
+    -return_type) RETURN_TYPE=true
+      [ "$TS_DEBUG" = true ] && echo -e "
+      Found the -return_type with parameter value $RETURN_TYPE
       "
       shift ;;
     -h|-hosts_path) TS_HOSTS_PATH=$2
@@ -254,6 +261,29 @@ nodes_to_find: $nodes_to_find
   esac
 }
 
+return_type () {
+  nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
+#  grep -w "$hostname" "$TS_HOSTS_PATH"
+  node_type=$(grep -i "$nodes_to_find" "$TS_HOSTS_PATH")
+
+  case "$node_type" in
+    *$ctrl_pattern*)
+        echo "ctrl"
+        ;;
+    *$comp_pattern*)
+        echo "comp"
+        ;;
+    *$net_pattern*)
+        echo "net"
+        ;;
+    *)
+        echo ""
+        ;;
+  esac
+  exit 0
+}
+
+[ "$RETURN_TYPE" = true ] && return_type
 
 #check_and_source_openrc_file
 if [ -n "$NODES_NAME" ]; then

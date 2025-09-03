@@ -352,14 +352,14 @@ for node_pair in ${NODES}; do
         -e 's/\(.*restarting.*\)/\o033[31m\1\o033[39m/'
         "
 
-    is_ctrl=$(echo $node_name|grep ctrl)
+    is_ctrl=$(get_nodes_list return_type $node_name)
     if [ -n "$is_ctrl" ]; then
       if [ -z $CONTAINER_NAME ]; then
         required_containers_list=( "${ctrl_required_container_list[@]}" )
         check_required_container $node_ip
       fi
     fi
-    is_comp=$(echo $node_name|grep -E "comp|cmpt")
+    is_comp=$(get_nodes_list return_type $node_name)
     if [ -n "$is_comp" ]; then
       if [ -z $CONTAINER_NAME ]; then
         required_containers_list=( "${comp_required_container_list[@]}" )
