@@ -268,6 +268,9 @@ return_type () {
 return_type running...
 "
   node_type=$(grep -i "$RETURN_TYPE_NODE_NAME" "$TS_HOSTS_PATH")
+    [ "$TS_DEBUG" = true ] && echo -e "
+node_type: $node_type
+"
 
   case "$node_type" in
     *$ctrl_pattern*)
