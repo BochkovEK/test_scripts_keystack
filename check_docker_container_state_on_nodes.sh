@@ -353,14 +353,14 @@ for node_pair in ${NODES}; do
         "
 
     is_ctrl=$(get_nodes_list return_type $node_name)
-    if [ -n "$is_ctrl" ]; then
+    if [ "$is_ctrl" = "ctrl" ]; then
       if [ -z $CONTAINER_NAME ]; then
         required_containers_list=( "${ctrl_required_container_list[@]}" )
         check_required_container $node_ip
       fi
     fi
     is_comp=$(get_nodes_list return_type $node_name)
-    if [ -n "$is_comp" ]; then
+    if [ "$is_comp" = "comp" ]; then
       if [ -z $CONTAINER_NAME ]; then
         required_containers_list=( "${comp_required_container_list[@]}" )
         check_required_container $node_ip
