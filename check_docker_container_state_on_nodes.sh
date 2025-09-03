@@ -234,8 +234,8 @@ get_nodes_list () {
 #  node=$(cat /etc/hosts | grep -m 1 -E ${nodes_pattern} | awk '{print $2}')
   [ "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]:
-  command: nodes=\$(bash $utils_dir/$get_nodes_list_script \"-$1\" \"$2\"\)
-  \"\$node\": $node\n
+  command: nodes=\$(bash $utils_dir/$get_nodes_list_script \"-$1\" \"$2\")
+  \"\$nodes\": $nodes\n
   "
   for node in $nodes; do NODES+=("$node"); done
   [ "$TS_DEBUG" = true ] && echo -e "
