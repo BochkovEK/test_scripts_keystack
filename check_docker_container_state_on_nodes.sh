@@ -336,7 +336,7 @@ for node_pair in ${NODES}; do
     if [ "$DOCKER_ENGINE" = "podman" ]; then
       format=" --format 'table {{.ID}}\t{{.Image}}\t{{.Names}}\t{{.Created}}]\t{{.Status}}'"
     fi
-    ssh -o StrictHostKeyChecking=no $SSH_USER@$node_ip "sudo $DOCKER_ENGINE ps -a '$format' \
+    ssh -o StrictHostKeyChecking=no $SSH_USER@$node_ip "sudo $DOCKER_ENGINE ps -a $format \
       |sed --unbuffered \
         -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
         -e 's/\(.*Exited.*\)/\o033[31m\1\o033[39m/' \
