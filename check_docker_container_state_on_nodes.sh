@@ -334,7 +334,7 @@ for node_pair in ${NODES}; do
     node_name="${node_pair%%:*}"  # get the part before the first ':'
     node_ip="${node_pair#*:}"     # get the part after the first ':'
     if [ "$DOCKER_ENGINE" = "podman" ]; then
-      format=" --format 'table {{.ID}}\t{{.Image}}\t{{.Names}}\t{{.Created}}]\t{{.Status}}'"
+      format=" --format 'table {{.ID}}\t{{.Image}}\t{{.Created}}\t{{.Status}}\t{{.Names}}'"
     fi
     ssh -o StrictHostKeyChecking=no $SSH_USER@$node_ip "sudo $DOCKER_ENGINE ps -a $format \
       |sed --unbuffered \
