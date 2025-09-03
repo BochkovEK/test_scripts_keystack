@@ -357,7 +357,9 @@ for node_pair in ${NODES}; do
 
     is_ctrl=$(get_nodes_list return_type $node_name)
     [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]: \"\$is_ctrl\": $is_ctrl\n
+  [DEBUG]:
+  \"\$is_ctrl\": $is_ctrl\n
+  \"\$node_name\": $node_name
   "
     if [ "$is_ctrl" = "ctrl" ]; then
       if [ -z $CONTAINER_NAME ]; then
