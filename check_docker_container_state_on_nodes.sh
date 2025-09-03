@@ -239,7 +239,9 @@ get_nodes_list () {
   "
   for node in $nodes; do NODES+=("$node"); done
   [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]: \"\$NODES\": ${NODES[*]}
+  [DEBUG]:
+  in get_nodes_list:
+  \"\$NODES\": ${NODES[*]}
   "
   echo -e "${NODES[*]}"
 
