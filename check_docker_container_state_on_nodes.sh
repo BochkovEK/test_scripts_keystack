@@ -227,12 +227,15 @@ check_required_container () {
 #}
 
 get_nodes_list () {
+  [ "$TS_DEBUG" = true ] && echo -e "get_nodes_list starting..."
   if [ -z "${NODES[*]}" ]; then
     nodes=$(bash $utils_dir/$get_nodes_list_script "-$1" "$2")
   fi
 #  node=$(cat /etc/hosts | grep -m 1 -E ${nodes_pattern} | awk '{print $2}')
   [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]: \"\$node\": $node\n
+  [DEBUG]:
+  command: nodes=\$(bash $utils_dir/$get_nodes_list_script \"-$1\" \"$2\"\)
+  \"\$node\": $node\n
   "
   for node in $nodes; do NODES+=("$node"); done
   [ "$TS_DEBUG" = true ] && echo -e "
