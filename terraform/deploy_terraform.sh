@@ -81,7 +81,7 @@ install_terraform () {
     if [ ! -f $script_dir/$terraform_binary_name ]; then
       curl -o $script_dir/terraform $repo/$terraform_binary_name
     fi
-    chmod 777 $script_dir/$terraform_binary_name
+    chmod 777 $script_dir/terraform
 #    mv $script_dir/$terraform_binary_name /usr/local/bin/terraform
 
     cat <<-EOF > ~/.terraformrc
