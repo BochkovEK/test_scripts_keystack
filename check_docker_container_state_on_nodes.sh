@@ -359,7 +359,7 @@ for node_pair in ${NODES}; do
         -e 's/\(.*restarting.*\)/\o033[31m\1\o033[39m/'
         "
 
-    is_ctrl=$(get_nodes_list "return_type" "$node_name")
+    is_ctrl=$(get_nodes_list return_type "$node_name")
     echo "is_ctrl: $is_ctrl"
     [ "$TS_DEBUG" = true ] && echo -e "
   [DEBUG]:
