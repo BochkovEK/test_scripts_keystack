@@ -1,6 +1,9 @@
 # Create VMs by config in module folder
 # Config name <name>.auto.tfvars
 # Config-json like this:
+
+terraform plan -var-file ubuntu_vm.auto.tfavrs -out=plan.tfplan
+terraform apply "plan.tfplan"
 #==============================================
 
 #variable list:
