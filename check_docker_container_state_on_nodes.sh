@@ -227,24 +227,25 @@ check_required_container () {
 #}
 
 get_nodes_list () {
-  [ "$TS_DEBUG" = true ] && echo -e "get_nodes_list starting..."
+#  [ "$TS_DEBUG" = true ] && echo -e "get_nodes_list starting..."
   nodes=$(bash $utils_dir/$get_nodes_list_script "-$1" "$2")
 #  if [ -z "${NODES[*]}" ]; then
 #    echo in get_nodes_list 1
 #    echo $nodes
 #  fi
 #  node=$(cat /etc/hosts | grep -m 1 -E ${nodes_pattern} | awk '{print $2}')
-  [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]:
-  command: nodes=\$(bash $utils_dir/$get_nodes_list_script \"-$1\" \"$2\")
-  \"\$nodes\": $nodes\n
-  "
+
+#  [ "$TS_DEBUG" = true ] && echo -e "
+#  [DEBUG]:
+#  command: nodes=\$(bash $utils_dir/$get_nodes_list_script \"-$1\" \"$2\")
+#  \"\$nodes\": $nodes\n
+#  "
   for node in $nodes; do NODES+=("$node"); done
-  [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]:
-  in get_nodes_list:
-  \"\$NODES\": ${NODES[*]}
-  "
+#  [ "$TS_DEBUG" = true ] && echo -e "
+#  [DEBUG]:
+#  in get_nodes_list:
+#  \"\$NODES\": ${NODES[*]}
+#  "
   echo -e "${NODES[*]}"
 
   if [ -z "${NODES[*]}" ]; then
