@@ -129,8 +129,8 @@ create_image () {
       echo -e "${yellow}Image $IMAGE does not created${normal}"
       exit 0
     else
+      mkdir -p $IMAGE_DIR
       if [ -f $script_dir/"$IMAGE" ]; then
-        mkdir -p $IMAGE_DIR
         cp $script_dir/"$IMAGE" $IMAGE_DIR/$IMAGE
       fi
       if [ -f $IMAGE_DIR/"$IMAGE" ]; then
