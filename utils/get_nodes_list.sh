@@ -273,13 +273,13 @@ node_type: $node_type
 "
 
   case "$node_type" in
-    *$ctrl_pattern*)
+    *ctrl*)
         echo "ctrl"
         ;;
-    *$comp_pattern*)
+    *comp*)
         echo "comp"
         ;;
-    *$net_pattern*)
+    *net*)
         echo "net"
         ;;
     *)
