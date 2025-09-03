@@ -264,6 +264,9 @@ nodes_to_find: $nodes_to_find
 return_type () {
 #  nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
 #  grep -w "$hostname" "$TS_HOSTS_PATH"
+  [ "$TS_DEBUG" = true ] && echo -e "
+return_type running...
+"
   node_type=$(grep -i "$RETURN_TYPE_NODE_NAME" "$TS_HOSTS_PATH")
 
   case "$node_type" in
