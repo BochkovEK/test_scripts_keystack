@@ -79,7 +79,7 @@ install_terraform () {
 "
   if [ "$yes_no_input" = "true" ]; then
     if [ ! -f $script_dir/$terraform_binary_name ]; then
-      wget $repo/$terraform_binary_name -P $script_dir/
+      curl -o $script_dir/ $repo/$terraform_binary_name
     fi
     chmod 777 $script_dir/$terraform_binary_name
 #    mv $script_dir/$terraform_binary_name /usr/local/bin/terraform

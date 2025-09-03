@@ -152,12 +152,13 @@ create_image () {
             error_message="Image $IMAGE does not created"
             error_output
           else
-            if ! bash $utils_dir/$install_package_script wget; then
-              error_message="Image $IMAGE does not created"
-              error_output
-            else
-              wget $IMAGE_SOURCE$IMAGE -P $IMAGE_DIR/
-            fi
+            curl -o $IMAGE_DIR/ $IMAGE_SOURCE$IMAGE
+#            if ! bash $utils_dir/$install_package_script wget; then
+#              error_message="Image $IMAGE does not created"
+#              error_output
+#            else
+#              wget  -P $IMAGE_DIR/
+#            fi
           fi
         fi
       fi
