@@ -353,6 +353,9 @@ for node_pair in ${NODES}; do
         "
 
     is_ctrl=$(get_nodes_list return_type $node_name)
+    [ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]: \"\$is_ctrl\": $is_ctrl\n
+  "
     if [ "$is_ctrl" = "ctrl" ]; then
       if [ -z $CONTAINER_NAME ]; then
         required_containers_list=( "${ctrl_required_container_list[@]}" )
@@ -360,6 +363,9 @@ for node_pair in ${NODES}; do
       fi
     fi
     is_comp=$(get_nodes_list return_type $node_name)
+    [ "$TS_DEBUG" = true ] && echo -e "
+  [DEBUG]: \"\$is_comp\": $is_comp\n
+  "
     if [ "$is_comp" = "comp" ]; then
       if [ -z $CONTAINER_NAME ]; then
         required_containers_list=( "${comp_required_container_list[@]}" )
