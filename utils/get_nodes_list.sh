@@ -32,7 +32,7 @@ normal=$(tput sgr0)
 [[ -z $PING ]] && PING="false"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $TS_HOSTS_PATH ]] && TS_HOSTS_PATH=$default_hosts_path
-[[ -z $RETURN_TYPE ]] && RETURN_TYPE="false"
+[[ -z $RETURN_TYPE_NODE_NAME ]] && RETURN_TYPE_NODE_NAME=""
 #[[ -z $WITHOUT_NETWORK_NODES ]] && WITHOUT_NETWORK_NODES="false"
 
 #======================
@@ -76,7 +76,7 @@ while [ -n "$1" ]; do
       Found the -nodes_name with parameter value $NODES_NAME
       "
       shift ;;
-    -return_type) RETURN_TYPE=true
+    -return_type) RETURN_TYPE_NODE_NAME=$2
       [ "$TS_DEBUG" = true ] && echo -e "
       Found the -return_type with parameter value $RETURN_TYPE
       "
@@ -262,9 +262,9 @@ nodes_to_find: $nodes_to_find
 }
 
 return_type () {
-  nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
+#  nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
 #  grep -w "$hostname" "$TS_HOSTS_PATH"
-  node_type=$(grep -i "$nodes_to_find" "$TS_HOSTS_PATH")
+  node_type=$(grep -i "$RETURN_TYPE_NODE_NAME" "$TS_HOSTS_PATH")
 
   case "$node_type" in
     *$ctrl_pattern*)
@@ -283,7 +283,7 @@ return_type () {
   exit 0
 }
 
-[ "$RETURN_TYPE" = true ] && return_type
+[ -n "$RETURN_TYPE" ] && return_type
 
 #check_and_source_openrc_file
 if [ -n "$NODES_NAME" ]; then
