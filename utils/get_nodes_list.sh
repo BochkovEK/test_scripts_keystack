@@ -78,7 +78,7 @@ while [ -n "$1" ]; do
       shift ;;
     -return_type) RETURN_TYPE_NODE_NAME=$2
       [ "$TS_DEBUG" = true ] && echo -e "
-      Found the -return_type with parameter value $RETURN_TYPE
+      Found the -return_type with parameter value $RETURN_TYPE_NODE_NAME
       "
       shift ;;
     -h|-hosts_path) TS_HOSTS_PATH=$2
@@ -286,7 +286,7 @@ return_type running...
   exit 0
 }
 
-[ -n "$RETURN_TYPE" ] && return_type
+[ -n "$RETURN_TYPE_NODE_NAME" ] && return_type
 
 #check_and_source_openrc_file
 if [ -n "$NODES_NAME" ]; then
