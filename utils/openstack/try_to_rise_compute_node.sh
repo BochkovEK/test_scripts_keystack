@@ -147,6 +147,7 @@ try_to_disable_MM () {
     curl -i \
         -H "X-Auth-Token: $TOKEN" \
         -X GET "$internal_FQDN":12999/api/"$OS_REGION_NAME"/hypervisors
+    echo
 }
 
 # Get ssh user
