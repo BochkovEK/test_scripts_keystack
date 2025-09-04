@@ -132,7 +132,7 @@ done
 
 # Function to display error messages and exit
 error_output() {
-    echo "${yellow}Command not executed on $NODES_TYPE nodes${normal}"
+    echo "${blue}Command not executed on $NODES_TYPE nodes${normal}"
     echo "${red}$error_message - error${normal}"
     exit 1
 }
@@ -155,9 +155,11 @@ start_commands_on_nodes() {
     [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG] Nodes list:"
 
-    for host in "${NODES[@]}"; do
-        [ "$TS_DEBUG" = true ] && echo "$host"
-    done
+    if [ "$TS_DEBUG" = true ]; then
+        for host in "${NODES[@]}"; do
+            echo "$host"
+        done
+    fi
 
     # Validate nodes list
     if [ ${#NODES[@]} -eq 0 ]; then
