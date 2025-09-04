@@ -120,34 +120,14 @@ try_to_disable_MM () {
     internal_FQDN=${OS_AUTH_URL/:5000}
     echo "$internal_FQDN"
 
-    TOKEN=$(curl -v -X POST "$OS_AUTH_URL"/v3/auth/tokens \
-        -H "Content-Type: application/json" \
+    TOKEN=$(curl -s -H "Content-Type: application/json" -H 'accept: application/json' -X POST $internal_FQDN:13000/login \
         -d '{
-          "auth": {
-            "identity": {
-              "methods": ["password"],
-              "password": {
-                "user": {
-                  "domain": {
-                    "name": "'"$OS_USER_DOMAIN_NAME"'"
-                  },
-                  "name": "'"$OS_USERNAME"'",
-                  "password": "'"$OS_PASSWORD"'"
-                }
-              }
-            },
-            "scope": {
-              "project": {
-                "domain": {
-                  "name": "'"$OS_PROJECT_DOMAIN_NAME"'"
-                },
-                "name": "'"$OS_PROJECT_NAME"'"
-              }
-            }
-          }
-        }' 2>&1 | grep x-subject-token | awk '{print $3}')
-
-    echo "$TOKEN"
+              "login": "'"$OS_USERNAME"'",
+                "password": "'"$OS_PASSWORD"'",
+                "user_domain_name": "'"$OS_USER_DOMAIN_NAME"'",
+                "project_name": "'"$OS_PROJECT_NAME"'",
+                "project_domain_name": "'"$OS_PROJECT_DOMAIN_NAME"'"
+            }'| python3 -c "import sys, json; print(json.load(sys.stdin)['X-Auth-Token'])"); echo "$TOKEN"
 
     [ "$TS_DEBUG" = true ] && echo "
     [DEBUG]
@@ -168,6 +148,7 @@ try_to_disable_MM () {
         -X GET "$internal_FQDN":12999/api/"$OS_REGION_NAME"/hypervisors
 }
 
+# Get ssh user
 get_ssh_user () {
     # Determine SSH user
     if [[ -z "$SSH_USER" ]]; then
