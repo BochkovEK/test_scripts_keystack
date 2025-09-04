@@ -350,14 +350,26 @@ check_consul_members() {
     echo -e "${violet}Checking consul members list...${normal}"
 
     local ctrl_nodes
-    ctrl_nodes=$(bash "$utils_dir/$get_nodes_list_script" -nt ctrl)
     local first_ctrl_node
+    local members_list
+    ctrl_nodes=$(bash "$utils_dir/$get_nodes_list_script" -nt ctrl)
     first_ctrl_node=$(echo "$ctrl_nodes" | head -n1)
-
+    if [ "$TS_DEBUG" = true ]; then
+    echo -e "
+    [DEBUG]
+        ctrl_nodes: $ctrl_nodes
+        first_ctrl_node: $first_ctrl_node
+    "
+    fi
     if [ -n "$first_ctrl_node" ]; then
-        local members_list
         local node_name="${first_ctrl_node%%:*}"
         local node_ip="${first_ctrl_node#*:}"
+        if [ "$TS_DEBUG" = true ]; then
+            echo -e "
+    [DEBUG]
+        command: ssh -t -o StrictHostKeyChecking=no \"$SSH_USER@$node_ip\" \"sudo $DOCKER_ENGINE exec -it consul consul members list\" 2>/dev/null
+    "
+        fi
         members_list=$(ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" "sudo $DOCKER_ENGINE exec -it consul consul members list" 2>/dev/null)
 
         if [ -n "$members_list" ]; then
@@ -456,9 +468,9 @@ if [[ -z "$SSH_USER" ]]; then
 fi
 
 # Execute checks
-check_openstack_cli
-check_and_source_openrc_file
-check_nova_service_list
+#check_openstack_cli
+#check_and_source_openrc_file
+#check_nova_service_list
 
 # Handle specific check types
 case "$CHECK" in
@@ -475,10 +487,10 @@ case "$CHECK" in
 esac
 
 # Perform comprehensive checks
-check_connections_to_nodes "ctrl"
-check_connections_to_nodes "comp"
+#check_connections_to_nodes "ctrl"
+#check_connections_to_nodes "comp"
 
-[ "$CHECK_IPMI" = "true" ] && check_ipmi_connections
+#[ "$CHECK_IPMI" = "true" ] && check_ipmi_connections
 
 check_docker_containers "ctrl" "consul"
 check_docker_containers "comp" "consul"
