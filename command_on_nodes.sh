@@ -216,71 +216,21 @@ check_ping() {
     fi
 }
 
-# Function to get nodes list from external script
-#get_nodes_list() {
-#    [ "$TS_DEBUG" = true ] && echo -e "
-#    [DEBUG] Getting nodes list:
-#      Current NODES: ${NODES[*]}
-#    "
-#
-#    # Get nodes list if not already provided
-#    if [ -z "${NODES[*]}" ]; then
-#        local nodes
-#        if [ -n "$NODES_NAME" ]; then
-#            nodes=$(bash "$utils_dir/$get_nodes_list_script" -nt "$NODES_TYPE" -nn "$NODES_NAME")
-#        else
-#            nodes=$(bash "$utils_dir/$get_nodes_list_script" -nt "$NODES_TYPE")
-#        fi
-#
-#        # Check for errors
-#        if echo "$nodes" | grep -q "ERROR"; then
-#            exit 1
-#        else
-#            # Add nodes to array
-#            for node in $nodes; do
-#                NODES+=("$node")
-#            done
-#        fi
-#    fi
-#
-#    [ "$TS_DEBUG" = true ] && echo -e "
-#    [DEBUG] Final NODES list: ${NODES[*]}
-#    "
-#
-#    # Validate nodes list
-#    if [ -z "${NODES[*]}" ]; then
-#        echo -e "${red}Failed to determine node list - ERROR${normal}"
-#        exit 1
-#    fi
-#}
-
 # Function to get nodes list using external script
 get_nodes_list() {
-    local param_type="$1"
-    local param_value="$2"
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG]:
+        Count parameters: $#
+        Parameters: $*"
+
     local nodes_result=""
 
     [ "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG] Getting nodes with: $param_type=$param_value"
-
-    if [ "$param_type" = "return_type" ]; then
-        [ "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG] nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" -return_type \"$param_value\"\)"
-        nodes_result=$(bash "$utils_dir/$get_nodes_list_script" -return_type "$param_value")
-    else
-        if [ -n "$param_value" ]; then
-            [ "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG] nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$param_type\" \"$param_value\"\)"
-            nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$param_type" "$param_value")
-        else
-            [ "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG] nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$param_type\""
-            nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$param_type")
-        fi
-    fi
-
+    [DEBUG]:
+      nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$*\")"
+    nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
     [ "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG] Final NODES list: $nodes_result
+    [DEBUG] nodes_result: $nodes_result
     "
 
     # Check for errors in node list

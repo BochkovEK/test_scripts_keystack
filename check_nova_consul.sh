@@ -255,7 +255,7 @@ check_ipmi_connections() {
     echo "BMC_SUFFIX: $suffix"
 
     ctrl_nodes=$(get_nodes_list -nt ctrl)
-    rmi_nodes=$(get_nodes_list -nt -rmi -suffix "$suffix")
+    rmi_nodes=$(get_nodes_list -nt rmi -suffix "$suffix")
 
     for ctrl_node_pair in $ctrl_nodes; do
         ctrl_node_name="${ctrl_node_pair%%:*}"
