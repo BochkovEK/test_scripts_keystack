@@ -216,19 +216,6 @@ get_nodes_list() {
     fi
 }
 
-# Function to check connections to nodes of specific type
-check_connections_to_nodes() {
-    local node_type="$1"
-    echo -e "${violet}Checking connections to $node_type nodes...${normal}"
-
-    local nodes
-    nodes="$(get_nodes_list -nt "$node_type")"
-
-    for host in $nodes; do
-        check_connection_to_node "$host"
-    done
-}
-
 # Function to check connection to a node
 check_connection_to_node() {
     local node="$1"
@@ -238,6 +225,21 @@ check_connection_to_node() {
         echo -e "${red}No connection to $node - error!${normal}"
         echo -e "${red}Node may be powered off${normal}\n"
     fi
+}
+
+# Function to check connections to nodes of specific type
+check_connections_to_nodes() {
+    local node_type="$1"
+    echo -e "${violet}Checking connections to $node_type nodes...${normal}"
+
+    local node_pair
+    node_pair="$(get_nodes_list -nt "$node_type")"
+
+    for host in $node_pair; do
+        node_name="${node_pair%%:*}"
+        node_ip="${node_pair#*:}"
+        check_connection_to_node "$node_ip"
+    done
 }
 
 # Function to check IPMI connections
