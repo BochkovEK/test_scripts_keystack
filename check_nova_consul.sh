@@ -302,6 +302,7 @@ check_disabled_computes() {
                     export CHECK_OPENSTACK="false"
                     export COMP_NODE_NAME="$cmpt"
                     export CHECK_AFTER="false"
+                    export SSH_USER=$SSH_USER
                     [ "$TS_DEBUG" = true ] && echo -e "try check script file $openstack_utils/$try_to_rise_compute_node_script"
                     if [ -f "$openstack_utils/$try_to_rise_compute_node_script" ]; then
                         [ "$TS_DEBUG" = true ] && echo -e "$try_to_rise_compute_node_script exists - ok"
