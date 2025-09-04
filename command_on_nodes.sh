@@ -132,7 +132,7 @@ done
 
 # Function to display error messages and exit
 error_output() {
-    echo "${blue}Command not executed on $NODES_TYPE nodes${normal}"
+    echo "${yellow}Command not executed on $NODES_TYPE nodes${normal}"
     echo "${red}$error_message - error${normal}"
     exit 1
 }
@@ -152,10 +152,9 @@ check_connection() {
 
 # Function to execute commands on all nodes
 start_commands_on_nodes() {
-    [ "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG] Nodes list:"
-
     if [ "$TS_DEBUG" = true ]; then
+        echo -e "
+    [DEBUG] Nodes list:"
         for host in "${NODES[@]}"; do
             echo "$host"
         done
@@ -274,24 +273,21 @@ get_nodes_list() {
         fi
     fi
 
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] Final NODES list: $nodes_result
+    "
+
     # Check for errors in node list
-    if echo "$nodes_result" | grep -q "ERROR"; then
+    if [ -z "$nodes_result" ]; then
+        echo -e "${red}Failed to determine node list - ERROR${normal}"
+        exit 1
+    elif echo "$nodes_result" | grep -q "ERROR"; then
         echo -e "${yellow}Node names could not be determined.${normal}"
         echo -e "${yellow}Try: bash $utils_dir/$get_nodes_list_script -nt all${normal}"
         echo -e "${red}Node names could not be determined - ERROR!${normal}"
         exit 1
     else
         echo "$nodes_result"
-    fi
-
-    [ "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG] Final NODES list: $nodes_result
-    "
-
-    # Validate nodes list
-    if [ -z "$nodes_result" ]; then
-        echo -e "${red}Failed to determine node list - ERROR${normal}"
-        exit 1
     fi
 }
 
