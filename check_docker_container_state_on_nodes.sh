@@ -4,34 +4,69 @@
 # Supports Docker and Podman container engines
 
 script_dir=$(dirname "$0")
-script_name=$(basename "$0")
 utils_dir="$script_dir/utils"
 get_nodes_list_script="get_nodes_list.sh"
 default_ssh_user="root"
 default_docker_engine="docker"
+#script_name=$(basename "$0")
 
 # Colors
-red=$(tput setaf 1)
 normal=$(tput sgr0)
+blue=$(tput setaf 4)
 yellow=$(tput setaf 3)
+red=$(tput setaf 1)
 
 # Required container lists
 ctrl_required_container_list=(
-    "keystone" "keystone_ssh" "rabbitmq" "memcached" "mariadb" "redis"
-    "haproxy" "horizon" "nova_serialproxy" "nova_novncproxy" "nova_conductor"
-    "nova_api" "nova_scheduler" "placement_api" "cinder_volume" "cinder_scheduler"
-    "cinder_api" "adminui_frontend" "adminui_backend" "drs" "consul"
-    "prometheus_consul_exporter" "prometheus_blackbox_exporter" "prometheus_elasticsearch_exporter"
-    "prometheus_openstack_exporter" "prometheus_alertmanager" "prometheus_memcached_exporter"
-    "prometheus_rabbitmq_exporter" "prometheus_mysqld_exporter" "prometheus_node_exporter"
+    "keystone"
+    "keystone_ssh"
+    "rabbitmq"
+    "memcached"
+    "mariadb"
+    "redis"
+    "haproxy"
+    "horizon"
+    "nova_serialproxy"
+    "nova_novncproxy"
+    "nova_conductor"
+    "nova_api"
+    "nova_scheduler"
+    "placement_api"
+    "cinder_volume"
+    "cinder_scheduler"
+    "cinder_api"
+    "adminui_frontend"
+    "adminui_backend"
+    "drs"
+    "consul"
+    "prometheus_consul_exporter"
+    "prometheus_blackbox_exporter"
+    "prometheus_elasticsearch_exporter"
+    "prometheus_openstack_exporter"
+    "prometheus_alertmanager"
+    "prometheus_memcached_exporter"
+    "prometheus_rabbitmq_exporter"
+    "prometheus_mysqld_exporter"
+    "prometheus_node_exporter"
     "prometheus_server"
 )
 
 comp_required_container_list=(
-    "iscsid" "consul" "neutron_openvswitch_agent" "openvswitch_vswitchd" "openvswitch_db"
-    "nova_compute" "nova_libvirt" "nova_ssh" "prometheus_hypervisor_exporter"
-    "prometheus_ovs_exporter" "prometheus_libvirt_exporter" "prometheus_node_exporter"
-    "prometheus_blackbox_exporter" "cron" "fluentd"
+    "iscsid"
+    "consul"
+    "neutron_openvswitch_agent"
+    "openvswitch_vswitchd"
+    "openvswitch_db"
+    "nova_compute"
+    "nova_libvirt"
+    "nova_ssh"
+    "prometheus_hypervisor_exporter"
+    "prometheus_ovs_exporter"
+    "prometheus_libvirt_exporter"
+    "prometheus_node_exporter"
+    "prometheus_blackbox_exporter"
+    "cron"
+    "fluentd"
 )
 
 # Default values
@@ -187,7 +222,7 @@ check_container_status() {
     local node_name="$1"
     local node_ip="$2"
 
-    echo -e "${yellow}Checking containers on $node_name ($node_ip)${normal}"
+    echo -e "${blue}Checking containers on $node_name ($node_ip)${normal}"
 
     local format_option=""
     if [ "$DOCKER_ENGINE" = "podman" ]; then
