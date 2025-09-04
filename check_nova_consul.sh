@@ -289,7 +289,11 @@ check_disabled_computes() {
             for cmpt in $comp_disabled_nova_list; do
                 local response
                 response=$(yes_no_answer "Do you want to try to enable nova service on $cmpt? [Yes]: ")
-
+                [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG]:
+        cmpt: $cmpt
+        response: $response
+    "
                 if [ "$response" = "true" ]; then
                     try_to_rise="true"
 #                    export OPENRC_PATH=$OPENRC_PATH
