@@ -231,9 +231,9 @@ check_connections_to_nodes() {
     local nodes
     if [ "$TS_DEBUG" = true ]; then
       echo "node_type: $node_type"
-      get_nodes_list "-nt $node_type"
+      get_nodes_list -nt $node_type
     fi
-    nodes=$(get_nodes_list "-nt $node_type")
+    nodes=$(get_nodes_list -nt $node_type)
 
     for node_pair in $nodes; do
         check_connection_to_node "$node_pair"
