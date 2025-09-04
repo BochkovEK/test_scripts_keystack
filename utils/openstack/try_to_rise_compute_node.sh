@@ -177,7 +177,7 @@ node_ip="${compute_node_pair#*:}"
 echo "Trying to raise and enable nova service on $node_name...
 Check connection to host: $node_name by ip: $node_ip..."
 
-connection_success=$(Check_connection_to_node "$node_name" "$node_ip")
+connection_success=$(check_connection_to_node "$node_name" "$node_ip")
 
 [ "$TS_DEBUG" = true ] && echo "[DEBUG]: connection_success: $connection_success"
 
