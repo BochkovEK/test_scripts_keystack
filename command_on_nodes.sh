@@ -316,10 +316,10 @@ fi
 # Get nodes list
 if [ -n "$NODES_NAME" ]; then
     echo foo
-    nodes=$(get_nodes_list -nn "$NODES_NAME")
+    nodes=$(get_nodes_list "-nn" "$NODES_NAME")
 else
     echo bar
-    nodes=$(get_nodes_list -nt "$NODES_TYPE")
+    nodes=$(get_nodes_list "-nt" "$NODES_TYPE")
 fi
 
 [ "$TS_DEBUG" = true ] && echo -e "
