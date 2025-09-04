@@ -4,11 +4,13 @@
 # Requires node IPs and names to be defined in /etc/hosts
 
 default_hosts_path="/etc/hosts"
+default_rmi_suffix="rmi"
 
 # Node name patterns
 comp_pattern="comp\-..(\s|$)"
 ctrl_pattern="ctrl\-..(\s|$)"
 net_pattern="net\-..(\s|$)"
+#rmi_pattern="-$default_rmi_suffix\..(\s|$)"
 
 # Colors
 red=$(tput setaf 1)
@@ -20,6 +22,7 @@ normal=$(tput sgr0)
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $TS_HOSTS_PATH ]] && TS_HOSTS_PATH="$default_hosts_path"
 [[ -z $RETURN_TYPE_NODE_NAME ]] && RETURN_TYPE_NODE_NAME=""
+[[ -n $RMI_SUFFIX ]] && RMI_SUFFIX=$default_rmi_suffix
 
 # Parameter counter
 count=1
@@ -42,7 +45,9 @@ while [ -n "$1" ]; do
       Node IPs and names must be defined in hosts file (default: $default_hosts_path)
 
       Options:
-        -nt, -type_of_nodes <type>    Node type: 'ctrl', 'comp', 'net', 'all'
+        -nt, -type_of_nodes <type>    Node type: 'ctrl', 'comp', 'net', 'all', 'rmi'
+          NOTE: If you are using the node_type rmi, specify -suffix <suffix> (the default suffix is $default_rmi_suffix)
+        -suffix <suffix>              RMI suffix (example: -suffix rmi)
         -nn, -nodes_name <names>      Specific node names (space-separated)
         -h, -hosts_path <path>        Path to hosts file
         -return_type <node_name>      Return type of specified node
@@ -60,6 +65,12 @@ while [ -n "$1" ]; do
     -nt|-type_of_nodes)
       NODES_TYPE="$2"
       [ "$TS_DEBUG" = true ] && echo -e "Node type set to: $NODES_TYPE"
+      shift
+      ;;
+
+    -suffix)
+      RMI_SUFFIX="$2"
+      [ "$TS_DEBUG" = true ] && echo -e "RMI suffix set to: $RMI_SUFFIX"
       shift
       ;;
 
@@ -132,7 +143,8 @@ parse_hosts() {
     if [ ${#NODES[@]} -eq 0 ]; then
         while read -r line; do
             NODES+=("$line")
-        done < <(grep -E "$nodes_to_find" "$TS_HOSTS_PATH" | awk '{print $2}')
+#        done < <(grep -E "$nodes_to_find" "$TS_HOSTS_PATH" | awk '{print $2}')
+        done < <(grep -E "$nodes_to_find" "$TS_HOSTS_PATH" | grep -v '^#' | awk '{print $2}')
     fi
 
     [ "$TS_DEBUG" = true ] && printf "Found nodes: %s\n" "${NODES[*]}"
@@ -148,7 +160,7 @@ parse_hosts() {
 }
 
 # Function to determine node type based on pattern
-define_node_type() {
+nodes_list_by_type() {
     local node_type="$1"
 
     case "$node_type" in
@@ -166,6 +178,12 @@ define_node_type() {
 
         net)
             nodes_to_find="$net_pattern"
+            [ "$TS_DEBUG" = true ] && echo -e "Looking for network nodes"
+            parse_hosts
+            ;;
+
+        rmi)
+            nodes_to_find="$RMI_SUFFIX"
             [ "$TS_DEBUG" = true ] && echo -e "Looking for network nodes"
             parse_hosts
             ;;
@@ -202,6 +220,9 @@ return_type() {
         *net*)
             echo "net"
             ;;
+        *rmi*)
+            echo "rmi"
+            ;;
         *)
             echo ""
             ;;
@@ -227,4 +248,4 @@ if [ -n "$NODES_NAME" ]; then
 fi
 
 # Process nodes by type
-define_node_type "$NODES_TYPE"
+nodes_list_by_type "$NODES_TYPE"

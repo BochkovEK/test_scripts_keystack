@@ -162,31 +162,35 @@ check_nova_service_list() {
 }
 
 get_nodes_list() {
-    local param_type="$1"
-    local param_value="$2"
+#    local param_type="$1"
+#    local param_value="$2"
+    local param=$1
     local nodes_result=""
 
-    [ "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG] Getting nodes with: $param_type=$param_value"
+#    [ "$TS_DEBUG" = true ] && echo -e "
+#    [DEBUG] Getting nodes with: $param_type=$param_value"
 
-    if [ "$param_type" = "return_type" ]; then
-        [ "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG] nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" -return_type \"$param_value\"\)"
-        nodes_result=$(bash "$utils_dir/$get_nodes_list_script" -return_type "$param_value")
-    else
-        if [ -n "$param_value" ]; then
-            [ "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG] nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$param_type\" \"$param_value\"\)"
-            nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$param_type" "$param_value")
-        else
-            [ "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG] nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$param_type\""
-            nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$param_type")
-        fi
-    fi
+#    if [ "$param_type" = "return_type" ]; then
+#        [ "$TS_DEBUG" = true ] && echo -e "
+#    [DEBUG] nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" -return_type \"$param_value\"\)"
+#        nodes_result=$(bash "$utils_dir/$get_nodes_list_script" -return_type "$param_value")
+#    else
+#        if [ -n "$param_value" ]; then
+#            [ "$TS_DEBUG" = true ] && echo -e "
+#    [DEBUG] nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$param_type\" \"$param_value\"\)"
+#            nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$param_type" "$param_value")
+#        else
+#            [ "$TS_DEBUG" = true ] && echo -e "
+#    [DEBUG] nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$param_type\""
+#            nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$param_type")
+#        fi
+#    fi
 
     [ "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG] Final NODES list: $nodes_result
+    [DEBUG] nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$param\"\)"
+    nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$param")
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] nodes_result: $nodes_result
     "
 
     # Check for errors in node list
@@ -222,7 +226,7 @@ check_connections_to_nodes() {
     echo -e "${violet}Checking connections to $node_type nodes...${normal}"
 
     local nodes
-    nodes="$(get_nodes_list -nt "$node_type")"
+    nodes=$(get_nodes_list "-nt $node_type")
 
     for node_pair in $nodes; do
         check_connection_to_node "$node_pair"
@@ -236,27 +240,28 @@ check_ipmi_connections() {
 #    [ -z "$nova_state_list" ] && nova_state_list=$(openstack compute service list)
 
     # Get nodes using external script
-    local ctrl_nodes comp_nodes
-    ctrl_nodes=$(get_nodes_list -nt ctrl)
-    comp_nodes=$(get_nodes_list -nt comp)
+    local ctrl_nodes rmi_nodes
 
     local suffix_output suffix
     suffix_output=$(bash "$script_dir/$edit_ha_region_config_script" -u "$SSH_USER" "-suffix")
-    suffix=$(echo "$suffix_output" | tail -n1)
+    suffix=$(echo "$suffix_output" | tail -n1 | sed 's/^-//')
     echo "BMC_SUFFIX: $suffix"
+
+    ctrl_nodes=$(get_nodes_list "-nt ctrl")
+    rmi_nodes=$(get_nodes_list "-nt -rmi -suffix $suffix")
 
     for ctrl_node_pair in $ctrl_nodes; do
         ctrl_node_name="${ctrl_node_pair%%:*}"
         ctrl_node_ip="${ctrl_node_pair#*:}"
         echo "Checking connections from $ctrl_node_name"
-        for comp_node_pair in $comp_nodes; do
-            comp_node_name="${comp_node_pair%%:*}"
-            comp_node_ip="${comp_node_pair#*:}"
+        for rmi_node_pair in $rmi_nodes; do
+            rmi_node_name="${rmi_node_pair%%:*}"
+            rmi_node_ip="${rmi_node_pair#*:}"
             sleep 1
-            if ssh "$node_name" ping -c 2 "${comp_node_name}${suffix}" &> /dev/null; then
-                echo -e "${green}Connection to ${comp_node_name}${suffix} successful${normal}"
+            if ssh "$node_name" ping -c 2 "$rmi_node_ip" &> /dev/null; then
+                echo -e "${green}Connection to $rmi_node_name successful${normal}"
             else
-                echo -e "${red}No connection to ${comp_node_name}${suffix} - error!${normal}"
+                echo -e "${red}No connection to $rmi_node_name - error!${normal}"
             fi
         done
     done
