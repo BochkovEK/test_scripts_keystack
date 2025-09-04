@@ -12,6 +12,7 @@ check_openrc_script="check_openrc.sh"
 check_openstack_cli_script="check_openstack_cli.sh"
 get_nodes_list_script="get_nodes_list.sh"
 edit_ha_region_config_script="edit_ha_config.sh"
+try_to_rise_compute_node_script="try_to_rise_compute_node.sh"
 default_ssh_user="root"
 default_docker_engine="docker"
 
@@ -161,6 +162,7 @@ check_nova_service_list() {
             -e 's/\(.*down.*\)/\o033[31m\1\o033[39m/'
 }
 
+# Function to get nodes list using external script
 get_nodes_list() {
     [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG]:
@@ -168,25 +170,6 @@ get_nodes_list() {
         Parameters: $*"
 
     local nodes_result=""
-
-#    [ "$TS_DEBUG" = true ] && echo -e "
-#    [DEBUG] Getting nodes with: $param_type=$param_value"
-
-#    if [ "$param_type" = "return_type" ]; then
-#        [ "$TS_DEBUG" = true ] && echo -e "
-#    [DEBUG] nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" -return_type \"$param_value\"\)"
-#        nodes_result=$(bash "$utils_dir/$get_nodes_list_script" -return_type "$param_value")
-#    else
-#        if [ -n "$param_value" ]; then
-#            [ "$TS_DEBUG" = true ] && echo -e "
-#    [DEBUG] nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$param_type\" \"$param_value\"\)"
-#            nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$param_type" "$param_value")
-#        else
-#            [ "$TS_DEBUG" = true ] && echo -e "
-#    [DEBUG] nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$param_type\""
-#            nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$param_type")
-#        fi
-#    fi
 
     [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG]:
@@ -305,14 +288,15 @@ check_disabled_computes() {
 
                 if [ "$response" = "true" ]; then
                     try_to_rise="true"
+#                    export OPENRC_PATH=$OPENRC_PATH
                     export CHECK_OPENSTACK="false"
                     export COMP_NODE_NAME="$cmpt"
                     export CHECK_AFTER="false"
 
-                    if [ -f "$openstack_utils/try_to_rise_node.sh" ]; then
-                        bash "$openstack_utils/try_to_rise_node.sh"
+                    if [ -f "$openstack_utils/$try_to_rise_compute_node_script" ]; then
+                        bash "$openstack_utils/$try_to_rise_compute_node_script"
                     else
-                        echo -e "${yellow}try_to_rise_node.sh script not found${normal}"
+                        echo -e "${yellow}$try_to_rise_compute_node_script script not found${normal}"
                     fi
                 fi
             done
