@@ -329,35 +329,21 @@ check_docker_containers() {
     local node_type="$1"
     local container_name="$2"
 
+    local nodes
+    nodes=$(get_nodes_list -nt "$node_type")
+
     # Check if external script exists
     if [ ! -f "$script_dir/check_docker_container_state_on_nodes.sh" ]; then
         echo -e "${red}ERROR: Container check script not found${normal}"
         return 1
     fi
 
-    local nodes
-    nodes="$(get_nodes_list -nt "$node_type")"
-
-    for host in $nodes; do
-        local node_name="${host%%:*}"
-
-        # Execute external script and check for errors
-        if ! bash "$script_dir/check_docker_container_state_on_nodes.sh" \
-            -nn "$node_name" \
-            -u "$SSH_USER" \
-            -de "$DOCKER_ENGINE" 2>/dev/null | grep "$container_name" | grep -q -E "(unhealthy|restarting|Exited)"; then
-
-            # If grep didn't find error states, check if container exists at all
-            if ! bash "$script_dir/check_docker_container_state_on_nodes.sh" \
-                -nn "$node_name" \
-                -u "$SSH_USER" 2>/dev/null | grep -q "$container_name"; then
-
-                echo -e "${red}ERROR: Container $container_name not found on $node_name${normal}"
-            fi
-        else
-            echo -e "${red}ERROR: Container $container_name has issues on $node_name${normal}"
-        fi
-    done
+    if ! bash "$script_dir/check_docker_container_state_on_nodes.sh" \
+        -nn "$nodes" \
+        -u "$SSH_USER" \
+        -de "$DOCKER_ENGINE" 2>/dev/null | grep "$container_name"; then
+        echo -e "${red}ERROR: Container $container_name has issues on $node_name${normal}"
+    fi
 }
 
 # Function to check consul members list
@@ -371,7 +357,9 @@ check_consul_members() {
 
     if [ -n "$first_ctrl_node" ]; then
         local members_list
-        members_list=$(ssh -t -o StrictHostKeyChecking=no "$first_ctrl_node" "docker exec -it consul consul members list" 2>/dev/null)
+        local node_name="${first_ctrl_node%%:*}"
+        local node_ip="${first_ctrl_node#*:}"
+        members_list=$(ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" "sudo $DOCKER_ENGINE exec -it consul consul members list" 2>/dev/null)
 
         if [ -n "$members_list" ]; then
             echo "$members_list" | \
