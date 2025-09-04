@@ -13,6 +13,7 @@ check_openstack_cli_script="check_openstack_cli.sh"
 get_nodes_list_script="get_nodes_list.sh"
 edit_ha_region_config_script="edit_ha_config.sh"
 default_ssh_user="root"
+default_docker_engine="docker"
 
 # Color definitions
 green=$(tput setaf 2)
@@ -20,16 +21,17 @@ red=$(tput setaf 1)
 violet=$(tput setaf 5)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
-ORANGE='\033[0;33m'
-NC='\033[0m' # No Color
+#ORANGE='\033[0;33m'
+#NC='\033[0m' # No Color
 
 # Default values
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
 [[ -z $TRY_TO_RISE ]] && TRY_TO_RISE="true"
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
-[[ -z $REGION ]] && REGION="region-ps"
+[[ -z $DOCKER_ENGINE ]] && DOCKER_ENGINE=$default_docker_engine
 [[ -z $CHECK_IPMI ]] && CHECK_IPMI="true"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
+#[[ -z $REGION ]] && REGION="region-ps"
 
 # Function to display help information
 show_help() {
@@ -37,13 +39,14 @@ show_help() {
     Usage: $0 [OPTIONS] [CHECK_TYPE]
 
     Options:
-      -o, -openrc <path>          Path to openrc file
-      -r, -region <name>          Region name
-      -dtr, -dont_try_to_rise     Don't attempt to rise disabled nova services
-      -u, -user <username>        SSH username
-      -ipmi                       Enable IPMI connection checks
-      -v, -debug                  Enable debug output
-      --help                      Show this help message
+      -o, -openrc <path>                  Path to openrc file
+      -r, -region <name>                  Region name
+      -dtr, -dont_try_to_rise             Don't attempt to rise disabled nova services
+      -u, -user <username>                SSH username
+      -de, -docker_engine <docker\podman> Docker engine
+      -ipmi                               Enable IPMI connection checks
+      -v, -debug                          Enable debug output
+      --help                              Show this help message
 
     Check types:
       nova    - Check nova state and try to raise disabled hosts
@@ -94,6 +97,12 @@ while [ -n "$1" ]; do
         -u|-user)
             SSH_USER="$2"
             echo "Found -user option with value: $SSH_USER"
+            shift
+            ;;
+
+        -de|-docker_engine)
+            DOCKER_ENGINE="$2"
+            echo "Found -docker_engine option with value: $DOCKER_ENGINE"
             shift
             ;;
 
@@ -196,9 +205,10 @@ get_nodes_list() {
 
 # Function to check connection to a node
 check_connection_to_node() {
-    local node_name="$1"
-    local ip="$2"
-    if ping -c 2 "$ip" &> /dev/null; then
+    node_pair=$1
+    local node_name="${node_pair%%:*}"
+    local node_ip="${node_pair#*:}"
+    if ping -c 2 "$node_ip" &> /dev/null; then
         echo -e "${green}Connection to $node_name successful${normal}"
     else
         echo -e "${red}No connection to $node_name - error!${normal}"
@@ -215,9 +225,7 @@ check_connections_to_nodes() {
     nodes="$(get_nodes_list -nt "$node_type")"
 
     for node_pair in $nodes; do
-        node_name="${node_pair%%:*}"
-        node_ip="${node_pair#*:}"
-        check_connection_to_node "$node_name" "$node_ip"
+        check_connection_to_node "$node_pair"
     done
 }
 
@@ -237,14 +245,18 @@ check_ipmi_connections() {
     suffix=$(echo "$suffix_output" | tail -n1)
     echo "BMC_SUFFIX: $suffix"
 
-    for ctrl_host in $ctrl_nodes; do
-        echo "Checking connections from $ctrl_host"
-        for comp_host in $comp_nodes; do
+    for ctrl_node_pair in $ctrl_nodes; do
+        ctrl_node_name="${ctrl_node_pair%%:*}"
+        ctrl_node_ip="${ctrl_node_pair#*:}"
+        echo "Checking connections from $ctrl_node_name"
+        for comp_node_pair in $comp_nodes; do
+            comp_node_name="${comp_node_pair%%:*}"
+            comp_node_ip="${comp_node_pair#*:}"
             sleep 1
-            if ssh "$ctrl_host" ping -c 2 "${comp_host}${suffix}" &> /dev/null; then
-                echo -e "${green}Connection to ${comp_host}${suffix} successful${normal}"
+            if ssh "$node_name" ping -c 2 "${comp_node_name}${suffix}" &> /dev/null; then
+                echo -e "${green}Connection to ${comp_node_name}${suffix} successful${normal}"
             else
-                echo -e "${red}No connection to ${comp_host}${suffix} - error!${normal}"
+                echo -e "${red}No connection to ${comp_node_name}${suffix} - error!${normal}"
             fi
         done
     done
