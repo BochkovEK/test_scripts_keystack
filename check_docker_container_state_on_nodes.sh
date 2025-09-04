@@ -194,36 +194,40 @@ get_nodes_list() {
     local param_value="$2"
     local nodes_result=""
 
-    [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] Getting nodes with: $param_type=$param_value"
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] Getting nodes with: $param_type=$param_value"
 
     if [ "$param_type" = "return_type" ]; then
+        [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" -return_type \"$param_value\"\)"
         nodes_result=$(bash "$utils_dir/$get_nodes_list_script" -return_type "$param_value")
     else
         if [ -n "$param_value" ]; then
+            [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$param_type\" \"$param_value\"\)"
             nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$param_type" "$param_value")
         else
+            [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$param_type\""
             nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$param_type")
         fi
-    fi
-
-    # Check for errors in node list
-    if echo "$nodes_result" | grep -q "ERROR"; then
-        echo -e "${yellow}Node names could not be determined.${normal}"
-        echo -e "${yellow}Try: bash $utils_dir/$get_nodes_list_script -nt all${normal}"
-        echo -e "${red}Node names could not be determined - ERROR!${normal}"
-        exit 1
-    else
-        echo "$nodes_result"
     fi
 
     [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG] Final NODES list: $nodes_result
     "
 
-    # Validate nodes list
+    # Check for errors in node list
     if [ -z "$nodes_result" ]; then
         echo -e "${red}Failed to determine node list - ERROR${normal}"
         exit 1
+    elif echo "$nodes_result" | grep -q "ERROR"; then
+        echo -e "${yellow}Node names could not be determined.${normal}"
+        echo -e "${yellow}Try: bash $utils_dir/$get_nodes_list_script -nt all${normal}"
+        echo -e "${red}Node names could not be determined - ERROR!${normal}"
+        exit 1
+    else
+        echo "$nodes_result"
     fi
 }
 
@@ -274,9 +278,17 @@ fi
 
 # Get nodes list
 if [ -n "$NODES_NAME" ]; then
-    nodes=$(get_nodes_list -nn "$NODES_NAME")
+    nodes="$(get_nodes_list "-nn" "$NODES_NAME")"
 else
-    nodes=$(get_nodes_list -nt "$NODES_TYPE")
+    nodes="$(get_nodes_list "-nt" "$NODES_TYPE")"
+fi
+
+if [ "$TS_DEBUG" = true ]; then
+    get_nodes_list "-nn" "$NODES_NAME"
+    get_nodes_list "-nt" "$NODES_TYPE"
+    echo -e "
+    [DEBUG] nodes: $nodes
+    "
 fi
 
 IFS=' ' read -ra NODES <<< "$nodes"
