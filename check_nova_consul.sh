@@ -239,7 +239,7 @@ check_connections_to_nodes() {
     for node_pair in $nodes; do
         node_name="${node_pair%%:*}"
         node_ip="${node_pair#*:}"
-        check_connection_to_node "$node_ip"
+        check_connection_to_node "$node_name" "$node_ip"
     done
 }
 
