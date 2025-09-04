@@ -485,7 +485,6 @@ fi
 # Execute checks
 check_openstack_cli
 check_and_source_openrc_file
-check_nova_service_list
 
 # Handle specific check types
 case "$CHECK" in
@@ -501,6 +500,7 @@ case "$CHECK" in
         ;;
 esac
 
+check_nova_service_list
 # Perform comprehensive checks
 check_connections_to_nodes "ctrl"
 check_connections_to_nodes "comp"
