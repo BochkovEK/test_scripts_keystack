@@ -162,9 +162,11 @@ check_nova_service_list() {
 }
 
 get_nodes_list() {
-#    local param_type="$1"
-#    local param_value="$2"
-    local param=$1
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG]:
+        Count parameters: $#
+        Parameters: $*"
+
     local nodes_result=""
 
 #    [ "$TS_DEBUG" = true ] && echo -e "
@@ -188,9 +190,8 @@ get_nodes_list() {
 
     [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG]:
-      param: $param
-      nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$param\")"
-    nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$param")
+      nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$*\")"
+    nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
     [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG] nodes_result: $nodes_result
     "
@@ -253,8 +254,8 @@ check_ipmi_connections() {
     suffix=$(echo "$suffix_output" | tail -n1 | sed 's/^-//')
     echo "BMC_SUFFIX: $suffix"
 
-    ctrl_nodes=$(get_nodes_list "-nt ctrl")
-    rmi_nodes=$(get_nodes_list "-nt -rmi -suffix $suffix")
+    ctrl_nodes=$(get_nodes_list -nt ctrl)
+    rmi_nodes=$(get_nodes_list -nt -rmi -suffix "$suffix")
 
     for ctrl_node_pair in $ctrl_nodes; do
         ctrl_node_name="${ctrl_node_pair%%:*}"
