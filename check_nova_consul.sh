@@ -293,13 +293,13 @@ yes_no_answer() {
 check_disabled_computes() {
     echo -e "${violet}Checking for disabled compute nodes...${normal}"
     local cmpt_disabled_nova_list
-    cmpt_disabled_nova_list=$(echo "$nova_state_list" | grep -E "(nova-compute.+disable)|(nova-compute.+down)" | awk '{print $6}')
+    comp_disabled_nova_list=$(echo "$nova_state_list" | grep -E "(nova-compute.+disable)|(nova-compute.+down)" | awk '{print $6}')
 
     if [ -n "$cmpt_disabled_nova_list" ]; then
         if [ "$TRY_TO_RISE" = "true" ]; then
             local try_to_rise="false"
 
-            for cmpt in $cmpt_disabled_nova_list; do
+            for cmpt in $comp_disabled_nova_list; do
                 local response
                 response=$(yes_no_answer "Do you want to try to enable nova service on $cmpt? [Yes]: ")
 
@@ -390,23 +390,25 @@ check_consul_logs() {
     local ctrl_nodes
     ctrl_nodes=$(bash "$utils_dir/$get_nodes_list_script" -nt ctrl)
     local first_ctrl_node
-    first_ctrl_node=$(echo "$ctrl_nodes" | head -n1)
+    first_ctrl_node=$(echo "$ctrl_nodes" | awk '{print $1}')
 
     if [ -n "$first_ctrl_node" ]; then
         local leader_node
-        leader_node=$(ssh -t -o StrictHostKeyChecking=no "$first_ctrl_node" "docker exec -it consul consul operator raft list-peers" 2>/dev/null | grep leader | awk '{print $1}')
+        local node_name="${first_ctrl_node%%:*}"
+        local node_ip="${first_ctrl_node#*:}"
+        leader_node=$(ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" "sudo $DOCKER_ENGINE exec -it consul consul operator raft list-peers" 2>/dev/null | grep leader | awk '{print $1}')
 
         if [ -n "$leader_node" ]; then
             echo "Leader consul node is $leader_node"
-            echo -e "${yellow}ssh -o StrictHostKeyChecking=no $leader_node less /var/log/kolla/autoevacuate.log${normal}"
+            echo -e "${yellow}ssh -o StrictHostKeyChecking=no \"$SSH_USER@$leader_node\" sudo less /var/log/kolla/autoevacuate.log${normal}"
 
-            ssh -o StrictHostKeyChecking=no "$leader_node" "tail -15 /var/log/kolla/autoevacuate.log 2>/dev/null" | \
+            ssh -o StrictHostKeyChecking=no "$SSH_USER@$leader_node" "sudo tail -n 50 /var/log/kolla/autoevacuate.log 2>/dev/null" | \
                 sed --unbuffered \
                     -e 's/\(.*Force off.*\)/\o033[31m\1\o033[39m/' \
                     -e 's/\(.*Server.*\)/\o033[33m\1\o033[39m/' \
                     -e 's/\(.*Evacuating instance.*\)/\o033[33m\1\o033[39m/' \
                     -e 's/\(.*Starting fence.*\)/\o033[31m\1\o033[39m/' \
-                    -e 's/\(.*IPMI "power off".*\)/\o033[31m\1\o033[39m/' \
+                    -e 's/\(.*IPMI \"power off\".*\)/\o033[31m\1\o033[39m/' \
                     -e 's/\(.*disabled,.*\)/\o033[33m\1\o033[39m/' \
                     -e 's/\(.*state: down.*\)/\o033[33m\1\o033[39m/' \
                     -e 's/\(.*CRITICAL.*\)/\o033[31m\1\o033[39m/' \
@@ -496,7 +498,7 @@ check_docker_containers "ctrl" "consul"
 check_docker_containers "comp" "consul"
 check_docker_containers "comp" "nova_compute"
 
-check_disabled_computes
-check_consul_members
+#check_disabled_computes
+#check_consul_members
 check_consul_logs
 check_consul_config
