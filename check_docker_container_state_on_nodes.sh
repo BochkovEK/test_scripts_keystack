@@ -73,8 +73,8 @@ comp_required_container_list=(
 [[ -z $CONTAINER_NAME ]] && CONTAINER_NAME=""
 [[ -z $NODES ]] && NODES=()
 [[ -z $NODES_TYPE ]] && NODES_TYPE="all"
-[[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $NODES_NAME ]] && NODES_NAME=""
+[[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $DOCKER_ENGINE ]] && DOCKER_ENGINE="$default_docker_engine"
 
 # Function to display help information
@@ -293,10 +293,10 @@ fi
 
 IFS=' ' read -ra NODES <<< "$nodes"
 
-[ "$TS_DEBUG" = true ] && echo -e "[DEBUG] Nodes: $NODES"
+[ "$TS_DEBUG" = true ] && echo -e "[DEBUG] Nodes: ${NODES[*]}"
 
 # Process each node
-for node_pair in $NODES; do
+for node_pair in "${NODES[@]}"; do
     # Split node:ip format
     node_name="${node_pair%%:*}"
     node_ip="${node_pair#*:}"
