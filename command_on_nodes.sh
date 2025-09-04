@@ -259,7 +259,8 @@ get_nodes_list() {
     local param_value="$2"
     local nodes_result=""
 
-    [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] Getting nodes with: $param_type=$param_value"
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] Getting nodes with: $param_type=$param_value"
 
     if [ "$param_type" = "return_type" ]; then
         nodes_result=$(bash "$utils_dir/$get_nodes_list_script" -return_type "$param_value")
