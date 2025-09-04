@@ -400,9 +400,12 @@ check_consul_logs() {
 
         if [ -n "$leader_node" ]; then
             echo "Leader consul node is $leader_node"
-            echo -e "${yellow}ssh -o StrictHostKeyChecking=no \"$SSH_USER@$leader_node\" sudo less /var/log/kolla/autoevacuate.log${normal}"
+            leader_node_pair=$(get_nodes_list -nn "$leader_node")
+            local leader_node_name="${leader_node_pair%%:*}"
+            local leader_node_ip="${leader_node_pair#*:}"
+            echo -e "${yellow}ssh -o StrictHostKeyChecking=no \"$SSH_USER@$leader_node_ip\" sudo less /var/log/kolla/autoevacuate.log${normal}"
 
-            ssh -o StrictHostKeyChecking=no "$SSH_USER@$leader_node" "sudo tail -n 50 /var/log/kolla/autoevacuate.log 2>/dev/null" | \
+            ssh -o StrictHostKeyChecking=no "$SSH_USER@$leader_node_ip" "sudo tail -n 50 /var/log/kolla/autoevacuate.log 2>/dev/null" | \
                 sed --unbuffered \
                     -e 's/\(.*Force off.*\)/\o033[31m\1\o033[39m/' \
                     -e 's/\(.*Server.*\)/\o033[33m\1\o033[39m/' \
