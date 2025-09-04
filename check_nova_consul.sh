@@ -152,26 +152,68 @@ check_nova_service_list() {
             -e 's/\(.*down.*\)/\o033[31m\1\o033[39m/'
 }
 
-# Function to get nodes by type using external script
-get_nodes_by_type() {
-    local node_type="$1"
-    local nodes
+## Function to get nodes by type using external script
+#get_nodes_by_type() {
+#    local node_type="$1"
+#    local nodes
+#
+#    case "$node_type" in
+#        controls)
+#            nodes=$(bash "$utils_dir/$get_nodes_list_script" -nt ctrl)
+#            ;;
+#        computes)
+#            nodes=$(bash "$utils_dir/$get_nodes_list_script" -nt comp)
+#            ;;
+#        *)
+#            echo "Unknown node type: $node_type"
+#            return 1
+#            ;;
+#    esac
+#
+#    [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] $node_type nodes: $nodes"
+#    echo "$nodes"
+#}
 
-    case "$node_type" in
-        controls)
-            nodes=$(bash "$utils_dir/$get_nodes_list_script" -nt ctrl)
-            ;;
-        computes)
-            nodes=$(bash "$utils_dir/$get_nodes_list_script" -nt comp)
-            ;;
-        *)
-            echo "Unknown node type: $node_type"
-            return 1
-            ;;
-    esac
+get_nodes_list() {
+    local param_type="$1"
+    local param_value="$2"
+    local nodes_result=""
 
-    [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] $node_type nodes: $nodes"
-    echo "$nodes"
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] Getting nodes with: $param_type=$param_value"
+
+    if [ "$param_type" = "return_type" ]; then
+        [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" -return_type \"$param_value\"\)"
+        nodes_result=$(bash "$utils_dir/$get_nodes_list_script" -return_type "$param_value")
+    else
+        if [ -n "$param_value" ]; then
+            [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$param_type\" \"$param_value\"\)"
+            nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$param_type" "$param_value")
+        else
+            [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$param_type\""
+            nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$param_type")
+        fi
+    fi
+
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] Final NODES list: $nodes_result
+    "
+
+    # Check for errors in node list
+    if [ -z "$nodes_result" ]; then
+        echo -e "${red}Failed to determine node list - ERROR${normal}"
+        exit 1
+    elif echo "$nodes_result" | grep -q "ERROR"; then
+        echo -e "${yellow}Node names could not be determined.${normal}"
+        echo -e "${yellow}Try: bash $utils_dir/$get_nodes_list_script -nt all${normal}"
+        echo -e "${red}Node names could not be determined - ERROR!${normal}"
+        exit 1
+    else
+        echo "$nodes_result"
+    fi
 }
 
 # Function to check connections to nodes of specific type
@@ -180,7 +222,7 @@ check_connections_to_nodes() {
     echo -e "${violet}Checking connections to $node_type nodes...${normal}"
 
     local nodes
-    nodes=$(get_nodes_by_type "$node_type")
+    nodes="$(get_nodes_list -nt "$node_type")"
 
     for host in $nodes; do
         check_connection_to_node "$host"
@@ -206,8 +248,8 @@ check_ipmi_connections() {
 
     # Get nodes using external script
     local ctrl_nodes comp_nodes
-    ctrl_nodes=$(bash "$utils_dir/$get_nodes_list_script" -nt ctrl)
-    comp_nodes=$(bash "$utils_dir/$get_nodes_list_script" -nt comp)
+    ctrl_nodes="$(get_nodes_list -nt ctrl)"
+    comp_nodes="$(get_nodes_list -nt comp)"
 
     local suffix_output suffix
     suffix_output=$(bash "$script_dir/$edit_ha_region_config_script" -u "$SSH_USER")
@@ -289,7 +331,7 @@ check_docker_containers() {
     fi
 
     local nodes
-    nodes=$(get_nodes_by_type "$node_type")
+    nodes="$(get_nodes_list -nt "$node_type")"
 
     for host in $nodes; do
         local node_name="${host%%:*}"
