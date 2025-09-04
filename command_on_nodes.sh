@@ -278,18 +278,15 @@ get_nodes_list() {
         echo -e "${red}Node names could not be determined - ERROR!${normal}"
         exit 1
     else
-        # Add nodes to array
-        for node in $nodes_result; do
-            NODES+=("$node")
-        done
+        echo "$nodes_result"
     fi
 
     [ "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG] Final NODES list: ${NODES[*]}
+    [DEBUG] Final NODES list: $nodes_result
     "
 
     # Validate nodes list
-    if [ -z "${NODES[*]}" ]; then
+    if [ -z "$nodes_result" ]; then
         echo -e "${red}Failed to determine node list - ERROR${normal}"
         exit 1
     fi
@@ -313,10 +310,12 @@ fi
 
 # Get nodes list
 if [ -n "$NODES_NAME" ]; then
-    get_nodes_list -nn "$NODES_NAME"
+    nodes=$(get_nodes_list -nn "$NODES_NAME")
 else
-    get_nodes_list -nt "$NODES_TYPE"
+    nodes=$(get_nodes_list -nt "$NODES_TYPE")
 fi
+
+IFS=' ' read -ra NODES <<< "$nodes"
 
 # Check connections if requested
 if [ "$DONT_CHECK_CONN" = false ]; then

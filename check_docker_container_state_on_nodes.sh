@@ -200,9 +200,9 @@ get_nodes_list() {
         nodes_result=$(bash "$utils_dir/$get_nodes_list_script" -return_type "$param_value")
     else
         if [ -n "$param_value" ]; then
-            nodes_result=$(bash "$utils_dir/$get_nodes_list_script" -"$param_type" "$param_value")
+            nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$param_type" "$param_value")
         else
-            nodes_result=$(bash "$utils_dir/$get_nodes_list_script" -"$param_type")
+            nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$param_type")
         fi
     fi
 
@@ -212,9 +212,19 @@ get_nodes_list() {
         echo -e "${yellow}Try: bash $utils_dir/$get_nodes_list_script -nt all${normal}"
         echo -e "${red}Node names could not be determined - ERROR!${normal}"
         exit 1
+    else
+        echo "$nodes_result"
     fi
 
-    echo "$nodes_result"
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] Final NODES list: $nodes_result
+    "
+
+    # Validate nodes list
+    if [ -z "$nodes_result" ]; then
+        echo -e "${red}Failed to determine node list - ERROR${normal}"
+        exit 1
+    fi
 }
 
 # Function to check container status on a node
@@ -263,11 +273,13 @@ if [[ -z "$SSH_USER" ]]; then
 fi
 
 # Get nodes list
-if [ -z "$NODES_NAME" ]; then
-    NODES=$(get_nodes_list nt "$NODES_TYPE")
+if [ -n "$NODES_NAME" ]; then
+    nodes=$(get_nodes_list -nn "$NODES_NAME")
 else
-    NODES=$(get_nodes_list nn "$NODES_NAME")
+    nodes=$(get_nodes_list -nt "$NODES_TYPE")
 fi
+
+IFS=' ' read -ra NODES <<< "$nodes"
 
 [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] Nodes: $NODES"
 
