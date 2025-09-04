@@ -120,6 +120,16 @@ try_to_disable_MM () {
     internal_FQDN=${OS_AUTH_URL/:5000}
     echo "$internal_FQDN"
 
+    [ "$TS_DEBUG" = true ] && echo "
+    [DEBUG]
+        internal_FQDN: $internal_FQDN
+        login: $OS_USERNAME,
+        password: $OS_PASSWORD,
+        user_domain_name: $OS_USER_DOMAIN_NAME,
+        project_name: $OS_PROJECT_NAME,
+        project_domain_name: $OS_PROJECT_DOMAIN_NAME
+    "
+
     TOKEN=$(curl -s -H "Content-Type: application/json" -H 'accept: application/json' -X POST $internal_FQDN:13000/login \
         -d '{
               "login": "'"$OS_USERNAME"'",
@@ -128,15 +138,6 @@ try_to_disable_MM () {
                 "project_name": "'"$OS_PROJECT_NAME"'",
                 "project_domain_name": "'"$OS_PROJECT_DOMAIN_NAME"'"
             }'| python3 -c "import sys, json; print(json.load(sys.stdin)['X-Auth-Token'])"); echo "$TOKEN"
-
-    [ "$TS_DEBUG" = true ] && echo "
-    [DEBUG]
-        login: $OS_USERNAME,
-        password: $OS_PASSWORD,
-        user_domain_name: $OS_USER_DOMAIN_NAME,
-          project_name: $OS_PROJECT_NAME,
-        project_domain_name: $OS_PROJECT_DOMAIN_NAME
-    "
 
     #maintenance #MM
     curl -i \
