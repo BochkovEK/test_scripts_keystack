@@ -277,7 +277,11 @@ check_disabled_computes() {
     echo -e "${violet}Checking for disabled compute nodes...${normal}"
     local cmpt_disabled_nova_list
     comp_disabled_nova_list=$(echo "$nova_state_list" | grep -E "(nova-compute.+disable)|(nova-compute.+down)" | awk '{print $6}')
-
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG]:
+        nova_state_list: $nova_state_list
+        comp_disabled_nova_list: $comp_disabled_nova_list
+    "
     if [ -n "$cmpt_disabled_nova_list" ]; then
         if [ "$TRY_TO_RISE" = "true" ]; then
             local try_to_rise="false"
