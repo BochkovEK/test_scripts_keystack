@@ -187,7 +187,9 @@ get_nodes_list() {
 #    fi
 
     [ "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG] nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$param\"\)"
+    [DEBUG]:
+      param: $param
+      nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$param\"\)"
     nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$param")
     [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG] nodes_result: $nodes_result
