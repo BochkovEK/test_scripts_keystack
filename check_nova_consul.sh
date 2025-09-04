@@ -225,7 +225,7 @@ check_connections_to_nodes() {
 check_ipmi_connections() {
     echo -e "${violet}Checking IPMI connections from controllers to computes${normal}"
 
-    [ -z "$nova_state_list" ] && nova_state_list=$(openstack compute service list)
+#    [ -z "$nova_state_list" ] && nova_state_list=$(openstack compute service list)
 
     # Get nodes using external script
     local ctrl_nodes comp_nodes
@@ -233,7 +233,7 @@ check_ipmi_connections() {
     comp_nodes="$(get_nodes_list -nt comp)"
 
     local suffix_output suffix
-    suffix_output=$(bash "$script_dir/$edit_ha_region_config_script" -u "$SSH_USER")
+    suffix_output=$(bash "$script_dir/$edit_ha_region_config_script" -u "$SSH_USER" "-suffix")
     suffix=$(echo "$suffix_output" | tail -n1)
     echo "BMC_SUFFIX: $suffix"
 

@@ -315,9 +315,9 @@ fi
 
 # Get nodes list
 if [ -n "$NODES_NAME" ]; then
-    nodes="$(get_nodes_list "-nn" "$NODES_NAME")"
+    nodes=$(get_nodes_list "-nn" "$NODES_NAME")
 else
-    nodes="$(get_nodes_list "-nt" "$NODES_TYPE")"
+    nodes=$(get_nodes_list "-nt" "$NODES_TYPE")
 fi
 
 if [ "$TS_DEBUG" = true ]; then
