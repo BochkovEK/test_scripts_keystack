@@ -353,7 +353,7 @@ check_consul_members() {
     local first_ctrl_node
     local members_list
     ctrl_nodes=$(bash "$utils_dir/$get_nodes_list_script" -nt ctrl)
-    first_ctrl_node=$(echo "$ctrl_nodes" | head -n1)
+    first_ctrl_node=$(echo "$ctrl_nodes" | awk '{print $1}')
     if [ "$TS_DEBUG" = true ]; then
     echo -e "
     [DEBUG]
