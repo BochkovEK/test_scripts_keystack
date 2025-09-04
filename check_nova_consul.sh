@@ -218,11 +218,12 @@ get_nodes_list() {
 
 # Function to check connection to a node
 check_connection_to_node() {
-    local node="$1"
-    if ping -c 2 "$node" &> /dev/null; then
-        echo -e "${green}Connection to $node successful${normal}"
+    local node_name="$1"
+    local ip="$2"
+    if ping -c 2 "$ip" &> /dev/null; then
+        echo -e "${green}Connection to $node_name successful${normal}"
     else
-        echo -e "${red}No connection to $node - error!${normal}"
+        echo -e "${red}No connection to $node_name - error!${normal}"
         echo -e "${red}Node may be powered off${normal}\n"
     fi
 }
@@ -232,10 +233,10 @@ check_connections_to_nodes() {
     local node_type="$1"
     echo -e "${violet}Checking connections to $node_type nodes...${normal}"
 
-    local node_pair
-    node_pair="$(get_nodes_list -nt "$node_type")"
+    local nodes
+    nodes="$(get_nodes_list -nt "$node_type")"
 
-    for host in $node_pair; do
+    for node_pair in $nodes; do
         node_name="${node_pair%%:*}"
         node_ip="${node_pair#*:}"
         check_connection_to_node "$node_ip"
