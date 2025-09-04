@@ -1,269 +1,232 @@
 #!/bin/bash
 
-# The script displays logs from the consul service
-# The node from which the log is checked is determined by the NODE_NAME variable. This variable can be set as the first parameter when running the script
-# The check period is determined by the OUTPUT_PERIOD variable. This variable can be set as the second parameter when running the script
+# Script to display logs from consul service
+# Can check logs on specific nodes or automatically detect consul leader
 
-#Colors
-#green=$(tput setaf 2)
-red=$(tput setaf 1)
-#violet=$(tput setaf 5)
-normal=$(tput sgr0)
-yellow=$(tput setaf 3)
-cyan=$(tput setaf 14)
-
-script_dir=$(dirname $0)
-utils_dir=$script_dir/utils
-nodes_type="ctrl"
-#check_openrc_script="check_openrc.sh"
-#check_openstack_cli_script="check_openstack_cli.sh"
+script_dir=$(dirname "$0")
+utils_dir="$script_dir/utils"
 get_nodes_list_script="get_nodes_list.sh"
 default_ssh_user="root"
 
+# Colors
+red=$(tput setaf 1)
+normal=$(tput sgr0)
+yellow=$(tput setaf 3)
+cyan=$(tput setaf 14)
+#violet=$(tput setaf 5)
+
+# Default values
 [[ -z $LOG_LAST_LINES_NUMBER ]] && LOG_LAST_LINES_NUMBER=35
-#[[ -z $OUTPUT_PERIOD ]] && OUTPUT_PERIOD=10
-#[[ -z $NODE_NAME ]] && NODE_NAME=""
-[[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
+[[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
 [[ -z $CTRL_LIST ]] && CTRL_LIST=""
 [[ -z $ALL_CTRL ]] && ALL_CTRL="false"
-#[[ -z $USER ]] && USER="$default_user"
 [[ -z $DOCKER_ENGINE ]] && DOCKER_ENGINE="docker"
-#========================
 
+# Function to display help information
+show_help() {
+    echo -E "
+    Usage: $0 [OPTIONS]
 
-# Define parameters
-define_parameters () {
-#  echo foo
-  [ "$count" = 1 ] && [[ -n $1 ]] && { echo; }
-#    NODE_NAME=$1; echo "Node name parameter found with value $NODE_NAME"; }
-#  [ "$count" = 2 ] && [[ -n $1 ]] && { OUTPUT_PERIOD=$1; echo "Check period parameter found with value $OUTPUT_PERIOD"; }
-#  [ "$count" = 3 ] && [[ -n $1 ]] && { LOG_LAST_LINES_NUMBER=$1; echo "log last lines number parameter found with value $LOG_LAST_LINES_NUMBER"; }
+    Options:
+      -ln, -line_numbers <number>    Number of log lines to display
+      -ctrl_list <nodes>             Space-separated list of controller nodes
+      -all_ctrl                      Check logs on all controller nodes
+      -u, -user <username>           SSH username
+      -de, -docker_engine <engine>   Container engine: docker or podman
+      --help                         Show this help message
+
+    Examples:
+      bash check_consul_log.sh -ctrl_list \"ctrl-01 ctrl-02\" -ln 50
+      bash check_consul_log.sh -all_ctrl
+    "
 }
 
-count=1
+# Parse command line arguments
 while [ -n "$1" ]; do
-#      -o,   -output_period    <output_period>
-  case "$1" in
-    --help) echo -E "
-      -ln,  -line_numbers     <log_last_lines_number>
-      -n,   -node_name        <node_name>
-      -ctrl_list              <ctrl_list> example: -ctrl_list \"ctrl-01 ctrl-02 ctrl-02\"
-      -all_ctrl               check logs on all ctrl nodes (without parameter)
-      -u,   -user             set user for ssh access
-      -de,  -docker_engine    <docker_engine> (docker\podman)
+    case "$1" in
+        --help)
+            show_help
+            exit 0
+            ;;
 
-      Example satart command:
-        bash $HOME/test_scripts_keystack/check_consul_log.sh <ctrl_01> <check_period> <log last lines number>
-        bash $HOME/test_scripts_keystack/check_consul_log.sh ebochkov-ks-sber-ctrl-01 10 25
-"
-#      -e,   -send_env       \"<ENV_NAME=env_value>\"
-        exit 0
-        break ;;
-    -ln|-line_numbers) LOG_LAST_LINES_NUMBER="$2"
-      echo "Found the -line_numbers option, with parameter value $LOG_LAST_LINES_NUMBER"
-      shift ;;
+        -ln|-line_numbers)
+            LOG_LAST_LINES_NUMBER="$2"
+            echo "Found -line_numbers with value: $LOG_LAST_LINES_NUMBER"
+            shift
+            ;;
 
-#    -o|-output_period) OUTPUT_PERIOD="$2"
-#      echo "Found the -output_period option, with parameter value $OUTPUT_PERIOD"
-#      shift ;;
-    -ctrl_list) CTRL_LIST="$2"
-      echo "Found the -ctrl_list option, with parameter value $CTRL_LIST"
-      shift ;;
-    -all_ctrl) ALL_CTRL="true"
-      echo "Found the -all_ctrl option, with parameter value $ALL_CTRL"
-      ;;
-    -u|-user) SSH_USER=$2
-      echo "Found the -user  with parameter value $SSH_USER"
-      shift
-      ;;
-    -de|-docker_engine) DOCKER_ENGINE=$2
-      echo "Found the -docker_engine with parameter value $DOCKER_ENGINE"
-      shift
-      ;;
-    --) shift
-      break ;;
-    *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
+        -ctrl_list)
+            CTRL_LIST="$2"
+            echo "Found -ctrl_list with value: $CTRL_LIST"
+            shift
+            ;;
+
+        -all_ctrl)
+            ALL_CTRL="true"
+            echo "Found -all_ctrl option"
+            ;;
+
+        -u|-user)
+            SSH_USER="$2"
+            echo "Found -user with value: $SSH_USER"
+            shift
+            ;;
+
+        -de|-docker_engine)
+            DOCKER_ENGINE="$2"
+            echo "Found -docker_engine with value: $DOCKER_ENGINE"
+            shift
+            ;;
+
+        --)
+            shift
+            break
+            ;;
+
+        *)
+            echo "Unknown parameter: $1"
+            show_help
+            exit 1
+            ;;
     esac
     shift
 done
 
-#    -n|-node_name) NODE_NAME="$2"
-#      echo "Found the -node_name option, with parameter value $NODE_NAME"
-#      shift ;;
+# Function to get nodes list using external script
+get_nodes_list() {
+    local param_type="$1"
+    local param_value="$2"
 
-## Check openrc file
-#Check_and_source_openrc_file () {
-#  echo -e "${violet}Check openrc file...${normal}"
-#  if bash $utils_dir/$check_openrc_script &> /dev/null; then
-#    openrc_file=$(bash $utils_dir/$check_openrc_script)
-#    echo -e "${green}$openrc_file file exist - success${normal}"
-#    source $openrc_file
-#  else
-#    bash $utils_dir/$check_openrc_script
-#    echo -e "${red}openrc file not found in $openrc_file${normal} - ERROR"
-#    exit 1
-#  fi
-#}
-#
-## Сheck openstack cli
-#Check_openstack_cli () {
-#  if [[ $CHECK_OPENSTACK = "true" ]]; then
-#    if ! bash $utils_dir/$check_openstack_cli_script; then
-##      echo -e "${red}Failed to check openstack cli - ERROR${normal}"
-#      exit 1
-#    fi
-#  fi
-#}
+    local nodes
+    nodes=$(bash "$utils_dir/$get_nodes_list_script" "-$param_type" "$param_value" 2>/dev/null)
 
+    if [ -z "$nodes" ] || echo "$nodes" | grep -q "ERROR"; then
+        echo -e "${red}Failed to get nodes list - ERROR${normal}" >&2
+        return 1
+    fi
+
+    echo "$nodes"
+}
+
+# Function to check consul logs on a single node
 check_consul_log_one_node() {
-#  echo "!!!ONE node"
-  if [ ! "$ALL_CTRL" = true ]; then
-    tail_string="-f"
-  else
-    tail_string="-n $LOG_LAST_LINES_NUMBER"
-  fi
-  ctrl=$(get_nodes_list nn $1)
-  echo $ctrl
-  node_name="${ctrl%%:*}"  # get the part before the first ':'
-  node_ip="${ctrl#*:}"     # get the part after the first ':'
-  ssh -o StrictHostKeyChecking=no $SSH_USER@$node_ip 'echo -e "\033[0;35m$(date)\033[0m
+    local node_identifier="$1"
+
+    # Get node details using external script
+    local node_info
+    node_info=$(get_nodes_list "nn" "$node_identifier")
+    [ $? -ne 0 ] && return 1
+
+    local node_name="${node_info%%:*}"
+    local node_ip="${node_info#*:}"
+
+    # Determine tail command options
+    local tail_options="-n $LOG_LAST_LINES_NUMBER"
+    [ "$ALL_CTRL" != "true" ] && tail_options="-f"
+
+    # Display log header
+    ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+        "echo -e '\033[0;35m$(date)\033[0m
 \033[0;35mLogs from: $(hostname)\033[0m
-\033[0;35mFor check this log: \033[0m
-\033[0;35mssh $(hostname) less /var/log/kolla/autoevacuate.log | less\033[0m"'
-  ssh -o StrictHostKeyChecking=no $SSH_USER@$node_ip "sudo sh -c 'tail $tail_string /var/log/kolla/autoevacuate.log'" | \
-    sed --unbuffered \
-    -e 's/\([1-9][0-9]* computes in maintenance\)/\o033[33m\1\o033[39m/' \
-    -e 's/\(.*Force off.*\)/\o033[31m\1\o033[39m/' \
-    -e 's/\(.*Server.*\)/\o033[33m\1\o033[39m/' \
-    -e 's/\(.*Evacuating instance.*\)/\o033[33m\1\o033[39m/' \
-    -e 's/\(.*IPMI "power off".*\)/\o033[31m\1\o033[39m/' \
-    -e 's/\(.*CRITICAL.*\)/\o033[31m\1\o033[39m/' \
-    -e 's/\(.*ERROR.*\)/\o033[31m\1\o033[39m/' \
-    -e 's/\(.*Not enough.*\)/\o033[31m\1\o033[39m/' \
-    -e 's/\(.*Too many.*\)/\o033[31m\1\o033[39m/' \
-    -e 's/\(.*disabled,.*\)/\o033[33m\1\o033[39m/' \
-    -e 's/\(.*down.*\)/\o033[33m\1\o033[39m/' \
-    -e 's/\(.*failed: True.*\)/\o033[33m\1\o033[39m/' \
-    -e 's/\(.*WARNING.*\)/\o033[33m\1\o033[39m/' \
-    -e 's/\(.*status_code: 400.*\)/\o033[33m\1\o033[39m/' \
-    -e 's/\(.*Starting fence.*\)/\o033[33m\1\o033[39m/'
+\033[0;35mView full log: ssh $(hostname) less /var/log/kolla/autoevacuate.log\033[0m'"
+
+    # Display colored log output
+    ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+        "sudo tail $tail_options /var/log/kolla/autoevacuate.log 2>/dev/null" | \
+        sed --unbuffered \
+            -e 's/\([1-9][0-9]* computes in maintenance\)/\o033[33m\1\o033[39m/' \
+            -e 's/\(.*Force off.*\)/\o033[31m\1\o033[39m/' \
+            -e 's/\(.*Server.*\)/\o033[33m\1\o033[39m/' \
+            -e 's/\(.*Evacuating instance.*\)/\o033[33m\1\o033[39m/' \
+            -e 's/\(.*IPMI "power off".*\)/\o033[31m\1\o033[39m/' \
+            -e 's/\(.*CRITICAL.*\)/\o033[31m\1\o033[39m/' \
+            -e 's/\(.*ERROR.*\)/\o033[31m\1\o033[39m/' \
+            -e 's/\(.*Not enough.*\)/\o033[31m\1\o033[39m/' \
+            -e 's/\(.*Too many.*\)/\o033[31m\1\o033[39m/' \
+            -e 's/\(.*disabled,.*\)/\o033[33m\1\o033[39m/' \
+            -e 's/\(.*down.*\)/\o033[33m\1\o033[39m/' \
+            -e 's/\(.*failed: True.*\)/\o033[33m\1\o033[39m/' \
+            -e 's/\(.*WARNING.*\)/\o033[33m\1\o033[39m/' \
+            -e 's/\(.*status_code: 400.*\)/\o033[33m\1\o033[39m/' \
+            -e 's/\(.*Starting fence.*\)/\o033[33m\1\o033[39m/'
 }
 
-check_log_on_all_ctrl () {
-  ctrl_nodes_list=$(get_nodes_list nt ctrl)
-  for ctrl in $ctrl_nodes_list; do
-    node_name="${ctrl%%:*}"  # get the part before the first ':'
-    node_ip="${ctrl#*:}"     # get the part after the first ':'
-#    echo -e "${cyan}Check logs on $node_name...${normal}"
-#    ssh -o StrictHostKeyChecking=no $SSH_USER@$node_ip 'echo -e "\033[0;35m$(date)\033[0m
-#\033[0;35mLogs from: $(hostname)\033[0m
-#\033[0;35mFor check this log: \033[0m
-#\033[0;35mssh $(hostname) less /var/log/kolla/autoevacuate.log | less\033[0m"'
-    check_consul_log_one_node $node_name
-  done
-}
+# Function to check logs on all controller nodes
+check_logs_on_all_ctrl() {
+    local ctrl_nodes
+    ctrl_nodes=$(get_nodes_list "nt" "ctrl")
+    [ $? -ne 0 ] && return 1
 
-get_nodes_list () {
-  if [ -z "${NODES[*]}" ]; then
-    nodes=$(bash $utils_dir/$get_nodes_list_script "-$1" "$2")
-  fi
-#  node=$(cat /etc/hosts | grep -m 1 -E ${nodes_pattern} | awk '{print $2}')
-  [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]: \"\$node\": $node\n
-  "
-  for node in $nodes; do NODES+=("$node"); done
-  [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]: \"\$NODES\": ${NODES[*]}
-  "
-  echo -e "${NODES[*]}"
-
-  if [ -z "${NODES[*]}" ]; then
-    echo -e "${red}Failed to determine node list - ERROR${normal}"
-    exit 1
-  fi
-}
-
-if [[ -z "$SSH_USER" ]]; then
-  # 3. Try to determine via whoami (with error handling)
-  SSH_USER=$(whoami 2>/dev/null) || {
-    echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
-    # 4. Use default value
-    SSH_USER="$default_ssh_user"
-  }
-fi
-
-# Final value check
-if [[ -z "$SSH_USER" ]]; then
-  echo -e "${red}Error: Failed to determine user!${normal}" >&2
-  exit 1
-fi
-
-#check_openstack_cli
-Check_openstack_cli
-# Check openrc file
-Check_and_source_openrc_file
-
-#if [ -z "${NODE_NAME}" ]; then
-  if [ -z "${CTRL_LIST}" ]; then
-#    nova_state_list=$(openstack compute service list)
-#    ctrl_nodes_list=$(echo "$nova_state_list" | grep -E "nova-scheduler" | awk '{print $6}')
-    ctrl_nodes_list=$(get_nodes_list nt ctrl)
-#    echo foo
-    echo $ctrl_nodes_list
-    if [ -z "${ctrl_nodes_list}" ]; then
-      echo -e "${yallow}Failed to determine node control list${normal}"
-      echo -e "Try passing the list of node controls via the key \'-ctrl_list\' (read --help)"
-      echo -e "${red}Failed to determine node control list - ERROR${normal}"
-      exit 1
-    fi
-  else
-    ctrl_nodes_list=$(get_nodes_list nn $CTRL_LIST)
-    echo $ctrl_nodes_list
-  fi
-  for i in $ctrl_nodes_list; do nova_ctrl_arr+=("$i"); done
-#    echo $ALL_CTRL
-  if [ ! "$ALL_CTRL" = true ]; then
-#    if [ -z "${ALL_CTRL}" ]; then
-    echo "Attempt to identify a leader in the consul cluster and read logs..."
-    for ctrl in "${nova_ctrl_arr[@]}"; do
-#   first_ctrl_node=${nova_ctrl_arr[0]}
-      node_name="${ctrl%%:*}"  # get the part before the first ':'
-      node_ip="${ctrl#*:}"     # get the part after the first ':'
-      leader_ctrl_node=$(ssh -t -o StrictHostKeyChecking=no $SSH_USER@$node_ip "sudo $DOCKER_ENGINE exec -it consul consul operator raft list-peers" | grep leader | awk '{print $1}')
-      if [ -n "${leader_ctrl_node}" ]; then
-        CTRL_LIST=$leader_ctrl_node
-        echo "Leader consul node is $CTRL_LIST"
-        break
-      fi
+    for node_info in $ctrl_nodes; do
+        local node_name="${node_info%%:*}"
+        echo -e "${cyan}Checking logs on $node_name...${normal}"
+        check_consul_log_one_node "$node_name"
+        echo "----------------------------------------"
     done
-    if [ -z "${leader_ctrl_node}" ]; then
-#    NODE_NAME=$leader_ctrl_node
-      CTRL_LIST=$ctrl_nodes_list
-#    echo "Leader consul node is $NODE_NAME"
-      echo -e "${yallow}Leader node not found. Check logs on all ctrl nodes${normal}
-      $ctrl_nodes_list\' nodes${normal}"
-#        else
-    fi
-  else
-    echo -e "Check logs on all ctrl nodes${normal}
-      $ctrl_nodes_list\' nodes${normal}"
-#        else
-    CTRL_LIST=$ctrl_nodes_list
-  fi
-#fi
+}
 
-echo -e "Consul logs from $CTRL_LIST node"
-#echo -e "Output period check: $OUTPUT_PERIOD sec"
+# Function to find consul leader node
+find_consul_leader() {
+    local ctrl_nodes="$1"
 
-i=0
-#ctrl_nodes_list=$(get_nodes_list nt )
-for ctrl in $CTRL_LIST; do
-  i=$(( $i + 1 ))
-done
-if (( $i > 1 )); then
-  check_log_on_all_ctrl
+    for node_info in $ctrl_nodes; do
+        local node_name="${node_info%%:*}"
+        local node_ip="${node_info#*:}"
+
+        local leader
+        leader=$(ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+            "sudo $DOCKER_ENGINE exec consul consul operator raft list-peers 2>/dev/null" | \
+            grep leader | awk '{print $1}')
+
+        if [ -n "$leader" ]; then
+            echo "$leader"
+            return 0
+        fi
+    done
+
+    echo -e "${yellow}Warning: Consul leader not found${normal}" >&2
+    return 1
+}
+
+# Main execution
+
+# Determine SSH user
+if [[ -z "$SSH_USER" ]]; then
+    SSH_USER=$(whoami 2>/dev/null) || {
+        echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
+        SSH_USER="$default_ssh_user"
+    }
+fi
+
+# Validate SSH user
+if [[ -z "$SSH_USER" ]]; then
+    echo -e "${red}Error: Failed to determine SSH user!${normal}" >&2
+    exit 1
+fi
+
+# Get controller nodes list
+if [ -z "$CTRL_LIST" ]; then
+    CTRL_NODES=$(get_nodes_list "nt" "ctrl")
+    [ $? -ne 0 ] && exit 1
 else
-  echo -e "${cyan}Check logs on $ctrl...${normal}"
-  check_consul_log_one_node $ctrl
+    CTRL_NODES=$(get_nodes_list "nn" "$CTRL_LIST")
+    [ $? -ne 0 ] && exit 1
+fi
+
+# Determine which nodes to check
+if [ "$ALL_CTRL" = "true" ]; then
+    echo -e "${cyan}Checking logs on all controller nodes...${normal}"
+    check_logs_on_all_ctrl
+else
+    # Try to find consul leader
+    LEADER_NODE=$(find_consul_leader "$CTRL_NODES")
+
+    if [ -n "$LEADER_NODE" ]; then
+        echo -e "${cyan}Found consul leader: $LEADER_NODE${normal}"
+        check_consul_log_one_node "$LEADER_NODE"
+    else
+        echo -e "${yellow}No leader found, checking all controller nodes${normal}"
+        check_logs_on_all_ctrl
+    fi
 fi

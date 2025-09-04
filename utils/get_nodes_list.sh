@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script to get node list from hosts file
+# Script to get node list from hosts file and return string like: "node_name1:ip1 node_name2:ip2 ... node_nameN:ipN"
 # Requires node IPs and names to be defined in /etc/hosts
 
 default_hosts_path="/etc/hosts"
