@@ -12,7 +12,7 @@ script_name=$(basename "$0")
 utils_dir="$script_dir/utils"
 check_openrc_script="check_openrc.sh"
 get_nodes_list_script="get_nodes_list.sh"
-default_user="root"
+default_ssh_user="root"
 #install_package_script="install_package.sh"
 
 #Colors
@@ -56,13 +56,16 @@ do
     --help) echo -E "
       The script change consul region config
 
+        suffix        the first parameter returns the RMI suffix
+        config_path   the first parameter returns config path
+
         -v, -debug    without value, set DEBUG=\"true\"
         -pull         pull consul config from ctrl node to $script_dir/$test_node_conf_dir
                       $script_dir/$test_node_conf_dir to
         -push         push consul config from $script_dir/$test_node_conf_dir to all ctrl nodes
         -check        only check option
         -l, legacy    edit legacy consul region config; work with -push, -pull, -check keys
-        -u, user      set user for ssh access
+        -u, ssh_user      set user for ssh access
         -suffix       get suffix
 
       Note:
@@ -113,7 +116,7 @@ do
     -suffix) CHECK_SUFFIX="true"
       echo "Found the -suffix, parameter set $CHECK_SUFFIX"
       ;;
-    -u|-user) SSH_USER="$2"
+    -u|-ssh_user) SSH_USER="$2"
 #      USER_STR="-u $USER"
       echo "Found the -user parameter with value $SSH_USER"
       shift

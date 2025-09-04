@@ -361,9 +361,9 @@ check_consul_members() {
         first_ctrl_node: $first_ctrl_node
     "
     fi
-    if [ -n "$first_ctrl_node" ]; then
-        local node_name="${first_ctrl_node%%:*}"
-        local node_ip="${first_ctrl_node#*:}"
+    if [ -n "$first_ctrl_node_pair" ]; then
+        local node_name="${first_ctrl_node_pair%%:*}"
+        local node_ip="${first_ctrl_node_pair#*:}"
         if [ "$TS_DEBUG" = true ]; then
             echo -e "
     [DEBUG]
@@ -427,17 +427,19 @@ check_consul_config() {
     local ctrl_nodes
     ctrl_nodes=$(bash "$utils_dir/$get_nodes_list_script" -nt ctrl)
     local first_ctrl_node
-    first_ctrl_node=$(echo "$ctrl_nodes" | head -n1)
+    first_ctrl_node_pair=$(echo "$ctrl_nodes" | awk '{print $1}')
 
-    if [ -n "$first_ctrl_node" ]; then
+    if [ -n "$first_ctrl_node_pair" ]; then
         local config_path
+        local node_name="${first_ctrl_node_pair%%:*}"
+        local node_ip="${$first_ctrl_node_pair#*:}"
         config_path=$(bash "$script_dir/$edit_ha_region_config_script" config_path 2>/dev/null | tail -n1)
 
         if [ -n "$config_path" ]; then
-            echo -e "${ORANGE}ssh -t -o StrictHostKeyChecking=no $first_ctrl_node cat $config_path${NC}"
+            echo -e "${ORANGE}ssh -t -o StrictHostKeyChecking=no \"$SSH_USER@$node_ip\" sudo cat $config_path${NC}"
 
             local config_content
-            config_content=$(ssh -o StrictHostKeyChecking=no "$first_ctrl_node" "cat $config_path 2>/dev/null")
+            config_content=$(ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" "sudo cat $config_path 2>/dev/null")
 
             if [ -n "$config_content" ]; then
                 echo "Fencing configuration:"
