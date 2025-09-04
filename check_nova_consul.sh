@@ -483,8 +483,8 @@ case "$CHECK" in
 esac
 
 # Perform comprehensive checks
-check_connections_to_nodes "controls"
-check_connections_to_nodes "computes"
+check_connections_to_nodes "ctrl"
+check_connections_to_nodes "comp"
 
 [ "$CHECK_IPMI" = "true" ] && check_ipmi_connections
 
