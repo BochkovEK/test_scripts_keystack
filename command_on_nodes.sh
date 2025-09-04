@@ -249,6 +249,7 @@ get_nodes_list() {
         nodes_result=$(bash "$utils_dir/$get_nodes_list_script" -return_type "$param_value")
     else
         if [ -n "$param_value" ]; then
+
             nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$param_type" "$param_value")
         else
             nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$param_type")
@@ -286,7 +287,7 @@ fi
 if [ -n "$NODES_NAME" ]; then
     get_nodes_list -nn "$NODES_NAME"
 else
-    get_nodes_list -nt "$NODES_NODES_TYPE"
+    get_nodes_list -nt "$NODES_TYPE"
 fi
 
 # Check connections if requested
