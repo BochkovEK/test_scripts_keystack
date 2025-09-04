@@ -1,310 +1,230 @@
 #!/bin/bash
 
-#The scrip get nodes list
-# !!! ip and name nodes list needed in /etc/hosts
+# Script to get node list from hosts file
+# Requires node IPs and names to be defined in /etc/hosts
 
-
-script_dir=$(dirname $0)
-utils_dir=$script_dir
-#check_openrc_script="check_openrc.sh"
 default_hosts_path="/etc/hosts"
-check_openstack_cli_script="check_openstack_cli.sh"
 
+# Node name patterns
 comp_pattern="comp\-..(\s|$)"
-#$"
 ctrl_pattern="ctrl\-..(\s|$)"
-#$"
 net_pattern="net\-..(\s|$)"
-#comp_compute_service_pattern="(nova-compute)"
-#ctrl_compute_service_pattern="(nova-scheduler)"
-#net_pattern="\-net\-.."
-#$"
 
-#Colors
-#green=$(tput setaf 2)
+# Colors
 red=$(tput setaf 1)
-#violet=$(tput setaf 5)
 normal=$(tput sgr0)
-#yellow=$(tput setaf 3)
 
+# Default values
 [[ -z $NODES_TYPE ]] && NODES_TYPE="all"
 [[ -z $NODES_NAME ]] && NODES_NAME=""
-[[ -z $PING ]] && PING="false"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
-[[ -z $TS_HOSTS_PATH ]] && TS_HOSTS_PATH=$default_hosts_path
+[[ -z $TS_HOSTS_PATH ]] && TS_HOSTS_PATH="$default_hosts_path"
 [[ -z $RETURN_TYPE_NODE_NAME ]] && RETURN_TYPE_NODE_NAME=""
-#[[ -z $WITHOUT_NETWORK_NODES ]] && WITHOUT_NETWORK_NODES="false"
 
-#======================
+# Parameter counter
+count=1
 
-# Define parameters
-define_parameters () {
-  [ "$count" = 1 ] && [[ -n $1 ]] && { NODES_TYPE=$1; [ "$TS_DEBUG" = true ] && echo -e "Nodes type parameter found with value $NODES_TYPE"; }
+# Function to define parameters from positional arguments
+define_parameters() {
+  [ "$count" = 1 ] && [[ -n $1 ]] && {
+    NODES_TYPE="$1"
+    [ "$TS_DEBUG" = true ] && echo -e "Nodes type parameter found with value $NODES_TYPE"
+  }
 }
 
-count=1
+# Parse command line arguments
 while [ -n "$1" ]; do
   case "$1" in
-    --help) echo -E "
-      ip and name nodes list needed in 'hosts' file (define by -h key, or by env TS_HOSTS_PATH; hosts path by default: $default_hosts_path)
+    --help)
+      echo -E "
+      Usage: $0 [OPTIONS]
 
-      -nt,  -type_of_nodes          <type_of_nodes> 'ctrl', 'comp', 'net', 'all', 'all_without_network\awn'
-      -h,   -hosts_path             <path_to_hosts_file>
-      -return_type                  <node_name> output node type
-      -debug                        debug mode (without parameter)
-"
-#      -wnn, -without_network_nodes  if the region does not have a network node (without parameter)
-        exit 0
-        break ;;
-    -debug) TS_DEBUG="true"
-      [ "$TS_DEBUG" = true ] && echo -e "
-      Found the -debug parameter
+      Node IPs and names must be defined in hosts file (default: $default_hosts_path)
+
+      Options:
+        -nt, -type_of_nodes <type>    Node type: 'ctrl', 'comp', 'net', 'all'
+        -nn, -nodes_name <names>      Specific node names (space-separated)
+        -h, -hosts_path <path>        Path to hosts file
+        -return_type <node_name>      Return type of specified node
+        -debug                        Enable debug mode
+        --help                        Show this help message
       "
+      exit 0
       ;;
-#    -wnn|-without_network_nodes) NODES_TYPE=$2
-#      [ "$TS_DEBUG" = true ] && echo -e "
-#      Found the -without_network_nodes with parameter value $WITHOUT_NETWORK_NODES
-#      "
-#      ;;
-    -nt|-type_of_nodes) NODES_TYPE=$2
-      [ "$TS_DEBUG" = true ] && echo -e "
-      Found the -type_of_nodes with parameter value $NODES_TYPE
-      "
-      shift ;;
-    -nn|-nodes_name) NODES_NAME=$2
-      [ "$TS_DEBUG" = true ] && echo -e "
-      Found the -nodes_name with parameter value $NODES_NAME
-      "
-      shift ;;
-    -return_type) RETURN_TYPE_NODE_NAME=$2
-      [ "$TS_DEBUG" = true ] && echo -e "
-      Found the -return_type with parameter value $RETURN_TYPE_NODE_NAME
-      "
-      shift ;;
-    -h|-hosts_path) TS_HOSTS_PATH=$2
-      [ "$TS_DEBUG" = true ] && echo -e "
-      Found the -hosts_path with parameter value $TS_HOSTS_PATH
-      "
-      shift ;;
-    --) shift
-      break ;;
+
+    -debug)
+      TS_DEBUG="true"
+      [ "$TS_DEBUG" = true ] && echo -e "Debug mode enabled"
+      ;;
+
+    -nt|-type_of_nodes)
+      NODES_TYPE="$2"
+      [ "$TS_DEBUG" = true ] && echo -e "Node type set to: $NODES_TYPE"
+      shift
+      ;;
+
+    -nn|-nodes_name)
+      NODES_NAME="$2"
+      [ "$TS_DEBUG" = true ] && echo -e "Node names set to: $NODES_NAME"
+      shift
+      ;;
+
+    -return_type)
+      RETURN_TYPE_NODE_NAME="$2"
+      [ "$TS_DEBUG" = true ] && echo -e "Return type for node: $RETURN_TYPE_NODE_NAME"
+      shift
+      ;;
+
+    -h|-hosts_path)
+      TS_HOSTS_PATH="$2"
+      [ "$TS_DEBUG" = true ] && echo -e "Hosts file path set to: $TS_HOSTS_PATH"
+      shift
+      ;;
+
+    --)
+      shift
+      break
+      ;;
+
     *)
-      [ "$TS_DEBUG" = true ] && echo -e "
-      Parameter #$count: $1
-      "
+      [ "$TS_DEBUG" = true ] && echo -e "Parameter #$count: $1"
       define_parameters "$1"
-      count=$(( $count + 1 ))
+      count=$((count + 1))
       ;;
   esac
   shift
 done
 
-#check_openstack_cli () {
-##  echo "check"
-#  export DONT_ASK=true
-#  export DONT_INSTALL=true
-#  if bash $utils_dir/$check_openstack_cli_script &> /dev/null; then
-##    pass
-#    check_and_source_openrc_file
-##    get_list_from_compute_service
-##    exit 0
-#  fi
-#}
-
-#check_and_source_openrc_file () {
-##  echo "check openrc"
-#  if bash $utils_dir/$check_openrc_script &> /dev/null; then
-##  if bash $utils_dir/$check_openrc_script 2>&1; then
-#    openrc_file=$(bash $utils_dir/$check_openrc_script)
-#    source $openrc_file
-##  else
-##    bash $utils_dir/$check_openrc_script
-##    exit 1
-#  fi
-#}
-
-# Function to find IP in hosts file
+# Function to find IP address in hosts file
 find_in_hosts_file() {
-    local hostname=$1
-#    echo $TS_HOSTS_PATH
-    [ -f "$TS_HOSTS_PATH" ] || { echo "file $TS_HOSTS_PATH does not exist"; return 1; }
+    local hostname="$1"
+    [ -f "$TS_HOSTS_PATH" ] || {
+        echo "Hosts file $TS_HOSTS_PATH does not exist" >&2
+        return 1
+    }
     grep -w "$hostname" "$TS_HOSTS_PATH" | awk '{print $1}' | head -n1
 }
 
-resolve_hostname_to_ips () {
-    # Resolve hostnames to IPs
-#    echo "${NODES[*]}"
-    for i in "${!NODES[@]}"; do
-#        echo "i: $i"
-        local host="${NODES[$i]}"
-#        local ip=$(dig +short "$host" 2>/dev/null | head -n1)
+# Function to resolve hostnames to IP addresses
+resolve_hostname_to_ips() {
+    local resolved_nodes=()
 
-        local ip=$(find_in_hosts_file "$host")
-#        if [ -z "$ip" ]; then
-#        fi
+    for host in "${NODES[@]}"; do
+        local ip
+        ip=$(find_in_hosts_file "$host")
 
         if [ -n "$ip" ]; then
-#            echo "baz"
-            NODES[$i]="$host:$ip"
+            resolved_nodes+=("$host:$ip")
         else
             echo "Warning: failed to resolve $host" >&2
-            NODES[$i]="unresolved:$host"
+            resolved_nodes+=("unresolved:$host")
         fi
     done
-    echo "${NODES[*]}"
+
+    echo "${resolved_nodes[*]}"
 }
 
-# Main function to parse hosts and resolve to IP
+# Function to parse hosts file and extract nodes
 parse_hosts() {
     [ "$TS_DEBUG" = true ] && echo "Parsing $TS_HOSTS_PATH for pattern: $nodes_to_find"
 
-    # Populate NODES array if empty
+    # Populate NODES array from hosts file
     if [ ${#NODES[@]} -eq 0 ]; then
         while read -r line; do
             NODES+=("$line")
         done < <(grep -E "$nodes_to_find" "$TS_HOSTS_PATH" | awk '{print $2}')
     fi
 
-    # Debug output
-    [ "$TS_DEBUG" = true ] && printf "NODES: %s\n" "${NODES[*]}"
+    [ "$TS_DEBUG" = true ] && printf "Found nodes: %s\n" "${NODES[*]}"
 
+    # Resolve hostnames to IPs
     resolve_hostname_to_ips
 
-#    echo "${NODES[*]}"
-
-    # Check if we have any valid nodes
+    # Validate we found nodes
     if [ ${#NODES[@]} -eq 0 ]; then
-        echo "Failed to determine node list from $TS_HOSTS_PATH" >&2
+        echo "Failed to find nodes in $TS_HOSTS_PATH" >&2
         exit 1
     fi
 }
 
-#get_list_from_compute_service () {
-#  nova_state_list=$(openstack compute service list)
-#  if [ -z "$nova_state_list" ];then
-#   [ "$TS_DEBUG" = true ] && echo -e "
-#[DEBUG]
-#${yellow}Failed - openstack compute service is empty${normal}
-#   "
-#    parse_hosts
-#  else
-#    nodes=$(echo "$nova_state_list" | grep -E $grep_from_compute_service | awk '{print $6}')
-#    if [[ -z $nodes ]];then
-#      [ "$TS_DEBUG" = true ] && echo -e "
-#      [DEBUG]
-#      ${yellow}Failed to find $grep_from_compute_service in compute service list${normal}
-#      "
-#    else
-#      echo $nodes
-#    fi
-#  fi
-#}
+# Function to determine node type based on pattern
+define_node_type() {
+    local node_type="$1"
 
-define_node_type () {
-  case "$1" in
-    ctrl)
-      NODES_TYPE=ctrl
-      nodes_to_find=$ctrl_pattern
-#      grep_from_compute_service=$ctrl_compute_service_pattern
-      [ "$TS_DEBUG" = true ] && echo -e "
-NODES_TYPE: $NODES_TYPE
-nodes_to_find: $nodes_to_find
-      "
-#      get_list_from_compute_service
-      parse_hosts
-      ;;
-    comp|cmpt)
-      NODES_TYPE=comp
-      nodes_to_find=$comp_pattern
-#      grep_from_compute_service=$comp_compute_service_pattern
-      [ "$TS_DEBUG" = true ] && echo -e "
-NODES_TYPE: $NODES_TYPE
-nodes_to_find: $nodes_to_find
-      "
-#      get_list_from_compute_service
-      parse_hosts
-      ;;
-#    awn|all_without_network)
-#      NODES_TYPE=all_without_network
-#      nodes_to_find="$comp_pattern|$ctrl_pattern"
-#      grep_from_compute_service="$comp_compute_service_pattern|$ctrl_compute_service_pattern"
-#      [ "$TS_DEBUG" = true ] && echo -e "
-#NODES_TYPE: $NODES_TYPE
-#nodes_to_find: $nodes_to_find
-#      "
-##      get_list_from_compute_service
-#      parse_hosts
-#      ;;
-    net)
-      NODES_TYPE=net
-      nodes_to_find=$net_pattern
-      [ "$TS_DEBUG" = true ] && echo -e "
-NODES_TYPE: $NODES_TYPE
-nodes_to_find: $nodes_to_find
-      "
-#      coming soon: openstack network agent list
-      parse_hosts
-      ;;
-    all)
-      NODES_TYPE=all
-      nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
-      [ "$TS_DEBUG" = true ] && echo -e "
-NODES_TYPE: $NODES_TYPE
-nodes_to_find: $nodes_to_find
-      "
-      parse_hosts
-      ;;
-    *)
-      [ "$TS_DEBUG" = true ] && echo -e "${red}Node type \'$2\' could not be determined, run script with --help - ERROR${normal}"
-      exit 1
-      ;;
-  esac
+    case "$node_type" in
+        ctrl)
+            nodes_to_find="$ctrl_pattern"
+            [ "$TS_DEBUG" = true ] && echo -e "Looking for controller nodes"
+            parse_hosts
+            ;;
+
+        comp|cmpt)
+            nodes_to_find="$comp_pattern"
+            [ "$TS_DEBUG" = true ] && echo -e "Looking for compute nodes"
+            parse_hosts
+            ;;
+
+        net)
+            nodes_to_find="$net_pattern"
+            [ "$TS_DEBUG" = true ] && echo -e "Looking for network nodes"
+            parse_hosts
+            ;;
+
+        all)
+            nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
+            [ "$TS_DEBUG" = true ] && echo -e "Looking for all node types"
+            parse_hosts
+            ;;
+
+        *)
+            echo "${red}Unknown node type '$node_type'. Use: ctrl, comp, net, or all${normal}" >&2
+            exit 1
+            ;;
+    esac
 }
 
-return_type () {
-#  nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
-#  grep -w "$hostname" "$TS_HOSTS_PATH"
-  [ "$TS_DEBUG" = true ] && echo -e "
-return_type running...
-"
-  node_type=$(grep -i "$RETURN_TYPE_NODE_NAME" "$TS_HOSTS_PATH")
-    [ "$TS_DEBUG" = true ] && echo -e "
-node_type: $node_type
-"
+# Function to return type of specific node
+return_type() {
+    [ "$TS_DEBUG" = true ] && echo -e "Determining type for node: $RETURN_TYPE_NODE_NAME"
 
-  case "$node_type" in
-    *ctrl*)
-        echo "ctrl"
-        ;;
-    *comp*)
-        echo "comp"
-        ;;
-    *net*)
-        echo "net"
-        ;;
-    *)
-        echo ""
-        ;;
-  esac
-  exit 0
+    local node_info
+    node_info=$(grep -i "$RETURN_TYPE_NODE_NAME" "$TS_HOSTS_PATH" 2>/dev/null)
+
+    [ "$TS_DEBUG" = true ] && echo -e "Node info found: $node_info"
+
+    case "$node_info" in
+        *ctrl*)
+            echo "ctrl"
+            ;;
+        *comp*)
+            echo "comp"
+            ;;
+        *net*)
+            echo "net"
+            ;;
+        *)
+            echo ""
+            ;;
+    esac
 }
 
-[ -n "$RETURN_TYPE_NODE_NAME" ] && return_type
+# Main execution flow
 
-#check_and_source_openrc_file
-if [ -n "$NODES_NAME" ]; then
-  [ "$TS_DEBUG" = true ] && echo -e "
-NODE_NAME: $NODES_NAME
-"
-#  NODES=("${NODES_NAME}")
-#  NODES=($NODES_NAME)
-#  NODES=("${NODES_NAME[*]}")
-#  IFS=' ' read -ra NODES <<< "$NODES_NAME"
-  for i in $NODES_NAME; do NODES+=("$i"); done
-  resolve_hostname_to_ips
-  exit 0
+# If return_type is requested, execute and exit
+if [ -n "$RETURN_TYPE_NODE_NAME" ]; then
+    return_type
+    exit 0
 fi
-define_node_type $NODES_TYPE
 
+# If specific node names are provided, resolve them
+if [ -n "$NODES_NAME" ]; then
+    [ "$TS_DEBUG" = true ] && echo -e "Processing specific node names: $NODES_NAME"
 
+    # Convert space-separated string to array
+    IFS=' ' read -ra NODES <<< "$NODES_NAME"
+    resolve_hostname_to_ips
+    exit 0
+fi
 
+# Process nodes by type
+define_node_type "$NODES_TYPE"
