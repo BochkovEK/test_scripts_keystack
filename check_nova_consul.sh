@@ -475,9 +475,9 @@ if [[ -z "$SSH_USER" ]]; then
 fi
 
 # Execute checks
-#check_openstack_cli
-#check_and_source_openrc_file
-#check_nova_service_list
+check_openstack_cli
+check_and_source_openrc_file
+check_nova_service_list
 
 # Handle specific check types
 case "$CHECK" in
@@ -494,16 +494,16 @@ case "$CHECK" in
 esac
 
 # Perform comprehensive checks
-#check_connections_to_nodes "ctrl"
-#check_connections_to_nodes "comp"
+check_connections_to_nodes "ctrl"
+check_connections_to_nodes "comp"
 
-#[ "$CHECK_IPMI" = "true" ] && check_ipmi_connections
+[ "$CHECK_IPMI" = "true" ] && check_ipmi_connections
 
 check_docker_containers "ctrl" "consul"
 check_docker_containers "comp" "consul"
 check_docker_containers "comp" "nova_compute"
 
-#check_disabled_computes
-#check_consul_members
+check_disabled_computes
+check_consul_members
 check_consul_logs
 check_consul_config
