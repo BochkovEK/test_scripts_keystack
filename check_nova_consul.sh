@@ -229,8 +229,8 @@ check_ipmi_connections() {
 
     # Get nodes using external script
     local ctrl_nodes comp_nodes
-    ctrl_nodes="$(get_nodes_list -nt ctrl)"
-    comp_nodes="$(get_nodes_list -nt comp)"
+    ctrl_nodes=$(get_nodes_list -nt ctrl)
+    comp_nodes=$(get_nodes_list -nt comp)
 
     local suffix_output suffix
     suffix_output=$(bash "$script_dir/$edit_ha_region_config_script" -u "$SSH_USER" "-suffix")
