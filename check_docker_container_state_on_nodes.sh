@@ -282,7 +282,7 @@ for node_pair in $NODES; do
 
     # Determine node type and check required containers
     if [ -z "$CONTAINER_NAME" ]; then
-        local node_type
+#        local node_type
         node_type=$(bash "$utils_dir/$get_nodes_list_script" -return_type "$node_name")
 
         [ "$TS_DEBUG" = true ] && echo -e "
