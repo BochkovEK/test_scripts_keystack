@@ -163,7 +163,8 @@ start_commands_on_nodes() {
         # Split node:ip format
         node_name="${node_pair%%:*}"
         node_ip="${node_pair#*:}"
-
+         [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] node_name: $node_name; node_ip: $node_ip"
         echo -E "${blue}Executing command on ${node_name}${normal}"
         ssh -o StrictHostKeyChecking=no -t "$SENDENV" "$SSH_USER@$node_ip" "$COMMAND"
     done
