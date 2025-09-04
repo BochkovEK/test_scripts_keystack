@@ -264,11 +264,17 @@ get_nodes_list() {
     [DEBUG] Getting nodes with: $param_type=$param_value"
 
     if [ "$param_type" = "return_type" ]; then
+        [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" -return_type \"$param_value\"\)"
         nodes_result=$(bash "$utils_dir/$get_nodes_list_script" -return_type "$param_value")
     else
         if [ -n "$param_value" ]; then
+            [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$param_type\" \"$param_value\"\)"
             nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$param_type" "$param_value")
         else
+            [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$param_type\""
             nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$param_type")
         fi
     fi
