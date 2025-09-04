@@ -329,8 +329,22 @@ check_docker_containers() {
     local node_type="$1"
     local container_name="$2"
 
+    echo -e "${violet}Checking $container_name on $node_type...${normal}"
+
     local nodes
     nodes=$(get_nodes_list -nt "$node_type")
+
+    local node_name
+    local nodes_name_list
+    if [ -n "$nodes" ]; then
+        for pair in $nodes; do
+            node_name="${pair%%:*}"
+            nodes_name_list="$nodes_name_list $node_name"
+        done
+    else
+        echo -e "${red}ERROR: nodes list type $node_type could not be define${normal}"
+        return 1
+    fi
 
     # Check if external script exists
     if [ ! -f "$script_dir/check_docker_container_state_on_nodes.sh" ]; then
@@ -339,7 +353,7 @@ check_docker_containers() {
     fi
 
     bash "$script_dir/check_docker_container_state_on_nodes.sh" \
-        -nn "$nodes" \
+        -nn "$nodes_name_list" \
         -u "$SSH_USER" \
         -de "$DOCKER_ENGINE" 2>/dev/null | grep "$container_name"
 #        echo -e "${red}ERROR: Container $container_name has issues on $node_name${normal}"
