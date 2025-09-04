@@ -20,6 +20,7 @@ get_nodes_list_script="get_nodes_list.sh"
 check_openrc_script="check_openrc.sh"
 check_openstack_cli_script="check_openstack_cli.sh"
 default_docker_engine="docker"
+default_ssh_user="root"
 
 
 [[ -z $COMP_NODE_NAME ]] && COMP_NODE_NAME="$1"
@@ -167,8 +168,25 @@ try_to_disable_MM () {
         -X GET "$internal_FQDN":12999/api/"$OS_REGION_NAME"/hypervisors
 }
 
+get_ssh_user () {
+    # Determine SSH user
+    if [[ -z "$SSH_USER" ]]; then
+        SSH_USER=$(whoami 2>/dev/null) || {
+            echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
+            SSH_USER="$default_ssh_user"
+        }
+    fi
+
+    # Final user validation
+    if [[ -z "$SSH_USER" ]]; then
+        echo -e "${red}Error: Failed to determine SSH user!${normal}" >&2
+        exit 1
+    fi
+}
+
 check_openstack_cli
 check_and_source_openrc_file
+get_ssh_user
 
 compute_node_pair=$(get_nodes_list -nn "$COMP_NODE_NAME")
 node_name="${compute_node_pair%%:*}"
