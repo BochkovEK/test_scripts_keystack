@@ -249,9 +249,9 @@ get_nodes_list() {
         nodes_result=$(bash "$utils_dir/$get_nodes_list_script" -return_type "$param_value")
     else
         if [ -n "$param_value" ]; then
-            nodes_result=$(bash "$utils_dir/$get_nodes_list_script" -"$param_type" "$param_value")
+            nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$param_type" "$param_value")
         else
-            nodes_result=$(bash "$utils_dir/$get_nodes_list_script" -"$param_type")
+            nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$param_type")
         fi
     fi
 
