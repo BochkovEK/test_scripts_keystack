@@ -432,7 +432,7 @@ check_consul_config() {
     if [ -n "$first_ctrl_node_pair" ]; then
         local config_path
         local node_name="${first_ctrl_node_pair%%:*}"
-        local node_ip="${$first_ctrl_node_pair#*:}"
+        local node_ip="${first_ctrl_node_pair#*:}"
         config_path=$(bash "$script_dir/$edit_ha_region_config_script" config_path 2>/dev/null | tail -n1)
 
         if [ -n "$config_path" ]; then
