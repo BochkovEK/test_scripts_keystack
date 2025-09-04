@@ -144,35 +144,13 @@ check_openstack_cli() {
 # Function to check nova service list
 check_nova_service_list() {
     echo -e "${violet}Checking nova service list...${normal}"
-    echo -e "${yellow}openstack compute service list${normal}"
+    echo -e "openstack compute service list"
     nova_state_list=$(openstack compute service list)
     echo "$nova_state_list" | \
         sed --unbuffered \
             -e 's/\(.*disabled.*\)/\o033[31m\1\o033[39m/' \
             -e 's/\(.*down.*\)/\o033[31m\1\o033[39m/'
 }
-
-## Function to get nodes by type using external script
-#get_nodes_by_type() {
-#    local node_type="$1"
-#    local nodes
-#
-#    case "$node_type" in
-#        controls)
-#            nodes=$(bash "$utils_dir/$get_nodes_list_script" -nt ctrl)
-#            ;;
-#        computes)
-#            nodes=$(bash "$utils_dir/$get_nodes_list_script" -nt comp)
-#            ;;
-#        *)
-#            echo "Unknown node type: $node_type"
-#            return 1
-#            ;;
-#    esac
-#
-#    [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] $node_type nodes: $nodes"
-#    echo "$nodes"
-#}
 
 get_nodes_list() {
     local param_type="$1"
@@ -491,9 +469,9 @@ check_connections_to_nodes "comp"
 
 [ "$CHECK_IPMI" = "true" ] && check_ipmi_connections
 
-check_docker_containers "controls" "consul"
-check_docker_containers "computes" "consul"
-check_docker_containers "computes" "nova_compute"
+check_docker_containers "ctrl" "consul"
+check_docker_containers "comp" "consul"
+check_docker_containers "comp" "nova_compute"
 
 check_disabled_computes
 check_consul_members
