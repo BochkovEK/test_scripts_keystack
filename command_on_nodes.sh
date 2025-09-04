@@ -200,41 +200,70 @@ check_ping() {
 }
 
 # Function to get nodes list from external script
+#get_nodes_list() {
+#    [ "$TS_DEBUG" = true ] && echo -e "
+#    [DEBUG] Getting nodes list:
+#      Current NODES: ${NODES[*]}
+#    "
+#
+#    # Get nodes list if not already provided
+#    if [ -z "${NODES[*]}" ]; then
+#        local nodes
+#        if [ -n "$NODES_NAME" ]; then
+#            nodes=$(bash "$utils_dir/$get_nodes_list_script" -nt "$NODES_TYPE" -nn "$NODES_NAME")
+#        else
+#            nodes=$(bash "$utils_dir/$get_nodes_list_script" -nt "$NODES_TYPE")
+#        fi
+#
+#        # Check for errors
+#        if echo "$nodes" | grep -q "ERROR"; then
+#            exit 1
+#        else
+#            # Add nodes to array
+#            for node in $nodes; do
+#                NODES+=("$node")
+#            done
+#        fi
+#    fi
+#
+#    [ "$TS_DEBUG" = true ] && echo -e "
+#    [DEBUG] Final NODES list: ${NODES[*]}
+#    "
+#
+#    # Validate nodes list
+#    if [ -z "${NODES[*]}" ]; then
+#        echo -e "${red}Failed to determine node list - ERROR${normal}"
+#        exit 1
+#    fi
+#}
+
+# Function to get nodes list using external script
 get_nodes_list() {
-    [ "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG] Getting nodes list:
-      Current NODES: ${NODES[*]}
-    "
+    local param_type="$1"
+    local param_value="$2"
+    local nodes_result=""
 
-    # Get nodes list if not already provided
-    if [ -z "${NODES[*]}" ]; then
-        local nodes
-        if [ -n "$NODES_NAME" ]; then
-            nodes=$(bash "$utils_dir/$get_nodes_list_script" -nt "$NODES_TYPE" -nn "$NODES_NAME")
-        else
-            nodes=$(bash "$utils_dir/$get_nodes_list_script" -nt "$NODES_TYPE")
-        fi
+    [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] Getting nodes with: $param_type=$param_value"
 
-        # Check for errors
-        if echo "$nodes" | grep -q "ERROR"; then
-            exit 1
+    if [ "$param_type" = "return_type" ]; then
+        nodes_result=$(bash "$utils_dir/$get_nodes_list_script" -return_type "$param_value")
+    else
+        if [ -n "$param_value" ]; then
+            nodes_result=$(bash "$utils_dir/$get_nodes_list_script" -"$param_type" "$param_value")
         else
-            # Add nodes to array
-            for node in $nodes; do
-                NODES+=("$node")
-            done
+            nodes_result=$(bash "$utils_dir/$get_nodes_list_script" -"$param_type")
         fi
     fi
 
-    [ "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG] Final NODES list: ${NODES[*]}
-    "
-
-    # Validate nodes list
-    if [ -z "${NODES[*]}" ]; then
-        echo -e "${red}Failed to determine node list - ERROR${normal}"
+    # Check for errors in node list
+    if echo "$nodes_result" | grep -q "ERROR"; then
+        echo -e "${yellow}Node names could not be determined.${normal}"
+        echo -e "${yellow}Try: bash $utils_dir/$get_nodes_list_script -nt all${normal}"
+        echo -e "${red}Node names could not be determined - ERROR!${normal}"
         exit 1
     fi
+
+    echo "$nodes_result"
 }
 
 # Main execution
@@ -254,7 +283,11 @@ if [[ -z "$SSH_USER" ]]; then
 fi
 
 # Get nodes list
-get_nodes_list
+if [ -n "$NODES_NAME" ]; then
+    get_nodes_list -nn "$NODES_NAME"
+else
+    get_nodes_list -nt "$NODES_NODES_TYPE"
+fi
 
 # Check connections if requested
 if [ "$DONT_CHECK_CONN" = false ]; then

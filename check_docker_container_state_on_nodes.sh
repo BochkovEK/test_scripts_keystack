@@ -1,389 +1,264 @@
 #!/bin/bash
 
-#The scrip check container state on nodes or node
+# Script to check container states on nodes
+# Supports Docker and Podman container engines
 
-# example nodes list define
-# NODES=("<IP_1>" "<IP_2>" "<IP_3>" "...")
-
-#comp_pattern="\-comp\-..($|\s)"
-#ctrl_pattern="\-ctrl\-..($|\s)"
-#net_pattern="\-net\-..($|\s)"
-#nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
-
-script_dir=$(dirname $0)
+script_dir=$(dirname "$0")
 script_name=$(basename "$0")
-utils_dir=$script_dir/utils
+utils_dir="$script_dir/utils"
 get_nodes_list_script="get_nodes_list.sh"
-#command_on_nodes_script="command_on_nodes.sh"
 default_ssh_user="root"
 default_docker_engine="docker"
 
-#Colors
-#green=$(tput setaf 2)
+# Colors
 red=$(tput setaf 1)
-#violet=$(tput setaf 5)
-#magenta=$(tput setaf 200)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
-#cyan=$(tput setaf 6)
 
+# Required container lists
 ctrl_required_container_list=(
-  "keystone"
-  "keystone_ssh"
-  "rabbitmq"
-  "memcached"
-  "mariadb"
-  "redis"
-  "haproxy"
-  "horizon"
-  "nova_serialproxy"
-  "nova_novncproxy"
-  "nova_conductor"
-  "nova_api"
-  "nova_scheduler"
-  "placement_api"
-  "cinder_volume"
-  "cinder_scheduler"
-  "cinder_api"
-  "adminui_frontend"
-  "adminui_backend"
-  "drs"
-  "consul"
-  "prometheus_consul_exporter"
-  "prometheus_blackbox_exporter"
-  "prometheus_elasticsearch_exporter"
-  "prometheus_openstack_exporter"
-  "prometheus_alertmanager"
-  "prometheus_memcached_exporter"
-  "prometheus_rabbitmq_exporter"
-  "prometheus_mysqld_exporter"
-  "prometheus_node_exporter"
-  "prometheus_server"
+    "keystone" "keystone_ssh" "rabbitmq" "memcached" "mariadb" "redis"
+    "haproxy" "horizon" "nova_serialproxy" "nova_novncproxy" "nova_conductor"
+    "nova_api" "nova_scheduler" "placement_api" "cinder_volume" "cinder_scheduler"
+    "cinder_api" "adminui_frontend" "adminui_backend" "drs" "consul"
+    "prometheus_consul_exporter" "prometheus_blackbox_exporter" "prometheus_elasticsearch_exporter"
+    "prometheus_openstack_exporter" "prometheus_alertmanager" "prometheus_memcached_exporter"
+    "prometheus_rabbitmq_exporter" "prometheus_mysqld_exporter" "prometheus_node_exporter"
+    "prometheus_server"
 )
 
 comp_required_container_list=(
-  "iscsid"
-  "consul"
-  "neutron_openvswitch_agent"
-  "openvswitch_vswitchd"
-  "openvswitch_db"
-  "nova_compute"
-  "nova_libvirt"
-  "nova_ssh"
-  "prometheus_hypervisor_exporter"
-  "prometheus_ovs_exporter"
-  "prometheus_libvirt_exporter"
-  "prometheus_node_exporter"
-  "prometheus_blackbox_exporter"
-  "cron"
-  "fluentd"
+    "iscsid" "consul" "neutron_openvswitch_agent" "openvswitch_vswitchd" "openvswitch_db"
+    "nova_compute" "nova_libvirt" "nova_ssh" "prometheus_hypervisor_exporter"
+    "prometheus_ovs_exporter" "prometheus_libvirt_exporter" "prometheus_node_exporter"
+    "prometheus_blackbox_exporter" "cron" "fluentd"
 )
-# inventory
-#   [monitoring:children]
-#   control
-#   [prometheus-blackbox-exporter:children]
-#   monitoring
-# "prometheus_blackbox_exporter" not required on comp
 
-#required_container_list=()
-
+# Default values
 [[ -z $CONTAINER_NAME ]] && CONTAINER_NAME=""
 [[ -z $NODES ]] && NODES=()
-#[[ -z $CHECK_UNHEALTHY ]] && CHECK_UNHEALTHY="false"
-[[ -z $NODES_TYPE ]] && NODES_TYPE=""
-[[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $NODES_TYPE ]] && NODES_TYPE="all"
+[[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $NODES_NAME ]] && NODES_NAME=""
-[[ -z $DOCKER_ENGINE ]] && DOCKER_ENGINE=$default_docker_engine
-#[[ -z $SSH_USER ]] && SSH_USER=$default_ssh_user # !!! replaced by the logic described below
-#======================
+[[ -z $DOCKER_ENGINE ]] && DOCKER_ENGINE="$default_docker_engine"
 
+# Function to display help information
+show_help() {
+    echo -E "
+    Usage: $0 [OPTIONS]
 
-# Define parameters
-define_parameters () {
-  [ "$count" = 1 ] && [[ -n $1 ]] && { echo; }
+    Options:
+      -nt, -type_of_nodes <type>    Node type: 'all', 'ctrl', 'comp', 'net', 'awn'
+      -nn, -node_name <names>       Space-separated node names
+      -u, -user <username>          SSH username
+      -de, -docker_engine <engine>  Container engine: docker or podman
+      -debug                        Enable debug output
+      --help                        Show this help message
+    "
 }
 
+# Function to define parameters from positional arguments
+define_parameters() {
+    [ "$count" = 1 ] && [[ -n $1 ]] && {
+        echo "Parameter found: $1"
+    }
+}
+
+# Parse command line arguments
 count=1
-while [ -n "$1" ]
-do
-  case "$1" in
-    --help) echo -E "
+while [ -n "$1" ]; do
+    case "$1" in
+        --help)
+            show_help
+            exit 0
+            ;;
 
-      -nt, 	-type_of_nodes		<type_of_nodes>: 'all', 'ctrl', 'comp', 'net', 'all_without_network\awn'
-      -nn,  -node_name        <nodes_name_list> (exp: -nn \"cdm-bl-pca06 cdm-bl-pca07\")
-      -u,   -user             <ssh_user>
-      -de,  -docker_engine    <docker_engine: docker\podman>
-      -debug                  enable debug output (without parameter)
-"
-#      -check_unhealthy        check only unhealthy containers (without parameter)
-      exit 0
-      break
-      ;;
+        -nt|-type_of_nodes)
+            NODES_TYPE="$2"
+            echo "Found -type_of_nodes with value: $NODES_TYPE"
+            shift
+            ;;
 
-    -nt|-type_of_nodes)
-      NODES_TYPE=$2
-#      nodes_type_string
-      echo "Found the -type_of_nodes  with parameter value $NODES_TYPE"
-#      note_type_func "$2"
-      shift
-      ;;
-    -nn|-node_name) NODES_NAME=$2
-      echo "Found the -node_name  with parameter value $NODES_NAME"
-#      note_type_func "$2"
-      shift
-      ;;
-    -de|-docker_engine) DOCKER_ENGINE=$2
-      echo "Found the -docker_engine with parameter value $DOCKER_ENGINE"
-      shift
-      ;;
-    -u|-user) SSH_USER=$2
-      echo "Found the -user with parameter value $SSH_USER"
-      shift
-      ;;
-    -debug)
-      TS_DEBUG="true"
-#      debug_string="-debug"
-      echo "Found the -debug with parameter value $TS_DEBUG"
-      ;;
-    --) shift
-      break
-      ;;
-    *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
-      esac
-      shift
+        -nn|-node_name)
+            NODES_NAME="$2"
+            echo "Found -node_name with value: $NODES_NAME"
+            shift
+            ;;
+
+        -de|-docker_engine)
+            DOCKER_ENGINE="$2"
+            echo "Found -docker_engine with value: $DOCKER_ENGINE"
+            shift
+            ;;
+
+        -u|-user)
+            SSH_USER="$2"
+            echo "Found -user with value: $SSH_USER"
+            shift
+            ;;
+
+        -debug)
+            TS_DEBUG="true"
+            echo "Found -debug option"
+            ;;
+
+        --)
+            shift
+            break
+            ;;
+
+        *)
+            echo "Parameter #$count: $1"
+            define_parameters "$1"
+            count=$((count + 1))
+            ;;
+    esac
+    shift
 done
 
-#    -check_unhealthy) CHECK_UNHEALTHY="true"
-#      echo "Found the -check_unhealthy  with parameter value $CHECK_UNHEALTHY"
-#      ;;
+# Function to check required containers on a node
+check_required_containers() {
+    local node_ip="$1"
+    local node_type="$2"
 
-#	  -c|-container_name) CONTAINER_NAME="$2"
-#	    echo "Found the -container_name <container_name> option, with parameter value $CONTAINER_NAME"
-#      shift
-#      ;;
+    echo -e "Checking required containers on $node_ip ($node_type)"
 
-#      <container_name> as parameter
-#      -c, 	-container_name		<container_name>
+    local container_names
+    container_names=$(ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+        "sudo $DOCKER_ENGINE ps --format '{{.Names}}' --filter status=running" 2>/dev/null)
 
-check_required_container () {
-  echo -e "Check required container on $1"
-#  container_name_on_node=$(ssh -o StrictHostKeyChecking=no $SSH_USER@$1 'sudo \$DOCKER_ENGINE ps --format "{{.Names}}" --filter status=running')
-#  container_name_on_node=$(ssh -o StrictHostKeyChecking=no "$SSH_USER@$1" "sudo \$DOCKER_ENGINE ps --format '{{.Names}}' --filter status=running")
-  container_name_on_node=$(ssh -o StrictHostKeyChecking=no $SSH_USER@$1 "sudo $DOCKER_ENGINE ps --format '{{.Names}}' --filter status=running")
-#  echo $container_name_on_node
-  for container_requaired in "${required_containers_list[@]}"; do
-    container_exist="false"
-    for container in $container_name_on_node; do
-      [ "$TS_DEBUG" = true ] && echo -e "
-[DEBUG]:  container_name:      $container
-          container_requaired: $container_requaired
-"
-      if [ "$container" = "$container_requaired" ]; then
-        container_exist="true"
-      fi
+    local required_containers=()
+    case "$node_type" in
+        ctrl) required_containers=("${ctrl_required_container_list[@]}") ;;
+        comp) required_containers=("${comp_required_container_list[@]}") ;;
+        *) return ;;
+    esac
+
+    for container_required in "${required_containers[@]}"; do
+        local container_exists="false"
+
+        for container in $container_names; do
+            [ "$TS_DEBUG" = true ] && echo -e "
+[DEBUG] Container: $container, Required: $container_required"
+
+            if [ "$container" = "$container_required" ]; then
+                container_exists="true"
+                break
+            fi
+        done
+
+        if [ "$container_exists" = "false" ]; then
+            echo -e "${red}Container $container_required not running - ERROR${normal}"
+        fi
     done
-    if [ "$container_exist" = "true" ]; then
-      container_exist="true"
+}
+
+# Function to get nodes list using external script
+get_nodes_list() {
+    local param_type="$1"
+    local param_value="$2"
+    local nodes_result=""
+
+    [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] Getting nodes with: $param_type=$param_value"
+
+    if [ "$param_type" = "return_type" ]; then
+        nodes_result=$(bash "$utils_dir/$get_nodes_list_script" -return_type "$param_value")
     else
-      echo -e "${red}Container $container_requaired not running - ERROR${normal}"
+        if [ -n "$param_value" ]; then
+            nodes_result=$(bash "$utils_dir/$get_nodes_list_script" -"$param_type" "$param_value")
+        else
+            nodes_result=$(bash "$utils_dir/$get_nodes_list_script" -"$param_type")
+        fi
     fi
-  done
+
+    # Check for errors in node list
+    if echo "$nodes_result" | grep -q "ERROR"; then
+        echo -e "${yellow}Node names could not be determined.${normal}"
+        echo -e "${yellow}Try: bash $utils_dir/$get_nodes_list_script -nt all${normal}"
+        echo -e "${red}Node names could not be determined - ERROR!${normal}"
+        exit 1
+    fi
+
+    echo "$nodes_result"
 }
 
-#get_nodes_list () {
-#  if [ -z "${NODES[*]}" ]; then
-#    nodes=$(bash $utils_dir/$get_nodes_list_script -nt $NODES_TYPE)
-#  fi
-##  node=$(cat /etc/hosts | grep -m 1 -E ${nodes_pattern} | awk '{print $2}')
-#  [ "$TS_DEBUG" = true ] && echo -e "
-#  [DEBUG]: \"\$node\": $node\n
-#  "
-#  for node in $nodes; do NODES+=("$node"); done
-#  [ "$TS_DEBUG" = true ] && echo -e "
-#  [DEBUG]: \"\$NODES\": ${NODES[*]}
-#  "
-#  #check error
-#  for word in "${NODES[@]}"; do
-#    [ "$TS_DEBUG" = true ] && echo -e "
-#  [DEBUG]:
-#    word in NODES: $word
-#  "
-#    error_in_NODES=$(echo $word|grep "ERROR")
-#    if [ -n "$error_in_NODES" ]; then
-#      echo -e "${yellow}Node names could not be determined.
-#        Try:
-#          bash ~/test_scripts_keystack/utils/get_nodes_list.sh -nt all
-#          or
-#          bash $script_dir/$script_name -nn \"<space-separated_list_of_hostnames>\"${normal}"
-#      echo -e "${red}Node names could not be determined - ERROR!${normal}"
-#      exit 1
-#    fi
-#  done
-#  if [ -z "${NODES[*]}" ]; then
-#    echo -e "${red}Failed to determine node list - ERROR!${normal}"
-#    exit 1
-#  fi
-#}
+# Function to check container status on a node
+check_container_status() {
+    local node_name="$1"
+    local node_ip="$2"
 
-get_nodes_list () {
-#  [ "$TS_DEBUG" = true ] && echo -e "get_nodes_list starting..."
-  local NODES=()
-  nodes=$(bash $utils_dir/$get_nodes_list_script "-$1" "$2")
+    echo -e "${yellow}Checking containers on $node_name ($node_ip)${normal}"
 
-#  [ "$TS_DEBUG" = true ] && echo -e "
-#  [DEBUG]:
-#  command: nodes=\$(bash $utils_dir/$get_nodes_list_script \"-$1\" \"$2\")
-#  \"\$nodes\": $nodes\n
-#  "
-  for node in $nodes; do NODES+=("$node"); done
-#  [ "$TS_DEBUG" = true ] && echo -e "
-#  [DEBUG]:
-#  in get_nodes_list:
-#  \"\$NODES\": ${NODES[*]}
-#  "
-  echo -e "${NODES[*]}"
-
-  if [ -z "${NODES[*]}" ]; then
-    echo -e "${red}Failed to determine node list - ERROR${normal}"
-    exit 1
-  fi
-}
-
-if [[ -z "$SSH_USER" ]]; then
-  # Try to determine via whoami (with error handling)
-  SSH_USER=$(whoami 2>/dev/null) || {
-    echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
-    # Use default value
-    SSH_USER="$default_ssh_user"
-  }
-#  ssh_user_string="-u $SSH_USER"
-fi
-
-# Final value check
-if [[ -z "$SSH_USER" ]]; then
-  echo -e "${red}Error: Failed to determine user!${normal}" >&2
-  exit 1
-fi
-
-#if [ -z "$NODES_NAME" ]; then
-#  get_nodes_list
-#else
-#  for word in $NODES_NAME; do
-#    NODES+=("$word")
-#  done
-##  NODES=("$NODES_NAME")
-#fi
-
-#[[ "$CHECK_UNHEALTHY" = true  ]] && {
-#  UNHEALTHY="\(unhealthy\)";
-#  echo "UNHEALTHY: $UNHEALTHY";
-#  }
-
-#grep_string="| grep -E \"$UNHEALTHY\\s+$CONTAINER_NAME\""
-#grep_string="| grep -E $CONTAINER_NAME"
-#
-#[ "$TS_DEBUG" = true ] && echo -e "
-#  [DEBUG]
-#  CONTAINER_NAME: $CONTAINER_NAME
-#  "
-#  grep_string: $grep_string
-
-#for host in "${NODES[@]}"; do
-
-#  if [ -z $CONTAINER_NAME ]; then
-#    echo -e "${cyan}Check containers on ${host}${normal}"
-#  else
-#    echo "Check container (CONTAINER_NAME: $CONTAINER_NAME) on ${host}"
-##    grep_string="|grep $CONTAINER_NAME"
-#  fi
-#  status=$(ssh -o "StrictHostKeyChecking=no" -o BatchMode=yes -o ConnectTimeout=5 $SSH_USER@$host echo ok 2>&1)
-#
-#  if [[ $status == ok ]] ; then
-#
-##  if ping -c 2 $host &> /dev/null; then
-#    printf "%40s\n" "There is a connection with $host - ok!"
-
-#    ssh -o StrictHostKeyChecking=no $host docker ps $grep_string \
-
-#export NODES_TYPE=$NODES_TYPE
-#export NODES_NAME=$NODES_NAME
-#export SSH_USER=$SSH_USER
-#export TS_DEBUG=$TS_DEBUG
-
-#bash $script_dir/$command_on_nodes_script -c "sudo $DOCKER_ENGINE ps -a" |sed --unbuffered \
-#        -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
-#        -e 's/\(.*Exited.*\)/\o033[31m\1\o033[39m/' \
-#        -e 's/\(.*second.*\)/\o033[33m\1\o033[39m/' \
-#        -e 's/\(.*Less than.*\)/\o033[33m\1\o033[39m/' \
-#        -e 's/\(.*(healthy).*\)/\o033[92m\1\o033[39m/' \
-#        -e 's/\(.*days.*\)/\o033[92m\1\o033[39m/' \
-#        -e 's/\(.*About an hour.*\)/\o033[92m\1\o033[39m/' \
-#        -e 's/\(.*minutes.*\)/\o033[92m\1\o033[39m/' \
-#        -e 's/\(.*weeks.*\)/\o033[92m\1\o033[39m/' \
-#        -e 's/\(.*hours.*\)/\o033[92m\1\o033[39m/' \
-#        -e 's/\(.*starting).*\)/\o033[33m\1\o033[39m/'\
-#        -e 's/\(.*restarting.*\)/\o033[31m\1\o033[39m/'
-
-if [ -z "$NODES_NAME" ]; then
-  NODES=$(get_nodes_list nt "$NODES_TYPE")
-else
-#  NODES_ARR=("${NODES_NAME[@]}")
-  NODES=$(get_nodes_list nn "$NODES_NAME")
-  echo $NODES
-fi
-
-for node_pair in ${NODES}; do
-    # Split the string into name and IP using ':' as delimiter
-    node_name="${node_pair%%:*}"  # get the part before the first ':'
-    node_ip="${node_pair#*:}"     # get the part after the first ':'
+    local format_option=""
     if [ "$DOCKER_ENGINE" = "podman" ]; then
-      format=" --format 'table {{.ID}}\t{{.Image}}\t{{.Created}}\t{{.Status}}\t{{.Names}}'"
+        format_option="--format 'table {{.ID}}\t{{.Image}}\t{{.Created}}\t{{.Status}}\t{{.Names}}'"
     fi
-    ssh -o StrictHostKeyChecking=no $SSH_USER@$node_ip "sudo $DOCKER_ENGINE ps -a $format \
-      |sed --unbuffered \
-        -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
-        -e 's/\(.*Exited.*\)/\o033[31m\1\o033[39m/' \
-        -e 's/\(.*second.*\)/\o033[33m\1\o033[39m/' \
-        -e 's/\(.*Less than.*\)/\o033[33m\1\o033[39m/' \
-        -e 's/\(.*(healthy).*\)/\o033[92m\1\o033[39m/' \
-        -e 's/\(.*days.*\)/\o033[92m\1\o033[39m/' \
-        -e 's/\(.*About an hour.*\)/\o033[92m\1\o033[39m/' \
-        -e 's/\(.*minutes.*\)/\o033[92m\1\o033[39m/' \
-        -e 's/\(.*weeks.*\)/\o033[92m\1\o033[39m/' \
-        -e 's/\(.*hours.*\)/\o033[92m\1\o033[39m/' \
-        -e 's/\(.*starting).*\)/\o033[33m\1\o033[39m/'\
-        -e 's/\(.*restarting.*\)/\o033[31m\1\o033[39m/'
-        "
 
-    is_ctrl=$(get_nodes_list return_type "$node_name")
-    echo "is_ctrl: $is_ctrl"
-    [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]:
-  \"\$is_ctrl\": $is_ctrl\n
-  \"\$node_name\": $node_name
-  "
-    if [ "$is_ctrl" = "ctrl" ]; then
-      if [ -z $CONTAINER_NAME ]; then
-        required_containers_list=( "${ctrl_required_container_list[@]}" )
-        check_required_container $node_ip
-      fi
+    ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+        "sudo $DOCKER_ENGINE ps -a $format_option" 2>/dev/null | \
+        sed --unbuffered \
+            -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
+            -e 's/\(.*Exited.*\)/\o033[31m\1\o033[39m/' \
+            -e 's/\(.*second.*\)/\o033[33m\1\o033[39m/' \
+            -e 's/\(.*Less than.*\)/\o033[33m\1\o033[39m/' \
+            -e 's/\(.*(healthy).*\)/\o033[92m\1\o033[39m/' \
+            -e 's/\(.*days.*\)/\o033[92m\1\o033[39m/' \
+            -e 's/\(.*About an hour.*\)/\o033[92m\1\o033[39m/' \
+            -e 's/\(.*minutes.*\)/\o033[92m\1\o033[39m/' \
+            -e 's/\(.*weeks.*\)/\o033[92m\1\o033[39m/' \
+            -e 's/\(.*hours.*\)/\o033[92m\1\o033[39m/' \
+            -e 's/\(.*starting).*\)/\o033[33m\1\o033[39m/' \
+            -e 's/\(.*restarting.*\)/\o033[31m\1\o033[39m/'
+}
+
+# Main execution
+
+# Determine SSH user
+if [[ -z "$SSH_USER" ]]; then
+    SSH_USER=$(whoami 2>/dev/null) || {
+        echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
+        SSH_USER="$default_ssh_user"
+    }
+fi
+
+# Validate SSH user
+if [[ -z "$SSH_USER" ]]; then
+    echo -e "${red}Error: Failed to determine SSH user!${normal}" >&2
+    exit 1
+fi
+
+# Get nodes list
+if [ -z "$NODES_NAME" ]; then
+    NODES=$(get_nodes_list nt "$NODES_TYPE")
+else
+    NODES=$(get_nodes_list nn "$NODES_NAME")
+fi
+
+[ "$TS_DEBUG" = true ] && echo -e "[DEBUG] Nodes: $NODES"
+
+# Process each node
+for node_pair in $NODES; do
+    # Split node:ip format
+    node_name="${node_pair%%:*}"
+    node_ip="${node_pair#*:}"
+
+    # Check container status
+    check_container_status "$node_name" "$node_ip"
+
+    # Determine node type and check required containers
+    if [ -z "$CONTAINER_NAME" ]; then
+        local node_type
+        node_type=$(bash "$utils_dir/$get_nodes_list_script" -return_type "$node_name")
+
+        [ "$TS_DEBUG" = true ] && echo -e "
+[DEBUG] Node: $node_name, Type: $node_type"
+
+        case "$node_type" in
+            ctrl|comp)
+                check_required_containers "$node_ip" "$node_type"
+                ;;
+        esac
     fi
-    is_comp=$(get_nodes_list return_type $node_name)
-    [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]: \"\$is_comp\": $is_comp\n
-  "
-    if [ "$is_comp" = "comp" ]; then
-      if [ -z $CONTAINER_NAME ]; then
-        required_containers_list=( "${comp_required_container_list[@]}" )
-        check_required_container $node_ip
-      fi
-    fi
-#  elif [[ $status == *"Permission denied"* ]] ; then
-#    echo -e "${red}Error: ${normal}"
-#    echo -e "${red}\t${status}${normal}"
-#  else
-#    printf "%40s\n" "${red}No connection with $host - error!${normal}"
-#    echo -e "${red}The node may be turned off.${normal}\n"
-#  fi
+
+    echo "----------------------------------------"
 done
