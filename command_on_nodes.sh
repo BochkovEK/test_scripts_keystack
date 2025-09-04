@@ -18,13 +18,13 @@ blue=$(tput setaf 4)
 
 # Default values
 [[ -z $COMMAND ]] && COMMAND="ls -la"
-[[ -z $SENDENV ]] && SENDENV=""
 [[ -z $NODES ]] && NODES=()
 [[ -z $NODES_NAME ]] && NODES_NAME=""
 [[ -z $NODES_TYPE ]] && NODES_TYPE="all"
 [[ -z $PING ]] && PING="false"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $DONT_CHECK_CONN ]] && DONT_CHECK_CONN="true"
+[[ -z $SEND_ENVS ]] && SEND_ENVS=""
 
 # Parameter counter
 count=1
@@ -43,6 +43,7 @@ show_help() {
       -u, -user <username>            SSH username
       -p, -ping                       Ping nodes before executing command
       -check_conn                     Check connection before executing commands
+      -se, -send_envs                 Send envs like -se \"MY_VARIABLE='value'\"
       -debug                          Enable debug mode
       --help                          Show this help message
 
@@ -87,6 +88,12 @@ while [ -n "$1" ]; do
             echo "Found -user option with value: $SSH_USER"
             shift
             ;;
+
+        -se|-send_envs)
+           SEND_ENVS="$2"
+           echo "Found -send_envs option with value: $SEND_ENVS"
+           shift
+           ;;
 
         -nn|-node_name)
             NODES_NAME="$2"
@@ -166,9 +173,15 @@ start_commands_on_nodes() {
         [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG] node_name: $node_name; node_ip: $node_ip"
         echo -E "${blue}Executing command on ${node_name}${normal}"
-        [ "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG] Executing command: ssh -o StrictHostKeyChecking=no -t \"$SENDENV\" \"$SSH_USER@$node_ip\" \"$COMMAND\""
-        ssh -o StrictHostKeyChecking=no -t "$SENDENV" "$SSH_USER@$node_ip" "$COMMAND"
+        if [ -n "$SEND_ENV" ]; then
+            [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] Executing command: ssh -o StrictHostKeyChecking=no -t \"$SEND_ENV\" \"$SSH_USER@$node_ip\" \"$COMMAND\""
+            ssh -o StrictHostKeyChecking=no -t "$SEND_ENV" "$SSH_USER@$node_ip" "$COMMAND"
+        else
+            [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] Executing command: ssh -o StrictHostKeyChecking=no -t \"$SSH_USER@$node_ip\" \"$COMMAND\""
+            ssh -o StrictHostKeyChecking=no -t "$SSH_USER@$node_ip" "$COMMAND"
+        fi
     done
 }
 
