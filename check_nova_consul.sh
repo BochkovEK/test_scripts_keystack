@@ -304,6 +304,7 @@ check_disabled_computes() {
                     export CHECK_AFTER="false"
 
                     if [ -f "$openstack_utils/$try_to_rise_compute_node_script" ]; then
+                        [ "$TS_DEBUG" = true ] && echo -e "$try_to_rise_compute_node_script exists - ok"
                         bash "$openstack_utils/$try_to_rise_compute_node_script"
                     else
                         echo -e "${yellow}$try_to_rise_compute_node_script script not found${normal}"
