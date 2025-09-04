@@ -333,7 +333,7 @@ check_docker_containers() {
         if ! bash "$script_dir/check_docker_container_state_on_nodes.sh" \
             -nn "$node_name" \
             -u "$SSH_USER" \
-            -de "docker" 2>/dev/null | grep "$container_name" | grep -q -E "(unhealthy|restarting|Exited)"; then
+            -de "$DOCKER_ENGINE" 2>/dev/null | grep "$container_name" | grep -q -E "(unhealthy|restarting|Exited)"; then
 
             # If grep didn't find error states, check if container exists at all
             if ! bash "$script_dir/check_docker_container_state_on_nodes.sh" \
