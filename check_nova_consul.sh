@@ -338,12 +338,11 @@ check_docker_containers() {
         return 1
     fi
 
-    if ! bash "$script_dir/check_docker_container_state_on_nodes.sh" \
+    bash "$script_dir/check_docker_container_state_on_nodes.sh" \
         -nn "$nodes" \
         -u "$SSH_USER" \
-        -de "$DOCKER_ENGINE" 2>/dev/null | grep "$container_name"; then
-        echo -e "${red}ERROR: Container $container_name has issues on $node_name${normal}"
-    fi
+        -de "$DOCKER_ENGINE" 2>/dev/null | grep "$container_name"
+#        echo -e "${red}ERROR: Container $container_name has issues on $node_name${normal}"
 }
 
 # Function to check consul members list
