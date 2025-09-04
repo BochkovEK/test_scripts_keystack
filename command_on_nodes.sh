@@ -320,6 +320,9 @@ else
     nodes=$(get_nodes_list -nt "$NODES_TYPE")
 fi
 
+[ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] nodes: $nodes"
+
 IFS=' ' read -ra NODES <<< "$nodes"
 
 # Check connections if requested
