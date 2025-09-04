@@ -282,7 +282,7 @@ check_disabled_computes() {
         nova_state_list: $nova_state_list
         comp_disabled_nova_list: $comp_disabled_nova_list
     "
-    if [ -n "$cmpt_disabled_nova_list" ]; then
+    if [ -n "$comp_disabled_nova_list" ]; then
         [ "$TS_DEBUG" = true ] && echo -e "[DEBUG]: cmpt_disabled_nova_list: $cmpt_disabled_nova_list"
         if [ "$TRY_TO_RISE" = "true" ]; then
             [ "$TS_DEBUG" = true ] && echo -e "[DEBUG]: TRY_TO_RISE: $TRY_TO_RISE"
