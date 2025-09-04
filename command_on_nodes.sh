@@ -249,7 +249,6 @@ get_nodes_list() {
         nodes_result=$(bash "$utils_dir/$get_nodes_list_script" -return_type "$param_value")
     else
         if [ -n "$param_value" ]; then
-
             nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$param_type" "$param_value")
         else
             nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$param_type")
@@ -262,9 +261,22 @@ get_nodes_list() {
         echo -e "${yellow}Try: bash $utils_dir/$get_nodes_list_script -nt all${normal}"
         echo -e "${red}Node names could not be determined - ERROR!${normal}"
         exit 1
+    else
+        # Add nodes to array
+        for node in $nodes_result; do
+            NODES+=("$node")
+        done
     fi
 
-    echo "$nodes_result"
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] Final NODES list: ${NODES[*]}
+    "
+
+    # Validate nodes list
+    if [ -z "${NODES[*]}" ]; then
+        echo -e "${red}Failed to determine node list - ERROR${normal}"
+        exit 1
+    fi
 }
 
 # Main execution
