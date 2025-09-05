@@ -22,6 +22,7 @@ normal=$(tput sgr0)      # Reset to default
 yellow=$(tput setaf 3)   # Warnings and highlights
 blue=$(tput setaf 4)     # Information and timestamps
 cyan=$(tput setaf 14)    # Node headers and section titles
+green=$(tput setaf 2)
 
 # Default configuration values
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
@@ -306,7 +307,7 @@ get_ssh_user
 if [ -n "$NODE_NAME" ]; then
     nodes=$(get_nodes_list "-nn" "$NODE_NAME")
 else
-    nodes=$(get_nodes_list "-nt" "ctrl")
+    nodes=$(get_nodes_list "-nt" "$nodes_type")
 fi
 
 [ "$TS_DEBUG" = "true" ] && echo -e "${blue}Nodes: $nodes${normal}"
