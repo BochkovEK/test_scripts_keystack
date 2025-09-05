@@ -272,28 +272,25 @@ find_drs_leader() {
   local nodes="$1"
   local leader_drs_ctrl=""
 
-  echo -e "${cyan}Attempting to identify DRS leader node...${normal}"
-
   for node_pair in $nodes; do
-    [ "$TS_DEBUG" = "true" ] && echo -e "
-  [DEBUG]: Checking node: $node_pair"
+    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG]: Checking node: $node_pair" >&2
 
-    if [ -z "$leader_drs_ctrl" ]; then
-      local leader_exist
-      leader_exist=$(find_leader "$node_pair")
+    local leader_exist
+    leader_exist=$(find_leader "$node_pair")
 
-      if [ -n "$leader_exist" ]; then
-        leader_drs_ctrl="$node_pair"
-        [ "$TS_DEBUG" = "true" ] && echo -e "
-  [DEBUG]:
-      leader_exist: $leader_exist
-      leader_drs_ctrl: $leader_drs_ctrl"
-      fi
+    if [ -n "$leader_exist" ]; then
+      leader_drs_ctrl="$node_pair"
+      [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG]: Found leader: $leader_drs_ctrl" >&2
+      break
     fi
   done
 
   echo "$leader_drs_ctrl"
 }
+
+# Then in main code:
+echo -e "${cyan}Attempting to identify DRS leader node...${normal}"
+leader_drs_ctrl=$(find_drs_leader "$nodes")
 
 # Main execution
 
