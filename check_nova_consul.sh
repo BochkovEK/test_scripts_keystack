@@ -362,10 +362,10 @@ check_consul_members() {
     echo -e "${violet}Checking consul members list...${normal}"
 
     local ctrl_nodes
-    local first_ctrl_node
+    local first_ctrl_node_pair
     local members_list
     ctrl_nodes=$(bash "$utils_dir/$get_nodes_list_script" -nt ctrl)
-    first_ctrl_node=$(echo "$ctrl_nodes" | awk '{print $1}')
+    first_ctrl_node_pair=$(echo "$ctrl_nodes" | awk '{print $1}')
     if [ "$TS_DEBUG" = true ]; then
     echo -e "
     [DEBUG]
