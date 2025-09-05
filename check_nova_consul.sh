@@ -249,7 +249,7 @@ check_ipmi_connections() {
             rmi_node_name="${rmi_node_pair%%:*}"
             rmi_node_ip="${rmi_node_pair#*:}"
             sleep 1
-            if ssh "$node_name" ping -c 2 "$rmi_node_ip" &> /dev/null; then
+            if ssh "$SSH_USER@$ctrl_node_ip" ping -c 2 "$rmi_node_ip" &> /dev/null; then
                 echo -e "${green}Connection to $rmi_node_name successful${normal}"
             else
                 echo -e "${red}No connection to $rmi_node_name - error!${normal}"
