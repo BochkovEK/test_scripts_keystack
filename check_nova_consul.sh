@@ -319,6 +319,8 @@ check_disabled_computes() {
                 check_nova_service_list
             fi
         fi
+    else
+        echo -e "${green}The nova-compute service on all compute nodes is in the state 'up' and status 'enabled' - ok${normal}"
     fi
 }
 
