@@ -29,10 +29,10 @@ green=$(tput setaf 2)
 [[ -z $DRS_LOG_FOLDER ]] && DRS_LOG_FOLDER='/var/log/kolla/drs'
 [[ -z $DRS_LOG_FILE_NAME ]] && DRS_LOG_FILE_NAME=$drs_log_file_name
 [[ -z $LOG_LAST_LINES_NUMBER ]] && LOG_LAST_LINES_NUMBER=50
-[[ -z $OUTPUT_PERIOD ]] && OUTPUT_PERIOD=10
 [[ -z $NODE_NAME ]] && NODE_NAME=""
 [[ -z $DEBUG_STRING_ONLY ]] && DEBUG_STRING_ONLY="false"
 [[ -z $ALL_NODES ]] && ALL_NODES="false"
+#[[ -z $OUTPUT_PERIOD ]] && OUTPUT_PERIOD=10
 
 # Function: define_parameters
 define_parameters() {
@@ -51,7 +51,6 @@ The script outputs DRS logs from $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME on control n
 Options:
   -ln,  -line_numbers       <log_last_lines_number>  Number of log lines to display
   -n,   -node_name          <node_name>              Specific node to check
-  -o,   -output_period      <output_period>          Output refresh period in seconds
   -dso  -debug_string_only                           Output only DEBUG strings from logs
   -v,   -debug                                       Enable debug output
   -all                                               Check logs on all control nodes
@@ -82,12 +81,6 @@ while [ -n "$1" ]; do
         -n|-node_name)
           NODE_NAME="$2"
           echo "Found the -node_name option, with parameter value $NODE_NAME"
-          shift
-          ;;
-        -o|-output_period)
-          validate_numeric_argument "$2" "output period"
-          OUTPUT_PERIOD="$2"
-          echo "Found the -output_period option, with parameter value $OUTPUT_PERIOD"
           shift
           ;;
         -v|-debug)
