@@ -3,25 +3,27 @@
 script_dir=$(dirname $0)
 utils_dir="$script_dir/utils"
 nodes_type="ctrl"
-#check_openrc_script="check_openrc.sh"
 get_nodes_list_script="get_nodes_list.sh"
 drs_log_file_name="drs-api-error.log"
 default_ssh_user="root"
+#check_openrc_script="check_openrc.sh"
 
 #Colors
-green=$(tput setaf 2)
 red=$(tput setaf 1)
-violet=$(tput setaf 5)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
+blue=$(tput setaf 4)
+cyan=$(tput setaf 14)
+#green=$(tput setaf 2)
+#violet=$(tput setaf 5)
 
 #CTRL_NODES='\-ctrl\-..( |$)'
 #TAIL_NUM=100
 
-CYAN='\033[0;36m'
-BLUE='\033[0;34m'
-ORANGE='\033[0;33m'
-NC='\033[0m' # No Color
+#CYAN='\033[0;36m'
+#BLUE='\033[0;34m'
+#ORANGE='\033[0;33m'
+#NC='\033[0m' # No Color
 
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $DRS_LOG_FOLDER ]] && DRS_LOG_FOLDER='/var/log/kolla/drs'
@@ -85,17 +87,22 @@ while [ -n "$1" ]; do
     shift
 done
 
+# Read log from one ctrl node
 read_logs () {
-  echo -e "${CYAN}Drs $LOG_LAST_LINES_NUMBER lines logs from $1${NC}"
+  local node_pair=$1
+  local node_name="${node_pair%%:*}"
+  local node_ip="${node_pair#*:}"
+
+  echo -e "${cyan}Drs $LOG_LAST_LINES_NUMBER lines logs from $node_name${normal}"
   if [ "$DEBUG_STRING_ONLY" = true ]; then
-    echo -e "${ORANGE}DEBUG strings only${NC}"
-    ssh -o StrictHostKeyChecking=no $USER@$1 "sudo sh -c 'tail -f -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME'|grep DEBUG"
+    echo -e "${yellow}DEBUG strings only${normal}"
+    ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" "sudo sh -c 'tail -f -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME'|grep DEBUG"
   else
-    ssh -o StrictHostKeyChecking=no $USER@$1 "sudo sh -c 'tail -f -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME'"
+    ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" "sudo sh -c 'tail -f -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME'"
   fi
-  echo -e "${BLUE}`date`${NC}"
-  echo -e "For read all log on $1:"
-  echo -e "${ORANGE}ssh -o StrictHostKeyChecking=no $USER@$1 \"sudo sh -c 'less $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME'\"${NC}"
+  echo -e "${blue}`date`${normal}"
+  echo -e "For read all log on $node_name:"
+  echo -e "${yellow}ssh -o StrictHostKeyChecking=no \"$SSH_USER@$node_ip\" \"sudo sh -c 'less $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME'\"${normal}"
 }
 
 #periodic_read_logs () {
@@ -107,34 +114,65 @@ read_logs () {
 #}
 
 read_logs_from_all_ctrl () {
-  for host in "${NODES[@]}";do
-    read_logs $host
+  local nodes=$1
+  for node_pair in $nodes;do
+    read_logs "$node_pair"
   done
 }
 
 find_leader () {
-  ssh -o StrictHostKeyChecking=no $USER@$1 "sudo sh -c 'tail -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME'|grep -E 'leadership updated|becomes a leader'"
+  local node_pair=$1
+  local node_name="${node_pair%%:*}"
+  local node_ip="${node_pair#*:}"
+  ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" "sudo sh -c 'tail -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME'|grep -E 'leadership updated|becomes a leader'"
 }
 
-get_nodes_list () {
-  if [ -z "${NODES[*]}" ]; then
-    nodes=$(bash $utils_dir/$get_nodes_list_script -nt $nodes_type)
-  fi
-#  node=$(cat /etc/hosts | grep -m 1 -E ${nodes_pattern} | awk '{print $2}')
-  [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]: \"\$node\": $node\n
-  "
-  for node in $nodes; do NODES+=("$node"); done
-  [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]: \"\$NODES\": ${NODES[*]}
-  "
-  echo -e "
-  NODES: ${NODES[*]}
-  "
-  if [ -z "${NODES[*]}" ]; then
-    echo -e "${red}Failed to determine node list - ERROR${normal}"
-    exit 1
-  fi
+# Function to get nodes list using external script
+get_nodes_list() {
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG]:
+        Count parameters: $#
+        Parameters: $*"
+
+    local nodes_result=""
+
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG]:
+      nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$*\")"
+    nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] nodes_result: $nodes_result
+    "
+
+    # Check for errors in node list
+    if [ -z "$nodes_result" ]; then
+        echo -e "${red}Failed to determine node list - ERROR${normal}"
+        exit 1
+    elif echo "$nodes_result" | grep -q "ERROR"; then
+        echo -e "${yellow}Node names could not be determined.${normal}"
+        echo -e "${yellow}Try: bash $utils_dir/$get_nodes_list_script -nt all${normal}"
+        echo -e "${red}Node names could not be determined - ERROR!${normal}"
+        exit 1
+    else
+        echo "$nodes_result"
+    fi
+}
+
+# Get ssh user
+get_ssh_user () {
+    # Determine SSH user
+    if [[ -z "$SSH_USER" ]]; then
+        SSH_USER=$(whoami 2>/dev/null) || {
+            echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
+            SSH_USER="$default_ssh_user"
+        }
+    fi
+
+    # Final user validation
+    if [[ -z "$SSH_USER" ]]; then
+        echo -e "${red}Error: Failed to determine SSH user!${normal}" >&2
+        exit 1
+    fi
 }
 
 #debug echo
@@ -144,77 +182,74 @@ debug_echo () {
     $1"
 }
 
-if [[ -z "$SSH_USER" ]]; then
-  # 3. Try to determine via whoami (with error handling)
-  SSH_USER=$(whoami 2>/dev/null) || {
-    echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
-    # 4. Use default value
-    SSH_USER="$default_ssh_user"
-  }
+# Main execution
+
+get_ssh_user
+
+# Get nodes list
+if [ -n "$NODES_NAME" ]; then
+    nodes=$(get_nodes_list "-nn" "$NODES_NAME")
+else
+    nodes=$(get_nodes_list "-nt" ctrl)
 fi
 
-# Final value check
-if [[ -z "$SSH_USER" ]]; then
-  echo -e "${red}Error: Failed to determine user!${normal}" >&2
-  exit 1
-fi
+#NODES=("${nodes[@]}")
 
-get_nodes_list
-
-#srv=$(cat /etc/hosts | grep -E "$CTRL_NODES" | awk '{print $1}')
-
-[ "$TS_DEBUG" = true ] && { for string in "${NODES[@]}"; do debug_echo $string; done; }
+#[ "$TS_DEBUG" = true ] && { for string in "${NODES[@]}"; do debug_echo "$string"; done; }
+[ "$TS_DEBUG" = true ] && { echo $nodes; }
 
 if [ -n "${NODE_NAME}" ]; then
-  echo "Read logs from $NODE_NAME..."
-  read_logs $NODE_NAME
+  echo "Read logs from \"$nodes\"..."
+  read_logs "$nodes"
 #  periodic_read_logs $NODE_NAME
 elif [ "$ALL_NODES" = true ]; then
   echo "Read logs from all nodes..."
-  read_logs_from_all_ctrl
+  read_logs_from_all_ctrl "$nodes"
 else
   echo "Try to define DRS leader ctrl node..."
-
-#  [ "$TS_DEBUG" = true ] && echo -e "
-#  [DEBUG]: srv: $srv
-#  "
-  leader_1_exist=""
-  leader_2_exist=""
-  for host in "${NODES[@]}"; do
-#    echo -e "${CYAN}Drs logs on $(cat /etc/hosts | grep -E ${host} | awk '{print $2}'):${NC}"
+#  leader_1_exist=""
+#  leader_2_exist=""
+  leader_drs_ctrl=""
+  for node_pair in $nodes; do
+#    echo -e "${CYAN}Drs logs on $(cat /etc/hosts | grep -E ${host} | awk '{print $2}'):${normal}"
     [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]: host: $host
+  [DEBUG]: node_pair: $node_pair
     "
-    if [ -z "${leader_1_exist}" ]; then
+    if [ -z "${leader_drs_ctrl}" ]; then
       [ "$TS_DEBUG" = true ] && { echo -e "
   [DEBUG]: find_leader:"; find_leader; }
-      leader_1_exist=$(find_leader $host)
-      leader_drs_ctrl=$host
-      [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]: leader_1_exist: $leader_1_exist
-      "
-    else
-      leader_2_exist=$(find_leader $host)
-      if [ -n "${leader_2_exist}" ]; then
+      leader_exist=$(find_leader "$node_pair")
+      if [ -n "${leader_exist}" ]; then
+        leader_drs_ctrl="$node_pair"
         [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]: leader_2_exist: $leader_2_exist
-        "
-        echo -e "${ORANGE}Leader node could not be found${NC}"
-        read_logs_from_all_ctrl
+  [DEBUG]:
+      leader_exist: $leader_exist
+      leader_drs_ctrl: $leader_drs_ctrl
+      "
       fi
+#    else
+#      leader_2_exist=$(find_leader "$node_pair")
+#      if [ -n "${leader_2_exist}" ]; then
+#        [ "$TS_DEBUG" = true ] && echo -e "
+#  [DEBUG]: leader_2_exist: $leader_2_exist
+#        "
+#        echo -e "${yellow}Leader node could not be found${normal}"
+#        read_logs_from_all_ctrl
+#      fi
     fi
   done
-  if [ -z "${leader_1_exist}" ]; then
-    echo -e "${ORANGE}Leader node could not be found${NC}"
+
+  if [ -z "${leader_exist}" ]; then
+    echo -e "${yellow}Leader node could not be found${normal}"
     read_logs_from_all_ctrl
   else
-    echo -e "${ORANGE}Leader node is: $leader_drs_ctrl${NC}"
-    read_logs $leader_drs_ctrl
+    echo -e "${yellow}Leader node is: $leader_drs_ctrl${normal}"
+    read_logs "$leader_drs_ctrl"
 #    periodic_read_logs $leader_drs_ctrl
   fi
 fi
 
-#    ; echo -e "${BLUE}`date`${NC}"
+#    ; echo -e "${BLUE}`date`${normal}"
 #    echo -e "For read all log on $host:"
-#    echo -e "${ORANGE}ssh -t -o StrictHostKeyChecking=no $host less /var/log/kolla/drs/drs.log${NC}"
+#    echo -e "${yellow}ssh -t -o StrictHostKeyChecking=no $host less /var/log/kolla/drs/drs.log${normal}"
 #  done
