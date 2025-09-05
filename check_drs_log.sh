@@ -42,60 +42,6 @@ define_parameters() {
   }
 }
 
-# Parse command line arguments
-while [ -n "$1" ]; do
-    case "$1" in
-      --help)
-        display_help
-        exit 0
-        ;;
-      -ln|-line_numbers)
-        validate_numeric_argument "$2" "line numbers"
-        LOG_LAST_LINES_NUMBER="$2"
-        echo "Found the -line_numbers option, with parameter value $LOG_LAST_LINES_NUMBER"
-        shift
-        ;;
-      -n|-node_name)
-        NODE_NAME="$2"
-        echo "Found the -node_name option, with parameter value $NODE_NAME"
-        shift
-        ;;
-      -o|-output_period)
-        validate_numeric_argument "$2" "output period"
-        OUTPUT_PERIOD="$2"
-        echo "Found the -output_period option, with parameter value $OUTPUT_PERIOD"
-        shift
-        ;;
-      -v|-debug)
-        TS_DEBUG="true"
-        echo "Found the -debug option, with parameter value $TS_DEBUG"
-        ;;
-      -dso|-debug_string_only)
-        DEBUG_STRING_ONLY="true"
-        echo "Found the -debug_string_only option, with parameter value $DEBUG_STRING_ONLY"
-        ;;
-      -all)
-        ALL_NODES="true"
-        echo "Found the -all option, with parameter value $ALL_NODES"
-        ;;
-      -u|-user)
-        SSH_USER="$2"
-        echo "Found the -user option with parameter value $SSH_USER"
-        shift
-        ;;
-      --)
-        shift
-        break
-        ;;
-      *)
-        echo "Parameter #$count: $1"
-        define_parameters "$1"
-        count=$((count + 1))
-        ;;
-    esac
-    shift
-done
-
 # Function: display_help
 display_help() {
   cat << EOF
@@ -119,6 +65,60 @@ Examples:
 
 EOF
 }
+
+# Parse command line arguments
+while [ -n "$1" ]; do
+    case "$1" in
+        --help)
+          display_help
+          exit 0
+          ;;
+        -ln|-line_numbers)
+          validate_numeric_argument "$2" "line numbers"
+          LOG_LAST_LINES_NUMBER="$2"
+          echo "Found the -line_numbers option, with parameter value $LOG_LAST_LINES_NUMBER"
+          shift
+          ;;
+        -n|-node_name)
+          NODE_NAME="$2"
+          echo "Found the -node_name option, with parameter value $NODE_NAME"
+          shift
+          ;;
+        -o|-output_period)
+          validate_numeric_argument "$2" "output period"
+          OUTPUT_PERIOD="$2"
+          echo "Found the -output_period option, with parameter value $OUTPUT_PERIOD"
+          shift
+          ;;
+        -v|-debug)
+          TS_DEBUG="true"
+          echo "Found the -debug option, with parameter value $TS_DEBUG"
+          ;;
+        -dso|-debug_string_only)
+          DEBUG_STRING_ONLY="true"
+          echo "Found the -debug_string_only option, with parameter value $DEBUG_STRING_ONLY"
+          ;;
+        -all)
+          ALL_NODES="true"
+          echo "Found the -all option, with parameter value $ALL_NODES"
+          ;;
+        -u|-user)
+          SSH_USER="$2"
+          echo "Found the -user option with parameter value $SSH_USER"
+          shift
+          ;;
+        --)
+          shift
+          break
+          ;;
+        *)
+          echo "Parameter #$count: $1"
+          define_parameters "$1"
+          count=$((count + 1))
+          ;;
+    esac
+    shift
+done
 
 # Function: read_logs
 read_logs() {
