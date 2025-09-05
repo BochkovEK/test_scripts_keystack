@@ -13,6 +13,7 @@ check_openstack_cli_script="check_openstack_cli.sh"
 get_nodes_list_script="get_nodes_list.sh"
 edit_ha_region_config_script="edit_ha_config.sh"
 try_to_rise_compute_node_script="try_to_rise_compute_node.sh"
+check_container_state_on_nodes_script="check_container_state_on_nodes.sh"
 default_ssh_user="root"
 default_docker_engine="docker"
 
@@ -344,12 +345,12 @@ check_docker_containers() {
     fi
 
     # Check if external script exists
-    if [ ! -f "$script_dir/check_docker_container_state_on_nodes.sh" ]; then
+    if [ ! -f "$script_dir/$check_container_state_on_nodes_script" ]; then
         echo -e "${red}ERROR: Container check script not found${normal}"
         return 1
     fi
 
-    bash "$script_dir/check_docker_container_state_on_nodes.sh" \
+    bash "$script_dir/$check_container_state_on_nodes_script" \
         -nn "$nodes_name_list" \
         -u "$SSH_USER" \
         -de "$DOCKER_ENGINE" 2>/dev/null | grep "$container_name"
