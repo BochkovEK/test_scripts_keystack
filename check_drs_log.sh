@@ -34,10 +34,7 @@ green=$(tput setaf 2)
 [[ -z $DEBUG_STRING_ONLY ]] && DEBUG_STRING_ONLY="false"
 [[ -z $ALL_NODES ]] && ALL_NODES="false"
 
-# =============================================================================
 # Function: define_parameters
-# Purpose:  Parse and define script parameters (currently placeholder)
-# =============================================================================
 define_parameters() {
   [ "$count" = 1 ] && [ "$1" = foo ] && {
     FOO=true;
@@ -45,14 +42,8 @@ define_parameters() {
   }
 }
 
-# =============================================================================
-# Function: parse_command_line_arguments
-# Purpose:  Process all command-line arguments and set corresponding variables
-# =============================================================================
-parse_command_line_arguments() {
-  local count=1
-
-  while [ -n "$1" ]; do
+# Parse command line arguments
+while [ -n "$1" ]; do
     case "$1" in
       --help)
         display_help
@@ -103,13 +94,9 @@ parse_command_line_arguments() {
         ;;
     esac
     shift
-  done
-}
+done
 
-# =============================================================================
 # Function: display_help
-# Purpose:  Show usage information and available options
-# =============================================================================
 display_help() {
   cat << EOF
 
@@ -133,24 +120,7 @@ Examples:
 EOF
 }
 
-# =============================================================================
-# Function: validate_numeric_argument
-# Purpose:  Validate that an argument is a positive number
-# =============================================================================
-validate_numeric_argument() {
-  local value="$1"
-  local name="$2"
-
-  if ! [[ "$value" =~ ^[0-9]+$ ]]; then
-    echo -e "${red}Error: $name must be a positive integer${normal}" >&2
-    exit 1
-  fi
-}
-
-# =============================================================================
 # Function: read_logs
-# Purpose:  Read and display logs from a specific node
-# =============================================================================
 read_logs() {
   local node_pair="$1"
   local node_name="${node_pair%%:*}"
@@ -172,10 +142,7 @@ read_logs() {
   echo -e "${yellow}ssh -o StrictHostKeyChecking=no \"$SSH_USER@$node_ip\" \"sudo sh -c 'less $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME'\"${normal}"
 }
 
-# =============================================================================
 # Function: read_logs_from_all_ctrl
-# Purpose:  Read logs from all control nodes
-# =============================================================================
 read_logs_from_all_ctrl() {
   local nodes="$1"
 
@@ -185,10 +152,7 @@ read_logs_from_all_ctrl() {
   done
 }
 
-# =============================================================================
 # Function: find_leader
-# Purpose:  Identify the DRS leader node by checking leadership messages in logs
-# =============================================================================
 find_leader() {
   local node_pair="$1"
   local node_name="${node_pair%%:*}"
@@ -199,10 +163,7 @@ find_leader() {
     grep -E 'leadership updated|becomes a leader'
 }
 
-# =============================================================================
 # Function: get_nodes_list
-# Purpose:  Retrieve list of nodes using external script with error handling
-# =============================================================================
 get_nodes_list() {
   [ "$TS_DEBUG" = "true" ] && echo -e "
   [DEBUG]:
@@ -235,10 +196,7 @@ get_nodes_list() {
   fi
 }
 
-# =============================================================================
 # Function: get_ssh_user
-# Purpose:  Determine the SSH user for connections with fallback logic
-# =============================================================================
 get_ssh_user() {
   # Use provided user or try to determine current user
   if [[ -z "$SSH_USER" ]]; then
@@ -257,10 +215,7 @@ get_ssh_user() {
   echo -e "${blue}Using SSH user: $SSH_USER${normal}"
 }
 
-# =============================================================================
 # Function: debug_echo
-# Purpose:  Print debug messages when debug mode is enabled
-# =============================================================================
 debug_echo() {
   echo -e "
   [DEBUG]:
