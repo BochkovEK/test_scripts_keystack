@@ -213,8 +213,8 @@ read_config() {
 #                -e 's/\(.*requirepass.*\)/\o033[33m\1 - [check password]\t\o033[39m/' \
 #                -e 's/\(.*masterauth.*\)/\o033[33m\1 - [check password]\t\o033[39m/' \
 #                -e 's/\(.*_pass\".*\)/\o033[33m\1 - [check password]\t\o033[39m/'
-        bash $script_dir/$command_on_nodes_script_name -u $SSH_USER -nt "$node_type" \
-          -c "sudo sh -c 'cat $config_path' 2>/dev/null | grep -E 'wsrep_sst_auth|auth-pass|requirepass|masterauth|db_uri|vault_secret|password_hash|with secret| password |\"password\"\:|password\:\s|_pass\"|password =|\[castellan_configsource\]'| \
+        bash "$script_dir/$command_on_nodes_script_name" -u $SSH_USER -nt "$node_type" \
+          -c "sudo sh -c 'cat $config_path' 2>/dev/null | grep -E 'wsrep_sst_auth|auth-pass|requirepass|masterauth|db_uri|vault_secret|password_hash|with secret| password |\"password\"\:|password\:\s|_pass\"|password =|\[castellan_configsource\]'" | \
           sed --unbuffered \
             -e 's/\(.*\[castellan_configsource\].*\)/\o033[32m\1 - [ok: castellan group exists]\o033[39m/'\
             -e 's/\(.*password_hash.*\)/\o033[32m ...pass..._hash... - [ok: pass hash exists]\o033[39m/'\
@@ -225,7 +225,7 @@ read_config() {
             -e 's/\(.*wsrep_sst_auth.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
             -e 's/\(.*requirepass.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
             -e 's/\(.*masterauth.*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'\
-            -e 's/\(.*_pass\".*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'; echo -e '\033[0;37m'"
+            -e 's/\(.*_pass\".*\)/\o033[33m\1 - [Warning: check password]\o033[33m/'; echo -e '\033[0;37m'
     fi
 }
 
