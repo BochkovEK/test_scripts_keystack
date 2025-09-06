@@ -311,7 +311,7 @@ fi
 
 get_ssh_user
 
-if [ -n "$CONFIG_LIST_FILE_PATH" ]; then
+if [ -n "$CONFIG" ]; then
     check_specific_config
     exit 0
 fi
