@@ -65,6 +65,27 @@ show_help() {
 }
 #      -e, -env_config_list <file> Load config lists from environment file
 
+# Function to validate input parameters
+validate_input() {
+    if [ -z "$CONFIG" ] && [ -z "$CONFIG_LIST_FILE_PATH" ]; then
+        echo -e "${red}ERROR: Either -c (config path) or -e (env config list) must be specified!${normal}"
+        echo -e "${yellow}Please provide one of the following:${normal}"
+        echo -e "  -c /path/to/config.conf    (check specific config file)"
+        echo -e "  -e config_list.env         (load config list from file)"
+        show_help
+        exit 1
+    fi
+
+    if [ -n "$CONFIG_LIST_FILE_PATH" ] && [ ! -f "$CONFIG_LIST_FILE_PATH" ]; then
+        echo -e "${red}ERROR: Config list file not found: $CONFIG_LIST_FILE_PATH${normal}"
+        exit 1
+    fi
+
+    if [ -n "$CONFIG" ] && [ "$CHECK_ALL" = "true" ] && [ "$CHECK_CTRL" = "false" ] && [ "$CHECK_COMP" = "false" ]; then
+        echo -e "${yellow}WARNING: Checking specific config but no node type specified. Will check both control and compute nodes.${normal}"
+    fi
+}
+
 # Function to load configuration lists from file
 load_config_lists() {
     local config_file="$1"
@@ -197,43 +218,66 @@ read_config() {
 
 # Function to check configurations on control nodes
 check_configs_on_controls() {
+    if [ ${#control_config_list[@]} -eq 0 ]; then
+        echo -e "${yellow}No control configs to check${normal}"
+        return
+    fi
+
     echo -e "${cyan}Checking [castellan_configsource] in control node configs${normal}"
     for config in "${control_config_list[@]}"; do
         echo -e "${violet}Checking: $config${normal}"
-        read_conf "ctrl" "$config" "castellan"
+        read_config "ctrl" "$config" "castellan"
+        echo "----------------------------------------"
     done
 }
 
 # Function to check configurations on compute nodes
 check_configs_on_computes() {
+    if [ ${#compute_config_list[@]} -eq 0 ]; then
+        echo -e "${yellow}No compute configs to check${normal}"
+        return
+    fi
+
     echo -e "${cyan}Checking [castellan_configsource] in compute node configs${normal}"
     for config in "${compute_config_list[@]}"; do
         echo -e "${violet}Checking: $config${normal}"
-        read_conf "comp" "$config" "castellan"
+        read_config "comp" "$config" "castellan"
+        echo "----------------------------------------"
     done
 }
 
 # Function to check hashed password configurations
 check_hashed_passwords() {
+    if [ ${#hashed_password_config_list[@]} -eq 0 ]; then
+        echo -e "${yellow}No hashed password configs to check${normal}"
+        return
+    fi
+
     echo -e "${cyan}Checking hashed passwords in configs${normal}"
     for config in "${hashed_password_config_list[@]}"; do
         echo -e "${violet}Checking: $config${normal}"
-        read_conf "ctrl" "$config" "castellan"
+        read_config "ctrl" "$config" "castellan"
+        echo "----------------------------------------"
     done
 }
 
 # Function to check specific configuration file
 check_specific_config() {
-    echo -e "${cyan}Checking specific config: $CONFIG_LIST_FILE_PATH${normal}"
-    if [ "$CHECK_CTRL" = "true" ]; then
-        read_conf "ctrl" "$CONFIG_LIST_FILE_PATH" "castellan"
+    if [ -z "$CONFIG_PATH" ]; then
+        echo -e "${red}No config path specified${normal}"
+        return
     fi
-    if [ "$CHECK_COMP" = "true" ]; then
-        read_conf "comp" "$CONFIG_LIST_FILE_PATH" "castellan"
+
+    echo -e "${cyan}Checking specific config: $CONFIG_PATH${normal}"
+
+    if [ "$CHECK_CTRL" = "true" ] || [ "$CHECK_ALL" = "true" ]; then
+        read_config "ctrl" "$CONFIG_PATH" "castellan"
+        echo "----------------------------------------"
     fi
-    if [ "$CHECK_ALL" = "true" ]; then
-        read_conf "ctrl" "$CONFIG_LIST_FILE_PATH" "castellan"
-        read_conf "comp" "$CONFIG_LIST_FILE_PATH" "castellan"
+
+    if [ "$CHECK_COMP" = "true" ] || [ "$CHECK_ALL" = "true" ]; then
+        read_config "comp" "$CONFIG_PATH" "castellan"
+        echo "----------------------------------------"
     fi
 }
 
@@ -255,6 +299,16 @@ get_ssh_user () {
 }
 
 # Main execution
+
+# Validate input parameters
+validate_input
+
+# Check if command script exists
+if [ ! -f "$script_dir/$command_on_nodes_script_name" ]; then
+    echo -e "${red}Script not found: $command_on_nodes_script_name${normal}"
+    exit 1
+fi
+
 get_ssh_user
 
 if [ -n "$CONFIG_LIST_FILE_PATH" ]; then
