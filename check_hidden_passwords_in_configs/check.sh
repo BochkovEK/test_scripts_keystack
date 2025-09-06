@@ -207,12 +207,12 @@ read_config() {
                 -e 's/\(.*password_hash.*\)/\o033[32m...password_hash... - [password hash exists]\o033[39m/' \
                 -e 's/\(.*vault_secret.*\)/\o033[32m...vault_secret... - [vault settings exist]\o033[39m/' \
                 -e 's/\(.*with secret.*\)/\o033[32m...with secret... - [vault settings exist]\o033[39m/' \
-                -e 's/\(.*password.*\)/\o033[33m\1 - [check password]\o033[39m/' \
-                -e 's/\(.*auth-pass.*\)/\o033[33m\1 - [check password]\o033[39m/' \
-                -e 's/\(.*wsrep_sst_auth.*\)/\o033[33m\1 - [check password]\o033[39m/' \
-                -e 's/\(.*requirepass.*\)/\o033[33m\1 - [check password]\o033[39m/' \
-                -e 's/\(.*masterauth.*\)/\o033[33m\1 - [check password]\o033[39m/' \
-                -e 's/\(.*_pass\".*\)/\o033[33m\1 - [check password]\o033[39m/'
+                -e 's/\(.*password.*\)/\o033[33m\1 - [check password]\t\o033[39m/' \
+                -e 's/\(.*auth-pass.*\)/\o033[33m\1 - [check password]\t\o033[39m/' \
+                -e 's/\(.*wsrep_sst_auth.*\)/\o033[33m\1 - [check password]\t\o033[39m/' \
+                -e 's/\(.*requirepass.*\)/\o033[33m\1 - [check password]\t\o033[39m/' \
+                -e 's/\(.*masterauth.*\)/\o033[33m\1 - [check password]\t\o033[39m/' \
+                -e 's/\(.*_pass\".*\)/\o033[33m\1 - [check password]\t\o033[39m/'
     fi
 }
 
