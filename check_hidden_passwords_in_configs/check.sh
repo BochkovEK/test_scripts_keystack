@@ -54,7 +54,7 @@ show_help() {
       -prometheus                   Check prometheus exporters configs
       -c, config                    Check the specific config
       -l, -configs_list_file_path   <path> Check specific config file
-      -u, -user                     <user>            SSH username
+      -u, -user                     <user> SSH username
       --help                        Show this help message
 
     Configs list file format:
@@ -71,7 +71,7 @@ validate_input() {
         echo -e "${red}ERROR: Either -c (config path) or -e (env config list) must be specified!${normal}"
         echo -e "${yellow}Please provide one of the following:${normal}"
         echo -e "  -c /path/to/config.conf    (check specific config file)"
-        echo -e "  -e config_list.env         (load config list from file)"
+        echo -e "  -l .configs_list.env       (load configs list from file)"
         show_help
         exit 1
     fi
