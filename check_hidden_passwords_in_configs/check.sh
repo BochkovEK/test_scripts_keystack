@@ -154,7 +154,7 @@ while [ -n "$1" ]; do
             ;;
         -c|-config)
             CONFIG="$2"
-            echo "Checking specific config: $CONFIG_LIST_FILE_PATH"
+            echo "Checking specific config: $CONFIG"
             shift
             ;;
         -l|-configs_list_file_path)
