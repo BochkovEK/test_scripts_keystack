@@ -27,12 +27,12 @@ script_dir=$(dirname $0)
 #[[ -z $DONT_ASK ]] && DONT_ASK="false"
 #[[ -z $EDIT_HOSTS_FILE ]] && EDIT_HOSTS_FILE="false"
 
-#[[ -z $INVENTORY_PATH ]] && INVENTORY_PATH=$script_dir/$inventory_file_name
-#[[ -z $OUTPUT_FILE_NAME ]] && OUTPUT_FILE_NAME=$output_file_name
-#[[ -z $DOMAIN ]] && DOMAIN=$domain_name
-#[[ -z $REGION ]] && REGION=$region_name
-#[[ -z $INT_PREF ]] && INT_PREF=$internal_prefix
-#[[ -z $EXT_PREF ]] && EXT_PREF=$external_prefix
+[[ -z $INVENTORY_PATH ]] && INVENTORY_PATH=$script_dir/$inventory_file_name
+[[ -z $OUTPUT_FILE_NAME ]] && OUTPUT_FILE_NAME=$output_file_name
+[[ -z $DOMAIN ]] && DOMAIN=$domain_name
+[[ -z $REGION ]] && REGION=$region_name
+[[ -z $INT_PREF ]] && INT_PREF=$internal_prefix
+[[ -z $EXT_PREF ]] && EXT_PREF=$external_prefix
 [[ -z $ADD_STRINGS ]] && ADD_STRINGS=$add_strings
 [[ -z $TS_DEBUG ]] && TS_DEBUG=false
 
@@ -110,21 +110,21 @@ do
         shift
 done
 
-#if [ -z "$INVENTORY_PATH" ]; then
-#  if [ -z "$1" ]; then
-#    echo -e "${red}The path to the inventory file path must be passed as an argument or by '-i' key - ERROR${normal}"
-#    exit 1
-#  fi
-#else
-#  cat $INVENTORY_PATH
-#  if [ ! -f "$INVENTORY_PATH" ]; then
-##    echo $INVENTORY_PATH
-#    echo -e "${yellow}Inventory file $INVENTORY_PATH not found - WARNING${normal}"
-#    echo -e "Create it or specify -i key, or environment var 'INVENTORY_PATH' ${normal}"
-#    echo -e "${red}The script cannot be executed - ERROR${normal}"
-#    exit 1
-#  fi
-#fi
+if [ -z "$INVENTORY_PATH" ]; then
+  if [ -z "$1" ]; then
+    echo -e "${red}The path to the inventory file path must be passed as an argument or by '-i' key - ERROR${normal}"
+    exit 1
+  fi
+else
+  cat $INVENTORY_PATH
+  if [ ! -f "$INVENTORY_PATH" ]; then
+#    echo $INVENTORY_PATH
+    echo -e "${yellow}Inventory file $INVENTORY_PATH not found - WARNING${normal}"
+    echo -e "Create it or specify -i key, or environment var 'INVENTORY_PATH' ${normal}"
+    echo -e "${red}The script cannot be executed - ERROR${normal}"
+    exit 1
+  fi
+fi
 
 # Function to check and set variables
 check_and_set_variables() {
