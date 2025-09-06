@@ -32,7 +32,7 @@ yellow=$(tput setaf 3)
 [[ -z $CHECK_PROMETH ]] && CHECK_PROMETH="false"
 [[ -z $CHECK_ALL ]] && CHECK_ALL="true"
 [[ -z $CONFIG_LIST_FILE_PATH ]] && CONFIG_LIST_FILE_PATH=""
-[[ -z $CONFIG ]] && CONFIG=""
+[[ -z $CONFIG_PATH ]] && CONFIG_PATH=""
 #[[ -z $ENV_CONFIG_LIST ]] && ENV_CONFIG_LIST=""
 #[[ -z $SSH_USER ]] && SSH_USER=$default_ssh_user
 
@@ -67,7 +67,7 @@ show_help() {
 
 # Function to validate input parameters
 validate_input() {
-    if [ -z "$CONFIG" ] && [ -z "$CONFIG_LIST_FILE_PATH" ]; then
+    if [ -z "$CONFIG_PATH" ] && [ -z "$CONFIG_LIST_FILE_PATH" ]; then
         echo -e "${red}ERROR: Either -c (config path) or -e (env config list) must be specified!${normal}"
         echo -e "${yellow}Please provide one of the following:${normal}"
         echo -e "  -c /path/to/config.conf    (check specific config file)"
@@ -81,7 +81,7 @@ validate_input() {
         exit 1
     fi
 
-    if [ -n "$CONFIG" ] && [ "$CHECK_ALL" = "true" ] && [ "$CHECK_CTRL" = "false" ] && [ "$CHECK_COMP" = "false" ]; then
+    if [ -n "$CONFIG_PATH" ] && [ "$CHECK_ALL" = "true" ] && [ "$CHECK_CTRL" = "false" ] && [ "$CHECK_COMP" = "false" ]; then
         echo -e "${yellow}WARNING: Checking specific config but no node type specified. Will check both control and compute nodes.${normal}"
     fi
 }
@@ -153,8 +153,8 @@ while [ -n "$1" ]; do
             echo "Checking prometheus exporters configs"
             ;;
         -c|-config)
-            CONFIG="$2"
-            echo "Checking specific config: $CONFIG"
+            CONFIG_PATH="$2"
+            echo "Checking specific config: $CONFIG_PATH"
             shift
             ;;
         -l|-configs_list_file_path)
@@ -311,7 +311,7 @@ fi
 
 get_ssh_user
 
-if [ -n "$CONFIG" ]; then
+if [ -n "$CONFIG_PATH" ]; then
     check_specific_config
     exit 0
 fi
