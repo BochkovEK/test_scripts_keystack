@@ -139,7 +139,7 @@ get_vms_info() {
     if [[ -n "$VM_NAMES" ]]; then
         # Use grep for multiple name filtering
         [ "$TS_DEBUG" = "true" ] && echo -e "
-    [DEBUG]
+    [DEBUG]:
         Command: openstack server list $project_string $host_string --long -f value -c Name -c Status -c Networks 2>/dev/null | \
             grep -E \"$vm_name_pattern\"
     "
@@ -147,11 +147,16 @@ get_vms_info() {
             grep -E "$vm_name_pattern")
     else
         [ "$TS_DEBUG" = "true" ] && echo -e "
-    [DEBUG]
+    [DEBUG]:
         Command: openstack server list $project_string $host_string --long -f value -c Name -c Status -c Networks 2>/dev/null
     "
         vm_list=$(openstack server list $project_string "$host_string" --long -f value -c Name -c Status -c Networks 2>/dev/null)
     fi
+
+    [ "$TS_DEBUG" = "true" ] && echo -e "
+    [DEBUG]:
+        vm_list: $vm_list
+    "
 
     if [[ -z "$vm_list" ]]; then
         # Fallback to alternative method if first attempt fails
