@@ -75,7 +75,7 @@ comp_required_container_list=(
 [[ -z $NODES_TYPE ]] && NODES_TYPE="all"
 [[ -z $NODES_NAME ]] && NODES_NAME=""
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
-[[ -z $DOCKER_ENGINE ]] && DOCKER_ENGINE="$default_docker_engine"
+[[ -z $CONTAINER_ENGINE ]] && CONTAINER_ENGINE="$default_docker_engine"
 
 # Function to display help information
 show_help() {
@@ -121,8 +121,8 @@ while [ -n "$1" ]; do
             ;;
 
         -de|-docker_engine)
-            DOCKER_ENGINE="$2"
-            echo "Found -docker_engine with value: $DOCKER_ENGINE"
+            CONTAINER_ENGINE="$2"
+            echo "Found -docker_engine with value: $CONTAINER_ENGINE"
             shift
             ;;
 
@@ -160,7 +160,7 @@ check_required_containers() {
 
     local container_names
     container_names=$(ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
-        "sudo $DOCKER_ENGINE ps --format '{{.Names}}' --filter status=running" 2>/dev/null)
+        "sudo $CONTAINER_ENGINE ps --format '{{.Names}}' --filter status=running" 2>/dev/null)
 
     local required_containers=()
     case "$node_type" in
@@ -227,12 +227,12 @@ check_container_status() {
     echo -e "${blue}Checking containers on $node_name ($node_ip)${normal}"
 
     local format_option=""
-    if [ "$DOCKER_ENGINE" = "podman" ]; then
+    if [ "$CONTAINER_ENGINE" = "podman" ]; then
         format_option="--format 'table {{.ID}}\t{{.Image}}\t{{.Created}}\t{{.Status}}\t{{.Names}}'"
     fi
 
     ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
-        "sudo $DOCKER_ENGINE ps -a $format_option" 2>/dev/null | \
+        "sudo $CONTAINER_ENGINE ps -a $format_option" 2>/dev/null | \
         sed --unbuffered \
             -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
             -e 's/\(.*Exited.*\)/\o033[31m\1\o033[39m/' \

@@ -29,7 +29,7 @@ default_ssh_user="root"
 [[ -z $WAIT_TIME ]] && WAIT_TIME=5
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
-[[ -z $DOCKER_ENGINE ]] && DOCKER_ENGINE="$default_docker_engine"
+[[ -z $CONTAINER_ENGINE ]] && CONTAINER_ENGINE="$default_docker_engine"
 [[ -z $TRY_TO_DISABLE_MM ]] && TRY_TO_DISABLE_MM="true"
 
 [[ -z "${COMP_NODE_NAME}" ]] && { echo "Compute node name required as parameter script"; exit 1; }
@@ -185,12 +185,12 @@ connection_success=$(check_connection_to_node "$node_name" "$node_ip")
 if [ -n "$connection_success" ] && [[ "$connection_success" != *"ERROR"* ]]; then
     echo "Connection to $node_name success"
     docker_nova_started=""
-    docker_nova_started=$(ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" sudo $DOCKER_ENGINE ps| grep nova_compute)
+    docker_nova_started=$(ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" sudo $CONTAINER_ENGINE ps| grep nova_compute)
     if [ -z "$docker_nova_started" ];then
         ssh -o StrictHostKeyChecking=no -t "$SSH_USER@$node_ip" "sudo systemctl start kolla-consul-container.service kolla-nova_compute-container.service"
-        ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" sudo $DOCKER_ENGINE start consul nova_compute
+        ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" sudo $CONTAINER_ENGINE start consul nova_compute
     else
-        ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" sudo $DOCKER_ENGINE restart consul nova_compute
+        ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" sudo $CONTAINER_ENGINE restart consul nova_compute
     fi
     sleep $WAIT_TIME
     openstack compute service set --enable --up "${node_name}" nova-compute

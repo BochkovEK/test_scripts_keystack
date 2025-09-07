@@ -7,6 +7,7 @@ script_dir=$(dirname "$0")
 utils_dir="$script_dir/utils"
 get_nodes_list_script="get_nodes_list.sh"
 default_ssh_user="root"
+default_container_engine="docker"
 
 # Colors
 red=$(tput setaf 1)
@@ -21,7 +22,7 @@ cyan=$(tput setaf 14)
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
 [[ -z $CTRL_LIST ]] && CTRL_LIST=""
 [[ -z $ALL_CTRL ]] && ALL_CTRL="false"
-[[ -z $DOCKER_ENGINE ]] && DOCKER_ENGINE="docker"
+[[ -z $CONTAINER_ENGINE ]] && CONTAINER_ENGINE=$default_container_engine
 
 # Function to display help information
 show_help() {
@@ -74,8 +75,8 @@ while [ -n "$1" ]; do
             ;;
 
         -de|-docker_engine)
-            DOCKER_ENGINE="$2"
-            echo "Found -docker_engine with value: $DOCKER_ENGINE"
+            CONTAINER_ENGINE="$2"
+            echo "Found -docker_engine with value: $CONTAINER_ENGINE"
             shift
             ;;
 
@@ -176,7 +177,7 @@ find_consul_leader() {
 
         local leader
         leader=$(ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
-            "sudo $DOCKER_ENGINE exec consul consul operator raft list-peers 2>/dev/null" | \
+            "sudo $CONTAINER_ENGINE exec consul consul operator raft list-peers 2>/dev/null" | \
             grep leader | awk '{print $1}')
 
         if [ -n "$leader" ]; then

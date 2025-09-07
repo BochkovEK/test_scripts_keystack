@@ -23,17 +23,14 @@ red=$(tput setaf 1)
 violet=$(tput setaf 5)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
-#ORANGE='\033[0;33m'
-#NC='\033[0m' # No Color
 
 # Default values
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
 [[ -z $TRY_TO_RISE ]] && TRY_TO_RISE="true"
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
-[[ -z $DOCKER_ENGINE ]] && DOCKER_ENGINE=$default_docker_engine
+[[ -z $CONTAINER_ENGINE ]] && CONTAINER_ENGINE=$default_docker_engine
 [[ -z $CHECK_IPMI ]] && CHECK_IPMI="true"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
-#[[ -z $REGION ]] && REGION="region-ps"
 
 # Function to display help information
 show_help() {
@@ -103,8 +100,8 @@ while [ -n "$1" ]; do
             ;;
 
         -de|-docker_engine)
-            DOCKER_ENGINE="$2"
-            echo "Found -docker_engine option with value: $DOCKER_ENGINE"
+            CONTAINER_ENGINE="$2"
+            echo "Found -docker_engine option with value: $CONTAINER_ENGINE"
             shift
             ;;
 
@@ -304,7 +301,7 @@ check_disabled_computes() {
                     export COMP_NODE_NAME="$cmpt"
                     export CHECK_AFTER="false"
                     export SSH_USER=$SSH_USER
-                    export DOCKER_ENGINE=$DOCKER_ENGINE
+                    export CONTAINER_ENGINE=$CONTAINER_ENGINE
                     [ "$TS_DEBUG" = true ] && echo -e "try check script file $openstack_utils/$try_to_rise_compute_node_script"
                     if [ -f "$openstack_utils/$try_to_rise_compute_node_script" ]; then
                         [ "$TS_DEBUG" = true ] && echo -e "$try_to_rise_compute_node_script exists - ok"
@@ -355,7 +352,7 @@ check_docker_containers() {
     bash "$script_dir/$check_container_state_on_nodes_script" \
         -nn "$nodes_name_list" \
         -u "$SSH_USER" \
-        -de "$DOCKER_ENGINE" 2>/dev/null | grep "$container_name"
+        -de "$CONTAINER_ENGINE" 2>/dev/null | grep "$container_name"
 #        echo -e "${red}ERROR: Container $container_name has issues on $node_name${normal}"
 }
 
@@ -381,10 +378,10 @@ check_consul_members() {
         if [ "$TS_DEBUG" = true ]; then
             echo -e "
     [DEBUG]
-        command: ssh -t -o StrictHostKeyChecking=no \"$SSH_USER@$node_ip\" \"sudo $DOCKER_ENGINE exec -it consul consul members list\" 2>/dev/null
+        command: ssh -t -o StrictHostKeyChecking=no \"$SSH_USER@$node_ip\" \"sudo $CONTAINER_ENGINE exec -it consul consul members list\" 2>/dev/null
     "
         fi
-        members_list=$(ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" "sudo $DOCKER_ENGINE exec -it consul consul members list" 2>/dev/null)
+        members_list=$(ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" "sudo $CONTAINER_ENGINE exec -it consul consul members list" 2>/dev/null)
 
         if [ -n "$members_list" ]; then
             echo "$members_list" | \
@@ -410,7 +407,7 @@ check_consul_logs() {
         local leader_node
         local node_name="${first_ctrl_node%%:*}"
         local node_ip="${first_ctrl_node#*:}"
-        leader_node=$(ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" "sudo $DOCKER_ENGINE exec -it consul consul operator raft list-peers" 2>/dev/null | grep leader | awk '{print $1}')
+        leader_node=$(ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" "sudo $CONTAINER_ENGINE exec -it consul consul operator raft list-peers" 2>/dev/null | grep leader | awk '{print $1}')
 
         if [ -n "$leader_node" ]; then
             echo "Leader consul node is $leader_node"
