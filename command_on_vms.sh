@@ -283,6 +283,7 @@ batch_run_commands() {
 #    fi
 
     local exit_code=$?
+    echo "exit_code from get_vms_ips: $exit_code"
     if [ $exit_code -ne 0 ]; then
         echo -e "${yellow}Warning: Failed to get the list of IPs${normal}"
         return 1
