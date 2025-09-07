@@ -227,6 +227,7 @@ else
         check_consul_log_one_node "$LEADER_NODE"
     else
         echo -e "${yellow}No leader found, checking all controller nodes${normal}"
+        ALL_CTRL="true"
         check_logs_on_all_ctrl
     fi
 fi
