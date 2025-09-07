@@ -159,7 +159,7 @@ get_vms_info() {
     [DEBUG]:
         vm_list: $vm_list
     "
-    exit 0
+#    exit 0
 
     if [[ -z "$vm_list" ]]; then
         # Fallback to alternative method if first attempt fails
