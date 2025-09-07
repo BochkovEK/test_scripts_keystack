@@ -107,7 +107,7 @@ check_and_source_openrc_file() {
 # Function to get VMs information in required format
 get_vms_info() {
     local project_string=""
-    local host_string="\t"
+    local host_string=""
     local vm_name_pattern=""
     local vm_list=""
 #    local name_filter_string=""
@@ -143,14 +143,14 @@ get_vms_info() {
         Command: openstack server list $project_string $host_string --long -f value -c Name -c Status -c Networks 2>/dev/null | \
             grep -E \"$vm_name_pattern\"
     "
-        vm_list=$(openstack server list "$project_string" "$host_string" --long -f value -c Name -c Status -c Networks 2>/dev/null | \
+        vm_list=$(openstack server list "$project_string" $host_string --long -f value -c Name -c Status -c Networks 2>/dev/null | \
             grep -E "${vm_name_pattern}")
     else
         [ "$TS_DEBUG" = "true" ] && echo -e "
     [DEBUG]:
         Command: openstack server list $project_string $host_string --long -f value -c Name -c Status -c Networks 2>/dev/null
     "
-        vm_list=$(openstack server list "$project_string" "$host_string" --long -f value -c Name -c Status -c Networks 2>/dev/null)
+        vm_list=$(openstack server list "$project_string" $host_string --long -f value -c Name -c Status -c Networks 2>/dev/null)
     fi
 
     [ "$TS_DEBUG" = "true" ] && echo -e "
