@@ -242,9 +242,23 @@ pull_conf() {
 
     echo "Copying $service_name configuration from ${node_name}:$conf_dir/$CONF_NAME"
 
+    [ "$TS_DEBUG" = "true" ] && echo -e "
+    [DEBUG]:
+        first_node: $first_node
+        node_name:  $node_name
+        node_ip:    $node_ip
+        Command:    ssh -o StrictHostKeyChecking=no \"$SSH_USER@$node_ip\" \
+        \"sudo cat $conf_dir/$CONF_NAME\" > \"$script_dir/$test_node_conf_dir/${CONF_NAME}\"
+    "
     # Copy configuration file
     ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
         "sudo cat $conf_dir/$CONF_NAME" > "$script_dir/$test_node_conf_dir/${CONF_NAME}"
+
+    # Check config on local host
+    if [ ! -f "$script_dir/$test_node_conf_dir/${CONF_NAME}" ]; then
+        echo -e "${red}Configuration file is missing in ${normal}"
+        exit 1
+    fi
 
     # Create backup if it doesn't exist
     [ ! -f "$script_dir/$test_node_conf_dir/${CONF_NAME}_backup" ] && \
