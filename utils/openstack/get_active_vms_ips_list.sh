@@ -106,12 +106,18 @@ check_and_source_openrc_file() {
 
 # Function to get VMs information in required format
 get_vms_info() {
-    local project_string="--project $PROJECT"
+    local project_string=""
     local host_string=""
     local name_filter_string=""
 
     # Build filter strings
     [[ -n "$HYPERVISOR_NAME" ]] && host_string="--host $HYPERVISOR_NAME"
+
+    if [[ -n "$PROJECT" ]]; then
+        project_string="--project $PROJECT"
+    else
+        project_string="--all-project"
+    fi
 
     # Convert VM names to filter string if provided
     if [[ -n "$VM_NAMES" ]]; then
