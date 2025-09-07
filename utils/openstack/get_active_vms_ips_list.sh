@@ -54,22 +54,22 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         -hv|-hypervisor)
             HYPERVISOR_NAME="$2"
-            echo "Filtering by hypervisor: $HYPERVISOR_NAME"
+            [ "$TS_DEBUG" = "true" ] && echo "Filtering by hypervisor: $HYPERVISOR_NAME"
             shift 2
             ;;
         -n|-vms_name)
             VM_NAMES="$2"
-            echo "Filtering by VM names: $VM_NAMES"
+            [ "$TS_DEBUG" = "true" ] && echo "Filtering by VM names: $VM_NAMES"
             shift 2
             ;;
         -p|-project)
             PROJECT="$2"
-            echo "Using project: $PROJECT"
+            [ "$TS_DEBUG" = "true" ] && echo "Using project: $PROJECT"
             shift 2
             ;;
         -debug)
             TS_DEBUG="true"
-            echo "Debug mode enabled"
+            [ "$TS_DEBUG" = "true" ] && echo "Debug mode enabled"
             shift
             ;;
         --help)
@@ -77,7 +77,7 @@ while [[ $# -gt 0 ]]; do
             exit 0
             ;;
         *)
-            echo "Unknown parameter: $1"
+            [ "$TS_DEBUG" = "true" ] && echo "Unknown parameter: $1"
             show_help
             exit 1
             ;;
