@@ -28,7 +28,7 @@ default_ssh_user="root"
 
 # Default values
 CHECK_SUFFIX="${CHECK_SUFFIX:-false}"
-DEBUG="${DEBUG:-false}"
+TS_DEBUG="${TS_DEBUG:-false}"
 ONLY_CONF_CHECK="${ONLY_CONF_CHECK:-false}"
 PUSH="${PUSH:-false}"
 PULL="${PULL:-false}"
@@ -77,20 +77,20 @@ define_parameters() {
 
 # Function to get nodes list using external script
 get_nodes_list() {
-    [ "$DEBUG" = true ] && echo -e "
+    [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG]:
         Count parameters: $#
         Parameters: $*"
 
     local nodes_result=""
 
-    [ "$DEBUG" = true ] && echo -e "
+    [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG]:
       nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$*\")"
 
     nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
 
-    [ "$DEBUG" = true ] && echo -e "
+    [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG] nodes_result: $nodes_result"
 
     # Check for errors in node list
@@ -134,7 +134,7 @@ parse_arguments() {
                 exit 0
                 ;;
             -v|-debug)
-                DEBUG="true"
+                TS_DEBUG="true"
                 echo "Debug mode enabled"
                 shift
                 ;;
