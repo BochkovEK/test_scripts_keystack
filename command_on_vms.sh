@@ -9,6 +9,7 @@ red=$(tput setaf 1)
 violet=$(tput setaf 5)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
+cyan=$(tput setaf 14)
 
 # Script configuration
 script_name=$(basename "$0")
@@ -34,7 +35,7 @@ TS_SSH_TIMEOUT="${TS_SSH_TIMEOUT:-$default_ssh_timeout}"
 
 # Function to display help information
 show_help() {
-    echo -E "
+    echo -e "
     Usage: $0 [OPTIONS]
 
     Execute commands on VMs via SSH. Can target all VMs on a hypervisor or specific VMs by IP.
@@ -273,12 +274,21 @@ batch_run_commands() {
     fi
 
     # Get VMs IPs if not provided
-    if [ -z "$VMS" ] && [ -n "$HYPERVISOR_NAME" ]; then
-        get_vms_ips
-    elif [ -z "$VMS" ]; then
-        get_vms_ips
+#    if [ -z "$VMS" ] && [ -n "$HYPERVISOR_NAME" ]; then
+    get_vms_ips
+#    elif [ -z "$VMS" ]; then
+#        get_vms_ips
 #        echo -e "${red}No target specified. Use -hv or -ips option.${normal}"
 #        exit 1
+#    fi
+
+    local exit_code=$?
+    if [ $exit_code -ne 0 ]; then
+        echo -e "${yellow}Warning: Failed to get the list of IPs${normal}"
+        return 1
+    else
+        return 0
+#        echo -e "${green}All operations completed successfully${normal}"
     fi
 
     [ "$TS_DEBUG" = "true" ] && echo -e "
