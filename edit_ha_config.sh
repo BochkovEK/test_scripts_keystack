@@ -230,6 +230,11 @@ pull_conf() {
 
     # Get nodes list
     nodes=$(get_nodes_list -nt "$nodes_type")
+
+    [ "$TS_DEBUG" = "true" ] && echo -e "
+    [DEBUG]: nodes: $nodes
+    "
+
     first_node=$(echo "$nodes" | head -n1)
 
     if [ -z "$first_node" ]; then
