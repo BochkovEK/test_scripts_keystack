@@ -169,6 +169,13 @@ get_vms_info() {
     fi
 
     if [[ -z "$vm_list" ]]; then
+        # Fallback to alternative method if first attempt fails
+        [ "$TS_DEBUG" = true ] && echo "Trying alternative method to get VM list"
+        vm_list=$(openstack server list $project_string --long -f value -c Name -c Status -c Networks | \
+            grep "$HYPERVISOR_NAME" 2>/dev/null)
+    fi
+
+    if [[ -z "$vm_list" ]]; then
         echo -e "${red}No VMs found matching criteria${normal}" >&2
         echo -e "${yellow}Project: $PROJECT${normal}" >&2
         echo -e "${yellow}Hypervisor: ${HYPERVISOR_NAME:-any}${normal}" >&2
@@ -185,7 +192,7 @@ get_vms_info() {
         if [[ -n "$ip_address" ]]; then
             echo "${vm_name}:${status}:${ip_address}"
         else
-            [ "$TS_DEBUG" = "true" ] && \
+            [ "$TS_DEBUG" = true ] && \
                 echo -e "${yellow}Warning: No IP found for VM $vm_name${normal}" >&2
         fi
     done
