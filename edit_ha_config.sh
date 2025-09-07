@@ -235,7 +235,7 @@ pull_conf() {
     [DEBUG]: nodes: $nodes
     "
 
-    first_node=$(echo "$nodes" | head -n1)
+    first_node=$(echo "$nodes" | awk '{print $1}')
 
     if [ -z "$first_node" ]; then
         echo -e "${red}No controller nodes found${normal}"
@@ -257,7 +257,7 @@ pull_conf() {
     "
     # Copy configuration file
     ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
-        "sudo cat $conf_dir/$CONF_NAME" > "$script_dir/$test_node_conf_dir/${CONF_NAME}"
+        "sudo cat $conf_dir/$CONF_NAME" > "$script_f`dir/$test_node_conf_dir/${CONF_NAME}"
 
     # Check config on local host
     if [ ! -f "$script_dir/$test_node_conf_dir/${CONF_NAME}" ]; then
