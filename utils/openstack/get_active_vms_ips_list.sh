@@ -126,17 +126,22 @@ get_vms_info() {
         vm_name_pattern=$(echo "$VM_NAMES" | tr ' ' '|')
     fi
 
-    [ "$TS_DEBUG" = "true" ] && echo -e "
-    [DEBUG] Command: openstack server list $project_string $host_string --long -f value -c Name -c Status -c Networks
-    "
-
     # Get VM list with name, status, and networks
     local vm_list
     if [[ -n "$VM_NAMES" ]]; then
         # Use grep for multiple name filtering
+        [ "$TS_DEBUG" = "true" ] && echo -e "
+    [DEBUG]
+        Command: openstack server list $project_string $host_string --long -f value -c Name -c Status -c Networks 2>/dev/null | \
+            grep -E \"$vm_name_pattern\"
+    "
         vm_list=$(openstack server list $project_string "$host_string" --long -f value -c Name -c Status -c Networks 2>/dev/null | \
             grep -E "$vm_name_pattern")
     else
+        [ "$TS_DEBUG" = "true" ] && echo -e "
+    [DEBUG]
+        Command: openstack server list $project_string $host_string --long -f value -c Name -c Status -c Networks 2>/dev/null
+    "
         vm_list=$(openstack server list $project_string "$host_string" --long -f value -c Name -c Status -c Networks 2>/dev/null)
     fi
 
