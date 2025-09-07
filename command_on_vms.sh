@@ -283,13 +283,10 @@ batch_run_commands() {
 #    fi
 
     local exit_code=$?
-    echo "exit_code from get_vms_ips: $exit_code"
+    [ "$TS_DEBUG" = "true" ] && echo -e "exit_code from get_vms_ips: $exit_code"
     if [ $exit_code -ne 0 ]; then
         echo -e "${yellow}Warning: Failed to get the list of IPs${normal}"
         return 1
-    else
-        return 0
-#        echo -e "${green}All operations completed successfully${normal}"
     fi
 
     [ "$TS_DEBUG" = "true" ] && echo -e "
