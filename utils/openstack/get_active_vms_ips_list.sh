@@ -109,6 +109,7 @@ get_vms_info() {
     local project_string=""
     local host_string=""
     local vm_name_pattern=""
+    local vm_list=""
 #    local name_filter_string=""
 
     # Build filter strings
@@ -120,6 +121,13 @@ get_vms_info() {
         project_string="--all-project"
     fi
 
+    [ "$TS_DEBUG" = "true" ] && echo -e "
+    [DEBUG]
+        PROJECT:          $PROJECT
+        HYPERVISOR_NAME:  $HYPERVISOR_NAME
+        VM_NAMES:         $VM_NAMES
+    "
+
     # Convert VM names to filter string if provided
     if [[ -n "$VM_NAMES" ]]; then
         # Create regex pattern for multiple names
@@ -127,7 +135,7 @@ get_vms_info() {
     fi
 
     # Get VM list with name, status, and networks
-    local vm_list
+
     if [[ -n "$VM_NAMES" ]]; then
         # Use grep for multiple name filtering
         [ "$TS_DEBUG" = "true" ] && echo -e "
