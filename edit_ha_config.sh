@@ -45,16 +45,15 @@ show_help() {
     Manage HA configuration files across consul nodes.
 
     Options:
-      suffix                Return BMC suffix
-      config_path           Return configuration file path
-      -v, -debug           Enable debug output
-      -pull                Pull configuration from controller node to local directory
-      -push                Push configuration from local directory to all controller nodes
-      -check               Only check configuration without making changes
-      -u, -ssh_user <user> Set SSH user for remote access
-      -suffix              Get BMC suffix
-
-
+      suffix                            Return BMC suffix
+      config_path                       Return configuration file path
+      -v, -debug                        Enable debug output
+      -pull                             Pull configuration from controller node to local directory
+      -push                             Push configuration from local directory to all controller nodes
+      -check                            Only check configuration without making changes
+      -u, -ssh_user <user>              Set SSH user for remote access
+      -ce, -container_engine <engine>   Container engine (docker/podman)
+      -suffix                           Get BMC suffix
     "
 }
 #      -l, -legacy          Work with legacy consul region config
@@ -154,10 +153,10 @@ parse_arguments() {
                 echo "Check mode enabled"
                 shift
                 ;;
-            -l|-legacy)
-                LEGACY_CONF="true"
-                echo "Legacy configuration mode enabled"
-                shift
+            -ce|-container_engine)
+                CONTAINER_ENGINE="$2"
+                echo "Using container engine: $CONTAINER_ENGINE"
+                shift 2
                 ;;
             -suffix)
                 CHECK_SUFFIX="true"
@@ -182,6 +181,12 @@ parse_arguments() {
         esac
     done
 }
+
+#-l|-legacy)
+#                LEGACY_CONF="true"
+#                echo "Legacy configuration mode enabled"
+#                shift
+#                ;;
 
 ## Function to check and source openrc file
 #check_and_source_openrc_file() {
@@ -384,7 +389,7 @@ main() {
         push_conf
         # Restart consul containers after configuration change
         echo "Restarting consul containers..."
-        bash "$script_dir/command_on_nodes.sh" -u "$SSH_USER" -nt ctrl -c "docker restart consul"
+        bash "$script_dir/command_on_nodes.sh" -u "$SSH_USER" -nt ctrl -c "sudo $CONTAINER_ENGINE restart consul"
     fi
 
     # Show configuration after changes
