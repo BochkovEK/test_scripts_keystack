@@ -86,7 +86,8 @@ get_nodes_list() {
 
     [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG]:
-      nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$*\")"
+        nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" $*)
+    "
 
     nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
 
@@ -245,7 +246,7 @@ pull_conf() {
     local node_name="${first_node%%:*}"
     local node_ip="${first_node#*:}"
 
-    echo "Copying $service_name configuration from ${node_name}:$conf_dir/$CONF_NAME"
+    echo "Copying $service_name configuration from $node_name:$conf_dir/$CONF_NAME"
 
     [ "$TS_DEBUG" = "true" ] && echo -e "
     [DEBUG]:

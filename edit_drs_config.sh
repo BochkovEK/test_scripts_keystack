@@ -1,222 +1,376 @@
-# The script change and check drs config
-# Start scrip to check conf: bash edit_drs_config.sh check
+#!/bin/bash
 
-#ctrl_pattern="\-ctrl\-..$"
-nodes_type="ctrl"
-service_name=drs
-test_node_conf_dir=kolla/$service_name
-conf_dir=/etc/kolla/$service_name
-conf_name=drs.ini
+# Script for managing DRS configuration files across controller nodes
+# Supports pulling, pushing, and checking configuration files
 
-#Colors
+# Color definitions
 green=$(tput setaf 2)
 red=$(tput setaf 1)
-violet=$(tput setaf 5)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
+cyan=$(tput setaf 14)
+#violet=$(tput setaf 5)
 
-script_dir=$(dirname $0)
+# Service and path configuration
+service_name="drs"
+nodes_type="ctrl"
+test_node_conf_dir="kolla/$service_name"
+conf_dir="/etc/kolla/$service_name"
+conf_name="drs.ini"
+
+# Script paths
+script_dir=$(dirname "$0")
 utils_dir="$script_dir/utils"
 get_nodes_list_script="get_nodes_list.sh"
-install_package_script="install_package.sh"
-conf_changed=""
+default_ssh_user="root"
+#install_package_script="install_package.sh"
 
-#[[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
-[[ -z $ADD_DEBUG ]] && ADD_DEBUG="false"
-[[ -z $DEBUG ]] && DEBUG="false"
-[[ -z $ONLY_CONF_CHECK ]] && ONLY_CONF_CHECK="true"
-[[ -z $ADD_PROM_ALERT ]] && ADD_PROM_ALERT=""
-[[ -z $PROMETHEUS_PASS ]] && PROMETHEUS_PASS=""
-[[ -z $PUSH ]] && PUSH="false"
-[[ -z $PULL ]] && PULL="false"
-[[ -z $CONF_NAME ]] && CONF_NAME=$conf_name
-#[[ -z $FOO_PARAM ]] && FOO_PARAM=""
-[[ -z $NODES ]] && NODES=()
+# Default values
+ADD_DEBUG="${ADD_DEBUG:-false}"
+TS_DEBUG="${TS_DEBUG:-false}"
+ONLY_CONF_CHECK="${ONLY_CONF_CHECK:-false}"
+ADD_PROM_ALERT="${ADD_PROM_ALERT:-false}"
+PROMETHEUS_PASS="${PROMETHEUS_PASS:-}"
+PUSH="${PUSH:-false}"
+PULL="${PULL:-false}"
+CONF_NAME="${CONF_NAME:-$conf_name}"
+CONTAINER_ENGINE="${CONTAINER_ENGINE:-docker}"
 
+# Function to display help information
+show_help() {
+    echo -E "
+    Usage: $0 [OPTIONS]
 
-# Define parameters
-define_parameters () {
-  [ "$count" = 1 ] && [ "$1" = check ] && { ONLY_CONF_CHECK=true; echo "Only conf check parameter found"; }
+    Manage DRS configuration files across controller nodes.
+
+    Options:
+      -v, -debug                        Enable debug output
+      -add_debug                        Add DEBUG level to DRS logs
+      -pa, -prometheus_alerting <pass>  Enable Prometheus alerting with password
+      -pull                             Pull configuration from controller node
+      -push                             Push configuration to all controller nodes
+      -check                            Only check configuration without changes
+      -u, -ssh_user <user>              Set SSH user for remote access
+      -ce, -container_engine <engine>   Container engine (docker/podman)
+
+    Examples:
+      # Check current configuration
+      $0 -check
+
+      # Pull configuration for editing
+      $0 -pull
+
+      # Push configuration changes
+      $0 -push
+
+      # Add debug logging
+      $0 -add_debug -push
+
+      # Enable Prometheus alerting
+      $0 -pa mypassword -push
+    "
 }
 
-count=1
-while [ -n "$1" ]
-do
-    case "$1" in
-        --help) echo -E "
-        The script change and check drs config
-
-        -foo,       -bar                  <baz>
-        -add_debug                        without value, add DEBUG level to log by drs config
-        -v,         -debug                without value, set DEBUG=\"true\"
-        -pa,        -prometheus_alerting  <prometheus_password>
-        -pull                           without value, pull config from $conf_dir/$conf_name
-                                        on $nodes_type node to
-                                        $script_dir/$test_node_conf_dir
-        -push                           without value, push config from $script_dir/$test_node_conf_dir
-                                        on $nodes_type node to $conf_dir/$conf_name
-        -check                          only check option (without parameter)
-
-        Start the scrip with parameter check to check conf: bash edit_drs_config.sh check
-        "
-          exit 0
-          break ;;
-        -v|-debug) DEBUG="true"
-	        echo "Found the -debug, parameter set $DEBUG"
-          ;;
-        -add_debug) ADD_DEBUG="true"
-	        echo "Found the --add_debug, parameter set $ADD_DEBUG"
-          ;;
-        -pa|-prometheus_alerting) PROMETHEUS_PASS="$2"; ADD_PROM_ALERT="true"
-	        echo "Found the -prometheus_alerting, \$PROMETHEUS_PASS: $PROMETHEUS_PASS"
-          shift;;
-        -pull) PULL="true"
-	        echo "Found the -pull, parameter set $PULL"
-          ;;
-        -push) PUSH="true"
-	        echo "Found the -push, parameter set $PUSH"
-          ;;
-        -check) ONLY_CONF_CHECK="true"
-	        echo "Found the -check, parameter set $ONLY_CONF_CHECK"
-          ;;
-        --) shift
-          break ;;
-        *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
-        esac
-        shift
-done
-
-cat_conf () {
-  echo "Cat all $service_name configs..."
-  bash $script_dir/command_on_nodes.sh -nt ctrl -c "echo \"cat $conf_dir/$CONF_NAME\"; cat $conf_dir/$CONF_NAME"
-}
-
-#pull_conf () {
-#  echo "Pulling drs.ini..."
-#  [ ! -d $script_dir/$test_node_conf_dir ] && { mkdir -p $script_dir/$test_node_conf_dir; }
-#  ctrl_node=$(cat /etc/hosts | grep -m 1 -E ${ctrl_pattern} | awk '{print $2}')
-#  [ "$DEBUG" = true ] && echo -e "
-#  [DEBUG]: \"\$ctrl_node\": $ctrl_node\n
-#  "
-#
-#  echo "Сopying $service_name conf from $ctrl_node:$conf_dir/$CONF_NAME"
-#  scp -o StrictHostKeyChecking=no $ctrl_node:$conf_dir/$CONF_NAME $script_dir/$test_node_conf_dir
-#}
-
-pull_conf () {
-  echo "Pulling $CONF_NAME..."
-  echo "Check and create folder $test_node_conf_dir in $script_dir folder"
-  [ ! -d $script_dir/$test_node_conf_dir ] && { mkdir -p $script_dir/$test_node_conf_dir; }
-
-
-  echo "Сopying $service_name conf from ${NODES[0]}:$conf_dir/$CONF_NAME"
-  scp -o StrictHostKeyChecking=no ${NODES[0]}:$conf_dir/$CONF_NAME $script_dir/$test_node_conf_dir
-  [ ! -f $script_dir/$test_node_conf_dir/${CONF_NAME}_backup ] && { cp $script_dir/$test_node_conf_dir/${CONF_NAME} $script_dir/$test_node_conf_dir/${CONF_NAME}_backup; }
-}
-
-#push_conf () {
-#  echo "Pushing drs.ini..."
-#  ctrl_nodes=$(cat /etc/hosts | grep -E ${ctrl_pattern} | awk '{print $1}')
-#
-#  for node in $ctrl_nodes; do
-#    if [ "$DEBUG" = true ]; then
-#      echo -e "
-#  [DEBUG]: \"\$ctrl_nodes\": $node\n
-#  "
-#    fi
-#    #change api_host = 10.224.132.178
-#    echo "sed api_host = $node on $CONF_NAME"
-#    sed -i --regexp-extended "s/api_host\s+=\s+[0-9]+.[0-9]+.[0-9]+.[0-9]+/api_host = $node/" \
-#      $script_dir/$test_node_conf_dir/$CONF_NAME
-##    sed -i --regexp-extended  "s/https\:\/\/[0-9]+.[0-9]+.[0-9]+.[0-9]+/https\:\/\/$node/" \
-##      $script_dir/$test_node_conf_dir/$CONF_NAME
-##    sed -i --regexp-extended  "s/\@[0-9]+.[0-9]+.[0-9]+.[0-9]+/@$node/" \
-##      $script_dir/$test_node_conf_dir/$CONF_NAME
-#    echo "Сopying $service_name conf to $node:$conf_dir/$CONF_NAME"
-#    scp -o StrictHostKeyChecking=no $script_dir/$test_node_conf_dir/$CONF_NAME $node:$conf_dir/$CONF_NAME
-#  done
-#}
-
-push_conf () {
-  echo "Pushing $CONF_NAME..."
-#  nodes=$(cat /etc/hosts | grep -E ${nodes_pattern} | awk '{print $1}')
-
-  if ! bash $utils_dir/$install_package_script host; then
-    exit 1
-  fi
-  for node in "${NODES[@]}"; do
-
-    ip=$(host $node|grep -m 1 $node|awk '{print $4}')
+# Function to get nodes list using external script
+get_nodes_list() {
     [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]: \"node\": \"ip\"
-          $node: $ip
-  "
-    #change api_host = 10.224.132.178
-    echo "sed ip to $ip on $CONF_NAME"
-    sed -i --regexp-extended "s/[0-9]+.[0-9]+.[0-9]+.[0-9]+/$ip/" \
-      $script_dir/$test_node_conf_dir/$CONF_NAME
+    [DEBUG]:
+        Count parameters: $#
+        Parameters: $*"
 
-    echo "Сopying $service_name conf to $node:$conf_dir/${CONF_NAME}"
-    scp -o StrictHostKeyChecking=no $script_dir/$test_node_conf_dir/$CONF_NAME $node:$conf_dir/${CONF_NAME}
-  done
-}
+    local nodes_result=""
+    nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
 
-get_nodes_list () {
-  if [ -z "${NODES[*]}" ]; then
-    nodes=$(bash $utils_dir/$get_nodes_list_script -nt $nodes_type)
-  fi
-#  node=$(cat /etc/hosts | grep -m 1 -E ${nodes_pattern} | awk '{print $2}')
-  [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]: \"\$node\": $node\n
-  "
-  for node in $nodes; do NODES+=("$node"); done
-  [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]: \"\$NODES\": ${NODES[*]}
-  "
-  echo -e "
-  NODES: ${NODES[*]}
-  "
-  if [ -z "${NODES[*]}" ]; then
-    echo -e "${red}Failed to determine node list - ERROR${normal}"
-    exit 1
-  fi
-}
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] nodes_result: $nodes_result"
 
-change_add_debug_param () {
-  echo "Add debug to drs.ini..."
-  pull_conf
-  sed -i 's/\[DEFAULT\]/\[DEFAULT\]\ndebug = true/' $script_dir/$test_node_conf_dir/$CONF_NAME
-  push_conf
-  conf_changed="true"
-}
-
-change_add_prometheus_alerting () {
-  echo "Add prometheus alerting to drs.ini..."
-  if [ -z "${PROMETHEUS_PASS}" ]; then
-    echo "${red}\$PROMETHEUS_PASS not set. Prometheus alerting not set in $conf_name${normal}"
-    ONLY_CONF_CHECK="false"
-  else
-    pull_conf
-    prom_pass_exists=$(cat $script_dir/$test_node_conf_dir/$CONF_NAME|grep prometheus_alert_manager_password)
-    if [ -z "$prom_pass_exists" ]; then
-  #    sed -i "s/\[prometheus\]/\[prometheus\]\nenable_prometheus_alert_manager_auth = true\nprometheus_alert_manager_user = admin\nprometheus_alert_manager_password = $PROMETHEUS_PASS/" $script_dir/$test_node_conf_dir/$conf_name
-    sed -i "s/\[alerting\]/\[alerting\]\nenable_prometheus_alert_manager_auth = true\nprometheus_alert_manager_user = admin\nprometheus_alert_manager_password = $PROMETHEUS_PASS/" $script_dir/$test_node_conf_dir/$conf_name
-    sed -i "s/enable_alerting = false/enable_alerting = true/" $script_dir/$test_node_conf_dir/$conf_name
+    # Check for errors in node list
+    if [ -z "$nodes_result" ]; then
+        echo -e "${red}Failed to determine node list - ERROR${normal}"
+        exit 1
+    elif echo "$nodes_result" | grep -q "ERROR"; then
+        echo -e "${yellow}Node names could not be determined.${normal}"
+        echo -e "${yellow}Try: bash $utils_dir/$get_nodes_list_script -nt all${normal}"
+        echo -e "${red}Node names could not be determined - ERROR!${normal}"
+        exit 1
+    else
+        echo "$nodes_result"
     fi
-    push_conf
-    conf_changed="true"
-  fi
 }
 
-get_nodes_list
+# Function to determine SSH user
+determine_ssh_user() {
+    if [ -z "$SSH_USER" ]; then
+        SSH_USER=$(whoami 2>/dev/null) || {
+            echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
+            SSH_USER="$default_ssh_user"
+        }
+    fi
 
-#[ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
-[ "$PUSH" = true ] && { push_conf; conf_changed=true; }
-[ "$PULL" = true ] && { pull_conf; exit 0; }
-[ "$ADD_DEBUG" = true ] && { change_add_debug_param; }
-[ -n "$ADD_PROM_ALERT" ] && { change_add_prometheus_alerting; }
-#[ -n "$CHANGE_FOO_PARAM" ] && change_foo_param $foo_param_value
-[ -n "$conf_changed" ] && { cat_conf; echo "Restart $service_name containers..."; bash $script_dir/command_on_nodes.sh -nt ctrl -c "docker restart $service_name"; exit 0; }
-[ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
-#cat_conf
+    if [ -z "$SSH_USER" ]; then
+        echo -e "${red}Error: Failed to determine SSH user!${normal}" >&2
+        exit 1
+    fi
+}
 
+# Parse command line arguments
+parse_arguments() {
+    while [ -n "$1" ]; do
+        case "$1" in
+            --help)
+                show_help
+                exit 0
+                ;;
+            -v|-debug)
+                TS_DEBUG="true"
+                echo "Debug mode enabled"
+                shift
+                ;;
+            -add_debug)
+                ADD_DEBUG="true"
+                echo "Debug logging will be enabled"
+                shift
+                ;;
+            -pa|-prometheus_alerting)
+                PROMETHEUS_PASS="$2"
+                ADD_PROM_ALERT="true"
+                echo "Prometheus alerting enabled with provided password"
+                shift 2
+                ;;
+            -pull)
+                PULL="true"
+                echo "Pull mode enabled"
+                shift
+                ;;
+            -push)
+                PUSH="true"
+                echo "Push mode enabled"
+                shift
+                ;;
+            -check)
+                ONLY_CONF_CHECK="true"
+                echo "Check mode enabled"
+                shift
+                ;;
+            -u|-ssh_user)
+                SSH_USER="$2"
+                echo "Using SSH user: $SSH_USER"
+                shift 2
+                ;;
+            -ce|-container_engine)
+                CONTAINER_ENGINE="$2"
+                echo "Using container engine: $CONTAINER_ENGINE"
+                shift 2
+                ;;
+            --)
+                shift
+                break
+                ;;
+            *)
+                echo "Unknown parameter: $1"
+                show_help
+                exit 1
+                ;;
+        esac
+    done
+}
+
+# Function to display configuration files
+cat_conf() {
+    echo "Displaying all $service_name configurations..."
+    local nodes
+    nodes=$(get_nodes_list -nt "$nodes_type")
+
+    for node in $nodes; do
+        local node_name="${node%%:*}"
+        local node_ip="${node#*:}"
+        echo -e "${cyan}Configuration on $node_name:${normal}"
+        ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+            "sudo cat $conf_dir/$CONF_NAME 2>/dev/null || echo 'Configuration file not found'"
+        echo "----------------------------------------"
+    done
+}
+
+# Function to pull configuration from controller node
+pull_conf() {
+    echo "Pulling $CONF_NAME from controller node..."
+
+    # Create local directory if it doesn't exist
+    [ ! -d "$script_dir/$test_node_conf_dir" ] && mkdir -p "$script_dir/$test_node_conf_dir"
+
+    # Get nodes list
+    local nodes
+    nodes=$(get_nodes_list -nt "$nodes_type")
+    local first_node
+    first_node=$(echo "$nodes" | awk '{print $1}')
+
+    if [ -z "$first_node" ]; then
+        echo -e "${red}No controller nodes found${normal}"
+        exit 1
+    fi
+
+    local node_name="${first_node%%:*}"
+    local node_ip="${first_node#*:}"
+
+    echo "Copying $service_name configuration from $node_name:$conf_dir/$CONF_NAME"
+
+    # Copy configuration file
+    ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+        "sudo cat $conf_dir/$CONF_NAME" > "$script_dir/$test_node_conf_dir/${CONF_NAME}"
+
+    # Create backup if it doesn't exist
+    [ ! -f "$script_dir/$test_node_conf_dir/${CONF_NAME}_backup" ] && \
+        cp "$script_dir/$test_node_conf_dir/${CONF_NAME}" "$script_dir/$test_node_conf_dir/${CONF_NAME}_backup"
+
+    echo -e "
+To edit the configuration:
+  vi $script_dir/$test_node_conf_dir/$CONF_NAME
+
+To apply the configuration:
+  bash $script_dir/$script_name -push
+"
+}
+
+# Function to push configuration to controller nodes
+push_conf() {
+    echo "Pushing $CONF_NAME to controller nodes..."
+
+    if [ ! -f "$script_dir/$test_node_conf_dir/$CONF_NAME" ]; then
+        echo -e "${red}Configuration file not found: $script_dir/$test_node_conf_dir/$CONF_NAME${normal}"
+        exit 1
+    fi
+
+    # Get nodes list
+    local nodes
+    nodes=$(get_nodes_list -nt "$nodes_type")
+
+    for node in $nodes; do
+        local node_name="${node%%:*}"
+        local node_ip="${node#*:}"
+
+        echo "Pushing configuration to $node_name"
+
+        # Get node IP for API host replacement
+        local node_actual_ip
+        node_actual_ip=$(ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+            "hostname -I | awk '{print \$1}'" 2>/dev/null)
+
+        if [ -n "$node_actual_ip" ]; then
+            # Create temporary file with replaced IP addresses
+            local temp_file
+            temp_file=$(mktemp)
+
+            # Replace API host IP
+            sed -E "
+                s/api_host[[:space:]]*=[[:space:]]*[0-9.]+[0-9]+/api_host = $node_actual_ip/g
+            " "$script_dir/$test_node_conf_dir/$CONF_NAME" > "$temp_file"
+
+            # Copy file to remote node
+            scp -o StrictHostKeyChecking=no "$temp_file" "$SSH_USER@$node_ip:/tmp/$CONF_NAME"
+            ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+                "sudo mv /tmp/$CONF_NAME $conf_dir/$CONF_NAME && sudo chown root:root $conf_dir/$CONF_NAME"
+
+            # Clean up temporary file
+            rm -f "$temp_file"
+
+            echo -e "${green}Configuration pushed to $node_name${normal}"
+        else
+            echo -e "${red}Failed to get IP address for $node_name${normal}"
+        fi
+    done
+}
+
+# Function to add debug logging
+add_debug_logging() {
+    echo "Adding debug logging to DRS configuration..."
+
+    if [ ! -f "$script_dir/$test_node_conf_dir/$CONF_NAME" ]; then
+        echo -e "${yellow}Configuration file not found locally, pulling first...${normal}"
+        pull_conf
+    fi
+
+    # Add debug setting
+    sed -i 's/\[DEFAULT\]/\[DEFAULT\]\ndebug = true/' "$script_dir/$test_node_conf_dir/$CONF_NAME"
+    echo -e "${green}Debug logging enabled in local configuration${normal}"
+}
+
+# Function to add Prometheus alerting
+add_prometheus_alerting() {
+    echo "Adding Prometheus alerting to DRS configuration..."
+
+    if [ -z "$PROMETHEUS_PASS" ]; then
+        echo -e "${red}Prometheus password not provided${normal}"
+        return 1
+    fi
+
+    if [ ! -f "$script_dir/$test_node_conf_dir/$CONF_NAME" ]; then
+        echo -e "${yellow}Configuration file not found locally, pulling first...${normal}"
+        pull_conf
+    fi
+
+    # Check if Prometheus settings already exist
+    local prom_pass_exists
+    prom_pass_exists=$(grep 'prometheus_alert_manager_password' "$script_dir/$test_node_conf_dir/$CONF_NAME")
+
+    if [ -z "$prom_pass_exists" ]; then
+        # Add Prometheus alerting settings
+        sed -i "
+            s/\[alerting\]/\[alerting\]\nenable_prometheus_alert_manager_auth = true\nprometheus_alert_manager_user = admin\nprometheus_alert_manager_password = $PROMETHEUS_PASS/
+            s/enable_alerting = false/enable_alerting = true/
+        " "$script_dir/$test_node_conf_dir/$CONF_NAME"
+
+        echo -e "${green}Prometheus alerting enabled in local configuration${normal}"
+    else
+        echo -e "${yellow}Prometheus alerting already configured${normal}"
+    fi
+}
+
+# Main execution function
+main() {
+    parse_arguments "$@"
+    determine_ssh_user
+
+    local config_changed=false
+
+    # Execute requested actions
+    if [ "$ONLY_CONF_CHECK" = true ]; then
+        cat_conf
+        exit 0
+    fi
+
+    if [ "$PULL" = true ]; then
+        pull_conf
+        exit 0
+    fi
+
+    if [ "$ADD_DEBUG" = true ]; then
+        add_debug_logging
+        config_changed=true
+    fi
+
+    if [ "$ADD_PROM_ALERT" = true ]; then
+        if add_prometheus_alerting; then
+            config_changed=true
+        fi
+    fi
+
+    if [ "$PUSH" = true ]; then
+        push_conf
+        config_changed=true
+    fi
+
+    if [ "$config_changed" = true ]; then
+        # Show configuration after changes
+        cat_conf
+
+        # Restart DRS service if configuration was changed
+        echo "Restarting $service_name containers..."
+        bash "$script_dir/command_on_nodes.sh" -u "$SSH_USER" -nt ctrl \
+            -c "sudo $CONTAINER_ENGINE restart $service_name"
+    else
+        echo -e "${yellow}No configuration changes were made${normal}"
+    fi
+}
+
+# Run main function
+main "$@"
