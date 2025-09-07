@@ -303,11 +303,14 @@ batch_run_commands() {
     fi
 
     # Process each VM
-    for ip in $VMS; do
-        echo -e "${cyan}Processing VM: $ip${normal}"
+    for vm_tripl in $VMS; do
+        vm_name=$(echo "$vm_tripl" | awk -F':' '{print $1}')
+        vm_status=$(echo "$vm_tripl" | awk -F':' '{print $2}')
+        vm_ip=$(echo "$vm_tripl" | awk -F':' '{print $3}')
+        echo -e "${cyan}Processing VM: $vm_name VM status: $vm_status VM ip: $vm_ip${normal}"
 
         # Check ping connectivity
-        if ! check_host_connectivity "$ip"; then
+        if ! check_host_connectivity "$vm_ip"; then
             at_least_one_failure=true
             continue
         fi
@@ -318,14 +321,14 @@ batch_run_commands() {
         fi
 
         # Check SSH connectivity
-        if ! check_ssh_connectivity "$ip"; then
+        if ! check_ssh_connectivity "$vm_ip"; then
             at_least_one_failure=true
             continue
         fi
 
         # Execute command if not only checking
         if [ "$ONLY_CHECK" = "false" ]; then
-            if ! execute_on_vm "$ip"; then
+            if ! execute_on_vm "$vm_ip"; then
                 at_least_one_failure=true
             fi
         fi
