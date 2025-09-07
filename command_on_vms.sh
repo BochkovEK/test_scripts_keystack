@@ -179,27 +179,27 @@ get_vms_ips() {
     [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] Command: bash \"$openstack_utils/$get_vms_list_script\" $command_args"
 
     # Execute the command and capture output
-    VMs_IPs=$(bash "$openstack_utils/$get_vms_list_script" $command_args 2>&1)
+    VMS=$(bash "$openstack_utils/$get_vms_list_script" $command_args 2>&1)
     local exit_code=$?
 
     if [ $exit_code -ne 0 ]; then
         echo -e "${red}Failed to get VMs IPs (exit code: $exit_code)${normal}"
-        echo -e "${red}Error output: $VMs_IPs${normal}"
+        echo -e "${red}Error output: $VMS${normal}"
         return 1
     fi
 
-    if echo "$VMs_IPs" | grep -q "ERROR"; then
-        echo -e "${red}Error in VMs list script: $VMs_IPs${normal}"
+    if echo "$VMS" | grep -q "ERROR"; then
+        echo -e "${red}Error in VMs list script: $VMS${normal}"
         return 1
     fi
 
-    if [ -z "$VMs_IPs" ]; then
+    if [ -z "$VMS" ]; then
         echo -e "${yellow}No VMs found matching the criteria${normal}"
         echo -e "${yellow}Hypervisor: ${HYPERVISOR_NAME:-any}, VMs: ${VMS:-any}, Project: $PROJECT${normal}"
         return 1
     fi
 
-    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] Retrieved VMs IPs: $VMs_IPs"
+    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] Retrieved VMs IPs: $VMS"
     return 0
 }
 
