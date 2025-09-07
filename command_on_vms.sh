@@ -1,9 +1,8 @@
-#!/bin/bashq!
+#!/bin/bash
 
-# TO-DO Rename this script to command_on_vm.sh with key check
-# The script checks access to the VM on HV
-
-#foo
+# This script executes commands:
+# - on all VMs of the specified hypervisor
+# - on the specified VMs (by IP/name)
 
 #Colors
 green=$(tput setaf 2)
@@ -16,7 +15,6 @@ script_name=$(basename "$0")
 script_dir=$(dirname $0)
 utils_dir=$script_dir/utils
 openstack_utils=$utils_dir/openstack
-#check_openrc_script="check_openrc.sh"
 default_ssh_timeout=5
 get_active_vms_ips_list_script="get_active_vms_ips_list.sh"
 
@@ -26,7 +24,6 @@ get_active_vms_ips_list_script="get_active_vms_ips_list.sh"
 [[ -z $ONLY_PING ]] && ONLY_PING="false"
 [[ -z $ONLY_CHECK ]] && ONLY_CHECK="false"
 [[ -z $VM_USER ]] && VM_USER="ubuntu"
-#[[ -z $COMMAND_CHECK ]] && COMMAND_CHECK="ls -la"
 [[ -z $COMMAND_STR ]] && COMMAND_STR="ls -la"
 [[ -z $PROJECT ]] && PROJECT="admin"
 [[ -z $DONT_ASK ]] && DONT_ASK="true"
@@ -94,37 +91,10 @@ done
 
 batch_run_command() {
   [[ -f "$HOME/.ssh/known_hosts" ]] && { rm ~/.ssh/known_hosts; }
-#    host_string=""
-#    [[ -n ${HYPERVISOR_NAME} ]] && { host_string="--host $HYPERVISOR_NAME"; }
-#    echo -E "
-#Start check VMs with parameters:
-#  Hypervisor:   $HYPERVISOR_NAME
-#  Key:          $KEY_PATH
-#  User name:    $VM_USER
-#  Command:      $COMMAND_STR
-#  Only ping:    $ONLY_PING
-#  Project:      $PROJECT
-#"
 
   [[ ! $DONT_ASK = "true" ]] && { read -p "Press enter to continue"; }
 
   if [ -z "$VMs_IPs" ]; then
-#      VMs_IPs=$(openstack server list --project $PROJECT $host_string |grep ACTIVE |awk '{print $8}')
-#      [ "$TS_DEBUG" = true ] && echo -e "
-#      command to define vms ip list
-#      VMs_IPs=\$(openstack server list $HV_STRING --project $PROJECT |grep ACTIVE |awk '{print \$8}')
-#      VMs_IPs: $VMs_IPs
-#      "
-#      if [ -z $VMs_IPs ]; then
-#        VMs_IPs=$(openstack server list --project $PROJECT --long |
-#          grep -E "ACTIVE.*$HYPERVISOR_NAME" |awk '{print $12}')
-#        # in openstack cli version 6.2 the --host key gives an empty output
-#        if [ -z $VMs_IPs ]; then
-#          echo -e "No instance found in the $PROJECT project\nProject list:"
-#          openstack project list
-#          exit 1
-#        fi
-#      fi
     echo -e "${violet}Get IPs VMs from hypervisor: $HYPERVISOR_NAME project $PROJECT...${normal}"
     export HYPERVISOR_NAME=$HYPERVISOR_NAME
     export PROJECT=$PROJECT
@@ -175,20 +145,6 @@ batch_run_command() {
   done
 }
 
-## Check openrc file
-#check_and_source_openrc_file () {
-#  echo "check openrc"
-#  openrc_file=$(bash $utils_dir/$check_openrc_script)
-#  if [[ -z $openrc_file ]]; then
-##    echo -E "${yellow}openrc file not found in $OPENRC_PATH${normal}"
-##    echo "Try to get 'openrc' from Vault"
-##      printf "%s\n" "${red}openrc file not found in $OPENRC_PATH - ERROR!${normal}"; }
-#    exit 1
-#  else
-#    echo $openrc_file
-#    source $openrc_file
-#  fi
-#}
 
 #rm -rf /root/.ssh/known_hosts
 #check_and_source_openrc_file

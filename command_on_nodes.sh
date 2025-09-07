@@ -43,7 +43,6 @@ show_help() {
       -u, -user <username>            SSH username
       -p, -ping                       Ping nodes before executing command
       -check_conn                     Check connection before executing commands
-      -se, -send_envs                 Send envs like -se \"MY_VARIABLE='value'\"
       -debug                          Enable debug mode
       --help                          Show this help message
 
@@ -52,8 +51,13 @@ show_help() {
         bash command_on_nodes.sh -c 'docker stop \$(docker ps -a -q)'
         bash command_on_nodes.sh -c 'docker system prune -af'
         bash command_on_nodes.sh -c 'docker volume prune -af'
+      Copy file to nodes:
+        export FILE_CONTENT=\$(cat /path/to/file);
+        bash ~/test_scripts_keystack/command_on_nodes.sh -u kolla -nt all -c \"echo '\$FILE_CONTENT' > /path/to/file; cat /path/to/file\"
     "
 }
+#-se, -send_envs                 Send envs like -se \"MY_VARIABLE='value'\"
+#                                      (exp: export FOO=bar; bash ~/test_scripts_keystack/command_on_nodes.sh -se \$FOO -u kolla -nt all -c \"echo \$FOO\")
 
 # Function to define parameters from positional arguments
 define_parameters() {
@@ -89,12 +93,6 @@ while [ -n "$1" ]; do
             shift
             ;;
 
-        -se|-send_envs)
-           SEND_ENVS="$2"
-           echo "Found -send_envs option with value: $SEND_ENVS"
-           shift
-           ;;
-
         -nn|-node_name)
             NODES_NAME="$2"
             echo "Found -node_name option with value: $NODES_NAME"
@@ -129,6 +127,12 @@ while [ -n "$1" ]; do
     esac
     shift
 done
+
+#-se|-send_envs)
+#           SEND_ENVS="$2"
+#           echo "Found -send_envs option with value: $SEND_ENVS"
+#           shift
+#           ;;
 
 # Function to display error messages and exit
 error_output() {
@@ -174,15 +178,15 @@ start_commands_on_nodes() {
         [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG] node_name: $node_name; node_ip: $node_ip"
         echo -E "${blue}Executing command on ${node_name}${normal}"
-        if [ -n "$SEND_ENV" ]; then
-            [ "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG] Executing command: ssh -o StrictHostKeyChecking=no -t \"$SEND_ENV\" \"$SSH_USER@$node_ip\" \"$COMMAND\""
-            ssh -o StrictHostKeyChecking=no -t "$SEND_ENV" "$SSH_USER@$node_ip" "$COMMAND"
-        else
-            [ "$TS_DEBUG" = true ] && echo -e "
+#        if [ -n "$SEND_ENV" ]; then
+#            [ "$TS_DEBUG" = true ] && echo -e "
+#    [DEBUG] Executing command: ssh -o StrictHostKeyChecking=no -t \"$SEND_ENV\" \"$SSH_USER@$node_ip\" \"$COMMAND\""
+#            export "$SEND_ENV" ssh -o StrictHostKeyChecking=no -t "$SEND_ENV" "$SSH_USER@$node_ip" "$COMMAND"
+#        else
+        [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG] Executing command: ssh -o StrictHostKeyChecking=no -t \"$SSH_USER@$node_ip\" \"$COMMAND\""
-            ssh -o StrictHostKeyChecking=no -t "$SSH_USER@$node_ip" "$COMMAND"
-        fi
+        ssh -o StrictHostKeyChecking=no -t "$SSH_USER@$node_ip" "$COMMAND"
+#        fi
     done
 }
 
