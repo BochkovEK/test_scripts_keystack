@@ -168,7 +168,7 @@ get_vms_ips() {
     # Build command arguments based on provided parameters
     [ -n "$HYPERVISOR_NAME" ] && command_args="$command_args -hv \"$HYPERVISOR_NAME\""
     [ -n "$VMS" ] && command_args="$command_args -vms \"$VMS\""
-    [ -n "$PROJECT" ] && command_args="$command_args -p \"$PROJECT\""
+    [ -n "$PROJECT" ] && command_args="$command_args -p $PROJECT"
 
     # Add debug flag if enabled
     [ "$TS_DEBUG" = "true" ] && command_args="$command_args -debug"
