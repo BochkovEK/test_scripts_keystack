@@ -24,7 +24,7 @@ default_network_mask="10\.224\.[0-9]{1,3}\.[0-9]{1,3}"
 #PROJECT="${PROJECT:-admin}"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $PROJECT ]] && PROJECT=""
-[[ -z $VM_NAMES ]] && VM_NAMES=""
+[[ -z $VMS ]] && VMS=""
 [[ -z $HYPERVISOR_NAME ]] && HYPERVISOR_NAME=""
 [[ -z $IP_REGEX ]] && IP_REGEX=$default_network_mask
 
@@ -35,7 +35,7 @@ show_help() {
 
     Options:
       -hv, -hypervisor <name>    Filter by hypervisor name
-      -n, -vms_name <names>      Filter by VM names (space-separated)
+      -vms <names\ip>      Filter by VM names (space-separated)
       -p, -project <project>     OpenStack project name (default: $PROJECT)
       -debug                     Enable debug output
       --help                     Show this help message
@@ -57,9 +57,9 @@ while [[ $# -gt 0 ]]; do
             [ "$TS_DEBUG" = "true" ] && echo "Filtering by hypervisor: $HYPERVISOR_NAME"
             shift 2
             ;;
-        -n|-vms_name)
-            VM_NAMES="$2"
-            [ "$TS_DEBUG" = "true" ] && echo "Filtering by VM names: $VM_NAMES"
+        -vms)
+            VMS="$2"
+            [ "$TS_DEBUG" = "true" ] && echo "Filtering by VM: $VMS"
             shift 2
             ;;
         -p|-project)
@@ -125,18 +125,18 @@ get_vms_info() {
     [DEBUG]
         PROJECT:          $PROJECT
         HYPERVISOR_NAME:  $HYPERVISOR_NAME
-        VM_NAMES:         $VM_NAMES
+        VMS:         $VMS
     "
 
     # Convert VM names to filter string if provided
-    if [[ -n "$VM_NAMES" ]]; then
+    if [[ -n "$VMS" ]]; then
         # Create regex pattern for multiple names
-        vm_name_pattern=$(echo "$VM_NAMES" | tr ' ' '|')
+        vm_name_pattern=$(echo "$VMS" | tr ' ' '|')
     fi
 
     # Get VM list with name, status, and networks
 
-    if [[ -n "$VM_NAMES" ]]; then
+    if [[ -n "$VMS" ]]; then
         # Use grep for multiple name filtering
         [ "$TS_DEBUG" = "true" ] && echo -e "
     [DEBUG]:
@@ -179,7 +179,7 @@ get_vms_info() {
         echo -e "${red}No VMs found matching criteria${normal}" >&2
         echo -e "${yellow}Project: $PROJECT${normal}" >&2
         echo -e "${yellow}Hypervisor: ${HYPERVISOR_NAME:-any}${normal}" >&2
-        echo -e "${yellow}VM names: ${VM_NAMES:-any}${normal}" >&2
+        echo -e "${yellow}VM names: ${VMS:-any}${normal}" >&2
         exit 1
     fi
 

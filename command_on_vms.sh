@@ -29,7 +29,7 @@ COMMAND_STR="${COMMAND_STR:-ls -la}"
 PROJECT="${PROJECT:-admin}"
 DONT_ASK="${DONT_ASK:-true}"
 TS_DEBUG="${TS_DEBUG:-false}"
-VMs_IPs="${VMs_IPs:-}"
+VMS="${VMS:-}"
 TS_SSH_TIMEOUT="${TS_SSH_TIMEOUT:-$default_ssh_timeout}"
 
 # Function to display help information
@@ -47,7 +47,7 @@ show_help() {
       -ping                   Only perform ping check
       -p, -project <name>     OpenStack project name (default: admin)
       -dont_ask               Perform actions automatically without confirmation
-      -ips <list>             Space-separated list of IP addresses
+      -vms                    Space-separated list of IP\name addresses
       -v, -debug              Enable debug output
       -check                  Only check SSH access without executing commands
       -t, -timeout <seconds>  SSH connection timeout (default: 5)
@@ -58,7 +58,8 @@ show_help() {
       $0 -hv compute-01 -c 'df -h'
 
       # Check connectivity to specific VMs
-      $0 -ips \"192.168.1.10 192.168.1.11\" -check
+      $0 -vms \"192.168.1.10 192.168.1.11\" -check
+      $0 -vms \"vm_name1 vm_name2\" -check
 
       # Only ping check
       $0 -hv compute-01 -ping
@@ -123,9 +124,9 @@ parse_arguments() {
                 echo "Debug mode enabled"
                 shift
                 ;;
-            -ips)
-                VMs_IPs="$2"
-                echo "Targeting specific IPs: $VMs_IPs"
+            -vms)
+                VMS="$2"
+                echo "Targeting specific VMS: $VMS"
                 shift 2
                 ;;
             --)
@@ -159,24 +160,46 @@ validate_ssh_key() {
 
 # Function to get VMs IPs from hypervisor
 get_vms_ips() {
-    echo -e "${violet}Getting IPs of VMs from hypervisor: $HYPERVISOR_NAME (project: $PROJECT)...${normal}"
+    echo -e "${violet}Getting IPs of VMs: ${VMS:-all} from hypervisor: ${HYPERVISOR_NAME:-any} (project: $PROJECT)...${normal}"
 
-    export HYPERVISOR_NAME="$HYPERVISOR_NAME"
-    export PROJECT="$PROJECT"
+    local command_args=""
 
-    VMs_IPs=$(bash "$openstack_utils/$get_vms_list_script")
+    # Build command arguments based on provided parameters
+    [ -n "$HYPERVISOR_NAME" ] && command_args="$command_args -hv \"$HYPERVISOR_NAME\""
+    [ -n "$VMS" ] && command_args="$command_args -vms \"$VMS\""
+    [ -n "$PROJECT" ] && command_args="$command_args -p \"$PROJECT\""
+
+    # Add debug flag if enabled
+    [ "$TS_DEBUG" = "true" ] && command_args="$command_args -debug"
+
+    # Trim leading space from arguments
+    command_args=$(echo "$command_args" | sed 's/^ //')
+
+    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] Command: bash \"$openstack_utils/$get_vms_list_script\" $command_args"
+
+    # Execute the command and capture output
+    VMs_IPs=$(bash "$openstack_utils/$get_vms_list_script" $command_args 2>&1)
+    local exit_code=$?
+
+    if [ $exit_code -ne 0 ]; then
+        echo -e "${red}Failed to get VMs IPs (exit code: $exit_code)${normal}"
+        echo -e "${red}Error output: $VMs_IPs${normal}"
+        return 1
+    fi
 
     if echo "$VMs_IPs" | grep -q "ERROR"; then
-        echo -e "${red}Failed to get VMs IPs: $VMs_IPs${normal}"
-        exit 1
+        echo -e "${red}Error in VMs list script: $VMs_IPs${normal}"
+        return 1
     fi
 
     if [ -z "$VMs_IPs" ]; then
-        echo -e "${yellow}No VMs found on hypervisor: $HYPERVISOR_NAME${normal}"
-        exit 0
+        echo -e "${yellow}No VMs found matching the criteria${normal}"
+        echo -e "${yellow}Hypervisor: ${HYPERVISOR_NAME:-any}, VMs: ${VMS:-any}, Project: $PROJECT${normal}"
+        return 1
     fi
 
-    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] VMs IPs: $VMs_IPs"
+    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] Retrieved VMs IPs: $VMs_IPs"
+    return 0
 }
 
 # Function to check host connectivity
@@ -250,16 +273,17 @@ batch_run_commands() {
     fi
 
     # Get VMs IPs if not provided
-    if [ -z "$VMs_IPs" ] && [ -n "$HYPERVISOR_NAME" ]; then
+    if [ -z "$VMS" ] && [ -n "$HYPERVISOR_NAME" ]; then
         get_vms_ips
-    elif [ -z "$VMs_IPs" ]; then
-        echo -e "${red}No target specified. Use -hv or -ips option.${normal}"
-        exit 1
+    elif [ -z "$VMS" ]; then
+        get_vms_ips
+#        echo -e "${red}No target specified. Use -hv or -ips option.${normal}"
+#        exit 1
     fi
 
     [ "$TS_DEBUG" = "true" ] && echo -e "
     [DEBUG] Configuration:
-      VMs_IPs: $VMs_IPs
+      VMS: $VMS
       KEY_PATH: $KEY_PATH
       VM_USER: $VM_USER
       TS_SSH_TIMEOUT: $TS_SSH_TIMEOUT
@@ -271,7 +295,7 @@ batch_run_commands() {
     fi
 
     # Process each VM
-    for ip in $VMs_IPs; do
+    for ip in $VMS; do
         echo -e "${cyan}Processing VM: $ip${normal}"
 
         # Check ping connectivity
