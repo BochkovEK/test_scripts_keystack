@@ -143,7 +143,7 @@ get_vms_info() {
         Command: openstack server list $project_string $host_string --long -f value -c Name -c Status -c Networks 2>/dev/null | \
             grep -E \"$vm_name_pattern\"
     "
-        vm_list=$(openstack server list $project_string "$host_string" --long -f value -c Name -c Status -c Networks 2>/dev/null | \
+        vm_list=$(openstack server list "$project_string" "$host_string" --long -f value -c Name -c Status -c Networks 2>/dev/null | \
             grep -E "$vm_name_pattern")
     else
         [ "$TS_DEBUG" = "true" ] && echo -e "
