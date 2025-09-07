@@ -144,7 +144,7 @@ get_vms_info() {
             grep -E \"$vm_name_pattern\"
     "
         vm_list=$(openstack server list "$project_string" "$host_string" --long -f value -c Name -c Status -c Networks 2>/dev/null | \
-            grep -E "$vm_name_pattern")
+            grep -E "${vm_name_pattern}")
     else
         [ "$TS_DEBUG" = "true" ] && echo -e "
     [DEBUG]:
