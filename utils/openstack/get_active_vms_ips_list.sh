@@ -108,7 +108,8 @@ check_and_source_openrc_file() {
 get_vms_info() {
     local project_string=""
     local host_string=""
-    local name_filter_string=""
+    local vm_name_pattern=""
+#    local name_filter_string=""
 
     # Build filter strings
     [[ -n "$HYPERVISOR_NAME" ]] && host_string="--host $HYPERVISOR_NAME"
@@ -121,22 +122,27 @@ get_vms_info() {
 
     # Convert VM names to filter string if provided
     if [[ -n "$VM_NAMES" ]]; then
-        name_filter_string=$(echo "$VM_NAMES" | tr ' ' '\n' | \
-            awk '{printf "--name " $1 " "}')
+        # Create regex pattern for multiple names
+        vm_name_pattern=$(echo "$VM_NAMES" | tr ' ' '|')
     fi
 
     [ "$TS_DEBUG" = "true" ] && echo -e "
-    [DEBUG] Command: openstack server list $project_string $host_string $name_filter_string --long -f value -c Name -c Status -c Networks
+    [DEBUG] Command: openstack server list $project_string $host_string --long -f value -c Name -c Status -c Networks
     "
 
     # Get VM list with name, status, and networks
     local vm_list
-    vm_list=$(openstack server list $project_string $host_string $name_filter_string \
-        --long -f value -c Name -c Status -c Networks 2>/dev/null)
+    if [[ -n "$VM_NAMES" ]]; then
+        # Use grep for multiple name filtering
+        vm_list=$(openstack server list $project_string "$host_string" --long -f value -c Name -c Status -c Networks 2>/dev/null | \
+            grep -E "$vm_name_pattern")
+    else
+        vm_list=$(openstack server list $project_string "$host_string" --long -f value -c Name -c Status -c Networks 2>/dev/null)
+    fi
 
     if [[ -z "$vm_list" ]]; then
         # Fallback to alternative method if first attempt fails
-        [ "$TS_DEBUG" = "true" ] && echo "Trying alternative method to get VM list"
+        [ "$TS_DEBUG" = true ] && echo "Trying alternative method to get VM list"
         vm_list=$(openstack server list $project_string --long -f value -c Name -c Status -c Networks | \
             grep "$HYPERVISOR_NAME" 2>/dev/null)
     fi
