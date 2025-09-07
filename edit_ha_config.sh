@@ -257,7 +257,7 @@ pull_conf() {
     "
     # Copy configuration file
     ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
-        "sudo cat $conf_dir/$CONF_NAME" > "$script_f`dir/$test_node_conf_dir/${CONF_NAME}"
+        "sudo cat $conf_dir/$CONF_NAME" > "$script_dir/$test_node_conf_dir/${CONF_NAME}"
 
     # Check config on local host
     if [ ! -f "$script_dir/$test_node_conf_dir/${CONF_NAME}" ]; then
