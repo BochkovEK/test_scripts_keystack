@@ -107,7 +107,7 @@ check_and_source_openrc_file() {
 # Function to get VMs information in required format
 get_vms_info() {
     local project_string=""
-    local host_string=""
+#    local host_string=""
     local vm_name_pattern=""
     local vm_list=""
 #    local name_filter_string=""
