@@ -224,10 +224,10 @@ check_ssh_connectivity() {
     ssh_output=$(ssh -o StrictHostKeyChecking=no \
         -o ConnectTimeout="$TS_SSH_TIMEOUT" \
         -o BatchMode=yes \
-        -q \
         -i "$KEY_PATH" \
         "$VM_USER@$ip" \
         "echo 'SSH_OK'" 2>&1)
+#        -q \
 
     if [ "$ssh_output" = "SSH_OK" ]; then
         echo -e "${green}SSH connection successful: $ip${normal}"
