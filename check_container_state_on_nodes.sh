@@ -7,7 +7,7 @@ script_dir=$(dirname "$0")
 utils_dir="$script_dir/utils"
 get_nodes_list_script="get_nodes_list.sh"
 default_ssh_user="root"
-default_docker_engine="docker"
+default_container_engine="docker"
 #script_name=$(basename "$0")
 
 # Colors
@@ -75,7 +75,7 @@ comp_required_container_list=(
 [[ -z $NODES_TYPE ]] && NODES_TYPE="all"
 [[ -z $NODES_NAME ]] && NODES_NAME=""
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
-[[ -z $CONTAINER_ENGINE ]] && CONTAINER_ENGINE="$default_docker_engine"
+[[ -z $CONTAINER_ENGINE ]] && CONTAINER_ENGINE="$default_container_engine"
 
 # Function to display help information
 show_help() {
@@ -86,7 +86,7 @@ show_help() {
       -nt, -type_of_nodes <type>    Node type: 'all', 'ctrl', 'comp', 'net', 'awn'
       -nn, -node_name <names>       Space-separated node names
       -u, -user <username>          SSH username
-      -de, -docker_engine <engine>  Container engine: docker or podman
+      -ce, -container_engine <engine>  Container engine: docker or podman
       -debug                        Enable debug output
       --help                        Show this help message
     "
@@ -120,7 +120,7 @@ while [ -n "$1" ]; do
             shift
             ;;
 
-        -de|-docker_engine)
+        -ce|-container_engine)
             CONTAINER_ENGINE="$2"
             echo "Found -docker_engine with value: $CONTAINER_ENGINE"
             shift

@@ -15,7 +15,7 @@ edit_ha_region_config_script="edit_ha_config.sh"
 try_to_rise_compute_node_script="try_to_rise_compute_node.sh"
 check_container_state_on_nodes_script="check_container_state_on_nodes.sh"
 default_ssh_user="root"
-default_docker_engine="docker"
+default_container_engine="docker"
 
 # Color definitions
 green=$(tput setaf 2)
@@ -28,7 +28,7 @@ yellow=$(tput setaf 3)
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
 [[ -z $TRY_TO_RISE ]] && TRY_TO_RISE="true"
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
-[[ -z $CONTAINER_ENGINE ]] && CONTAINER_ENGINE=$default_docker_engine
+[[ -z $CONTAINER_ENGINE ]] && CONTAINER_ENGINE=$default_container_engine
 [[ -z $CHECK_IPMI ]] && CHECK_IPMI="true"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 
@@ -99,7 +99,7 @@ while [ -n "$1" ]; do
             shift
             ;;
 
-        -de|-docker_engine)
+        -ce|-container_engine)
             CONTAINER_ENGINE="$2"
             echo "Found -docker_engine option with value: $CONTAINER_ENGINE"
             shift
@@ -322,7 +322,7 @@ check_disabled_computes() {
 }
 
 # Function to check Docker containers
-check_docker_containers() {
+check_containers() {
     local node_type="$1"
     local container_name="$2"
 
@@ -510,9 +510,9 @@ check_connections_to_nodes "comp"
 
 [ "$CHECK_IPMI" = "true" ] && check_ipmi_connections
 
-check_docker_containers "ctrl" "consul"
-check_docker_containers "comp" "consul"
-check_docker_containers "comp" "nova_compute"
+check_containers "ctrl" "consul"
+check_containers "comp" "consul"
+check_containers "comp" "nova_compute"
 
 check_disabled_computes
 check_consul_members

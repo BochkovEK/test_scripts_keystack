@@ -30,12 +30,12 @@ show_help() {
     Usage: $0 [OPTIONS]
 
     Options:
-      -ln, -line_numbers <number>    Number of log lines to display
-      -ctrl_list <nodes>             Space-separated list of controller nodes
-      -all_ctrl                      Check logs on all controller nodes
-      -u, -user <username>           SSH username
-      -de, -docker_engine <engine>   Container engine: docker or podman
-      --help                         Show this help message
+      -ln, -line_numbers <number>      Number of log lines to display
+      -ctrl_list <nodes>               Space-separated list of controller nodes
+      -all_ctrl                        Check logs on all controller nodes
+      -u, -user <username>             SSH username
+      -ce, -container_engine <engine>  Container engine: docker or podman
+      --help                           Show this help message
 
     Examples:
       bash check_consul_log.sh -ctrl_list \"ctrl-01 ctrl-02\" -ln 50
@@ -74,7 +74,7 @@ while [ -n "$1" ]; do
             shift
             ;;
 
-        -de|-docker_engine)
+        -ce|-container_engine)
             CONTAINER_ENGINE="$2"
             echo "Found -docker_engine with value: $CONTAINER_ENGINE"
             shift
