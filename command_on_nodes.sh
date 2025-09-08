@@ -185,8 +185,8 @@ start_commands_on_nodes() {
 #        else
         [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG] Executing command: ssh -o StrictHostKeyChecking=no -t \"$SSH_USER@$node_ip\" \"$COMMAND\""
-        ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" "$COMMAND"
-#        ssh -o StrictHostKeyChecking=no -t "$SSH_USER@$node_ip" "$COMMAND"
+#        ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" "$COMMAND"
+        ssh -o StrictHostKeyChecking=no -t "$SSH_USER@$node_ip" "$COMMAND"
 #        fi
     done
 }
