@@ -228,7 +228,7 @@ check_ssh_connectivity() {
         "$VM_USER@$ip" \
         "echo 'SSH_OK'" 2>&1)
 #        -q \
-
+    echo "debug: ssh_output: $ssh_output"
     if [ "$ssh_output" = "SSH_OK" ]; then
         echo -e "${green}SSH connection successful: $ip${normal}"
         return 0

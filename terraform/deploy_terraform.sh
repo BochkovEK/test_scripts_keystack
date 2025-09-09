@@ -181,51 +181,56 @@ check_openstack_cli
 
 check_cloud_config
 
+# Create items
+#--------------------------
 # Create images
-for image_name in "${images_list[@]}"; do
-  if ! bash $utils_dir/openstack/create_image.sh $image_name; then
-    exit 1
-  fi
-done
-
-# Create images from public repo
-for image_name in "${public_images_list[@]}"; do
-  image_name_cut=$(echo "${image_name##*/}")
-  image_source=$(echo "${image_name%/*}")
-#  echo $image_source $image_name_cut
-#  exit 1
-  export IMAGE_SOURCE=$image_source
-  if ! bash $utils_dir/openstack/create_image.sh $image_name_cut; then
-    exit 1
-  fi
-  export IMAGE_SOURCE=""
-done
-
+#for image_name in "${images_list[@]}"; do
+#  if ! bash $utils_dir/openstack/create_image.sh $image_name; then
+#    exit 1
+#  fi
+#done
+#
+## Create images from public repo
+#for image_name in "${public_images_list[@]}"; do
+#  image_name_cut=$(echo "${image_name##*/}")
+#  image_source=$(echo "${image_name%/*}")
+##  echo $image_source $image_name_cut
+##  exit 1
+#  export IMAGE_SOURCE=$image_source
+#  if ! bash $utils_dir/openstack/create_image.sh $image_name_cut; then
+#    exit 1
+#  fi
+#  export IMAGE_SOURCE=""
+#done
+#
 # Create network
-echo "Check external network: $NETWORK"
-export NETWORK=$NETWORK
-if ! bash $utils_dir/openstack/create_pub_network.sh; then
-  export TS_YES_NO_QUESTION="Do you want to skip check external network [Yes]:"
-  yes_no_input=$(bash $utils_dir/yes_no_answer.sh)
-
-  if [ ! "$yes_no_input" = "true" ]; then
-    exit 1
-  fi
-fi
+#echo "Check external network: $NETWORK"
+#export NETWORK=$NETWORK
+#if ! bash $utils_dir/openstack/create_pub_network.sh; then
+#  export TS_YES_NO_QUESTION="Do you want to skip check external network [Yes]:"
+#  yes_no_input=$(bash $utils_dir/yes_no_answer.sh)
+#
+#  if [ ! "$yes_no_input" = "true" ]; then
+#    exit 1
+#  fi
+#fi
+#--------------------------
 
 echo -E "${green}
 Terraform installed - ok!
 cloud.yml config in $script_dir - ok!${normal}"
-for image_name in "${images_list[@]}"; do
-  echo -E "${green}Image $image_name created - ok!${normal}"
-done
-# created from public repo
-for image_name in "${public_images_list[@]}"; do
-  echo -E "${green}Image $image_name created - ok!${normal}"
-done
-echo -E "${green}Network $pub_net_name created - ok!${normal}"
 
-[[ -f ~/.bashrc ]] && { echo "alias tf='terraform'" >> ~/.bashrc; } || { alias tf='terraform'; }
+#for image_name in "${images_list[@]}"; do
+#  echo -E "${green}Image $image_name created - ok!${normal}"
+#done
+
+# created from public repo
+#for image_name in "${public_images_list[@]}"; do
+#  echo -E "${green}Image $image_name created - ok!${normal}"
+#done
+#echo -E "${green}Network $pub_net_name created - ok!${normal}"
+#
+#[[ -f ~/.bashrc ]] && { echo "alias tf='terraform'" >> ~/.bashrc; } || { alias tf='terraform'; }
 
 echo "
 You can create resources using terraform.
@@ -237,6 +242,9 @@ echo "
     terraform init
     terraform plan -var-file \"<name>.auto.tfvars\"
     terraform apply
+    in venv folder:
+      terraform plan -var-file \"<name>.auto.tfvars\" -out=plan.tfplan
+      terraform apply \"plan.tfplan\"
     type \"yes\"
 
 Read more: https://github.com/BochkovEK/test_scripts_keystack/tree/master/terraform
