@@ -17,6 +17,12 @@ TC_SSH_USER="${TC_SSH_USER:-"kolla"}"
 TC_COMMAND_ON_NODES_SCRIPT="${TC_COMMAND_ON_NODES_SCRIPT:-"~/test_scripts_keystack/command_on_nodes.sh"}"
 #TC_HOSTS must be define by user
 
+# Host configuration
+#declare -A HOSTS=(
+#    [1]="cdm-bl-pca10"
+#    [2]="cdm-bl-pca11"
+#)
+
 # ========== FUNCTIONS ==========
 
 # Function to create virtual machines
@@ -285,9 +291,19 @@ validate_hosts () {
         exit 1
     fi
 
-    # Convert TC_HOSTS string to array
-    IFS=' ' read -ra HOSTS_ARRAY <<< "${TC_HOSTS}"
-    HOSTS_COUNT=${#HOSTS_ARRAY[@]}
+    # Declare associative array (if using bash 4+)
+    declare -A HOSTS
+
+    # Convert TC_HOSTS string to array with numeric indices starting from 1
+    IFS=' ' read -ra HOSTS_TMP <<< "${TC_HOSTS}"
+
+    local index=1
+    for host in "${HOSTS_TMP[@]}"; do
+        HOSTS[$index]="$host"
+        ((index++))
+    done
+
+    HOSTS_COUNT=${#HOSTS_TMP[@]}
 
     # Validate hosts count
     if [ "$HOSTS_COUNT" -lt 2 ]; then
@@ -296,7 +312,7 @@ validate_hosts () {
         exit 1
     fi
 
-    echo "Using hosts: ${TC_HOSTS}"
+    echo "Using hosts: ${HOSTS[*]}"
     echo "Host count: ${HOSTS_COUNT}"
 }
 
