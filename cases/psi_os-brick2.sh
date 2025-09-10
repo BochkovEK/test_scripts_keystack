@@ -57,7 +57,8 @@ collect_block_device_info() {
     for i in 1 2; do
         local server="${TC_NAME_PREFIX}${i}"
         local host="${HOSTS[$i]}"
-        local server_id=$(openstack server show -c id -f value "$server")
+        local server_id
+        server_id=$(openstack server show -c id -f value "$server")
 
         # Server information
         openstack server show "$server" | tee "${TC_OUTPUT_PATH}/${server}_server_show_${stage}.txt"
