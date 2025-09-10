@@ -46,6 +46,8 @@ create_vms() {
             \"${SERVERS[$i]}\"
         "
 
+        read -p "Press Enter to continue: "
+
         # Create server
         openstack server create \
             --flavor "${TC_FLAVOR}" \
