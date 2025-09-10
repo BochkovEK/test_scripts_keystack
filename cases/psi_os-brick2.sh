@@ -5,7 +5,7 @@
 
 # ========== CONSTANTS ==========
 TC_FLAVOR="${TC_FLAVOR:-"g1-cpu-4-4"}"
-TC_TC_NETWORK="${TC_TC_NETWORK:-"pub_net"}"
+TC_NETWORK="${TC_NETWORK:-"pub_net"}"
 TC_IMAGE="${TC_IMAGE:-"cirros-0.6.3-x86_64-disk"}"
 TC_BOOT_DISK_SIZE="${TC_BOOT_DISK_SIZE:-30}"
 TC_AZ="${TC_AZ:-"nova"}"
