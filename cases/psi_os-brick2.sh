@@ -292,7 +292,7 @@ validate_hosts () {
     fi
 
     # Declare associative array (if using bash 4+)
-    declare -A HOSTS
+    declare -g -a HOSTS
 
     # Convert TC_HOSTS string to array with numeric indices starting from 1
     IFS=' ' read -ra HOSTS_TMP <<< "${TC_HOSTS}"
