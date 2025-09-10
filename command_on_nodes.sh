@@ -24,7 +24,7 @@ blue=$(tput setaf 4)
 [[ -z $PING ]] && PING="false"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $DONT_CHECK_CONN ]] && DONT_CHECK_CONN="true"
-[[ -z $SEND_ENVS ]] && SEND_ENVS=""
+#[[ -z $SEND_ENVS ]] && SEND_ENVS=""
 
 # Parameter counter
 count=1

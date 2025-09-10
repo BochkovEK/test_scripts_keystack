@@ -30,7 +30,7 @@ VMs = {
         }
         az_hint                             = "<az_name>:<hyper_name>"
         network_name                        = "<network_name>" # default "pub_net"
-        boot_volume_size                    = <size> # default 5 GB
+        boot_volume_size                    = <size> # in GB; default 5 GB
         boot_volume_delete_on_termination   = "true\false" # default "true"
         disks                               = [
           {
