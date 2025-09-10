@@ -339,6 +339,7 @@ output_variables () {
   TC_SSH_USER: ${TC_SSH_USER}
   TC_COMMAND_ON_NODES_SCRIPT: ${TC_COMMAND_ON_NODES_SCRIPT}
   TC_HOSTS: ${TC_HOSTS}
+    HOSTS: ${HOSTS[*]}
   "
   read -p "Press Enter to continue: "
 }
