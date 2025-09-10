@@ -41,7 +41,7 @@ create_vms() {
             block_device_params+="--block-device source_type=blank,destination_type=volume,volume_size=${i} "
         done
 
-        echo"
+        echo "
         openstack server create \
             --flavor \"${TC_FLAVOR}\" \
             --network \"${TC_NETWORK}\" \
@@ -265,8 +265,9 @@ cleanup_resources() {
 generate_report() {
     echo "Generating final report..."
 
-    local files=($(ls -1tr "${TC_OUTPUT_PATH}"/*.txt))
+    local files
     local report_file="${TC_OUTPUT_PATH}/psi_os-brick2_output.txt"
+    files=($(ls -1tr "${TC_OUTPUT_PATH}"/*.txt))
 
     echo > "$report_file"  # Clear the file
 
