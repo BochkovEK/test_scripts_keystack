@@ -68,6 +68,8 @@ create_vms() {
     # Wait for VMs to be created
     echo "Waiting for VMs to be created..."
     watch -n3 "openstack server list --name ${TC_NAME_PREFIX}"
+
+    read -p "Press Enter to continue: "
 }
 
 # Function to collect block device information
@@ -149,6 +151,8 @@ detach_and_delete_volumes() {
     echo "Waiting for server to stop..."
     watch -n3 "openstack server list --name $server"
 
+    read -p "Press Enter to continue: "
+
     # Detach non-boot volumes
     openstack server volume list "$server" -c Device -c "Volume ID" -f value | \
         awk '!/vda/{print $2}' | \
@@ -210,6 +214,8 @@ perform_live_migration() {
         -c ID -c Created_At -c Updated_At -c Source_Node -c Dest_Node -c Status \
         --server $source_server"
 
+    read -p "Press Enter to continue: "
+
     # Save migration details
     openstack server migration list \
         -c ID -c Created_At -c Updated_At -c Source_Node -c Dest_Node -c Status \
@@ -237,6 +243,8 @@ cleanup_resources() {
 
     # Monitor deletion
     watch -n3 "openstack server list --name $TC_NAME_PREFIX -c Name -c Status -c 'Task State'"
+
+    read -p "Press Enter to continue: "
 
     # Additional multipath cleanup
     local host="${HOSTS[1]}"
@@ -314,6 +322,7 @@ output_variables () {
   TC_COMMAND_ON_NODES_SCRIPT: ${TC_COMMAND_ON_NODES_SCRIPT}
   TC_HOSTS: ${TC_HOSTS}
   "
+  read -p "Press Enter to continue: "
 }
 
 # ========== MAIN EXECUTION ==========
