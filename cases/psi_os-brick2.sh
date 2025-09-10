@@ -215,11 +215,11 @@ perform_live_migration() {
 
     # Perform migration
     echo "
-    openstack server migrate --os-com 2.1 --live \"$source_server\" --host \"$dest_host\"
+    openstack server migrate --os-com 2.30 --live \"$source_server\" --host \"$dest_host\"
     "
 
     read -p "Press Enter to continue: "
-    openstack server migrate --live "$source_server" --host "$dest_host"
+    openstack server migrate --os-com 2.30 --live "$source_server" --host "$dest_host"
 
     # Monitor migration status
     echo "Monitoring migration status..."
