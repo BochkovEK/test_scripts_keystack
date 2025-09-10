@@ -14,7 +14,7 @@ TC_MAX_DISKS="${TC_MAX_DISKS:-10}"
 TC_OUTPUT_PATH="${TC_OUTPUT_PATH:-"/tmp"}"
 TC_CONTAINER_ENGINE="${TC_CONTAINER_ENGINE:-"podman"}"
 TC_SSH_USER="${TC_SSH_USER:-"kolla"}"
-TC_COMMAND_ON_NODES_SCRIPT="${TC_COMMAND_ON_NODES_SCRIPT:-"~/test_scripts_keystack/command_on_nodes.sh"}"
+TC_COMMAND_ON_NODES_SCRIPT="${TC_COMMAND_ON_NODES_SCRIPT:-"$HOME/test_scripts_keystack/command_on_nodes.sh"}"
 #TC_HOSTS must be define by user
 
 # Host configuration
@@ -361,7 +361,7 @@ main() {
     output_variables
 
     # Phase 1: Initial setup
-    create_vms
+#    create_vms
     collect_block_device_info "ini"
 
     # Phase 2: Volume operations
