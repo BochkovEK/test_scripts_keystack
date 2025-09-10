@@ -15,6 +15,7 @@ TC_OUTPUT_PATH="${TC_OUTPUT_PATH:-"/tmp"}"
 TC_CONTAINER_ENGINE="${TC_CONTAINER_ENGINE:-"podman"}"
 TC_SSH_USER="${TC_SSH_USER:-"kolla"}"
 TC_COMMAND_ON_NODES_SCRIPT="${TC_COMMAND_ON_NODES_SCRIPT:-"$HOME/test_scripts_keystack/command_on_nodes.sh"}"
+TC_SKIP_STAGE_ENV_FILE="${TC_SKIP_STAGE_ENV_FILE:-"$(dirname "$0")/.skip_stage_envs"}"
 #TC_HOSTS must be define by user
 
 # Host configuration
@@ -77,6 +78,7 @@ create_vms() {
     echo "Waiting for VMs to be created..."
     watch -n3 "openstack server list --name ${TC_NAME_PREFIX}"
 
+    echo "export SKIP_CREATE_VMS=true" >> "$TC_SKIP_STAGE_ENV_FILE"
     read -p "Press Enter to continue: "
 }
 
@@ -129,6 +131,12 @@ collect_block_device_info() {
         openstack server volume list "${TC_NAME_PREFIX}${i}" | \
             tee "${TC_OUTPUT_PATH}/${TC_NAME_PREFIX}${i}_volumes_${stage}.txt"
     done
+
+    if [ "$stage" = ini ]; then
+        echo "export SKIP_COLLECT_BLOCK_DEV_INFO_INI=true" >> "$TC_SKIP_STAGE_ENV_FILE"
+    else
+        echo "export SKIP_COLLECT_BLOCK_DEV_INFO_FIN=true" >> "$TC_SKIP_STAGE_ENV_FILE"
+    fi
 }
 
 # Function to run remote command
@@ -180,6 +188,8 @@ detach_and_delete_volumes() {
     # Verify deletion
     openstack server volume list "$server" | \
         tee "${TC_OUTPUT_PATH}/${server}_openstack_server_volume_list_after_delete.txt"
+
+    echo "export SKIP_DETACH_AND_DELETE_VOLUMES=true" >> "$TC_SKIP_STAGE_ENV_FILE"
 }
 
 # Function to cleanup multipath devices
@@ -204,6 +214,8 @@ cleanup_multipath() {
          awk -F- '/by-id/{print \$NF}' | \
          xargs -I@ bash -c 'sudo $TC_CONTAINER_ENGINE exec multipathd multipath -ll @'" \
         "${server}_mpath_flush.txt"
+
+    echo "export SKIP_CLEANUP_MULTIPATH=true" >> "$TC_SKIP_STAGE_ENV_FILE"
 }
 
 # Function to perform live migration
@@ -243,6 +255,8 @@ perform_live_migration() {
     # Verify server state
     openstack server list --long --name "$TC_NAME_PREFIX" | \
         tee "${TC_OUTPUT_PATH}/openstack_server_list_long_after_migration_${source_server}_to_${dest_host}.txt"
+
+    echo "export SKIP_PERFORM_LIVE_MIGR=true" >> "$TC_SKIP_STAGE_ENV_FILE"
 }
 
 # Function to cleanup resources
@@ -264,6 +278,8 @@ cleanup_resources() {
     run_remote_command "$host" \
         "sudo $TC_CONTAINER_ENGINE exec multipathd multipath -ll 2>&1 | awk '/##/{print \$1}'" \
         "multipath_remaining_devices.txt"
+
+    echo "export SKIP_CLEANUP_RES=true" >> "$TC_SKIP_STAGE_ENV_FILE"
 }
 
 # Function to generate final report
@@ -285,6 +301,8 @@ generate_report() {
     done
 
     echo "Report generated: $report_file"
+
+    echo "export SKIP_GEN_REPORT=true" >> "$TC_SKIP_STAGE_ENV_FILE"
 }
 
 # Validate hosts
@@ -350,6 +368,20 @@ output_variables () {
   read -p "Press Enter to continue: "
 }
 
+# Source skip envs
+source_env () {
+  if [ -f "$TC_SKIP_STAGE_ENV_FILE" ]; then
+      echo "Source 'skip envs' file $TC_SKIP_STAGE_ENV_FILE exists"
+      echo "cat..."
+      cat $TC_SKIP_STAGE_ENV_FILE
+      read -p "Press Enter to continue: "
+      source "$TC_SKIP_STAGE_ENV_FILE"
+  else
+      echo "Source 'skip envs' file not $TC_SKIP_STAGE_ENV_FILE exists"
+      read -p "Press Enter to continue: "
+  fi
+}
+
 # ========== MAIN EXECUTION ==========
 
 # Main execution flow
@@ -365,21 +397,24 @@ main() {
     #Output variables
     output_variables
 
+    # Source skip envs
+    source_env
+
     # Phase 1: Initial setup
-#    create_vms
-#    collect_block_device_info "ini"
+    [ ! "${SKIP_CREATE_VMS}" = true ] && create_vms
+    [ ! "${SKIP_COLLECT_BLOCK_DEV_INFO_INI}" = true ] && collect_block_device_info "ini"
 
     # Phase 2: Volume operations
-#    detach_and_delete_volumes
-#    cleanup_multipath
+    [ ! "${SKIP_DETACH_AND_DELETE_VOLUMES}" = true ] && detach_and_delete_volumes
+    [ ! "${SKIP_CLEANUP_MULTIPATH}" = true ] && cleanup_multipath
 
     # Phase 3: Migration
-    perform_live_migration
-    collect_block_device_info "fin"
+    [ ! "${SKIP_PERFORM_LIVE_MIGR}" = true ] && perform_live_migration
+    [ ! "${SKIP_COLLECT_BLOCK_DEV_INFO_FIN}" = true ] && collect_block_device_info "fin"
 
     # Phase 4: Cleanup and reporting
-    cleanup_resources
-    generate_report
+    [ ! "${SKIP_CLEANUP_RES}" = true ] && cleanup_resources
+    [ ! "${SKIP_GEN_REPORT}" = true ] && generate_report
 
     echo "Test completed successfully!"
 }
