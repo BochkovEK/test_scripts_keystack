@@ -6,13 +6,15 @@
 # ========== CONSTANTS ==========
 TC_FLAVOR="${TC_FLAVOR:-"g1-cpu-4-4"}"
 TC_NETWORK="${TC_NETWORK:-"pub_net"}"
-TC_IMAGE="${TC_IMAGE:-"ubuntu-22.04-x64"}"
+TC_IMAGE="${TC_IMAGE:-"cirros-0.6.3-x86_64-disk"}"
 TC_BOOT_DISK_SIZE="${TC_BOOT_DISK_SIZE:-30}"
 TC_AZ="${TC_AZ:-"nova"}"
 TC_NAME_PREFIX="${TC_NAME_PREFIX:-"vm_"}"
 TC_MAX_DISKS="${TC_MAX_DISKS:-10}"
 TC_OUTPUT_PATH="${TC_OUTPUT_PATH:-"/tmp"}"
 TC_CONTAINER_ENGINE="${TC_CONTAINER_ENGINE:-"podman"}"
+TC_SSH_USER="${TC_SSH_USER:-"kolla"}"
+TC_COMMAND_ON_NODES_SCRIPT="${TC_COMMAND_ON_NODES_SCRIPT:-"~/test_scripts_keystack/command_on_nodes.sh"}"
 #TC_HOSTS must be define by user
 
 # ========== FUNCTIONS ==========
@@ -106,8 +108,13 @@ run_remote_command() {
     local command="$2"
     local output_file="$3"
 
-    bash ~/test_scripts_keystack/command_on_nodes.sh \
-        -u kolla \
+    if [ ! -f "$TC_COMMAND_ON_NODES_SCRIPT" ]; then
+        echo -e "Error: Script command_on_nodes not found in \$TC_COMMAND_ON_NODES_SCRIPT: $TC_COMMAND_ON_NODES_SCRIPT" >&2
+        exit 1
+    fi
+
+    bash "$TC_COMMAND_ON_NODES_SCRIPT" \
+        -u "$TC_SSH_USER" \
         -nn "$host" \
         -c "$command" 2>&1 | \
         tee "${TC_OUTPUT_PATH}/${output_file}"
@@ -192,7 +199,7 @@ perform_live_migration() {
 
     # Check compute logs
     run_remote_command "$dest_host" \
-        "sudo grep '$(date +%Y-%m-%d)' /var/log/kolla/nova/nova-compute.log" \
+        "sudo grep '$(date +%Y-%m-%d)' /var/log/"$SSH_USER"/nova/nova-compute.log" \
         "nova_compute_log_migrate_${source_server}_to_${dest_host}.txt"
 
     # Verify server state
@@ -262,6 +269,14 @@ validate_hosts () {
 
     echo "Using hosts: ${TC_HOSTS}"
     echo "Host count: ${HOSTS_COUNT}"
+}
+
+# Get ssh user
+get_ssh_user () {
+    if [[ -z "$TC_SSH_USER" ]]; then
+        echo -e "Error: Failed to determine SSH user!" >&2
+        exit 1
+    fi
 }
 
 # ========== MAIN EXECUTION ==========
