@@ -298,6 +298,24 @@ get_ssh_user () {
     fi
 }
 
+# Output variable
+output_variables () {
+  echo "
+  TC_FLAVOR: ${TC_FLAVOR}
+  TC_NETWORK: ${TC_NETWORK}
+  TC_IMAGE: ${TC_IMAGE}
+  TC_BOOT_DISK_SIZE: ${TC_BOOT_DISK_SIZE}
+  TC_AZ: ${TC_AZ}
+  TC_NAME_PREFIX: ${TC_NAME_PREFIX}
+  TC_MAX_DISK: ${TC_MAX_DISKS}
+  TC_OUTPUT_PATH: ${TC_OUTPUT_PATH}
+  TC_CONTAINER_ENGINE: ${TC_CONTAINER_ENGINE}
+  TC_SSH_USER: ${TC_SSH_USER}
+  TC_COMMAND_ON_NODES_SCRIPT: ${TC_COMMAND_ON_NODES_SCRIPT}
+  TC_HOSTS: ${TC_HOSTS}
+  "
+}
+
 # ========== MAIN EXECUTION ==========
 
 # Main execution flow
@@ -306,6 +324,12 @@ main() {
 
     # Validate hosts
     validate_hosts
+
+    #Get ssh user
+    get_ssh_user
+
+    #Output variables
+    output_variables
 
     # Phase 1: Initial setup
     create_vms
