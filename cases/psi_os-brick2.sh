@@ -214,6 +214,11 @@ perform_live_migration() {
     echo "Performing live migration of $source_server to $dest_host..."
 
     # Perform migration
+    echo "
+    openstack server migrate --os-com 2.1 --live \"$source_server\" --host \"$dest_host\"
+    "
+
+    read -p "Press Enter to continue: "
     openstack server migrate --live "$source_server" --host "$dest_host"
 
     # Monitor migration status
@@ -232,7 +237,7 @@ perform_live_migration() {
 
     # Check compute logs
     run_remote_command "$dest_host" \
-        "sudo grep '$(date +%Y-%m-%d)' /var/log/"$SSH_USER"/nova/nova-compute.log" \
+        "sudo grep '$(date +%Y-%m-%d)' /var/log/kolla/nova/nova-compute.log" \
         "nova_compute_log_migrate_${source_server}_to_${dest_host}.txt"
 
     # Verify server state
@@ -362,11 +367,11 @@ main() {
 
     # Phase 1: Initial setup
 #    create_vms
-    collect_block_device_info "ini"
+#    collect_block_device_info "ini"
 
     # Phase 2: Volume operations
-    detach_and_delete_volumes
-    cleanup_multipath
+#    detach_and_delete_volumes
+#    cleanup_multipath
 
     # Phase 3: Migration
     perform_live_migration
