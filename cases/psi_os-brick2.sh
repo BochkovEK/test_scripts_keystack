@@ -115,6 +115,10 @@ collect_block_device_info() {
         # Server information
         openstack server show "$server" | tee "${TC_OUTPUT_PATH}/${server}_server_show_${stage}.txt"
 
+        # Volume information
+        openstack server volume list "${SERVERS[$i]}" | \
+            tee "${TC_OUTPUT_PATH}/${SERVERS[$i]}_volumes_${stage}.txt"
+
         # Virsh domblklist
         run_remote_command "$host" \
             "sudo $TC_CONTAINER_ENGINE exec nova_libvirt virsh domblklist $server_id" \
@@ -143,12 +147,6 @@ collect_block_device_info() {
             "sudo $TC_CONTAINER_ENGINE exec nova_libvirt virsh domblklist $server_id | \
              awk -F- '/by-id/{print \$NF}' | xargs -I@ bash -c 'sudo $TC_CONTAINER_ENGINE exec multipathd multipath -ll @ | tail -1 | awk \"{print \\\$3}\" | xargs -I@ bash -c \"ls -l /dev/disk/by-path/* | grep @ | tail -1\"'" \
             "${server}_path_${stage}.txt"
-    done
-
-    # Volume information
-    for i in 1 2; do
-        openstack server volume list "${SERVERS[$i]}" | \
-            tee "${TC_OUTPUT_PATH}/${SERVERS[$i]}_volumes_${stage}.txt"
     done
 
     if [ "$stage" = ini ]; then
