@@ -393,7 +393,8 @@ get_servers () {
         done
 
         SRV_COUNT=${#SERVERS_TMP[@]}
-    echo "TC_SERVERS not defined, generating server names from prefix"
+    else
+        echo "TC_SERVERS not defined, generating server names from prefix"
 
         # Use default naming pattern
         for i in 1 2; do
