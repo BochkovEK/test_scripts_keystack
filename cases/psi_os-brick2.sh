@@ -262,13 +262,13 @@ perform_live_migration() {
     "
 
     read -p "Press Enter to continue: "
-    openstack server migrate --os-com 2.30 --live "$source_server" --host "$dest_host"
+    openstack server migrate --os-com 2.30 --live "$source_server" --host "$dest_host" --debug
 
-    # Monitor migration status
-    echo "Monitoring migration status..."
-    watch -n3 "openstack server migration list \
-        -c ID -c Created_At -c Updated_At -c Source_Node -c Dest_Node -c Status \
-        --server $source_server"
+#    # Monitor migration status
+#    echo "Monitoring migration status..."
+#    watch -n3 "openstack server migration list \
+#        -c ID -c Created_At -c Updated_At -c Source_Node -c Dest_Node -c Status \
+#        --server $source_server"
 
     # Save migration details
     openstack server migration list \
