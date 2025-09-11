@@ -42,6 +42,9 @@ TC_SERVERS="${TC_SERVERS:-""}"
 # Function to create virtual machines
 create_vms() {
     echo "Creating virtual machines..."
+
+    read -p "Press Enter to continue: "
+
     declare -A SERVERS
 
     for i in 1 2; do
@@ -93,13 +96,15 @@ create_vms() {
 #    --name ${TC_NAME_PREFIX}"
 
     echo "export SKIP_CREATE_VMS=true" >> "$TC_SKIP_STAGE_ENV_FILE"
-    read -p "Press Enter to continue: "
+
 }
 
 # Function to collect block device information
 collect_block_device_info() {
     local stage="$1"
     echo "Collecting block device information (stage: $stage)..."
+
+    read -p "Press Enter to continue: "
 
     for i in 1 2; do
         local server="${SERVERS[$i]}"
@@ -159,6 +164,12 @@ run_remote_command() {
     local command="$2"
     local output_file="$3"
 
+    echo "
+    Execute command: $command on host: $host and output to output_file: $output_file ...
+    "
+
+    read -p "Press Enter to continue: "
+
     if [ ! -f "$TC_COMMAND_ON_NODES_SCRIPT" ]; then
         echo -e "Error: Script command_on_nodes not found in \$TC_COMMAND_ON_NODES_SCRIPT: $TC_COMMAND_ON_NODES_SCRIPT" >&2
         exit 1
@@ -175,6 +186,8 @@ run_remote_command() {
 detach_and_delete_volumes() {
     local server="${SERVERS[1]}"
     echo "Detaching and deleting volumes for $server..."
+
+    read -p "Press Enter to continue: "
 
     # Stop the server
     openstack server stop "$server"
@@ -215,6 +228,8 @@ cleanup_multipath() {
 
     echo "Cleaning up multipath devices..."
 
+    read -p "Press Enter to continue: "
+
     # Remove multipath devices
     run_remote_command "$host" \
         "sudo $TC_CONTAINER_ENGINE exec nova_libvirt virsh domblklist $server_id | \
@@ -238,6 +253,8 @@ perform_live_migration() {
     local dest_host="${HOSTS[1]}"
 
     echo "Performing live migration of $source_server to $dest_host..."
+
+    read -p "Press Enter to continue: "
 
     # Perform migration
     echo "
@@ -277,6 +294,8 @@ perform_live_migration() {
 cleanup_resources() {
     echo "Cleaning up resources..."
 
+    read -p "Press Enter to continue: "
+
     # Delete servers
     for i in 1 2; do
         openstack server delete "${SERVERS[$i]}"
@@ -300,6 +319,8 @@ cleanup_resources() {
 # Function to generate final report
 generate_report() {
     echo "Generating final report..."
+
+    read -p "Press Enter to continue: "
 
     local files
     local report_file="${TC_OUTPUT_PATH}/psi_os-brick2_output.txt"
@@ -421,7 +442,7 @@ output_variables () {
   TC_SERVERS: ${TC_SERVERS}
     SERVERS: ${SERVERS[*]}
   "
-  read -p "Press Enter to continue: "
+
 }
 
 # Source skip envs
@@ -430,11 +451,11 @@ source_env () {
       echo "Source 'skip envs' file $TC_SKIP_STAGE_ENV_FILE exists"
       echo "cat..."
       cat $TC_SKIP_STAGE_ENV_FILE
-      read -p "Press Enter to continue: "
+
       source "$TC_SKIP_STAGE_ENV_FILE"
   else
       echo "Source 'skip envs' file not $TC_SKIP_STAGE_ENV_FILE exists"
-      read -p "Press Enter to continue: "
+
   fi
 }
 
