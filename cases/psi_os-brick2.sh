@@ -187,11 +187,13 @@ detach_and_delete_volumes() {
 
     read -p "Press Enter to continue: "
 
+    echo "Powering off VM: $server"
     # Stop the server
     openstack server stop "$server"
     echo "Waiting for server to stop..."
     watch -n3 "openstack server list --name $server"
 
+    echo "Detach non-boot volumes..."
     read -p "Press Enter to continue: "
 
     # Detach non-boot volumes
@@ -268,18 +270,22 @@ perform_live_migration() {
         -c ID -c Created_At -c Updated_At -c Source_Node -c Dest_Node -c Status \
         --server $source_server"
 
-    read -p "Press Enter to continue: "
-
     # Save migration details
     openstack server migration list \
         -c ID -c Created_At -c Updated_At -c Source_Node -c Dest_Node -c Status \
         --server "$source_server" | \
         tee "${TC_OUTPUT_PATH}/openstack_server_migration_list_${source_server}_to_${dest_host}.txt"
 
+    echo "Get nova_compute_logs from ${dest_host}..."
+    read -p "Press Enter to continue: "
+
     # Check compute logs
     run_remote_command "$dest_host" \
         "sudo grep '$(date +%Y-%m-%d)' /var/log/kolla/nova/nova-compute.log" \
         "nova_compute_log_migrate_${source_server}_to_${dest_host}.txt"
+
+    echo "Check server list..."
+    read -p "Press Enter to continue: "
 
     # Verify server state
     openstack server list --long -c id -c Host -c Status -c state -c Name -c "Power State" -c networks -c flavor -c availability_zone -c pinned_availability_zone | \
