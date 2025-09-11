@@ -16,6 +16,7 @@ TC_CONTAINER_ENGINE="${TC_CONTAINER_ENGINE:-"podman"}"
 TC_SSH_USER="${TC_SSH_USER:-"kolla"}"
 TC_COMMAND_ON_NODES_SCRIPT="${TC_COMMAND_ON_NODES_SCRIPT:-"$HOME/test_scripts_keystack/command_on_nodes.sh"}"
 TC_SKIP_STAGE_ENV_FILE="${TC_SKIP_STAGE_ENV_FILE:-"$(dirname "$0")/.skip_stage_envs"}"
+TC_SERVERS="${TC_SERVERS:-""}"
 #TC_HOSTS must be define by user
 
 # Host configuration
@@ -32,7 +33,7 @@ create_vms() {
     declare -A SERVERS
 
     for i in 1 2; do
-        SERVERS[$i]="${TC_NAME_PREFIX}${i}"
+#        [ -z "$TC_SERVERS" ] && SERVERS[$i]="${TC_NAME_PREFIX}${i}"
 
         echo "Creating VM: ${SERVERS[$i]} on host: ${HOSTS[$i]}"
 
@@ -76,7 +77,8 @@ create_vms() {
 
     # Wait for VMs to be created
     echo "Waiting for VMs to be created..."
-    watch -n3 "openstack server list --name ${TC_NAME_PREFIX}"
+    watch -n3 "openstack server list"
+#    --name ${TC_NAME_PREFIX}"
 
     echo "export SKIP_CREATE_VMS=true" >> "$TC_SKIP_STAGE_ENV_FILE"
     read -p "Press Enter to continue: "
@@ -88,7 +90,7 @@ collect_block_device_info() {
     echo "Collecting block device information (stage: $stage)..."
 
     for i in 1 2; do
-        local server="${TC_NAME_PREFIX}${i}"
+        local server="${SERVERS[$i]}"
         local host="${HOSTS[$i]}"
         local server_id
         server_id=$(openstack server show -c id -f value "$server")
@@ -128,8 +130,8 @@ collect_block_device_info() {
 
     # Volume information
     for i in 1 2; do
-        openstack server volume list "${TC_NAME_PREFIX}${i}" | \
-            tee "${TC_OUTPUT_PATH}/${TC_NAME_PREFIX}${i}_volumes_${stage}.txt"
+        openstack server volume list "${SERVERS[$i]}" | \
+            tee "${TC_OUTPUT_PATH}/${SERVERS[$i]}_volumes_${stage}.txt"
     done
 
     if [ "$stage" = ini ]; then
@@ -159,7 +161,7 @@ run_remote_command() {
 
 # Function to detach and delete volumes
 detach_and_delete_volumes() {
-    local server="${TC_NAME_PREFIX}1"
+    local server="${SERVERS[1]}"
     echo "Detaching and deleting volumes for $server..."
 
     # Stop the server
@@ -195,7 +197,7 @@ detach_and_delete_volumes() {
 # Function to cleanup multipath devices
 cleanup_multipath() {
     local host="${HOSTS[1]}"
-    local server="${TC_NAME_PREFIX}1"
+    local server="${SERVERS[1]}"
     local server_id
     server_id=$(openstack server show -c id -f value "$server")
 
@@ -220,7 +222,7 @@ cleanup_multipath() {
 
 # Function to perform live migration
 perform_live_migration() {
-    local source_server="${TC_NAME_PREFIX}2"
+    local source_server="${SERVERS[2]}"
     local dest_host="${HOSTS[1]}"
 
     echo "Performing live migration of $source_server to $dest_host..."
@@ -253,7 +255,7 @@ perform_live_migration() {
         "nova_compute_log_migrate_${source_server}_to_${dest_host}.txt"
 
     # Verify server state
-    openstack server list --long --name "$TC_NAME_PREFIX" | \
+    openstack server list --long -c id -c Host -c Status -c state -c Name -c "Power State" -c networks -c flavor -c availability_zone -c pinned_availability_zone | \
         tee "${TC_OUTPUT_PATH}/openstack_server_list_long_after_migration_${source_server}_to_${dest_host}.txt"
 
     echo "export SKIP_PERFORM_LIVE_MIGR=true" >> "$TC_SKIP_STAGE_ENV_FILE"
@@ -265,11 +267,12 @@ cleanup_resources() {
 
     # Delete servers
     for i in 1 2; do
-        openstack server delete "${TC_NAME_PREFIX}${i}"
+        openstack server delete "${SERVERS[$i]}"
     done
 
     # Monitor deletion
-    watch -n3 "openstack server list --name $TC_NAME_PREFIX -c Name -c Status -c 'Task State'"
+    watch -n3 "openstack server list -c Name -c Status -c 'Task State'"
+#    --name $TC_NAME_PREFIX
 
     read -p "Press Enter to continue: "
 
@@ -340,6 +343,44 @@ validate_hosts () {
     echo "Host count: ${HOSTS_COUNT}"
 }
 
+# Get servers
+get_servers () {
+
+    # Declare associative array (if using bash 4+)
+    declare -g -a SERVERS
+
+    if [ -n "${TC_SERVERS}" ]; then
+        # Convert TC_HOSTS string to array with numeric indices starting from 1
+        IFS=' ' read -ra SERVERS_TMP <<< "${TC_SERVERS}"
+
+        local index=1
+        for srv in "${SERVERS_TMP[@]}"; do
+            SERVERS[$index]="$srv"
+            ((index++))
+        done
+
+        SRV_COUNT=${#SERVERS_TMP[@]}
+    echo "TC_SERVERS not defined, generating server names from prefix"
+
+        # Use default naming pattern
+        for i in 1 2; do
+            SERVERS[$i]="${TC_NAME_PREFIX}${i}"
+        done
+
+        SRV_COUNT=2
+    fi
+
+    # Validate srv count
+    if [ "$SRV_COUNT" -lt 2 ]; then
+        echo "Error: TC_SERVERS must contain at least 2 srv names"
+        echo "Current value: ${TC_SERVERS}"
+        exit 1
+    fi
+
+    echo "Using servers: ${SERVERS[*]}"
+    echo "servers count: ${SRV_COUNT}"
+}
+
 # Get ssh user
 get_ssh_user () {
     if [[ -z "$TC_SSH_USER" ]]; then
@@ -350,6 +391,7 @@ get_ssh_user () {
 
 # Output variable
 output_variables () {
+
   echo "
   TC_FLAVOR: ${TC_FLAVOR}
   TC_NETWORK: ${TC_NETWORK}
@@ -364,6 +406,8 @@ output_variables () {
   TC_COMMAND_ON_NODES_SCRIPT: ${TC_COMMAND_ON_NODES_SCRIPT}
   TC_HOSTS: ${TC_HOSTS}
     HOSTS: ${HOSTS[*]}
+  TC_SERVERS: ${TC_SERVERS}
+    SERVERS: ${SERVERS[*]}
   "
   read -p "Press Enter to continue: "
 }
@@ -390,6 +434,9 @@ main() {
 
     # Validate hosts
     validate_hosts
+
+    #Get servers
+    get_servers
 
     #Get ssh user
     get_ssh_user
