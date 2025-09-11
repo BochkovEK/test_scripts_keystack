@@ -3,6 +3,9 @@
 # Script for OpenStack volume migration testing with multipath devices
 # This script creates VMs, tests volume operations, and performs live migration
 
+# Предпроверка podman exec -it multipathd multipath -ll (на гиперах)
+# Итоговая проверка dmesg -T (на гиперах)
+
 #ENVS
 #export SKIP_CREATE_VMS=true
 #export SKIP_COLLECT_BLOCK_DEV_INFO_INI=true
@@ -45,7 +48,7 @@ create_vms() {
 
     read -p "Press Enter to continue: "
 
-    declare -A SERVERS
+#    declare -A SERVERS
 
     for i in 1 2; do
 #        [ -z "$TC_SERVERS" ] && SERVERS[$i]="${TC_NAME_PREFIX}${i}"
