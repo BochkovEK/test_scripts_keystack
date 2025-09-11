@@ -3,6 +3,18 @@
 # Script for OpenStack volume migration testing with multipath devices
 # This script creates VMs, tests volume operations, and performs live migration
 
+#ENVS
+#export SKIP_CREATE_VMS=true
+#export SKIP_COLLECT_BLOCK_DEV_INFO_INI=true
+#export SKIP_DETACH_AND_DELETE_VOLUMES=true
+#export SKIP_CLEANUP_MULTIPATH=true
+#export SKIP_PERFORM_LIVE_MIGR=true
+#export SKIP_COLLECT_BLOCK_DEV_INFO_FIN=true
+#export SKIP_CLEANUP_RES=true
+#export SKIP_GEN_REPOR=true
+#export TC_SERVERS=""
+#export TC_HOSTS=""
+
 # ========== CONSTANTS ==========
 TC_FLAVOR="${TC_FLAVOR:-"g1-cpu-4-4"}"
 TC_NETWORK="${TC_NETWORK:-"pub_net"}"
@@ -432,6 +444,9 @@ source_env () {
 main() {
     echo "Starting OpenStack volume migration test..."
 
+    # Source skip envs
+    source_env
+
     # Validate hosts
     validate_hosts
 
@@ -443,9 +458,6 @@ main() {
 
     #Output variables
     output_variables
-
-    # Source skip envs
-    source_env
 
     # Phase 1: Initial setup
     [ ! "${SKIP_CREATE_VMS}" = true ] && create_vms
