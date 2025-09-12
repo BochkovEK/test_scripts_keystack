@@ -167,7 +167,7 @@ wait_for_ssh_connection () {
   # SSH availability check loop
   for (( i=0; i<$SSH_TIMEOUT; i+=$SSH_INTERVAL )); do
     # Check port availability (using nc or ssh)
-    if nc -z -w 2 "$HOST_NAME" "$SSH_PORT" 2>/dev/null; then
+    if nc -z -w 2 "$HOST_NAME" "$SSH_USER@$SSH_PORT" 2>/dev/null; then
       echo "SSH is available!"
       break
     fi
