@@ -72,7 +72,7 @@ create_vms() {
         done
 
         echo "Check vms"
-        vm_exist=$(openatck server list |grep -E "${SERVERS[$i]}.*ACTIVE")
+        vm_exist=$(openstack server list |grep -E "${SERVERS[$i]}.*ACTIVE")
 
         if [ -z $vm_exist ]; then
 
