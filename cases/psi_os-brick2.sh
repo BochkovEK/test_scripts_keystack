@@ -19,7 +19,7 @@
 #export TC_HOSTS=""
 
 # ========== CONSTANTS ==========
-TC_FLAVOR="${TC_FLAVOR:-"g1-cpu-4-4"}"
+TC_FLAVOR="${TC_FLAVOR:-""}"
 TC_NETWORK="${TC_NETWORK:-"pub_net"}"
 TC_IMAGE="${TC_IMAGE:-"cirros-0.6.3-x86_64-disk"}"
 TC_BOOT_DISK_SIZE="${TC_BOOT_DISK_SIZE:-30}"
@@ -49,6 +49,10 @@ create_vms() {
     read -p "Press Enter to continue: "
 
 #    declare -A SERVERS
+
+    if [ -z "$TC_FLAVOR" ]; then
+        openstack flavor create --public --vcpus 4 --ram 4096 --disk 0 4c-4r-pci_os-brick2
+    fi
 
     for i in 1 2; do
 #        [ -z "$TC_SERVERS" ] && SERVERS[$i]="${TC_NAME_PREFIX}${i}"
@@ -169,7 +173,7 @@ run_remote_command() {
     Execute command: $command on host: $host and output to output_file: $output_file ...
     "
 
-    read -p "Press Enter to continue: "
+#    read -p "Press Enter to continue: "
 
     if [ ! -f "$TC_COMMAND_ON_NODES_SCRIPT" ]; then
         echo -e "Error: Script command_on_nodes not found in \$TC_COMMAND_ON_NODES_SCRIPT: $TC_COMMAND_ON_NODES_SCRIPT" >&2
@@ -250,28 +254,28 @@ cleanup_multipath() {
     echo "export SKIP_CLEANUP_MULTIPATH=true" >> "$TC_SKIP_STAGE_ENV_FILE"
 }
 
-# Function to perform live migration
+# Function live migration
 perform_live_migration() {
     local source_server="${SERVERS[2]}"
     local dest_host="${HOSTS[1]}"
 
-    echo "Performing live migration of $source_server to $dest_host..."
+    echo "Live migration of $source_server to $dest_host..."
 
     read -p "Press Enter to continue: "
 
-    # Perform migration
+    # Migration
     echo "
     openstack server migrate --os-com 2.30 --live \"$source_server\" --host \"$dest_host\"
     "
 
     read -p "Press Enter to continue: "
-    openstack server migrate --os-com 2.30 --live "$source_server" --host "$dest_host" --debug
+    openstack server migrate --os-com 2.87 --live "$source_server" --host "$dest_host" --debug
 
-#    # Monitor migration status
-#    echo "Monitoring migration status..."
-#    watch -n3 "openstack server migration list \
-#        -c ID -c Created_At -c Updated_At -c Source_Node -c Dest_Node -c Status \
-#        --server $source_server"
+    # Monitor migration status
+    echo "Monitoring migration status..."
+    watch -n3 "openstack server migration list \
+        -c ID -c Created_At -c Updated_At -c Source_Node -c Dest_Node -c Status \
+        --server $source_server"
 
     # Save migration details
     openstack server migration list \
@@ -307,6 +311,10 @@ cleanup_resources() {
     for i in 1 2; do
         openstack server delete "${SERVERS[$i]}"
     done
+
+    if [ -z "$TC_FLAVOR" ]; then
+        openstack flavor delete 4c-4r-pci_os-brick2
+    fi
 
     # Monitor deletion
     watch -n3 "openstack server list -c Name -c Status -c 'Task State'"
