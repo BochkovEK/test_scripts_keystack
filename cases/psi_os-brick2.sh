@@ -71,35 +71,41 @@ create_vms() {
             block_device_params+="--block-device source_type=blank,destination_type=volume,volume_size=${i} "
         done
 
-        echo "
-        openstack server create \
-            --flavor \"${TC_FLAVOR}\" \
-            --network \"${TC_NETWORK}\" \
-            --image \"${TC_IMAGE}\" \
-            --boot-from-volume \"${TC_BOOT_DISK_SIZE}\" \
-            ${block_device_params} \
-            --availability-zone \"${TC_AZ}:${HOSTS[$i]}\" \
-            \"${SERVERS[$i]}\"
-        "
+        echo "Check vms"
+        vm_exist=$(openatck server list |grep -E "${SERVERS[$i]}.*ACTIVE")
 
-        read -p "Press Enter to continue: "
+        if [ -z $vm_exist ]; then
 
-        # Create server
-        openstack server create \
-            --flavor "${TC_FLAVOR}" \
-            --network "${TC_NETWORK}" \
-            --image "${TC_IMAGE}" \
-            --boot-from-volume "${TC_BOOT_DISK_SIZE}" \
-            ${block_device_params} \
-            --availability-zone "${TC_AZ}:${HOSTS[$i]}" \
-            "${SERVERS[$i]}"
+            echo "
+            openstack server create \
+                --flavor \"${TC_FLAVOR}\" \
+                --network \"${TC_NETWORK}\" \
+                --image \"${TC_IMAGE}\" \
+                --boot-from-volume \"${TC_BOOT_DISK_SIZE}\" \
+                ${block_device_params} \
+                --availability-zone \"${TC_AZ}:${HOSTS[$i]}\" \
+                \"${SERVERS[$i]}\"
+            "
 
-        local exit_code=$?
+            read -p "Press Enter to continue: "
 
-        # Check exit code and output
-        if [ $exit_code -ne 0 ]; then
-            echo -e "Error: VM \${SERVERS[$i]}: ${SERVERS[$i]}" >&2
-            exit 1
+            # Create server
+            openstack server create \
+                --flavor "${TC_FLAVOR}" \
+                --network "${TC_NETWORK}" \
+                --image "${TC_IMAGE}" \
+                --boot-from-volume "${TC_BOOT_DISK_SIZE}" \
+                ${block_device_params} \
+                --availability-zone "${TC_AZ}:${HOSTS[$i]}" \
+                "${SERVERS[$i]}"
+
+            local exit_code=$?
+
+            # Check exit code and output
+            if [ $exit_code -ne 0 ]; then
+                echo -e "Error: VM \${SERVERS[$i]}: ${SERVERS[$i]}" >&2
+                exit 1
+            fi
         fi
     done
 
