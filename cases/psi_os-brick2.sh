@@ -65,6 +65,7 @@ create_vms() {
         echo "Creating VM: ${SERVERS[$i]} on host: ${HOSTS[$i]}"
 
         # Build block device parameters
+        # for the first VM volume size 1 GB, for the second 2 GB
         local block_device_params=""
         for ((n=1; n<=TC_MAX_DISKS; n++)); do
             block_device_params+="--block-device source_type=blank,destination_type=volume,volume_size=${i} "
