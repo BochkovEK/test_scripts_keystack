@@ -11,12 +11,16 @@
 #export SKIP_COLLECT_BLOCK_DEV_INFO_INI=true
 #export SKIP_DETACH_AND_DELETE_VOLUMES=true
 #export SKIP_CLEANUP_MULTIPATH=true
-#export SKIP_PERFORM_LIVE_MIGR=true
+#export SKIP_LIVE_MIGR=true
 #export SKIP_COLLECT_BLOCK_DEV_INFO_FIN=true
 #export SKIP_CLEANUP_RES=true
 #export SKIP_GEN_REPOR=true
 #export TC_SERVERS=""
 #export TC_HOSTS=""
+
+default_flavor_name="psi_os-break2"
+default_flavor_vcpus=4
+default_flavor_ram=4096
 
 # ========== CONSTANTS ==========
 TC_FLAVOR="${TC_FLAVOR:-""}"
@@ -51,7 +55,8 @@ create_vms() {
 #    declare -A SERVERS
 
     if [ -z "$TC_FLAVOR" ]; then
-        openstack flavor create --public --vcpus 4 --ram 4096 --disk 0 4c-4r-pci_os-brick2
+        openstack flavor create --public --vcpus "$default_flavor_vcpus" --ram "$default_flavor_ram" --disk 0 "$default_flavor_name"
+        TC_FLAVOR="$default_flavor_name"
     fi
 
     for i in 1 2; do
@@ -298,7 +303,7 @@ perform_live_migration() {
     openstack server list --long -c id -c Host -c Status -c state -c Name -c "Power State" -c networks -c flavor -c availability_zone -c pinned_availability_zone | \
         tee "${TC_OUTPUT_PATH}/openstack_server_list_long_after_migration_${source_server}_to_${dest_host}.txt"
 
-    echo "export SKIP_PERFORM_LIVE_MIGR=true" >> "$TC_SKIP_STAGE_ENV_FILE"
+    echo "export SKIP_LIVE_MIGR=true" >> "$TC_SKIP_STAGE_ENV_FILE"
 }
 
 # Function to cleanup resources
@@ -312,8 +317,8 @@ cleanup_resources() {
         openstack server delete "${SERVERS[$i]}"
     done
 
-    if [ -z "$TC_FLAVOR" ]; then
-        openstack flavor delete 4c-4r-pci_os-brick2
+    if [ "$TC_FLAVOR" = "$default_flavor_name" ]; then
+        openstack flavor delete "$TC_FLAVOR"
     fi
 
     # Monitor deletion
@@ -505,7 +510,7 @@ main() {
     [ ! "${SKIP_CLEANUP_MULTIPATH}" = true ] && cleanup_multipath
 
     # Phase 3: Migration
-    [ ! "${SKIP_PERFORM_LIVE_MIGR}" = true ] && perform_live_migration
+    [ ! "${SKIP_LIVE_MIGR}" = true ] && perform_live_migration
     [ ! "${SKIP_COLLECT_BLOCK_DEV_INFO_FIN}" = true ] && collect_block_device_info "fin"
 
     # Phase 4: Cleanup and reporting
