@@ -18,6 +18,9 @@
 #export TC_SERVERS=""
 #export TC_HOSTS=""
 
+script_dir=$(dirname "$0")
+utils_dir="$script_dir/../utils"
+get_nodes_list_script="get_nodes_list.sh"
 default_flavor_name="psi_os-break2"
 default_flavor_vcpus=4
 default_flavor_ram=4096
@@ -192,11 +195,14 @@ run_remote_command() {
         exit 1
     fi
 
-    bash "$TC_COMMAND_ON_NODES_SCRIPT" \
-        -u "$TC_SSH_USER" \
-        -nn "$host" \
-        -c "$command" 2>&1 | \
-        tee "${TC_OUTPUT_PATH}/${output_file}"
+    if [ -z "$output_file" ]; then
+        bash "$TC_COMMAND_ON_NODES_SCRIPT" \
+            -u "$TC_SSH_USER" \
+            -nn "$host" \
+            -c "$command" 2>&1 | \
+            tee "${TC_OUTPUT_PATH}/${output_file}"
+    else
+
 }
 
 # Function to detach and delete volumes
@@ -317,6 +323,10 @@ perform_live_migration() {
 cleanup_resources() {
     echo "Cleaning up resources..."
 
+    local host
+    local ip_host
+
+    echo "Delete vms ${SERVERS[*]}"
     read -p "Press Enter to continue: "
 
     # Delete servers
@@ -324,21 +334,41 @@ cleanup_resources() {
         openstack server delete "${SERVERS[$i]}"
     done
 
-    if [ "$TC_FLAVOR" = "$default_flavor_name" ]; then
-        openstack flavor delete "$TC_FLAVOR"
-    fi
-
     # Monitor deletion
     watch -n3 "openstack server list -c Name -c Status -c 'Task State'"
 #    --name $TC_NAME_PREFIX
 
+    echo "Delete flavor ${TC_FLAVOR}"
+    read -p "Press Enter to continue: "
+
+    if [ "$TC_FLAVOR" = "$default_flavor_name" ]; then
+        openstack flavor delete "$TC_FLAVOR"
+    fi
+
+    echo "Additional multipath cleanup..."
     read -p "Press Enter to continue: "
 
     # Additional multipath cleanup
-    local host="${HOSTS[1]}"
-    run_remote_command "$host" \
-        "sudo $TC_CONTAINER_ENGINE exec multipathd multipath -ll 2>&1 | awk '/##/{print \$1}'" \
-        "multipath_remaining_devices.txt"
+    host="${HOSTS[1]}"
+
+    if [ -f $utils_dir/$get_nodes_list_script ]; then
+        ip_host="$(bash $utils_dir/$get_nodes_list_script)"
+        if [ -n $ip_host ] && [ ! echo "$ip_host" | grep -q "ERROR" ]; then
+            multipath_with_sharp_string="$(ssh $TC_SSH_USER@$ip_host "sudo podman exec multipathd multipath -ll 2>&1 | awk '/##/{print$1}'")"
+            for i in multipath_with_sharp_string; do
+                ssh $TC_SSH_USER@$ip_host "sudo $TC_CONTAINER_ENGINE exec multipathd dmsetup message $i 0 fail_if_no_path && sudo $TC_CONTAINER_ENGINE exec multipathd multipath -f $i"
+            done
+            fault_dev_multipath="$(ssh $TC_SSH_USER@$ip_host "sudo podman exec multipathd multipath -ll | awk '/fault/{print$3}'")"
+            for dev in "$fault_dev_multipath"; do
+                ssh $TC_SSH_USER@$ip_host "sudo sh -c 'echo 1 > /sys/block/$dev/device/delete'"
+            done
+            for i in $multipath_with_sharp_string; do
+                ssh $TC_SSH_USER@$ip_host "sudo podman exec multipathd dmsetup message $i 0 fail_if_no_path && sudo podman exec multipathd multipath -f $i; dmsetup remove -f $i"
+            done
+        fi
+    else
+        echo "Script $utils_dir/$get_nodes_list_script not found. Multipath cleanup not completed"
+    fi
 
     echo "export SKIP_CLEANUP_RES=true" >> "$TC_SKIP_STAGE_ENV_FILE"
 }
