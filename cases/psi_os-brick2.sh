@@ -195,14 +195,11 @@ run_remote_command() {
         exit 1
     fi
 
-    if [ -z "$output_file" ]; then
-        bash "$TC_COMMAND_ON_NODES_SCRIPT" \
-            -u "$TC_SSH_USER" \
-            -nn "$host" \
-            -c "$command" 2>&1 | \
-            tee "${TC_OUTPUT_PATH}/${output_file}"
-    else
-
+    bash "$TC_COMMAND_ON_NODES_SCRIPT" \
+        -u "$TC_SSH_USER" \
+        -nn "$host" \
+        -c "$command" 2>&1 | \
+        tee "${TC_OUTPUT_PATH}/${output_file}"
 }
 
 # Function to detach and delete volumes
