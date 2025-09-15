@@ -42,7 +42,7 @@ show_help() {
       -r, -region <name>                  Region name
       -dtr, -dont_try_to_rise             Don't attempt to rise disabled nova services
       -u, -user <username>                SSH username
-      -de, -docker_engine <docker\podman> Docker engine
+      -ce, -docker_engine <docker\podman> Docker engine
       -ipmi                               Enable IPMI connection checks
       -v, -debug                          Enable debug output
       --help                              Show this help message
@@ -352,7 +352,7 @@ check_containers() {
     bash "$script_dir/$check_container_state_on_nodes_script" \
         -nn "$nodes_name_list" \
         -u "$SSH_USER" \
-        -de "$CONTAINER_ENGINE" 2>/dev/null | grep "$container_name"
+        -ce "$CONTAINER_ENGINE" 2>/dev/null | grep "$container_name"
 #        echo -e "${red}ERROR: Container $container_name has issues on $node_name${normal}"
 }
 

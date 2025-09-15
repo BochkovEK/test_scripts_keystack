@@ -12,4 +12,5 @@
 ./output.txt
 ./*-rc*.py
 ./utils/*-rc*.sh
+./*-rc*.sh
 foo*
