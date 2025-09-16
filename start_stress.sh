@@ -210,10 +210,10 @@ get_vms_ips() {
 # Function to get mode and timeout strings
 get_mode_strings() {
     if [ "$TYPE_TEST" = "cpu" ]; then
-        load_string="CPU:         $CPUS cores"
+        load_string="CPU:            $CPUS cores"
         stress_args="-c $CPUS"
     elif [ "$TYPE_TEST" = "ram" ]; then
-        load_string="RAM:         $RAM $UNITS"
+        load_string="RAM:            $RAM $UNITS"
         stress_args="--vm 1 --vm-bytes ${RAM}${UNITS}"
     else
         echo -e "${red}Unsupported test type: $TYPE_TEST${normal}"
