@@ -299,6 +299,7 @@ ${violet}Stress Test Configuration:${normal}
     SSH Key:          $KEY_PATH
     VM User:          $VM_USER
     Test Type:        $TYPE_TEST
+    VMs_IPs:          $VMs_IPs
     $load_string
     $time_out_help_string
     Debug Mode:       $TS_DEBUG
