@@ -352,15 +352,40 @@ cleanup_resources() {
         pair_host="$(bash $utils_dir/$get_nodes_list_script -nn $host)"
        if [[ -n "$pair_host" && "$pair_host" != *ERROR* ]]; then
             ip_host="${pair_host#*:}"
+            echo "
+    [DEBUG]:
+      host: $host
+      ip_host: $ip_host
+            "
             multipath_with_sharp_string="$(ssh $TC_SSH_USER@$ip_host "sudo podman exec multipathd multipath -ll 2>&1 | awk '/##/{print\$1}'")"
+            echo "
+    [DEBUG]:
+      multipath_with_sharp_string: $multipath_with_sharp_string
+            "
             for i in $multipath_with_sharp_string; do
+                echo "
+    [DEBUG]:
+      command: ssh $TC_SSH_USER@$ip_host \"sudo $TC_CONTAINER_ENGINE exec multipathd dmsetup message $i 0 fail_if_no_path && sudo $TC_CONTAINER_ENGINE exec multipathd multipath -f $i\"
+      "
                 ssh $TC_SSH_USER@$ip_host "sudo $TC_CONTAINER_ENGINE exec multipathd dmsetup message $i 0 fail_if_no_path && sudo $TC_CONTAINER_ENGINE exec multipathd multipath -f $i"
             done
             fault_dev_multipath=$(ssh $TC_SSH_USER@$ip_host "sudo podman exec multipathd multipath -ll | awk '/fault/{print\$3}'")
+            echo "
+    [DEBUG]:
+      fault_dev_multipath: $fault_dev_multipath
+            "
             for dev in $fault_dev_multipath; do
+                echo "
+    [DEBUG]:
+      command: ssh $TC_SSH_USER@$ip_host \"sudo sh -c 'echo 1 > /sys/block/$dev/device/delete'\"
+                "
                 ssh $TC_SSH_USER@$ip_host "sudo sh -c 'echo 1 > /sys/block/$dev/device/delete'"
             done
             for i in $multipath_with_sharp_string; do
+                echo "
+    [DEBUG]:
+      command: ssh $TC_SSH_USER@$ip_host \"sudo podman exec multipathd dmsetup message $i 0 fail_if_no_path && sudo podman exec multipathd multipath -f $i; sudo dmsetup remove -f $i\"
+                "
                 ssh $TC_SSH_USER@$ip_host "sudo podman exec multipathd dmsetup message $i 0 fail_if_no_path && sudo podman exec multipathd multipath -f $i; sudo dmsetup remove -f $i"
             done
         fi
