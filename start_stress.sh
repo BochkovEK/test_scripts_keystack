@@ -183,7 +183,7 @@ get_vms_ips() {
 
             # Extract IPs from the formatted output
             VMs_IPs=$(extract_ips_from_vm_list "$vm_list")
-            [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] VMs_IPs: $VMs_IPs"
+#            [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] VMs_IPs: $VMs_IPs"
         else
             # Read IPs from file
             if [ ! -f "$IP_LIST_FILE" ]; then
@@ -311,9 +311,10 @@ ${violet}Stress Test Configuration:${normal}
 
     for ip in $VMs_IPs; do
         ((total_count++))
-        if copy_and_run_stress "$ip"; then
-            ((success_count++))
-        fi
+        copy_and_run_stress "$ip"
+#        if copy_and_run_stress "$ip"; then
+#            ((success_count++))
+#        fi
         echo ""
     done
 
