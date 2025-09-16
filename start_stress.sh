@@ -292,11 +292,10 @@ check_vm_connectivity() {
 
 # Function to batch run stress tests
 batch_run_stress() {
-    local hv_info="$1"
+#    local hv_info="$1"
 
     echo -e "
 ${violet}Stress Test Configuration:${normal}
-    Target:           $hv_info
     SSH Key:          $KEY_PATH
     VM User:          $VM_USER
     Test Type:        $TYPE_TEST
@@ -305,6 +304,7 @@ ${violet}Stress Test Configuration:${normal}
     $time_out_help_string
     Debug Mode:       $TS_DEBUG
     "
+#    Target:           $hv_info
 
     read -p "Press Enter to continue or Ctrl+C to cancel..."
 
@@ -363,8 +363,9 @@ main() {
     rm -f /root/.ssh/known_hosts 2>/dev/null
 
     # Get VMs IPs
-    local hv_info
-    hv_info=$(get_vms_ips)
+#    local hv_info
+#    hv_info=$(
+    get_vms_ips
 
     # Get mode strings
     get_mode_strings
@@ -376,7 +377,8 @@ main() {
     fi
 
     # Run stress tests
-    batch_run_stress "$hv_info"
+    batch_run_stress
+#     "$hv_info"
 
     echo -e "${green}Stress test initialization completed successfully!${normal}"
 }
