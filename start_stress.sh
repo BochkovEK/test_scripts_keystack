@@ -244,6 +244,9 @@ copy_and_run_stress() {
 
     # Copy stress binary
     echo "Copying stress tool to $vm_ip..."
+    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG]
+    command: scp -o StrictHostKeyChecking=no -i \"$KEY_PATH\" \"$script_dir/stress\" \"$VM_USER@$vm_ip:~/\" >/dev/null 2>&1
+    "
     if ! scp -o StrictHostKeyChecking=no -i "$KEY_PATH" "$script_dir/stress" "$VM_USER@$vm_ip:~/" >/dev/null 2>&1; then
         echo -e "${red}Failed to copy stress tool to $vm_ip${normal}"
         return 1
