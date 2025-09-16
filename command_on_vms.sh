@@ -186,6 +186,9 @@ get_vms_ips() {
     [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] exit_code $?"
 
     echo -e "[DEBUG] VMS: $VMS"
+    echo "command_args"
+    echo "$command_args"
+    exit 0
 #    local exit_code=$?
 #    if [ $exit_code -ne 0 ]; then
 #        echo -e "${red}Failed to get VMs IPs (exit code: $exit_code)${normal}"
