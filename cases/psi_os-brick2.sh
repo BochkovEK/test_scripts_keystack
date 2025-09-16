@@ -321,6 +321,7 @@ cleanup_resources() {
     echo "Cleaning up resources..."
 
     local host
+    local pair_host
     local ip_host
 
     echo "Delete vms ${SERVERS[*]}"
@@ -349,8 +350,9 @@ cleanup_resources() {
     host="${HOSTS[1]}"
 
     if [ -f $utils_dir/$get_nodes_list_script ]; then
-        ip_host="$(bash $utils_dir/$get_nodes_list_script)"
-       if [[ -n "$ip_host" && "$ip_host" != *ERROR* ]]; then
+        pair_host="$(bash $utils_dir/$get_nodes_list_script)"
+       if [[ -n "$pair_host" && "$ip_host" != *ERROR* ]]; then
+            ip_host="${pair_host#*:}"
             multipath_with_sharp_string="$(ssh $TC_SSH_USER@$ip_host "sudo podman exec multipathd multipath -ll 2>&1 | awk '/##/{print\$1}'")"
             for i in $multipath_with_sharp_string; do
                 ssh $TC_SSH_USER@$ip_host "sudo $TC_CONTAINER_ENGINE exec multipathd dmsetup message $i 0 fail_if_no_path && sudo $TC_CONTAINER_ENGINE exec multipathd multipath -f $i"
