@@ -178,7 +178,7 @@ get_vms_ips() {
 
     [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] Command: bash \"$openstack_utils/$get_vms_list_script\" $command_args"
 
-    echo -e "[DEBUG] Command: bash \"$openstack_utils/$get_vms_list_script\" $command_args"
+#    echo -e "[DEBUG] Command: bash \"$openstack_utils/$get_vms_list_script\" $command_args"
 
     # Execute the command and capture output
     VMS=$(bash "$openstack_utils/$get_vms_list_script" $command_args)
@@ -187,15 +187,15 @@ get_vms_ips() {
     [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] exit_code $?"
 
     echo -e "[DEBUG] VMS: $VMS"
-    echo "command_args"
-    echo "$command_args"
-    exit 0
-#    local exit_code=$?
-#    if [ $exit_code -ne 0 ]; then
-#        echo -e "${red}Failed to get VMs IPs (exit code: $exit_code)${normal}"
-#        echo -e "${red}Error output: $VMS${normal}"
-#        return 1
-#    fi
+#    echo "command_args"
+#    echo "$command_args"
+#    exit 0
+    local exit_code=$?
+    if [ $exit_code -ne 0 ]; then
+        echo -e "${red}Failed to get VMs IPs (exit code: $exit_code)${normal}"
+        echo -e "${red}Error output: $VMS${normal}"
+        return 1
+    fi
 
     if echo "$VMS" | grep -q "ERROR"; then
         echo -e "${red}Error in VMs list script: $VMS${normal}"
