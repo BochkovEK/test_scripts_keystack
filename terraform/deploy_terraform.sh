@@ -82,7 +82,7 @@ install_terraform () {
       curl -o $script_dir/terraform $repo/$terraform_binary_name
     fi
     chmod 777 $script_dir/terraform
-#    mv $script_dir/$terraform_binary_name /usr/local/bin/terraform
+    mv $script_dir/$terraform_binary_name /usr/local/bin/terraform
 
     cat <<-EOF > ~/.terraformrc
 provider_installation {
