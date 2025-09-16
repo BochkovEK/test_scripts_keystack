@@ -180,7 +180,7 @@ get_vms_ips() {
 
     # Execute the command and capture output
     VMS=$(bash "$openstack_utils/$get_vms_list_script" $command_args 2>&1)
-    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] $VMS"
+    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] VMS: $VMS"
     [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] exit_code $?"
 
     local exit_code=$?
@@ -306,9 +306,18 @@ batch_run_commands() {
 
     # Process each VM
     for vm_tripl in $VMS; do
+
         vm_name=$(echo "$vm_tripl" | awk -F':' '{print $1}')
         vm_status=$(echo "$vm_tripl" | awk -F':' '{print $2}')
         vm_ip=$(echo "$vm_tripl" | awk -F':' '{print $3}')
+
+        echo -e "
+    [DEBUG] Configuration:
+      vm_name: $vm_name
+      vm_status: $vm_status
+      vm_ip: $vm_ip
+      "
+
         echo -e "${cyan}Processing VM: $vm_name VM status: $vm_status VM ip: $vm_ip${normal}"
 
         # Check ping connectivity
