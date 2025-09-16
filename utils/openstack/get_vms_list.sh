@@ -6,9 +6,9 @@
 # Color definitions
 green=$(tput setaf 2)
 red=$(tput setaf 1)
-violet=$(tput setaf 5)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
+#violet=$(tput setaf 5)
 
 # Script paths
 script_file_path=$(realpath "$0")

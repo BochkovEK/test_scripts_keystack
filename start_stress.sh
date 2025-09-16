@@ -183,6 +183,7 @@ get_vms_ips() {
 
             # Extract IPs from the formatted output
             VMs_IPs=$(extract_ips_from_vm_list "$vm_list")
+            [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] VMs_IPs: $VMs_IPs"
         else
             # Read IPs from file
             if [ ! -f "$IP_LIST_FILE" ]; then
