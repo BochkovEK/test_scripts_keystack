@@ -331,11 +331,10 @@ cleanup_resources() {
         for i in 1 2; do
             openstack server delete "${SERVERS[$i]}"
         done
+        # Monitor deletion
+        watch -n3 "openstack server list -c Name -c Status -c 'Task State'"
+#       --name $TC_NAME_PREFIX
     fi
-
-    # Monitor deletion
-    watch -n3 "openstack server list -c Name -c Status -c 'Task State'"
-#    --name $TC_NAME_PREFIX
 
     if [ -n "$TC_FLAVOR" ]; then
         echo "Delete flavor ${TC_FLAVOR}"
