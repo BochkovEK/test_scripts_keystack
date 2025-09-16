@@ -111,7 +111,6 @@ clouds:
     auth:
       auth_url: $OS_AUTH_URL
       username: "$OS_USERNAME"
-      tenant_name: "$OS_TENANT_NAME"
       user_domain_name: "Default"
       password: $OS_PASSWORD
       project_id: $project_id
@@ -120,6 +119,7 @@ clouds:
     identity_api_version: 3
     cacert: "$OS_CACERT"
 EOF
+#      tenant_name: "$OS_TENANT_NAME"
   cat $script_dir/clouds.yml
 }
 
