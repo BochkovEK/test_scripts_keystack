@@ -324,22 +324,22 @@ cleanup_resources() {
     local pair_host
     local ip_host
 
-    echo "Delete vms ${SERVERS[*]}"
-    read -p "Press Enter to continue: "
-
     # Delete servers
-    for i in 1 2; do
-        openstack server delete "${SERVERS[$i]}"
-    done
+    if [ -z "$TC_SERVERS" ]; then
+        echo "Delete vms ${SERVERS[*]}"
+        read -p "Press Enter to continue: "
+        for i in 1 2; do
+            openstack server delete "${SERVERS[$i]}"
+        done
+    fi
 
     # Monitor deletion
     watch -n3 "openstack server list -c Name -c Status -c 'Task State'"
 #    --name $TC_NAME_PREFIX
 
-    echo "Delete flavor ${TC_FLAVOR}"
-    read -p "Press Enter to continue: "
-
-    if [ "$TC_FLAVOR" = "$default_flavor_name" ]; then
+    if [ -n "$TC_FLAVOR" ]; then
+        echo "Delete flavor ${TC_FLAVOR}"
+        read -p "Press Enter to continue: "
         openstack flavor delete "$TC_FLAVOR"
     fi
 
@@ -362,7 +362,7 @@ cleanup_resources() {
                 ssh $TC_SSH_USER@$ip_host "sudo sh -c 'echo 1 > /sys/block/$dev/device/delete'"
             done
             for i in $multipath_with_sharp_string; do
-                ssh $TC_SSH_USER@$ip_host "sudo podman exec multipathd dmsetup message $i 0 fail_if_no_path && sudo podman exec multipathd multipath -f $i; dmsetup remove -f $i"
+                ssh $TC_SSH_USER@$ip_host "sudo podman exec multipathd dmsetup message $i 0 fail_if_no_path && sudo podman exec multipathd multipath -f $i; sudo dmsetup remove -f $i"
             done
         fi
     else
