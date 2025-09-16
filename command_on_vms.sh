@@ -166,7 +166,7 @@ get_vms_ips() {
     local command_args=""
 
     # Build command arguments based on provided parameters
-    [ -n "$HYPERVISOR_NAME" ] && command_args="$command_args -hv \"$HYPERVISOR_NAME\""
+    [ -n "$HYPERVISOR_NAME" ] && command_args="$command_args -hv $HYPERVISOR_NAME"
     [ -n "$VMS" ] && command_args="$command_args -vms \"$VMS\""
     [ -n "$PROJECT" ] && command_args="$command_args -p $PROJECT"
 
