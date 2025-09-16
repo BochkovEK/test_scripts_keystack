@@ -41,7 +41,7 @@ show_help() {
     Usage: $0 [OPTIONS]
 
     Options:
-      -hv <name>              Hypervisor name
+      -hv <name>              Hypervisor name (!!! not ip)
       -cpu <number>           Number of CPUs for stress test
       -ram <gb>               GB of RAM for stress test
       -units <unit>           Units for RAM stress: B, K, M, G (default: G)
