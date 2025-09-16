@@ -1,262 +1,381 @@
 #!/bin/bash
 
-#The cpu/ram stress test will be launched on all VMs of hypervisor
-#Exapmple start command: bash $HOME/test_scripts_keystack/start_stress.sh -cpu 2 -hv $comp_01
+# CPU/RAM stress test script for OpenStack VMs
+# Supports stress testing on all VMs of a hypervisor or specific VMs
 
-#Colors
+# Color definitions
 green=$(tput setaf 2)
 red=$(tput setaf 1)
 violet=$(tput setaf 5)
 normal=$(tput sgr0)
 
-script_dir=$(dirname $0)
-utils_dir=$script_dir/utils
-openstack_utils=$utils_dir/openstack
-check_vm_script="command_on_vms.sh"
+# Script paths
+script_dir=$(dirname "$0")
+utils_dir="$script_dir/utils"
+openstack_utils="$utils_dir/openstack"
 get_active_vms_ips_list_script="get_vms_list.sh"
-check_openrc_script="check_openrc.sh"
-check_openstack_cli_script="check_openstack_cli.sh"
+#check_vm_script="command_on_vms.sh"
 #check_openrc_script="check_openrc.sh"
+#check_openstack_cli_script="check_openstack_cli.sh"
 
-[[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
-[[ -z $KEY_PATH ]] && KEY_PATH="$script_dir/key_test.pem"
-[[ -z $HYPERVISOR_NAME ]] && HYPERVISOR_NAME=""
-[[ -z $CPUS ]] && CPUS="2"
-[[ -z $RAM ]] && RAM="4"
-[[ -z $TIME_OUT ]] && TIME_OUT=""
-[[ -z $TYPE_TEST ]] && TYPE_TEST="cpu"
-[[ -z $PROJECT ]] && PROJECT="admin"
-[[ -z $VM_USER ]] && VM_USER="ubuntu"
-[[ -z $TS_DEBUG ]] && TS_DEBUG="false"
-[[ -z $UNITS ]] && UNITS="G"
-[[ -z $IP_LIST_FILE ]] && IP_LIST_FILE=""
-[[ -z $VMs_IPs ]] && VMs_IPs=""
-#======================
+# Default values
+OPENRC_PATH="${OPENRC_PATH:-$HOME/openrc}"
+KEY_PATH="${KEY_PATH:-$script_dir/key_test.pem}"
+HYPERVISOR_NAME="${HYPERVISOR_NAME:-}"
+CPUS="${CPUS:-2}"
+RAM="${RAM:-4}"
+TIME_OUT="${TIME_OUT:-}"
+TYPE_TEST="${TYPE_TEST:-cpu}"
+PROJECT="${PROJECT:-admin}"
+VM_USER="${VM_USER:-ubuntu}"
+TS_DEBUG="${TS_DEBUG:-false}"
+UNITS="${UNITS:-G}"
+IP_LIST_FILE="${IP_LIST_FILE:-}"
+VMs_IPs="${VMs_IPs:-}"
 
-while [ -n "$1" ]; do
-  case "$1" in
-    --help) echo -E "
-    !!! WARNING: Cirros OS doesn't work with binary ./stress
+# Function to display help information
+show_help() {
+    echo -E "
+    CPU/RAM Stress Test for OpenStack VMs
 
-      -hv               <hypervisor_name> (WARNING: doesn't work with version openstack cli 6.2.0)
-      -cpu              <number_cpus_for_stress>
-      -ram              <gb_ram_stress>
-      -units            <units for RAM stress: B,K,M,G (size). \"G - default\">
-      -t, -time_out     <time_during_which_the_load_will_be_applied_in_sec>
-      -key              <path_to_key>
-      -p, -project      <project_name>
-      -u, -vm_user      <vm_user>
-      -v, -debug        enabled debug output (without parameter)
-      -ip_list_file          <path_to_file> with VMs IP list
-                        Example: (cat ./ip_list_file)
-                          10.224.132.179
-                          10.224.132.175
-                          10.224.132.188
-      -ips              <ips list> (example: -ips \"<ip_vm_1> <ip_vm_2> ... \")
-      "
-      exit 0
-      break ;;
-    -hv) HYPERVISOR_NAME="$2"
-      echo "Found the -hv option, with parameter value $HYPERVISOR_NAME"
-      shift ;;
-    -cpu) CPUS="$2"; TYPE_TEST="cpu"
-      echo "Found the -cpu option, with parameter value $CPUS"
-      shift ;;
-    -ram) RAM="$2"; TYPE_TEST="ram"
-      echo "Found the -ram option in Gb, with parameter value $RAM"
-      shift;;
-    -units) UNITS="$2"
-      echo "Found the -units option with parameter value $UNITS"
-      shift;;
-    -key) KEY_PATH="$2"
-      echo "Found the -key option, with parameter value : $KEY_PATH"
-      shift;;
-    -p|-project) PROJECT="$2"
-      echo "Found the -project option, with parameter value $PROJECT"
-      shift;;
-    -u|-vm_user) VM_USER="$2"
-      echo "Found the -vm_user option, with parameter value $VM_USER"
-      shift;;
-    -t|-time_out) TIME_OUT="$2"
-      echo "Found the -time_out option, with parameter value $TIME_OUT"
-      shift;;
-    -v|-debug) TS_DEBUG="true"
-	    echo "Found the -debug, with parameter value $TS_DEBUG"
-      ;;
-    -ip_list_file) IP_LIST_FILE="$2"
-      echo "Found the -ip_list option, with parameter value $IP_LIST_FILE"
-      shift;;
-    -ips) VMs_IPs="$2"
-      echo "Found the -ips option, with parameter value $VMs_IPs"
-      shift ;;
-    --) shift
-      break ;;
-    *) echo "$1 is not an option";;
-  esac
-  shift
-done
+    Usage: $0 [OPTIONS]
 
-# Functions
-copy_and_stress() {
-  local VM_IP=$1
-#  local MODE=$2
+    Options:
+      -hv <name>              Hypervisor name
+      -cpu <number>           Number of CPUs for stress test
+      -ram <gb>               GB of RAM for stress test
+      -units <unit>           Units for RAM stress: B, K, M, G (default: G)
+      -t, -time_out <sec>     Timeout for stress test in seconds
+      -key <path>             Path to SSH key file
+      -p, -project <name>     OpenStack project name
+      -u, -vm_user <name>     VM SSH username
+      -v, -debug              Enable debug output
+      -ip_list_file <path>    Path to file with VM IP list
+      -ips <list>             Space-separated list of VM IPs
+      --help                  Show this help message
 
-#  echo -e "\nStart checking $VM_IP..."
-#  sleep 1
-#  if ping -c 2 $VM_IP &> /dev/null; then
-#    printf "%40s\n" "${green}There is a connection with $VM_IP - success${normal}"
-#    ssh -o StrictHostKeyChecking=no -i $script_dir/$KEY_PATH $VM_USER@$VM_IP "echo 2>&1"
-#    test $? -eq 0 && printf "%40s\n" "${green}There is a SSH connection with $VM_IP - success${normal}" || \
-#    { printf "%40s\n" "${red}No SSH connection with $VM_IP - error!${normal}"; exit 1; }
-#  else
-#    printf "%40s\n" "${red}No connection with $VM_IP - error!${normal}"
-#    exit 1
-##    return
-#  fi
-
-  echo "Copy stress to $VM_IP..."
-  scp -o StrictHostKeyChecking=no -i $KEY_PATH $script_dir/stress $VM_USER@$VM_IP:~
-  ssh -t -o StrictHostKeyChecking=no -i $KEY_PATH $VM_USER@$VM_IP "chmod +x ~/stress"
-
-  case $TYPE_TEST in
-    cpu)
-      echo "Starting cpu stress on $VM_IP..."
-      ssh -o StrictHostKeyChecking=no -i $KEY_PATH $VM_USER@$VM_IP "nohup ./stress -c $CPUS $time_out_string > /dev/null 2>&1 &"
-      ;;
-    ram)
-      echo "Starting ram stress on $VM_IP..."
-      ssh -o StrictHostKeyChecking=no -i $KEY_PATH $VM_USER@$VM_IP "nohup ./stress --vm 1 --vm-bytes '$RAM'$UNITS $time_out_string > /dev/null 2>&1 &"
-      ;;
-  esac
+    Example:
+      $0 -cpu 2 -hv compute-01 -p myproject -t 300
+    "
 }
 
-check_vm () {
-  if [ -f $script_dir/$check_vm_script ]; then
-  [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]:
-    HYPERVISOR_NAME: $HYPERVISOR_NAME
-    PROJECT: $PROJECT
-    VMs_IPs: $VMs_IPs
-    VM_USER: $VM_USER
-    KEY_PATH: $KEY_PATH
-"
-  export HYPERVISOR_NAME=$HYPERVISOR_NAME
-  export PROJECT=$PROJECT
-  export VMs_IPs=$VMs_IPs
-  export VM_USER=$VM_USER
-  export KEY_PATH=$KEY_PATH
-  export ONLY_CHECK=true
-  [ "$TS_DEBUG" = true ] && { debug_string="-v"; }
-  if ! bash $script_dir/$check_vm_script $debug_string; then
-    echo -E "${red}VMs are not ready to start stress - error${normal}"
-    exit 1
-  fi
-else
-  echo -E "${red}Script $script_dir/$check_vm_script not found - error${normal}"
-fi
+# Parse command line arguments
+parse_arguments() {
+    while [ -n "$1" ]; do
+        case "$1" in
+            --help)
+                show_help
+                exit 0
+                ;;
+            -hv)
+                HYPERVISOR_NAME="$2"
+                echo "Targeting hypervisor: $HYPERVISOR_NAME"
+                shift 2
+                ;;
+            -cpu)
+                CPUS="$2"
+                TYPE_TEST="cpu"
+                echo "CPU stress with $CPUS cores"
+                shift 2
+                ;;
+            -ram)
+                RAM="$2"
+                TYPE_TEST="ram"
+                echo "RAM stress with $RAM GB"
+                shift 2
+                ;;
+            -units)
+                UNITS="$2"
+                echo "Using units: $UNITS"
+                shift 2
+                ;;
+            -key)
+                KEY_PATH="$2"
+                echo "Using SSH key: $KEY_PATH"
+                shift 2
+                ;;
+            -p|-project)
+                PROJECT="$2"
+                echo "Using project: $PROJECT"
+                shift 2
+                ;;
+            -u|-vm_user)
+                VM_USER="$2"
+                echo "Using VM user: $VM_USER"
+                shift 2
+                ;;
+            -t|-time_out)
+                TIME_OUT="$2"
+                echo "Timeout: $TIME_OUT seconds"
+                shift 2
+                ;;
+            -v|-debug)
+                TS_DEBUG="true"
+                echo "Debug mode enabled"
+                shift
+                ;;
+            -ip_list_file)
+                IP_LIST_FILE="$2"
+                echo "Using IP list file: $IP_LIST_FILE"
+                shift 2
+                ;;
+            -ips)
+                VMs_IPs="$2"
+                echo "Using IP list: $VMs_IPs"
+                shift 2
+                ;;
+            --)
+                shift
+                break
+                ;;
+            *)
+                echo "Unknown parameter: $1"
+                show_help
+                exit 1
+                ;;
+        esac
+    done
 }
 
-get_VMs_IPs () {
-  if [ -z $VMs_IPs ]; then
-    if [ -z $IP_LIST_FILE ]; then
-      if [ -z $HYPERVISOR_NAME ]; then
-        hv="all VMs on project: $PROJECT"
-        host_string=""
-      else
-        hv="all VMs on hypervisor $HYPERVISOR_NAME"
-        host_string="--host $hv"
-      fi
-  [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]:
-    HYPERVISOR_NAME: $HYPERVISOR_NAME
-    PROJECT: $PROJECT
-"
-#
-      export HYPERVISOR_NAME=$HYPERVISOR_NAME
-      export PROJECT=$PROJECT
-      VMs_IPs=$(bash $openstack_utils/$get_active_vms_ips_list_script)
-      if echo $VMs_IPs| grep "ERROR"; then
-        exit 1
-      fi
+# Function to extract IPs from vm_name:status:ip format
+extract_ips_from_vm_list() {
+    local vm_list="$1"
+    local ips=""
+
+    while IFS= read -r line; do
+        if [[ "$line" == *:*:* ]]; then
+            local ip="${line##*:}"
+            ips="$ips $ip"
+        else
+            # If not in expected format, assume it's already an IP
+            ips="$ips $line"
+        fi
+    done <<< "$vm_list"
+
+    echo "$ips" | tr -s ' ' | sed 's/^ //'
+}
+
+# Function to get VMs IPs
+get_vms_ips() {
+    local hv_info=""
+
+    if [ -z "$VMs_IPs" ]; then
+        if [ -z "$IP_LIST_FILE" ]; then
+            if [ -z "$HYPERVISOR_NAME" ]; then
+                hv_info="all VMs in project: $PROJECT"
+            else
+                hv_info="VMs on hypervisor: $HYPERVISOR_NAME"
+            fi
+
+            [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] Getting VMs from: $hv_info"
+
+            # Get VMs list in format: vm_name:status:ip
+            export HYPERVISOR_NAME="$HYPERVISOR_NAME"
+            export PROJECT="$PROJECT"
+
+            local vm_list
+            vm_list=$(bash "$openstack_utils/$get_active_vms_ips_list_script")
+
+            if echo "$vm_list" | grep -q "ERROR"; then
+                echo -e "${red}Failed to get VMs list${normal}"
+                exit 1
+            fi
+
+            # Extract IPs from the formatted output
+            VMs_IPs=$(extract_ips_from_vm_list "$vm_list")
+        else
+            # Read IPs from file
+            if [ ! -f "$IP_LIST_FILE" ]; then
+                echo -e "${red}IP list file not found: $IP_LIST_FILE${normal}"
+                exit 1
+            fi
+            VMs_IPs=$(cat "$IP_LIST_FILE")
+            hv_info="VMs from file: $IP_LIST_FILE"
+        fi
     else
-      VMs_IPs=$(cat $IP_LIST_FILE)
-      hv="VMs list: $VMs_IPs"
+        hv_info="Manual IP list provided"
     fi
-  else
-    hv="VMs list: $VMs_IPs"
-  fi
 
-  [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]:
-    hv: $hv
-    host_string: $host_string
-    VMs_IPs: $VMs_IPs
-  "
+    # Validate we have IPs
+    if [ -z "$VMs_IPs" ]; then
+        echo -e "${red}No VMs found for stress testing${normal}"
+        exit 1
+    fi
 
-  [[ -z $VMs_IPs ]] && { echo -e "${red}No instance found in the $PROJECT project - ERROR${normal}"; exit 1; }
+    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] VMs_IPs: $VMs_IPs"
+    echo "$hv_info"
 }
 
-get_mode_string () {
-#  local MODE=$1
-  # load_string
-  if [ "$TYPE_TEST" = cpu ]; then
-    load_string="CPU:                      $CPUS"
-  elif [ "$TYPE_TEST" = ram ]; then
-    load_string="RAM:                      $RAM; $UNITS"
-  else
-    echo -e "${red}Test type $TYPE_TEST not supported${normal}"
-    exit 1
-  fi
-  # time_out_help_string, time_out_string
-  if [ -n "$TIME_OUT" ]; then
-    time_out_help_string="time out stress loading:  $TIME_OUT"
-    time_out_string="-t $TIME_OUT"
-  fi
+# Function to get mode and timeout strings
+get_mode_strings() {
+    if [ "$TYPE_TEST" = "cpu" ]; then
+        load_string="CPU: $CPUS cores"
+        stress_args="-c $CPUS"
+    elif [ "$TYPE_TEST" = "ram" ]; then
+        load_string="RAM: $RAM $UNITS"
+        stress_args="--vm 1 --vm-bytes ${RAM}${UNITS}"
+    else
+        echo -e "${red}Unsupported test type: $TYPE_TEST${normal}"
+        exit 1
+    fi
 
-  [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]: TYPE_TEST: $TYPE_TEST
-  [DEBUG]: CPUS: $CPUS
-  [DEBUG]: RAM: $RAM
-  [DEBUG]: time_out_string: $time_out_string
-  "
+    if [ -n "$TIME_OUT" ]; then
+        time_out_help_string="Timeout: $TIME_OUT seconds"
+        stress_args="$stress_args -t $TIME_OUT"
+    else
+        time_out_help_string="No timeout (run until stopped)"
+    fi
+
+    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] stress_args: $stress_args"
 }
 
-batch_run_stress () {
-#Stress test: $TYPE_TEST will be launched on the hypervisor ($HV_STRING) VMs
-  echo -E "
-Stress test parameters:
-    Start stress test on:     $hv
-    Key:                      $KEY_PATH
-    User on VM (SSH):         $VM_USER
-    Stress test type:         $TYPE_TEST
-    VMs IPs list file:        $IP_LIST_FILE
-    Debug:                    $TS_DEBUG
+# Function to copy and run stress tool
+copy_and_run_stress() {
+    local vm_ip="$1"
+
+    echo "Processing VM: $vm_ip"
+
+    # Check connectivity
+    if ! ping -c 2 "$vm_ip" &> /dev/null; then
+        echo -e "${red}No connectivity to $vm_ip${normal}"
+        return 1
+    fi
+
+    # Copy stress binary
+    echo "Copying stress tool to $vm_ip..."
+    if ! scp -o StrictHostKeyChecking=no -i "$KEY_PATH" "$script_dir/stress" "$VM_USER@$vm_ip:~/" >/dev/null 2>&1; then
+        echo -e "${red}Failed to copy stress tool to $vm_ip${normal}"
+        return 1
+    fi
+
+    # Set executable permission
+    ssh -o StrictHostKeyChecking=no -i "$KEY_PATH" "$VM_USER@$vm_ip" "chmod +x ~/stress" >/dev/null 2>&1
+
+    # Run stress test
+    echo "Starting $TYPE_TEST stress on $vm_ip..."
+    local ssh_command="nohup ./stress $stress_args > /dev/null 2>&1 &"
+
+    if ! ssh -o StrictHostKeyChecking=no -i "$KEY_PATH" "$VM_USER@$vm_ip" "$ssh_command"; then
+        echo -e "${red}Failed to start stress on $vm_ip${normal}"
+        return 1
+    fi
+
+    echo -e "${green}Stress test started on $vm_ip${normal}"
+    return 0
+}
+
+# Function to check VM connectivity
+check_vm_connectivity() {
+    echo "Checking VM connectivity..."
+
+    for ip in $VMs_IPs; do
+        if ping -c 2 "$ip" &> /dev/null; then
+            echo -e "${green}✓ Connectivty to $ip - OK${normal}"
+        else
+            echo -e "${red}✗ No connectivity to $ip${normal}"
+            return 1
+        fi
+
+        # Check SSH access
+        if ssh -o StrictHostKeyChecking=no -i "$KEY_PATH" -o ConnectTimeout=5 "$VM_USER@$ip" "echo SSH_OK" >/dev/null 2>&1; then
+            echo -e "${green}✓ SSH access to $ip - OK${normal}"
+        else
+            echo -e "${red}✗ SSH access failed to $ip${normal}"
+            return 1
+        fi
+    done
+
+    return 0
+}
+
+# Function to batch run stress tests
+batch_run_stress() {
+    local hv_info="$1"
+
+    echo -e "
+${violet}Stress Test Configuration:${normal}
+    Target:           $hv_info
+    SSH Key:          $KEY_PATH
+    VM User:          $VM_USER
+    Test Type:        $TYPE_TEST
     $load_string
     $time_out_help_string
-"
+    Debug Mode:       $TS_DEBUG
+    "
 
-  read -p "Press enter to continue: "
+    read -p "Press Enter to continue or Ctrl+C to cancel..."
 
-  for IP in $VMs_IPs; do
-    copy_and_stress $IP $MODE
-  done
+    local success_count=0
+    local total_count=0
+
+    for ip in $VMs_IPs; do
+        ((total_count++))
+        if copy_and_run_stress "$ip"; then
+            ((success_count++))
+        fi
+        echo ""
+    done
+
+    echo -e "${green}Stress tests completed: $success_count/$total_count VMs successful${normal}"
+
+    if [ $success_count -eq 0 ]; then
+        echo -e "${red}No stress tests were successfully started${normal}"
+        exit 1
+    fi
 }
 
-#check_and_source_openrc_file () {
-#  echo "check openrc"
-#  openrc_file=$(bash $utils_dir/$check_openrc_script)
-#  if [[ -z $openrc_file ]]; then
-#    exit 1
-#  else
-#    echo "openrc_file: $openrc_file"
-#    source $openrc_file
-#  fi
-#}
+# Function to validate environment
+validate_environment() {
+    # Check if stress binary exists
+    if [ ! -f "$script_dir/stress" ]; then
+        echo -e "${red}Stress binary not found: $script_dir/stress${normal}"
+        exit 1
+    fi
 
-rm -rf /root/.ssh/known_hosts
-#check_and_source_openrc_file
-get_VMs_IPs
-get_mode_string
-check_vm
-batch_run_stress
+    # Check if SSH key exists
+    if [ ! -f "$KEY_PATH" ]; then
+        echo -e "${red}SSH key not found: $KEY_PATH${normal}"
+        exit 1
+    fi
 
+    # Validate test parameters
+    if [ "$TYPE_TEST" = "cpu" ] && [ "$CPUS" -le 0 ]; then
+        echo -e "${red}Invalid CPU count: $CPUS${normal}"
+        exit 1
+    fi
+
+    if [ "$TYPE_TEST" = "ram" ] && [ "$RAM" -le 0 ]; then
+        echo -e "${red}Invalid RAM size: $RAM${normal}"
+        exit 1
+    fi
+}
+
+# Main execution function
+main() {
+    parse_arguments "$@"
+    validate_environment
+
+    # Remove known hosts to avoid conflicts
+    rm -f /root/.ssh/known_hosts 2>/dev/null
+
+    # Get VMs IPs
+    local hv_info
+    hv_info=$(get_vms_ips)
+
+    # Get mode strings
+    get_mode_strings
+
+    # Check connectivity
+    if ! check_vm_connectivity; then
+        echo -e "${red}VM connectivity check failed${normal}"
+        exit 1
+    fi
+
+    # Run stress tests
+    batch_run_stress "$hv_info"
+
+    echo -e "${green}Stress test initialization completed successfully!${normal}"
+}
+
+# Run main function
+main "$@"
