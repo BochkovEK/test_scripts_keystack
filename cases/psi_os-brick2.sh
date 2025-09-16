@@ -280,7 +280,7 @@ perform_live_migration() {
 
     # Migration
     echo "
-    openstack server migrate --os-com 2.30 --live \"$source_server\" --host \"$dest_host\"
+    openstack server migrate --os-com 2.87 --live \"$source_server\" --host \"$dest_host\"
     "
 
     read -p "Press Enter to continue: "
@@ -350,13 +350,13 @@ cleanup_resources() {
 
     if [ -f $utils_dir/$get_nodes_list_script ]; then
         ip_host="$(bash $utils_dir/$get_nodes_list_script)"
-        if [ -n $ip_host ] && [ ! echo "$ip_host" | grep -q "ERROR" ]; then
-            multipath_with_sharp_string="$(ssh $TC_SSH_USER@$ip_host "sudo podman exec multipathd multipath -ll 2>&1 | awk '/##/{print$1}'")"
-            for i in multipath_with_sharp_string; do
+       if [[ -n "$ip_host" && "$ip_host" != *ERROR* ]]; then
+            multipath_with_sharp_string="$(ssh $TC_SSH_USER@$ip_host "sudo podman exec multipathd multipath -ll 2>&1 | awk '/##/{print\$1}'")"
+            for i in $multipath_with_sharp_string; do
                 ssh $TC_SSH_USER@$ip_host "sudo $TC_CONTAINER_ENGINE exec multipathd dmsetup message $i 0 fail_if_no_path && sudo $TC_CONTAINER_ENGINE exec multipathd multipath -f $i"
             done
-            fault_dev_multipath="$(ssh $TC_SSH_USER@$ip_host "sudo podman exec multipathd multipath -ll | awk '/fault/{print$3}'")"
-            for dev in "$fault_dev_multipath"; do
+            fault_dev_multipath=$(ssh $TC_SSH_USER@$ip_host "sudo podman exec multipathd multipath -ll | awk '/fault/{print\$3}'")
+            for dev in $fault_dev_multipath; do
                 ssh $TC_SSH_USER@$ip_host "sudo sh -c 'echo 1 > /sys/block/$dev/device/delete'"
             done
             for i in $multipath_with_sharp_string; do
