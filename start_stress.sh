@@ -313,10 +313,10 @@ ${violet}Stress Test Configuration:${normal}
 
     for ip in $VMs_IPs; do
         ((total_count++))
-        copy_and_run_stress "$ip"
-#        if copy_and_run_stress "$ip"; then
-#            ((success_count++))
-#        fi
+#        copy_and_run_stress "$ip"
+        if copy_and_run_stress "$ip"; then
+            ((success_count++))
+        fi
         echo ""
     done
 
