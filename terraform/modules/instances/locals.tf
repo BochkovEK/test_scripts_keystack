@@ -14,6 +14,7 @@ locals {
         server_group_uuid                 = try(instance.server_group_uuid, null)
         server_group                      = try(instance.server_group, null)
         az_hint                           = try(instance.az_hint, null)
+        config_drive                      = try(instance.config_drive, null)
         scheduler_hints                   = try(instance.scheduler_hints, null)
         network_name                      = try(instance.network_name, var.default_network_name)
         boot_volume_size                  = try(instance.boot_volume_size, var.default_volume_size)

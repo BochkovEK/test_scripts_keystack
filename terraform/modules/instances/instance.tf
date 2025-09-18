@@ -23,6 +23,7 @@ resource "openstack_compute_instance_v2" "vm" {
   availability_zone_hints     = each.value.az_hint
   metadata                    = each.value.metadata
   user_data                   = each.value.user_data
+  config_drive                = each.value.config_drive
 
   dynamic "scheduler_hints" {
     for_each = each.value.server_group_type != null ? [1] : []
