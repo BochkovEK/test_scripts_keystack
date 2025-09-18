@@ -226,23 +226,47 @@ check_host_connectivity() {
 }
 
 # Function to check SSH connectivity
+#check_ssh_connectivity() {
+#    local ip="$1"
+#
+#    local ssh_output
+#    ssh_output=$(ssh -o StrictHostKeyChecking=no \
+#        -o ConnectTimeout="$TS_SSH_TIMEOUT" \
+#        -o BatchMode=yes \
+#        -i "$KEY_PATH" \
+#        "$VM_USER@$ip" \
+#        "echo 'SSH_OK'" | grep 'SSH_OK')
+#
+##    echo "debug: ssh_output: $ssh_output"
+#    if [ "$ssh_output" = "SSH_OK" ]; then
+#        echo -e "${green}SSH connection successful: $ip${normal}"
+#        return 0
+#    else
+#        echo -e "${red}SSH connection failed: $ip - ssh_output: $ssh_output${normal}"
+#        return 1
+#    fi
+#}
+
+# Function to check SSH connectivity
 check_ssh_connectivity() {
     local ip="$1"
-
     local ssh_output
+    local exit_code
+
+    # Выполняем SSH команду, захватывая и stdout и stderr
     ssh_output=$(ssh -o StrictHostKeyChecking=no \
         -o ConnectTimeout="$TS_SSH_TIMEOUT" \
         -o BatchMode=yes \
         -i "$KEY_PATH" \
         "$VM_USER@$ip" \
-        "echo 'SSH_OK'" | grep 'SSH_OK')
+        "echo 'SSH_OK'" 2>&1)
+    exit_code=$?
 
-#    echo "debug: ssh_output: $ssh_output"
-    if [ "$ssh_output" = "SSH_OK" ]; then
+    if [ $exit_code -eq 0 ] && [ "$ssh_output" = "SSH_OK" ]; then
         echo -e "${green}SSH connection successful: $ip${normal}"
         return 0
     else
-        echo -e "${red}SSH connection failed: $ip - ssh_output: $ssh_output${normal}"
+        echo -e "${red}SSH connection failed: $ip - exit code: $exit_code, error: $ssh_output${normal}"
         return 1
     fi
 }
