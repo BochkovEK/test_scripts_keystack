@@ -365,9 +365,9 @@ cleanup_resources() {
             for i in $multipath_with_sharp_string; do
                 echo "
     [DEBUG]:
-      command: ssh $TC_SSH_USER@$ip_host \"sudo $TC_CONTAINER_ENGINE exec multipathd dmsetup message $i 0 fail_if_no_path && sudo $TC_CONTAINER_ENGINE exec multipathd multipath -f $i\"
+      command: ssh $TC_SSH_USER@$ip_host \"sudo $TC_CONTAINER_ENGINE exec multipathd dmsetup message $i 0 fail_if_no_path; sudo $TC_CONTAINER_ENGINE exec multipathd multipath -f $i\"
       "
-                ssh $TC_SSH_USER@$ip_host "sudo $TC_CONTAINER_ENGINE exec multipathd dmsetup message $i 0 fail_if_no_path && sudo $TC_CONTAINER_ENGINE exec multipathd multipath -f $i"
+                ssh $TC_SSH_USER@$ip_host "sudo $TC_CONTAINER_ENGINE exec multipathd dmsetup message $i 0 fail_if_no_path; sudo $TC_CONTAINER_ENGINE exec multipathd multipath -f $i"
             done
             fault_dev_multipath=$(ssh $TC_SSH_USER@$ip_host "sudo podman exec multipathd multipath -ll | awk '/fault/{print\$3}'")
             echo "
