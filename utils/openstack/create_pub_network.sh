@@ -139,7 +139,7 @@ check_openstack_cli () {
 
 # Check network
 get_settings () {
-  any_ctrl=$(bash "$utils_dir/$get_nodes_list_script" -nt ctrl|awk '{$print $1}')
+  any_ctrl=$(bash "$utils_dir/$get_nodes_list_script" -nt ctrl|awk '{print $1}')
 #  node_name="${any_ctrl%%:*}"
   node_ip="${any_ctrl#*:}"
   CIDR=$(ssh $SSH_USER@$node_ip "sudo ip r|grep 'dev external proto kernel scope'"| awk '{print $1}');
