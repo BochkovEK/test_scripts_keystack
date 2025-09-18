@@ -303,6 +303,7 @@ execute_on_vm() {
 batch_run_commands() {
     local at_least_one_failure=false
 
+    echo "batch_run_commands..."
     # Remove known_hosts to avoid conflicts
     [ -f "$HOME/.ssh/known_hosts" ] && rm -f "$HOME/.ssh/known_hosts"
 
