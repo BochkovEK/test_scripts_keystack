@@ -165,24 +165,32 @@ get_vms_ips() {
 
     local command_args=""
 
-    # Build command arguments based on provided parameters
-    [ -n "$HYPERVISOR_NAME" ] && command_args="$command_args -hv $HYPERVISOR_NAME"
-    [ -n "$VMS" ] && command_args="$command_args -vms \"$VMS\""
-    [ -n "$PROJECT" ] && command_args="$command_args -p $PROJECT"
+    command_args=()
 
-    # Add debug flag if enabled
-#    [ "$TS_DEBUG" = "true" ] && command_args="$command_args -debug"
+    [ -n "$HYPERVISOR_NAME" ] && command_args+=(-hv "$HYPERVISOR_NAME")
+    [ -n "$VMS" ] && command_args+=(-vms "$VMS")
+    [ -n "$PROJECT" ] && command_args+=(-p "$PROJECT")
 
-    # Trim leading space from arguments
-    command_args="$(echo "$command_args" | sed 's/^ //')"
+    VMS=$(bash "$openstack_utils/$get_vms_list_script" "${command_args[@]}")
+
+#    # Build command arguments based on provided parameters
+#    [ -n "$HYPERVISOR_NAME" ] && command_args="$command_args -hv $HYPERVISOR_NAME"
+#    [ -n "$VMS" ] && command_args="$command_args -vms \"$VMS\""
+#    [ -n "$PROJECT" ] && command_args="$command_args -p $PROJECT"
+#
+#    # Add debug flag if enabled
+##    [ "$TS_DEBUG" = "true" ] && command_args="$command_args -debug"
+#
+#    # Trim leading space from arguments
+#    command_args="$(echo "$command_args" | sed 's/^ //')"
 
     # Execute the command and capture output
-    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] VMS command: bash \"$openstack_utils/$get_vms_list_script\" $command_args"
-    VMS=$(bash "$openstack_utils/$get_vms_list_script" $command_args)
+#    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] VMS command: bash \"$openstack_utils/$get_vms_list_script\" $command_args"
+#    VMS=$(bash "$openstack_utils/$get_vms_list_script" $command_args)
 #     2>&1)
-    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] command_args: $command_args"
-    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] VMS: $VMS"
-    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] exit_code $?"
+#    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] command_args: $command_args"
+#    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] VMS: $VMS"
+#    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] exit_code $?"
 
     echo -e "[DEBUG] VMS: $VMS"
 #    echo "command_args"
