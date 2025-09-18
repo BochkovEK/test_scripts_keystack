@@ -235,7 +235,7 @@ check_ssh_connectivity() {
         -o BatchMode=yes \
         -i "$KEY_PATH" \
         "$VM_USER@$ip" \
-        "echo 'SSH_OK'" 2>&1 | grep 'SSH_OK')
+        "echo 'SSH_OK'" | grep 'SSH_OK')
 
 #    echo "debug: ssh_output: $ssh_output"
     if [ "$ssh_output" = "SSH_OK" ]; then
