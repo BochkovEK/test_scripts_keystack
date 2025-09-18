@@ -171,7 +171,7 @@ get_vms_ips() {
     [ -n "$PROJECT" ] && command_args="$command_args -p $PROJECT"
 
     # Add debug flag if enabled
-    [ "$TS_DEBUG" = "true" ] && command_args="$command_args -debug"
+#    [ "$TS_DEBUG" = "true" ] && command_args="$command_args -debug"
 
     # Trim leading space from arguments
     command_args="$(echo "$command_args" | sed 's/^ //')"
