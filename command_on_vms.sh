@@ -242,7 +242,7 @@ check_ssh_connectivity() {
         echo -e "${green}SSH connection successful: $ip${normal}"
         return 0
     else
-        echo -e "${red}SSH connection failed: $ip - $ssh_output${normal}"
+        echo -e "${red}SSH connection failed: $ip - ssh_output: $ssh_output${normal}"
         return 1
     fi
 }
@@ -321,6 +321,7 @@ batch_run_commands() {
 #        [ "$TS_DEBUG" = "true" ] &&
         echo -e "
     [DEBUG] Configuration:
+      VM_USER: $VM_USER
       vm_name: $vm_name
       vm_status: $vm_status
       vm_ip: $vm_ip
