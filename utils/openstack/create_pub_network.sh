@@ -8,17 +8,19 @@
 #Colors
 green=$(tput setaf 2)
 red=$(tput setaf 1)
-orange=$(tput setaf 3)
-violet=$(tput setaf 5)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
+#orange=$(tput setaf 3)
+#violet=$(tput setaf 5)
 
 #Script_dir, current folder
+default_ssh_user="root"
 script_name=$(basename "$0")
 script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
 utils_dir=$parent_dir
+get_nodes_list_script="get_nodes_list.sh"
 check_openrc_script="check_openrc.sh"
 check_openstack_cli_script="check_openstack_cli.sh"
 yes_no_answer_script="yes_no_answer.sh"
@@ -28,11 +30,64 @@ yes_no_answer_script="yes_no_answer.sh"
 [[ -z $PROJECT ]] && PROJECT="admin"
 [[ -z $API_VERSION ]] && API_VERSION="2.74"
 [[ -z $NETWORK ]] && NETWORK="pub_net"
-#[[ -z $TS_YES_NO_QUESTION ]] && TS_YES_NO_QUESTION=""
-#[[ -z $TS_YES_NO_INPUT ]] && TS_YES_NO_INPUT=""
 [[ -z $TS_DEBUG ]] && TS_DEBUG="true"
 [[ -z $GET_SETTINGS ]] && GET_SETTINGS="false"
+#[[ -z $TS_YES_NO_INPUT ]] && TS_YES_NO_INPUT=""
+#[[ -z $TS_YES_NO_QUESTION ]] && TS_YES_NO_QUESTION=""
 
+
+# Function to display help information
+show_help() {
+    echo -E "
+    Usage: $0 [OPTIONS]
+
+    Options:
+      -u, -user <username>          SSH username
+      -debug                        Enable debug output
+      --help                        Show this help message
+    "
+}
+
+# Function to define parameters from positional arguments
+define_parameters() {
+    [ "$count" = 1 ] && [[ -n $1 ]] && {
+        echo "Parameter found: $1"
+    }
+}
+
+# Parse command line arguments
+count=1
+while [ -n "$1" ]; do
+    case "$1" in
+        --help)
+            show_help
+            exit 0
+            ;;
+
+        -u|-user)
+            SSH_USER="$2"
+            echo "Found -user with value: $SSH_USER"
+            shift
+            ;;
+
+        -debug)
+            TS_DEBUG="true"
+            echo "Found -debug option"
+            ;;
+
+        --)
+            shift
+            break
+            ;;
+
+        *)
+            echo "Parameter #$count: $1"
+            define_parameters "$1"
+            count=$((count + 1))
+            ;;
+    esac
+    shift
+done
 
 error_output () {
 #  printf "%s\n" "${yellow}command not executed on $NODES_TYPE nodes${normal}"
@@ -84,8 +139,10 @@ check_openstack_cli () {
 
 # Check network
 get_settings () {
-
-  CIDR=$(ip r|grep "dev external proto kernel scope"| awk '{print $1}');
+  any_ctrl=$(bash "$utils_dir/$get_nodes_list_script" -nt ctrl|awk '{$print $1}')
+#  node_name="${any_ctrl%%:*}"
+  node_ip="${any_ctrl#*:}"
+  CIDR=$(ssh $SSH_USER@$node_ip "sudo ip r|grep 'dev external proto kernel scope'"| awk '{print $1}');
   last_digit=$(echo $CIDR | sed --regexp-extended 's/([0-9]+\.[0-9]+\.[0-9]+\.)|(\/[0-9]+)//g');
   left_side=$(echo $CIDR | sed --regexp-extended 's/([0-9]+\/[0-9]+)//g');
   GATEWAY=$left_side$(expr $last_digit + 1);
@@ -178,6 +235,28 @@ create_pub_network () {
     echo -e "${green}Network \"$NETWORK\" already exist in project \"$PROJECT\"${normal}"
   fi
 }
+
+# Get ssh user
+get_ssh_user () {
+    # Determine SSH user
+    if [[ -z "$SSH_USER" ]]; then
+        SSH_USER=$(whoami 2>/dev/null) || {
+            echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
+            SSH_USER="$default_ssh_user"
+        }
+    fi
+
+    # Final user validation
+    if [[ -z "$SSH_USER" ]]; then
+        echo -e "${red}Error: Failed to determine SSH user!${normal}" >&2
+        exit 1
+    fi
+}
+
+
+# Main execution
+
+get_ssh_user
 
 echo "$script_name script started..."
 
