@@ -183,6 +183,7 @@ get_vms_ips() {
     # Execute the command and capture output
     VMS=$(bash "$openstack_utils/$get_vms_list_script" $command_args)
 #     2>&1)
+    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] command_args: $command_args"
     [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] VMS: $VMS"
     [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] exit_code $?"
 
