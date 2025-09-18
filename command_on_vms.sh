@@ -321,10 +321,11 @@ batch_run_commands() {
 #        [ "$TS_DEBUG" = "true" ] &&
         echo -e "
     [DEBUG] Configuration:
-      VM_USER: $VM_USER
-      vm_name: $vm_name
-      vm_status: $vm_status
-      vm_ip: $vm_ip
+      VM_USER:    $VM_USER
+      KEY_PATH:   $KEY_PATH
+      vm_name:    $vm_name
+      vm_status:  $vm_status
+      vm_ip:      $vm_ip
       "
 
         echo -e "${cyan}Processing VM: $vm_name VM status: $vm_status VM ip: $vm_ip${normal}"
