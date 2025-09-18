@@ -7,6 +7,7 @@ default_hosts_path="/etc/hosts"
 default_rmi_suffix="rmi"
 
 # Node name patterns
+lcm_pattern="lcm\-..(\s|$)"
 comp_pattern="comp\-..(\s|$)"
 ctrl_pattern="ctrl\-..(\s|$)"
 net_pattern="net\-..(\s|$)"
@@ -45,7 +46,7 @@ while [ -n "$1" ]; do
       Node IPs and names must be defined in hosts file (default: $default_hosts_path)
 
       Options:
-        -nt, -type_of_nodes <type>    Node type: 'ctrl', 'comp', 'net', 'all', 'rmi'
+        -nt, -type_of_nodes <type>    Node type: 'lcm', 'ctrl', 'comp', 'net', 'all', 'rmi'
           NOTE: If you are using the node_type rmi, specify -suffix <suffix> (the default suffix is $default_rmi_suffix)
         -suffix <suffix>              RMI suffix (example: -suffix rmi)
         -nn, -nodes_name <names>      Specific node names (space-separated)
@@ -164,6 +165,11 @@ nodes_list_by_type() {
     local node_type="$1"
 
     case "$node_type" in
+        lcm)
+            nodes_to_find="$lcm_pattern"
+            [ "$TS_DEBUG" = true ] && echo -e "Looking for lcm nodes"
+            parse_hosts
+            ;;
         ctrl)
             nodes_to_find="$ctrl_pattern"
             [ "$TS_DEBUG" = true ] && echo -e "Looking for controller nodes"
