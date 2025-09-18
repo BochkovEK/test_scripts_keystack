@@ -2,14 +2,13 @@
 
 # The script create image.
 # To create:
-#   1) get list of images from repo.itkey.com images repo
-#      curl -X 'GET' 'https://repo.itkey.com/service/rest/v1/search?repository=images&name=*' -H 'accept: application/json'| jq '.items[]|.name'
-#   2) bash create_image.sh <image name from repo.itkey.com 'images' repo>
+#   1) curl -o ~/test_scripts_keystack/utils/openstack/ubuntu-22.04-server-cloudimg-amd64.img https://cloud-images.ubuntu.com/releases/jammy/release/ubuntu-22.04-server-cloudimg-amd64.img
+#   2) bash ~/test_scripts_keystack/utils/openstack/create_image.sh ubuntu-22.04-server-cloudimg-amd64.img
 # OR
 #    1) export IMAGE_SOURCE="https://cloud-images.ubuntu.com/releases/focal/release"
 #    2) bash ~/test_scripts_keystack/utils/openstack/create_image.sh ubuntu-20.04-server-cloudimg-amd64.img
 #     or
-#    1) http://cloud-images-archive.ubuntu.com/releases/noble/release-20240523.1/
+#    1) export IMAGE_SOURCE="http://cloud-images-archive.ubuntu.com/releases/noble/release-20240523.1"
 #    2) bash ~/test_scripts_keystack/utils/openstack/create_image.sh ubuntu-24.04-server-cloudimg-amd64.img
 #     or
 #    2) bash ~/test_scripts_keystack/utils/openstack/create_image.sh cirros-0.6.2-x86_64-disk.img
@@ -29,10 +28,10 @@
 #Colors
 green=$(tput setaf 2)
 red=$(tput setaf 1)
-orange=$(tput setaf 3)
-violet=$(tput setaf 5)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
+#orange=$(tput setaf 3)
+#violet=$(tput setaf 5)
 
 #Script_dir, current folder
 script_name=$(basename "$0")
@@ -44,7 +43,7 @@ check_openrc_script="check_openrc.sh"
 check_openstack_cli_script="check_openstack_cli.sh"
 #install_wget_script="install_wget.sh"
 yes_no_answer_script="yes_no_answer.sh"
-install_package_script="install_package.sh"
+#install_package_script="install_package.sh"
 
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"

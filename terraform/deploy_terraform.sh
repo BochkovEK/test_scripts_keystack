@@ -25,12 +25,12 @@ pub_net_name="pub_net"
 
 #Colors
 green=$(tput setaf 2)
-red=$(tput setaf 1)
-violet=$(tput setaf 13)
-cyan=$(tput setaf 14)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
 #magenta=$(tput setaf 5)
+#red=$(tput setaf 1)
+#violet=$(tput setaf 13)
+#cyan=$(tput setaf 14)
 
 script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
