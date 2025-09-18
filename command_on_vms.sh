@@ -318,7 +318,8 @@ batch_run_commands() {
         vm_status=$(echo "$vm_tripl" | awk -F':' '{print $2}')
         vm_ip=$(echo "$vm_tripl" | awk -F':' '{print $3}')
 
-        [ "$TS_DEBUG" = "true" ] && echo -e "
+#        [ "$TS_DEBUG" = "true" ] &&
+        echo -e "
     [DEBUG] Configuration:
       vm_name: $vm_name
       vm_status: $vm_status
