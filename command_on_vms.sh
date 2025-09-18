@@ -176,12 +176,8 @@ get_vms_ips() {
     # Trim leading space from arguments
     command_args="$(echo "$command_args" | sed 's/^ //')"
 
-    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] Command: bash \"$openstack_utils/$get_vms_list_script\" $command_args"
-
-#    echo -e "[DEBUG] Command: bash \"$openstack_utils/$get_vms_list_script\" $command_args"
-
     # Execute the command and capture output
-    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] VMS command: bash \"$openstack_utils/$get_vms_list_script" $command_args"
+    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] VMS command: bash \"$openstack_utils/$get_vms_list_script\" $command_args"
     VMS=$(bash "$openstack_utils/$get_vms_list_script" $command_args)
 #     2>&1)
     [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] command_args: $command_args"
