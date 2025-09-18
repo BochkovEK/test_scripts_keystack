@@ -336,10 +336,10 @@ batch_run_commands() {
       TS_SSH_TIMEOUT: $TS_SSH_TIMEOUT
     "
 
-    if [ "$TS_DEBUG" = "true" ]; then
-        echo -e "${yellow}[Warning] Debug mode enabled - skipping command execution${normal}"
-        return 0
-    fi
+#    if [ "$TS_DEBUG" = "true" ]; then
+#        echo -e "${yellow}[Warning] Debug mode enabled - skipping command execution${normal}"
+#        return 0
+#    fi
 
     # Process each VM
     for vm_tripl in $VMS; do
