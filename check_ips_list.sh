@@ -5,6 +5,7 @@ normal=$(tput sgr0)
 yellow=$(tput setaf 3)
 red=$(tput setaf 1)
 green=$(tput setaf 2)
+blue=$(tput setaf 4)
 
 # Function to show usage
 usage() {
@@ -18,6 +19,23 @@ if [ $# -ne 1 ]; then
     echo -e "${red}Error: Missing required argument${normal}"
     usage
 fi
+
+# Ask for SSH tunnel connection
+echo -e "${blue}Please provide SSH tunnel connection in format user@ip:${normal}"
+read -r SSH_TUNNEL
+
+# Validate SSH tunnel format
+if ! echo "$SSH_TUNNEL" | grep -qE '^[a-zA-Z0-9_.-]+@[a-zA-Z0-9_.-]+$'; then
+    echo -e "${red}Error: Invalid SSH tunnel format. Use user@ip${normal}"
+    exit 1
+fi
+
+# Extract user and IP from SSH tunnel
+SSH_USER=$(echo "$SSH_TUNNEL" | cut -d@ -f1)
+SSH_IP=$(echo "$SSH_TUNNEL" | cut -d@ -f2)
+
+echo -e "${green}Using SSH tunnel: $SSH_TUNNEL${normal}"
+echo ""
 
 # Parse the input argument
 IP_RANGE=$1
@@ -50,15 +68,17 @@ if [ "$START_HOST" -gt "$END_HOST" ]; then
     usage
 fi
 
-echo -e "${green}Pinging IP range: $START_IP to $END_IP${normal}"
+echo -e "${green}Pinging IP range through SSH tunnel $SSH_TUNNEL:${normal}"
+echo -e "${green}From: $START_IP to $END_IP${normal}"
 echo ""
 
 i=$START_HOST
 while [[ $i -le $END_HOST ]]; do
     IP="$NETWORK_PART.$i"
-    echo "Testing $IP"
+    echo "Testing $IP through SSH tunnel..."
 
-    if ping -c 2 -W 1 "$IP" &> /dev/null; then
+    # Ping through SSH tunnel
+    if ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no "$SSH_TUNNEL" "ping -c 2 -W 1 $IP" &> /dev/null; then
         printf "%40s\n" "${yellow}There is a connection with $IP - success${normal}"
     else
         printf "%40s\n" "${red}No connection with $IP - error!${normal}"
@@ -67,4 +87,4 @@ while [[ $i -le $END_HOST ]]; do
 done
 
 echo ""
-echo -e "${green}Scan completed!${normal}"
+echo -e "${green}Scan completed through SSH tunnel $SSH_TUNNEL!${normal}"
