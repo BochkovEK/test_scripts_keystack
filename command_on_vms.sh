@@ -6,9 +6,10 @@
 # Color definitions
 green=$(tput setaf 2)
 red=$(tput setaf 1)
-violet=$(tput setaf 5)
+#violet=$(tput setaf 5)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
+blue=$(tput setaf 4)
 cyan=$(tput setaf 14)
 
 # Script configuration
@@ -161,7 +162,7 @@ validate_ssh_key() {
 
 # Function to get VMs IPs from hypervisor
 get_vms_ips() {
-    echo -e "${violet}Getting IPs of VMs: ${VMS:-all} from hypervisor: ${HYPERVISOR_NAME:-any} (project: $PROJECT)...${normal}"
+    echo -e "${blue}Getting IPs of VMs: ${VMS:-all} from hypervisor: ${HYPERVISOR_NAME:-any} (project: $PROJECT)...${normal}"
 
     local command_args=""
 
@@ -280,7 +281,7 @@ check_ssh_connectivity() {
 execute_on_vm() {
     local ip="$1"
 
-    echo -e "${violet}Executing command on $ip...${normal}"
+    echo -e "${blue}Executing command on $ip...${normal}"
     echo -e "${yellow}Command: $COMMAND_STR${normal}"
 
     ssh -t -o StrictHostKeyChecking=no \
@@ -363,7 +364,7 @@ batch_run_commands() {
         # Check ping connectivity
         if ! check_host_connectivity "$vm_ip"; then
             at_least_one_failure=true
-            continue
+            #continue
         fi
 
         # Skip further checks if only ping is requested

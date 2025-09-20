@@ -75,6 +75,7 @@ comp_required_container_list=(
 [[ -z $NODES_TYPE ]] && NODES_TYPE="all"
 [[ -z $NODES_NAME ]] && NODES_NAME=""
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
+[[ -z $SSH_USER ]] && SSH_USER=""
 [[ -z $CONTAINER_ENGINE ]] && CONTAINER_ENGINE="$default_container_engine"
 
 # Function to display help information
