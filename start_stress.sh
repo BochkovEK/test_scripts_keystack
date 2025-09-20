@@ -297,19 +297,7 @@ check_vm_connectivity() {
 batch_run_stress() {
 #    local hv_info="$1"
 
-    echo -e "
-${violet}Stress Test Configuration:${normal}
-    SSH Key:          $KEY_PATH
-    VM User:          $VM_USER
-    Test Type:        $TYPE_TEST
-    VMs_IPs:          $VMs_IPs
-    $load_string
-    $time_out_help_string
-    Debug Mode:       $TS_DEBUG
-    "
-#    Target:           $hv_info
 
-    read -p "Press Enter to continue or Ctrl+C to cancel..."
 
     local success_count=0
     local total_count=0
@@ -357,6 +345,22 @@ validate_environment() {
     fi
 }
 
+check_configuration () {
+      echo -e "
+${violet}Stress Test Configuration:${normal}
+    SSH Key:          $KEY_PATH
+    VM User:          $VM_USER
+    Test Type:        $TYPE_TEST
+    VMs_IPs:          $VMs_IPs
+    $load_string
+    $time_out_help_string
+    Debug Mode:       $TS_DEBUG
+    "
+#    Target:           $hv_info
+
+    read -p "Press Enter to continue or Ctrl+C to cancel..."
+}
+
 # Main execution function
 main() {
     parse_arguments "$@"
@@ -372,6 +376,8 @@ main() {
 
     # Get mode strings
     get_mode_strings
+
+    check_configuration
 
     # Check connectivity
     if ! check_vm_connectivity; then
