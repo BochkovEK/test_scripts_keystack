@@ -298,7 +298,7 @@ batch_run_stress() {
 #    local hv_info="$1"
     echo "Starting stress..."
 
-    read -p "Press Enter to continue or Ctrl+C to cancel..."
+    read -p "Press Enter to continue or Ctrl+C to cancel: "
 
     local success_count=0
     local total_count=0
@@ -359,7 +359,7 @@ ${violet}Stress Test Configuration:${normal}
     "
 #    Target:           $hv_info
 
-    read -p "Press Enter to continue or Ctrl+C to cancel..."
+    read -p "Press Enter to continue or Ctrl+C to cancel: "
 }
 
 # Main execution function
