@@ -195,7 +195,7 @@ nodes_list_by_type() {
             ;;
 
         all)
-            nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
+            nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern|$lcm_pattern"
             [ "$TS_DEBUG" = true ] && echo -e "Looking for all node types"
             parse_hosts
             ;;

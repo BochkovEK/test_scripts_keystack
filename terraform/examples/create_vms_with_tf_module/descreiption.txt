@@ -39,12 +39,15 @@ VMs = {
           },
         ]
         metadata = {}
-        user_data =
-            #or string:
-                <<-EOT
-                #cloud-config
-                hostname: my-vm
-                EOT
+        user_data = <<-EOT
+                    #cloud-config
+                    chpasswd:
+                        list: |
+                            ubuntu:1111
+                        expire: False
+                    ssh_pwauth: True
+                    EOT
+
             #or template:
                 { template_file = "templates/cloud-init-2.yaml" }
         }
