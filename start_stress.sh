@@ -236,11 +236,11 @@ copy_and_run_stress() {
 
     echo "Processing VM: $vm_ip"
 
-    # Check connectivity
-    if ! ping -c 2 "$vm_ip" &> /dev/null; then
-        echo -e "${red}No connectivity to $vm_ip${normal}"
-        return 1
-    fi
+#    # Check connectivity
+#    if ! ping -c 2 "$vm_ip" &> /dev/null; then
+#        echo -e "${red}No connectivity to $vm_ip${normal}"
+#        return 1
+#    fi
 
     # Copy stress binary
     echo "Copying stress tool to $vm_ip..."
@@ -296,8 +296,9 @@ check_vm_connectivity() {
 # Function to batch run stress tests
 batch_run_stress() {
 #    local hv_info="$1"
+    echo "Starting stress..."
 
-
+    read -p "Press Enter to continue or Ctrl+C to cancel..."
 
     local success_count=0
     local total_count=0
