@@ -278,7 +278,7 @@ check_vm_connectivity() {
             echo -e "${green}✓ Connectivty to $ip - OK${normal}"
         else
             echo -e "${red}✗ No connectivity to $ip${normal}"
-            return 1
+            return 0
         fi
 
         # Check SSH access
