@@ -2,10 +2,11 @@
 
 # Colors
 normal=$(tput sgr0)
-yellow=$(tput setaf 3)
+cyan=$(tput setaf 6)
 red=$(tput setaf 1)
 green=$(tput setaf 2)
 blue=$(tput setaf 4)
+#yellow=$(tput setaf 3)
 
 # Function to show usage
 usage() {
@@ -34,7 +35,7 @@ fi
 SSH_USER=$(echo "$SSH_TUNNEL" | cut -d@ -f1)
 SSH_IP=$(echo "$SSH_TUNNEL" | cut -d@ -f2)
 
-echo -e "${green}Using SSH tunnel: $SSH_TUNNEL${normal}"
+echo -e "${cyan}Using SSH tunnel: $SSH_TUNNEL${normal}"
 echo ""
 
 # Parse the input argument
@@ -68,8 +69,8 @@ if [ "$START_HOST" -gt "$END_HOST" ]; then
     usage
 fi
 
-echo -e "${green}Pinging IP range through SSH tunnel $SSH_TUNNEL:${normal}"
-echo -e "${green}From: $START_IP to $END_IP${normal}"
+echo -e "Pinging IP range through SSH tunnel $SSH_TUNNEL:"
+echo -e "${cyan}From: $START_IP to $END_IP${normal}"
 echo ""
 
 i=$START_HOST
@@ -79,7 +80,7 @@ while [[ $i -le $END_HOST ]]; do
 
     # Ping through SSH tunnel
     if ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no "$SSH_TUNNEL" "ping -c 2 -W 1 $IP" &> /dev/null; then
-        printf "%40s\n" "${yellow}There is a connection with $IP - success${normal}"
+        printf "%40s\n" "${green}There is a connection with $IP - success${normal}"
     else
         printf "%40s\n" "${red}No connection with $IP - error!${normal}"
     fi
