@@ -442,7 +442,7 @@ check_consul_logs() {
 
     local ctrl_nodes
     ctrl_nodes=$(bash "$utils_dir/$get_nodes_list_script" -nt ctrl)
-    local first_ctrl_node
+    local first_ctrl_node_pair
     first_ctrl_node_pair=$(echo "$ctrl_nodes" | awk '{print $1}')
 
     if [ -n "$first_ctrl_node_pair" ]; then
@@ -453,7 +453,7 @@ check_consul_logs() {
         return 1
     fi
 
-    if [ -f "$script_dir/$check_consul_log_script" ]; then
+    if [ ! -f "$script_dir/$check_consul_log_script" ]; then
         echo -e "${yellow}$check_consul_log_script not exists in $script_dir${normal}"
         return 1
     fi
