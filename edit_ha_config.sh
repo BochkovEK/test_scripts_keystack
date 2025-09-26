@@ -92,7 +92,7 @@ check_ssl_config() {
     local first_ctrl_node
 
     # Take only the first node for config reading
-    first_ctrl_node=$(echo "$nodes_list" | awk '{print $1}')
+    first_ctrl_node=$(echo "$NODES" | awk '{print $1}')
     echo "first_ctrl_node: $first_ctrl_node"
     if [ -z "$first_ctrl_node" ]; then
         echo -e "${red}No nodes provided${normal}" >&2
