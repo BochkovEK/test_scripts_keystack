@@ -425,11 +425,13 @@ main() {
     # Get nodes list
     if ! NODES=$(get_nodes_list -nt $nodes_type); then
         exit 1
+    else
+        echo "$NODES"
     fi
 
     if [ "$TS_DEBUG" = true ]; then
     echo -e "
-    [DEBUG] NODES: $NODES
+    [DEBUG] foo NODES: $NODES
     "
     fi
 
@@ -461,7 +463,7 @@ main() {
     if [ "$PUSH" = true ]; then
         push_conf
         echo "Restarting consul containers..."
-        bash "$script_dir/command_on_nodes.sh" -u "$SSH_USER" -nt ctrl -c "sudo $CONTAINER_ENGINE restart consul"
+        bash "$script_dir/command_on_nodes.sh" -u "$SSH_USER" -nt $nodes_type -c "sudo $CONTAINER_ENGINE restart consul"
     fi
 
     cat_conf
