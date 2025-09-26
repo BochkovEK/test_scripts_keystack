@@ -264,10 +264,10 @@ get_ssh_user
 
 # Get controller nodes list
 if [ -z "$CTRL_LIST" ]; then
-    NODES=$(get_nodes_list "nt" "$nodes_type")
+    NODES=$(get_nodes_list "-nt" "$nodes_type")
     [ $? -ne 0 ] && exit 1
 else
-    NODES=$(get_nodes_list "nn" "$CTRL_LIST")
+    NODES=$(get_nodes_list "-nn" "$CTRL_LIST")
     [ $? -ne 0 ] && exit 1
 fi
 
