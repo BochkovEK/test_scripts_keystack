@@ -91,13 +91,20 @@ check_ssl_config() {
     local config_file
     local first_ctrl_node
 
-    first_ctrl_node=$(echo "$NODES" | awk '{print $1}')
-    config_file=$(cat_conf "$first_ctrl_node")
+    # Take only the first node for config reading
+    first_ctrl_node=$(echo "$nodes_list" | awk '{print $1}')
+    echo "first_ctrl_node: $first_ctrl_node"
+    if [ -z "$first_ctrl_node" ]; then
+        echo -e "${red}No nodes provided${normal}" >&2
+        return 1
+    fi
 
-#    if [ ! -f "$config_file" ]; then
-#        echo -e "${red}Configuration file not found: $config_file${normal}"
-#        return 1
-#    fi
+
+
+    if ! config_file=$(cat_conf "$first_ctrl_node"); then
+        echo -e "${red}Configuration file not found: $config_file${normal}"
+        return 1
+    fi
 
     [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG]:
@@ -243,14 +250,7 @@ cat_conf() {
 #        nodes_list=$(get_node_names)
 #    fi
 
-    # Take only the first node for config reading
-    local first_node
-    first_node=$(echo "$nodes_list" | awk '{print $1}')
 
-    if [ -z "$first_node" ]; then
-        echo -e "${red}No nodes provided${normal}" >&2
-        return 1
-    fi
 
 #    # Get node IP for the first node
 #    local nodes
@@ -425,13 +425,11 @@ main() {
     # Get nodes list
     if ! NODES=$(get_nodes_list -nt $nodes_type); then
         exit 1
-    else
-        echo "$NODES"
     fi
 
     if [ "$TS_DEBUG" = true ]; then
     echo -e "
-    [DEBUG] foo NODES: $NODES
+    [DEBUG] NODES: $NODES
     "
     fi
 
