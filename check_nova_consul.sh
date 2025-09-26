@@ -458,7 +458,7 @@ check_consul_logs() {
         return 1
     fi
 
-    bash "$utils_dir/$check_consul_log_script" -ctrl_list "$node_name"
+    bash "$script_dir/$check_consul_log_script" -ctrl_list "$node_name"
 
     return 0
 #    if [ -n "$first_ctrl_node" ]; then
