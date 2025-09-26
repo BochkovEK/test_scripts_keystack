@@ -88,12 +88,16 @@ define_parameters() {
 
 # Function to check for SSL client key in config and extract SSL parameters
 check_ssl_config() {
-    local config_file="$script_dir/$test_node_conf_dir/$CONF_NAME"
+    local config_file
+    local first_ctrl_node
 
-    if [ ! -f "$config_file" ]; then
-        echo -e "${red}Configuration file not found: $config_file${normal}"
-        return 1
-    fi
+    first_ctrl_node=$(echo "$NODES" | awk '{print $1}')
+    config_file=$(cat_conf "$first_ctrl_node")
+
+#    if [ ! -f "$config_file" ]; then
+#        echo -e "${red}Configuration file not found: $config_file${normal}"
+#        return 1
+#    fi
 
     # Check if client key exists in config
     if ! grep -q "client_key = .*\.pem" "$config_file"; then
@@ -209,19 +213,75 @@ parse_arguments() {
 }
 
 # Function to display configuration files
-cat_conf() {
-    echo "Displaying all $service_name configurations..."
-    local nodes
-    nodes=$(get_nodes_list -nt "$nodes_type")
+#cat_conf() {
+#    echo "Displaying all $service_name configurations..."
+#    local nodes
+#    nodes=$(get_nodes_list -nt "$nodes_type")
+#
+#    for node in $nodes; do
+#        local node_name="${node%%:*}"
+#        local node_ip="${node#*:}"
+#        echo -e "${cyan}Configuration on $node_name:${normal}"
+#        ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+#            "sudo cat $conf_dir/$CONF_NAME 2>/dev/null || echo 'Configuration file not found'"
+#        echo "----------------------------------------"
+#    done
+#}
 
+# Function to display configuration files - returns config content
+cat_conf() {
+    local nodes_list="$1"
+
+#    # If no nodes provided, get all nodes
+#    if [ -z "$nodes_list" ]; then
+#        nodes_list=$(get_node_names)
+#    fi
+
+    # Take only the first node for config reading
+    local first_node
+    first_node=$(echo "$nodes_list" | awk '{print $1}')
+
+    if [ -z "$first_node" ]; then
+        echo -e "${red}No nodes provided${normal}" >&2
+        return 1
+    fi
+
+#    # Get node IP for the first node
+#    local nodes
+#    nodes=$(get_nodes_list -nt "$nodes_type")
+#    local node_ip=""
+#
+#    for node in $nodes; do
+#        local node_name="${node%%:*}"
+#        local current_ip="${node#*:}"
+#        if [ "$node_name" = "$first_node" ]; then
+#            node_ip="$current_ip"
+#            break
+#        fi
+#    done
+
+#    if [ -z "$node_ip" ]; then
+#        echo -e "${red}Could not find IP for node: $first_node${normal}" >&2
+#        return 1
+#    fi
+
+    config_content=""
     for node in $nodes; do
         local node_name="${node%%:*}"
         local node_ip="${node#*:}"
-        echo -e "${cyan}Configuration on $node_name:${normal}"
-        ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
-            "sudo cat $conf_dir/$CONF_NAME 2>/dev/null || echo 'Configuration file not found'"
-        echo "----------------------------------------"
+
+        local node_config
+        node_config=$(ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+            "sudo cat $conf_dir/$CONF_NAME 2>/dev/null")
+
+        if [ -n "$node_config" ]; then
+            if [ -n "$config_content" ]; then
+                config_content="${config_content}\n---\n"
+            fi
+            config_content="${config_content}# Config from $node_name\n${node_config}"
+        fi
     done
+    return 0
 }
 
 # Function to pull configuration from controller node
@@ -356,6 +416,17 @@ main() {
     parse_arguments "$@"
     determine_ssh_user
 
+    # Get nodes list
+    if ! NODES=$(get_nodes_list -nt $nodes_type); then
+        exit 1
+    fi
+
+    if [ "$TS_DEBUG" = true ]; then
+    echo -e "
+[DEBUG] NODES: $NODES
+    "
+    fi
+
     if [ "$SSL_CHECK" = true ]; then
         check_ssl_config
         exit 0
@@ -372,7 +443,7 @@ main() {
     fi
 
     if [ "$ONLY_CONF_CHECK" = true ]; then
-        cat_conf
+        cat_conf "$NODES"
         exit 0
     fi
 
