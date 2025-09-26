@@ -288,7 +288,7 @@ else
 fi
 
 # Determine which nodes to check
-if [ "$ALL_CTRL" = "true" ]; then
+if [ "$ALL_CTRL" = "true" ] || [ -n "$CTRL_LIST" ]; then
     echo -e "${cyan}Checking logs on all controller nodes...${normal}"
     check_logs_on_all_ctrl
 else
