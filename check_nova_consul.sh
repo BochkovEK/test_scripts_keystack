@@ -356,10 +356,26 @@ check_containers() {
 #        echo -e "${red}ERROR: Container $container_name has issues on $node_name${normal}"
 }
 
+# Function to check ssl config
+check_ssl_config() {
+#    echo -e "${cyan}Checking SSL configuration...${normal}"
+
+    local ssl_config_output
+    [ ! -f "$script_dir/$edit_ha_config_script" ] && {
+      echo -e "${yellow}Script $edit_ha_config_script does not exist in $script_dir/${normal}";
+      return 1;
+      }
+    ssl_config_output=$(bash "$script_dir/$edit_ha_config_script" -u "$SSH_USER" "-ssl_check"| tail -n1)
+#    ssl_type=$(echo "$ssl_config_output" )
+    echo "$ssl_config_output"
+    return 0
+}
+
 # Function to check consul members list
 check_consul_members() {
     echo -e "${violet}Checking consul members list...${normal}"
 
+    local ssl_config_output
     local ctrl_nodes
     local first_ctrl_node_pair
     local members_list
@@ -471,21 +487,24 @@ check_consul_config() {
     fi
 }
 
+# Function to determine SSH user
+determine_ssh_user() {
+    if [ -z "$SSH_USER" ]; then
+        SSH_USER=$(whoami 2>/dev/null) || {
+            echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
+            SSH_USER="$default_ssh_user"
+        }
+    fi
+
+    if [ -z "$SSH_USER" ]; then
+        echo -e "${red}Error: Failed to determine SSH user!${normal}" >&2
+        exit 1
+    fi
+}
+
 # Main execution
 
-# Determine SSH user
-if [[ -z "$SSH_USER" ]]; then
-    SSH_USER=$(whoami 2>/dev/null) || {
-        echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
-        SSH_USER="$default_ssh_user"
-    }
-fi
-
-# Validate SSH user
-if [[ -z "$SSH_USER" ]]; then
-    echo -e "${red}Error: Failed to determine SSH user!${normal}" >&2
-    exit 1
-fi
+determine_ssh_user
 
 # Execute checks
 check_openstack_cli

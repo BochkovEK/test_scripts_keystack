@@ -177,11 +177,11 @@ check_consul_log_one_node() {
 
 # Function to check logs on all controller nodes
 check_logs_on_all_ctrl() {
-    local ctrl_nodes
-    ctrl_nodes=$(get_nodes_list "nt" "ctrl")
-    [ $? -ne 0 ] && return 1
+#    local ctrl_nodes
+#    ctrl_nodes=$(get_nodes_list "nt" "ctrl")
+#    [ $? -ne 0 ] && return 1
 
-    for node_info in $ctrl_nodes; do
+    for node_info in $NODES; do
         local node_name="${node_info%%:*}"
         echo -e "${cyan}Checking logs on $node_name...${normal}"
         check_consul_log_one_node "$node_name"
