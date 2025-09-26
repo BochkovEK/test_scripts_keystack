@@ -103,34 +103,34 @@ check_ssl_config() {
         echo -e "${red}Configuration file not found: $config_file${normal}"
         return 1
     fi
-
-    [ "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG]:
-        config_file:
-        $config_file
-    "
-
+#
+#    [ "$TS_DEBUG" = true ] && echo -e "
+#    [DEBUG]:
+#        config_file:
+#        $config_file
+#    "
+#
 #    # Check if client key exists in config
 #    if ! echo "$config_file" | grep -q "client_key = .*\.pem"; then
 #        echo -e "${yellow}No SSL client key found in configuration${normal}"
 #        return 1
 #    fi
-
-    # Extract SSL parameters with better parsing
-    local https_ssl_verify client_key client_cert
-
-    # Extract values with proper handling of quotes and spaces
-    https_ssl_verify=$(grep -E "^https_ssl_verify\s*=" "$config_file" | head -1 | awk -F= '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
-    client_key=$(grep -E "^client_key\s*=" "$config_file" | head -1 | awk -F= '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
-    client_cert=$(grep -E "^client_cert\s*=" "$config_file" | head -1 | awk -F= '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
-
-    # Set default values if not found or empty
-    https_ssl_verify="${https_ssl_verify:-/etc/pki/tls/certs/ca-bundle.crt}"
-    client_key="${client_key:-/etc/consul/certs/consul-key.pem}"
-    client_cert="${client_cert:-/etc/consul/certs/consul-cert.pem}"
-
-    # Return formatted string
-    echo "mtls; https_ssl_verify = $https_ssl_verify; client_key = $client_key; client_cert = $client_cert"
+#
+#    # Extract SSL parameters with better parsing
+#    local https_ssl_verify client_key client_cert
+#
+#    # Extract values with proper handling of quotes and spaces
+#    https_ssl_verify=$(grep -E "^https_ssl_verify\s*=" "$config_file" | head -1 | awk -F= '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
+#    client_key=$(grep -E "^client_key\s*=" "$config_file" | head -1 | awk -F= '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
+#    client_cert=$(grep -E "^client_cert\s*=" "$config_file" | head -1 | awk -F= '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
+#
+#    # Set default values if not found or empty
+#    https_ssl_verify="${https_ssl_verify:-/etc/pki/tls/certs/ca-bundle.crt}"
+#    client_key="${client_key:-/etc/consul/certs/consul-key.pem}"
+#    client_cert="${client_cert:-/etc/consul/certs/consul-cert.pem}"
+#
+#    # Return formatted string
+#    echo "mtls; https_ssl_verify = $https_ssl_verify; client_key = $client_key; client_cert = $client_cert"
     return 0
 }
 
