@@ -12,6 +12,7 @@ check_openrc_script="check_openrc.sh"
 check_openstack_cli_script="check_openstack_cli.sh"
 get_nodes_list_script="get_nodes_list.sh"
 edit_ha_config_script="edit_ha_config.sh"
+check_consul_log_script="check_consul_log.sh"
 try_to_rise_compute_node_script="try_to_rise_compute_node.sh"
 check_container_state_on_nodes_script="check_container_state_on_nodes.sh"
 default_ssh_user="root"
@@ -376,28 +377,51 @@ check_consul_members() {
     echo -e "${violet}Checking consul members list...${normal}"
 
     local ssl_config_output
-    local ctrl_nodes
-    local first_ctrl_node_pair
+    local first_ctrl_node
     local members_list
+
+    local ctrl_nodes
     ctrl_nodes=$(bash "$utils_dir/$get_nodes_list_script" -nt ctrl)
+    local first_ctrl_node
     first_ctrl_node_pair=$(echo "$ctrl_nodes" | awk '{print $1}')
-    if [ "$TS_DEBUG" = true ]; then
-    echo -e "
-    [DEBUG]
-        ctrl_nodes: $ctrl_nodes
-        first_ctrl_node: $first_ctrl_node
-    "
-    fi
+
     if [ -n "$first_ctrl_node_pair" ]; then
         local node_name="${first_ctrl_node_pair%%:*}"
         local node_ip="${first_ctrl_node_pair#*:}"
-        if [ "$TS_DEBUG" = true ]; then
-            echo -e "
-    [DEBUG]
-        command: ssh -t -o StrictHostKeyChecking=no \"$SSH_USER@$node_ip\" \"sudo $CONTAINER_ENGINE exec -it consul consul members list\" 2>/dev/null
-    "
+    else
+        echo -e "${yellow}Failed to define any ctrl node${normal}"
+        return 1
+    fi
+
+    if ssl_config_output=$(check_ssl_config); then
+        IFS=';' read -r -a parts <<< "$ssl_config_output"
+
+        mode="${parts[0]}"  # "mtls"
+        https_ssl_verify=$(echo "${parts[1]}" | awk -F' = ' '{print $2}' | xargs)
+        client_key=$(echo "${parts[2]}" | awk -F' = ' '{print $2}' | xargs)
+        client_cert=$(echo "${parts[3]}" | awk -F' = ' '{print $2}' | xargs)
+
+        if [ "$mode" = "mtls" ];then
+            [ "$TS_DEBUG" = true ] && echo -e "
+    members_list=\$(ssh -t -o StrictHostKeyChecking=no \"$SSH_USER@$node_ip\" \
+        \"sudo $CONTAINER_ENGINE exec -it consul consul members list
+        -http-addr=https://$node_ip:8501 -ca-file $https_ssl_verify
+        -client-cert $client_cert
+        -client-key $client_key 2>/dev/null\")
+                "
+            members_list=$(ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+                "sudo $CONTAINER_ENGINE exec -it consul consul members list \
+                -http-addr=https://$node_ip:8501 -ca-file $https_ssl_verify \
+                -client-cert $client_cert \
+                -client-key $client_key 2>/dev/null")
+        else
+            [ "$TS_DEBUG" = true ] && echo -e "
+    members_list=\$(ssh -t -o StrictHostKeyChecking=no \"$SSH_USER@$node_ip\" \
+        \"sudo $CONTAINER_ENGINE exec -it consul consul members list 2>/dev/null\")
+            "
+            members_list=$(ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+                "sudo $CONTAINER_ENGINE exec -it consul consul members list 2>/dev/null")
         fi
-        members_list=$(ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" "sudo $CONTAINER_ENGINE exec -it consul consul members list" 2>/dev/null)
 
         if [ -n "$members_list" ]; then
             echo "$members_list" | \
@@ -419,34 +443,50 @@ check_consul_logs() {
     local ctrl_nodes
     ctrl_nodes=$(bash "$utils_dir/$get_nodes_list_script" -nt ctrl)
     local first_ctrl_node
-    first_ctrl_node=$(echo "$ctrl_nodes" | awk '{print $1}')
+    first_ctrl_node_pair=$(echo "$ctrl_nodes" | awk '{print $1}')
 
-    if [ -n "$first_ctrl_node" ]; then
-        local leader_node
-        local node_name="${first_ctrl_node%%:*}"
-        local node_ip="${first_ctrl_node#*:}"
-        leader_node=$(ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" "sudo $CONTAINER_ENGINE exec -it consul consul operator raft list-peers" 2>/dev/null | grep leader | awk '{print $1}')
-
-        if [ -n "$leader_node" ]; then
-            echo "Leader consul node is $leader_node"
-            leader_node_pair=$(get_nodes_list -nn "$leader_node")
-            local leader_node_name="${leader_node_pair%%:*}"
-            local leader_node_ip="${leader_node_pair#*:}"
-            echo -e "${yellow}ssh -o StrictHostKeyChecking=no \"$SSH_USER@$leader_node_ip\" sudo less /var/log/kolla/autoevacuate.log${normal}"
-
-            ssh -o StrictHostKeyChecking=no "$SSH_USER@$leader_node_ip" "sudo tail -n 50 /var/log/kolla/autoevacuate.log 2>/dev/null" | \
-                sed --unbuffered \
-                    -e 's/\(.*Force off.*\)/\o033[31m\1\o033[39m/' \
-                    -e 's/\(.*Server.*\)/\o033[33m\1\o033[39m/' \
-                    -e 's/\(.*Evacuating instance.*\)/\o033[33m\1\o033[39m/' \
-                    -e 's/\(.*Starting fence.*\)/\o033[31m\1\o033[39m/' \
-                    -e 's/\(.*IPMI \"power off\".*\)/\o033[31m\1\o033[39m/' \
-                    -e 's/\(.*disabled,.*\)/\o033[33m\1\o033[39m/' \
-                    -e 's/\(.*state: down.*\)/\o033[33m\1\o033[39m/' \
-                    -e 's/\(.*CRITICAL.*\)/\o033[31m\1\o033[39m/' \
-                    -e 's/\(.*WARNING.*\)/\o033[33m\1\o033[39m/'
-        fi
+    if [ -n "$first_ctrl_node_pair" ]; then
+        local node_name="${first_ctrl_node_pair%%:*}"
+        local node_ip="${first_ctrl_node_pair#*:}"
+    else
+        echo -e "${yellow}Failed to define any ctrl node${normal}"
+        return 1
     fi
+
+    if [ -f "$script_dir/$check_consul_log_script" ]; then
+        echo -e "${yellow}$check_consul_log_script not exists in $script_dir${normal}"
+        return 1
+    fi
+
+    bash "$utils_dir/$check_consul_log_script" -ctrl_list "$node_name"
+
+    return 0
+#    if [ -n "$first_ctrl_node" ]; then
+#        local leader_node
+#        local node_name="${first_ctrl_node%%:*}"
+#        local node_ip="${first_ctrl_node#*:}"
+#        leader_node=$(ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" "sudo $CONTAINER_ENGINE exec -it consul consul operator raft list-peers" 2>/dev/null | grep leader | awk '{print $1}')
+#
+#        if [ -n "$leader_node" ]; then
+#            echo "Leader consul node is $leader_node"
+#            leader_node_pair=$(get_nodes_list -nn "$leader_node")
+#            local leader_node_name="${leader_node_pair%%:*}"
+#            local leader_node_ip="${leader_node_pair#*:}"
+#            echo -e "${yellow}ssh -o StrictHostKeyChecking=no \"$SSH_USER@$leader_node_ip\" sudo less /var/log/kolla/autoevacuate.log${normal}"
+#
+#            ssh -o StrictHostKeyChecking=no "$SSH_USER@$leader_node_ip" "sudo tail -n 50 /var/log/kolla/autoevacuate.log 2>/dev/null" | \
+#                sed --unbuffered \
+#                    -e 's/\(.*Force off.*\)/\o033[31m\1\o033[39m/' \
+#                    -e 's/\(.*Server.*\)/\o033[33m\1\o033[39m/' \
+#                    -e 's/\(.*Evacuating instance.*\)/\o033[33m\1\o033[39m/' \
+#                    -e 's/\(.*Starting fence.*\)/\o033[31m\1\o033[39m/' \
+#                    -e 's/\(.*IPMI \"power off\".*\)/\o033[31m\1\o033[39m/' \
+#                    -e 's/\(.*disabled,.*\)/\o033[33m\1\o033[39m/' \
+#                    -e 's/\(.*state: down.*\)/\o033[33m\1\o033[39m/' \
+#                    -e 's/\(.*CRITICAL.*\)/\o033[31m\1\o033[39m/' \
+#                    -e 's/\(.*WARNING.*\)/\o033[33m\1\o033[39m/'
+#        fi
+#    fi
 }
 
 # Function to check consul configuration
@@ -455,7 +495,7 @@ check_consul_config() {
 
     local ctrl_nodes
     ctrl_nodes=$(bash "$utils_dir/$get_nodes_list_script" -nt ctrl)
-    local first_ctrl_node
+    local first_ctrl_node_pair
     first_ctrl_node_pair=$(echo "$ctrl_nodes" | awk '{print $1}')
 
     if [ -n "$first_ctrl_node_pair" ]; then
