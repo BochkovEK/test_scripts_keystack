@@ -104,10 +104,6 @@ check_ssl_config() {
         return 1
     fi
 
-    echo "config_file:
-    $config_file
-    "
-
     [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG]:
         config_file:
@@ -289,7 +285,7 @@ cat_conf() {
             config_content="${config_content}# Config from $node_name\n${node_config}"
         fi
     done
-    echo $config_content
+    echo "$config_content"
     return 0
 }
 

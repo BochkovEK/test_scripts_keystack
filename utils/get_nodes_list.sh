@@ -20,7 +20,7 @@ normal=$(tput sgr0)
 # Default values
 [[ -z $NODES_TYPE ]] && NODES_TYPE="all"
 [[ -z $NODES_NAME ]] && NODES_NAME=""
-[[ -z $TS_DEBUG ]] && TS_DEBUG="false"
+[[ -z $TS_UTILS_DEBUG ]] && TS_UTILS_DEBUG="false"
 [[ -z $TS_HOSTS_PATH ]] && TS_HOSTS_PATH="$default_hosts_path"
 [[ -z $RETURN_TYPE_NODE_NAME ]] && RETURN_TYPE_NODE_NAME=""
 [[ -n $RMI_SUFFIX ]] && RMI_SUFFIX=$default_rmi_suffix
@@ -32,7 +32,7 @@ count=1
 define_parameters() {
   [ "$count" = 1 ] && [[ -n $1 ]] && {
     NODES_TYPE="$1"
-    [ "$TS_DEBUG" = true ] && echo -e "Nodes type parameter found with value $NODES_TYPE"
+    [ "$TS_UTILS_DEBUG" = true ] && echo -e "Nodes type parameter found with value $NODES_TYPE"
   }
 }
 
@@ -59,37 +59,37 @@ while [ -n "$1" ]; do
       ;;
 
     -debug)
-      TS_DEBUG="true"
-      [ "$TS_DEBUG" = true ] && echo -e "Debug mode enabled"
+      TS_UTILS_DEBUG="true"
+      [ "$TS_UTILS_DEBUG" = true ] && echo -e "Debug mode enabled"
       ;;
 
     -nt|-type_of_nodes)
       NODES_TYPE="$2"
-      [ "$TS_DEBUG" = true ] && echo -e "Node type set to: $NODES_TYPE"
+      [ "$TS_UTILS_DEBUG" = true ] && echo -e "Node type set to: $NODES_TYPE"
       shift
       ;;
 
     -suffix)
       RMI_SUFFIX="$2"
-      [ "$TS_DEBUG" = true ] && echo -e "RMI suffix set to: $RMI_SUFFIX"
+      [ "$TS_UTILS_DEBUG" = true ] && echo -e "RMI suffix set to: $RMI_SUFFIX"
       shift
       ;;
 
     -nn|-nodes_name)
       NODES_NAME="$2"
-      [ "$TS_DEBUG" = true ] && echo -e "Node names set to: $NODES_NAME"
+      [ "$TS_UTILS_DEBUG" = true ] && echo -e "Node names set to: $NODES_NAME"
       shift
       ;;
 
     -return_type)
       RETURN_TYPE_NODE_NAME="$2"
-      [ "$TS_DEBUG" = true ] && echo -e "Return type for node: $RETURN_TYPE_NODE_NAME"
+      [ "$TS_UTILS_DEBUG" = true ] && echo -e "Return type for node: $RETURN_TYPE_NODE_NAME"
       shift
       ;;
 
     -h|-hosts_path)
       TS_HOSTS_PATH="$2"
-      [ "$TS_DEBUG" = true ] && echo -e "Hosts file path set to: $TS_HOSTS_PATH"
+      [ "$TS_UTILS_DEBUG" = true ] && echo -e "Hosts file path set to: $TS_HOSTS_PATH"
       shift
       ;;
 
@@ -99,7 +99,7 @@ while [ -n "$1" ]; do
       ;;
 
     *)
-      [ "$TS_DEBUG" = true ] && echo -e "Parameter #$count: $1"
+      [ "$TS_UTILS_DEBUG" = true ] && echo -e "Parameter #$count: $1"
       define_parameters "$1"
       count=$((count + 1))
       ;;
@@ -138,7 +138,7 @@ resolve_hostname_to_ips() {
 
 # Function to parse hosts file and extract nodes
 parse_hosts() {
-    [ "$TS_DEBUG" = true ] && echo "Parsing $TS_HOSTS_PATH for pattern: $nodes_to_find"
+    [ "$TS_UTILS_DEBUG" = true ] && echo "Parsing $TS_HOSTS_PATH for pattern: $nodes_to_find"
 
     # Populate NODES array from hosts file
     if [ ${#NODES[@]} -eq 0 ]; then
@@ -148,7 +148,7 @@ parse_hosts() {
         done < <(grep -E "$nodes_to_find" "$TS_HOSTS_PATH" | grep -v '^#' | awk '{print $2}')
     fi
 
-    [ "$TS_DEBUG" = true ] && printf "Found nodes: %s\n" "${NODES[*]}"
+    [ "$TS_UTILS_DEBUG" = true ] && printf "Found nodes: %s\n" "${NODES[*]}"
 
     # Resolve hostnames to IPs
     resolve_hostname_to_ips
@@ -167,36 +167,36 @@ nodes_list_by_type() {
     case "$node_type" in
         lcm)
             nodes_to_find="$lcm_pattern"
-            [ "$TS_DEBUG" = true ] && echo -e "Looking for lcm nodes"
+            [ "$TS_UTILS_DEBUG" = true ] && echo -e "Looking for lcm nodes"
             parse_hosts
             ;;
         ctrl)
             nodes_to_find="$ctrl_pattern"
-            [ "$TS_DEBUG" = true ] && echo -e "Looking for controller nodes"
+            [ "$TS_UTILS_DEBUG" = true ] && echo -e "Looking for controller nodes"
             parse_hosts
             ;;
 
         comp|cmpt)
             nodes_to_find="$comp_pattern"
-            [ "$TS_DEBUG" = true ] && echo -e "Looking for compute nodes"
+            [ "$TS_UTILS_DEBUG" = true ] && echo -e "Looking for compute nodes"
             parse_hosts
             ;;
 
         net)
             nodes_to_find="$net_pattern"
-            [ "$TS_DEBUG" = true ] && echo -e "Looking for network nodes"
+            [ "$TS_UTILS_DEBUG" = true ] && echo -e "Looking for network nodes"
             parse_hosts
             ;;
 
         rmi)
             nodes_to_find="$RMI_SUFFIX"
-            [ "$TS_DEBUG" = true ] && echo -e "Looking for network nodes"
+            [ "$TS_UTILS_DEBUG" = true ] && echo -e "Looking for network nodes"
             parse_hosts
             ;;
 
         all)
             nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern|$lcm_pattern"
-            [ "$TS_DEBUG" = true ] && echo -e "Looking for all node types"
+            [ "$TS_UTILS_DEBUG" = true ] && echo -e "Looking for all node types"
             parse_hosts
             ;;
 
@@ -209,12 +209,12 @@ nodes_list_by_type() {
 
 # Function to return type of specific node
 return_type() {
-    [ "$TS_DEBUG" = true ] && echo -e "Determining type for node: $RETURN_TYPE_NODE_NAME"
+    [ "$TS_UTILS_DEBUG" = true ] && echo -e "Determining type for node: $RETURN_TYPE_NODE_NAME"
 
     local node_info
     node_info=$(grep -i "$RETURN_TYPE_NODE_NAME" "$TS_HOSTS_PATH" 2>/dev/null)
 
-    [ "$TS_DEBUG" = true ] && echo -e "Node info found: $node_info"
+    [ "$TS_UTILS_DEBUG" = true ] && echo -e "Node info found: $node_info"
 
     case "$node_info" in
         *ctrl*)
@@ -245,7 +245,7 @@ fi
 
 # If specific node names are provided, resolve them
 if [ -n "$NODES_NAME" ]; then
-    [ "$TS_DEBUG" = true ] && echo -e "Processing specific node names: $NODES_NAME"
+    [ "$TS_UTILS_DEBUG" = true ] && echo -e "Processing specific node names: $NODES_NAME"
 
     # Convert space-separated string to array
     IFS=' ' read -ra NODES <<< "$NODES_NAME"
