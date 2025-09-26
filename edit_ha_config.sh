@@ -274,7 +274,7 @@ cat_conf() {
 #    fi
 
     config_content=""
-    for node in $nodes; do
+    for node in $nodes_list; do
         local node_name="${node%%:*}"
         local node_ip="${node#*:}"
 
