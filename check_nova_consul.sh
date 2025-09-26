@@ -387,7 +387,9 @@ check_consul_members() {
             echo "$members_list" | \
                 sed --unbuffered \
                     -e 's/\(.*alive.*\)/\o033[92m\1\o033[39m/' \
-                    -e 's/\(.*failed.*\)/\o033[31m\1\o033[39m/'
+                    -e 's/\(.*failed.*\)/\o033[31m\1\o033[39m/' \
+                    -e 's/\(.*Error.*\)/\o033[31m\1\o033[39m/' \
+                    -e 's/\(.*error.*\)/\o033[31m\1\o033[39m/'
         else
             echo -e "${red}Failed to get consul members list${normal}"
         fi

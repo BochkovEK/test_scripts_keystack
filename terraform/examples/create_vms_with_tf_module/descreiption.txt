@@ -1,6 +1,6 @@
 # Create VMs by config in module folder
 # Config name <name>.auto.tfvars
-# Config-json like this:
+# Config-json like examples below
 
 terraform plan -var-file ubuntu_vm.auto.tfavrs -out=plan.tfplan
 terraform apply "plan.tfplan"
@@ -12,6 +12,7 @@ VMs = {
     <vm_name> = {
         vm_qty                              = <vms_quantity> # required
         image_name                          = "<image_name>" # default "cirros-0.6.2-x86_64-disk.img"
+        config_drive                        = true # if it is necessary to use config_drive
         flavor_name                         = "<existing_flavor_name>"
         # or create new flavor
         flavor                              = {

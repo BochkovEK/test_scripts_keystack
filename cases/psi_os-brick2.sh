@@ -213,7 +213,7 @@ detach_and_delete_volumes() {
     # Stop the server
     openstack server stop "$server"
     echo "Waiting for server to stop..."
-    watch -n3 "openstack server list --name $server"
+    watch -n3 "echo wait for 'SHUTOFF' state VM $server; openstack server list --name $server"
 
     echo "Detach non-boot volumes..."
     read -p "Press Enter to continue: "

@@ -34,9 +34,9 @@ create_image_script_script="openstack/create_image.sh"
 green=$(tput setaf 2)
 red=$(tput setaf 1)
 orange=$(tput setaf 3)
-violet=$(tput setaf 5)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
+#violet=$(tput setaf 5)
 
 # Constants
 TIMEOUT_BEFORE_NEXT_CREATION=10
