@@ -11,7 +11,7 @@ yes_no_script="$utils_dir/yes_no_answer.sh"
 check_openrc_script="check_openrc.sh"
 check_openstack_cli_script="check_openstack_cli.sh"
 get_nodes_list_script="get_nodes_list.sh"
-edit_ha_region_config_script="edit_ha_config.sh"
+edit_ha_config_script="edit_ha_config.sh"
 try_to_rise_compute_node_script="try_to_rise_compute_node.sh"
 check_container_state_on_nodes_script="check_container_state_on_nodes.sh"
 default_ssh_user="root"
@@ -231,7 +231,7 @@ check_ipmi_connections() {
     local ctrl_nodes rmi_nodes
 
     local suffix_output suffix
-    suffix_output=$(bash "$script_dir/$edit_ha_region_config_script" -u "$SSH_USER" "-suffix")
+    suffix_output=$(bash "$script_dir/$edit_ha_config_script" -u "$SSH_USER" "-suffix")
     suffix=$(echo "$suffix_output" | tail -n1 | sed 's/^-//')
     echo "BMC_SUFFIX: $suffix"
 
@@ -446,7 +446,7 @@ check_consul_config() {
         local config_path
         local node_name="${first_ctrl_node_pair%%:*}"
         local node_ip="${first_ctrl_node_pair#*:}"
-        config_path=$(bash "$script_dir/$edit_ha_region_config_script" config_path 2>/dev/null | tail -n1)
+        config_path=$(bash "$script_dir/$edit_ha_config_script" config_path 2>/dev/null | tail -n1)
 
         if [ -n "$config_path" ]; then
             echo -e "${ORANGE}ssh -t -o StrictHostKeyChecking=no \"$SSH_USER@$node_ip\" sudo cat $config_path${NC}"

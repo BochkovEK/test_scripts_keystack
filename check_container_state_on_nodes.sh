@@ -249,21 +249,28 @@ check_container_status() {
             -e 's/\(.*restarting.*\)/\o033[31m\1\o033[39m/'
 }
 
+# Get ssh user
+get_ssh_user () {
+    # Determine SSH user
+    if [[ -z "$SSH_USER" ]]; then
+        SSH_USER=$(whoami 2>/dev/null) || {
+            echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
+            SSH_USER="$default_ssh_user"
+        }
+    fi
+
+    # Final user validation
+    if [[ -z "$SSH_USER" ]]; then
+        echo -e "${red}Error: Failed to determine SSH user!${normal}" >&2
+        exit 1
+    fi
+}
+
+
 # Main execution
 
 # Determine SSH user
-if [[ -z "$SSH_USER" ]]; then
-    SSH_USER=$(whoami 2>/dev/null) || {
-        echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
-        SSH_USER="$default_ssh_user"
-    }
-fi
-
-# Validate SSH user
-if [[ -z "$SSH_USER" ]]; then
-    echo -e "${red}Error: Failed to determine SSH user!${normal}" >&2
-    exit 1
-fi
+get_ssh_user
 
 # Get nodes list
 if [ -n "$NODES_NAME" ]; then

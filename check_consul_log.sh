@@ -6,6 +6,7 @@
 script_dir=$(dirname "$0")
 utils_dir="$script_dir/utils"
 get_nodes_list_script="get_nodes_list.sh"
+edit_ha_config_script="edit_ha_config.sh"
 default_ssh_user="root"
 default_container_engine="docker"
 
@@ -167,6 +168,21 @@ check_logs_on_all_ctrl() {
     done
 }
 
+# Function to check ssl config
+check_ssl_config() {
+    echo -e "${cyan}Checking SSL configuration...${normal}"
+
+    local ssl_config_output ssl_type
+    [ ! -f "$script_dir/$edit_ha_config_script" ] && {
+      echo -e "${yellow}Script $edit_ha_config_script does not exist in $script_dir/${normal}";
+      return 1;
+      }
+    ssl_config_output=$(bash "$script_dir/$edit_ha_config_script" -u "$SSH_USER" "-ssl_check")
+    ssl_type=$(echo "$ssl_config_output" | tail -n1)
+    echo "SSL type: $ssl_type"
+    return 0
+}
+
 # Function to find consul leader node
 find_consul_leader() {
     local ctrl_nodes="$1"
@@ -176,6 +192,15 @@ find_consul_leader() {
         local node_ip="${node_info#*:}"
 
         local leader
+
+        if ssl_type=$(check_ssl_config | tail -n 1); then
+            if [ "$ssl_type" = "mtls" ];then
+                leader=$(ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+                    "sudo $CONTAINER_ENGINE exec consul consul operator raft list-peers 2>/dev/null" | \
+                    grep leader | awk '{print $1}')
+            fi
+        fi
+
         leader=$(ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
             "sudo $CONTAINER_ENGINE exec consul consul operator raft list-peers 2>/dev/null" | \
             grep leader | awk '{print $1}')
@@ -190,21 +215,28 @@ find_consul_leader() {
     return 1
 }
 
+# Get ssh user
+get_ssh_user () {
+    # Determine SSH user
+    if [[ -z "$SSH_USER" ]]; then
+        SSH_USER=$(whoami 2>/dev/null) || {
+            echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
+            SSH_USER="$default_ssh_user"
+        }
+    fi
+
+    # Final user validation
+    if [[ -z "$SSH_USER" ]]; then
+        echo -e "${red}Error: Failed to determine SSH user!${normal}" >&2
+        exit 1
+    fi
+}
+
+
 # Main execution
 
 # Determine SSH user
-if [[ -z "$SSH_USER" ]]; then
-    SSH_USER=$(whoami 2>/dev/null) || {
-        echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
-        SSH_USER="$default_ssh_user"
-    }
-fi
-
-# Validate SSH user
-if [[ -z "$SSH_USER" ]]; then
-    echo -e "${red}Error: Failed to determine SSH user!${normal}" >&2
-    exit 1
-fi
+get_ssh_user
 
 # Get controller nodes list
 if [ -z "$CTRL_LIST" ]; then
