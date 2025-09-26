@@ -8,7 +8,7 @@ green=$(tput setaf 2)
 red=$(tput setaf 1)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
-cyan=$(tput setaf 6)
+#cyan=$(tput setaf 6)
 
 # Service and path configuration
 service_name="consul"

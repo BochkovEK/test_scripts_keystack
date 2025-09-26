@@ -7,6 +7,7 @@ script_dir=$(dirname "$0")
 utils_dir="$script_dir/utils"
 get_nodes_list_script="get_nodes_list.sh"
 edit_ha_config_script="edit_ha_config.sh"
+nodes_type="ctrl"
 default_ssh_user="root"
 default_container_engine="docker"
 
@@ -97,18 +98,30 @@ done
 
 # Function to get nodes list using external script
 get_nodes_list() {
-    local param_type="$1"
-    local param_value="$2"
+#    [ "$TS_DEBUG" = true ] && echo -e "
+#    [DEBUG]:
+#        Count parameters: $#
+#        Parameters: $*
+#    "
 
-    local nodes
-    nodes=$(bash "$utils_dir/$get_nodes_list_script" "-$param_type" "$param_value" 2>/dev/null)
+    local nodes_result=""
 
-    if [ -z "$nodes" ] || echo "$nodes" | grep -q "ERROR"; then
-        echo -e "${red}Failed to get nodes list - ERROR${normal}" >&2
-        return 1
+    nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
+
+#    [ "$TS_DEBUG" = true ] && echo -e "
+#    [DEBUG] nodes_result: $nodes_result"
+
+    if [ -z "$nodes_result" ]; then
+        echo -e "${red}Failed to determine node list - ERROR${normal}"
+        exit 1
+    elif echo "$nodes_result" | grep -q "ERROR"; then
+        echo -e "${yellow}Node names could not be determined.${normal}"
+        echo -e "${yellow}Try: bash $utils_dir/$get_nodes_list_script -nt all${normal}"
+        echo -e "${red}Node names could not be determined - ERROR!${normal}"
+        exit 1
+    else
+        echo "$nodes_result"
     fi
-
-    echo "$nodes"
 }
 
 # Function to check consul logs on a single node
@@ -170,40 +183,51 @@ check_logs_on_all_ctrl() {
 
 # Function to check ssl config
 check_ssl_config() {
-    echo -e "${cyan}Checking SSL configuration...${normal}"
+#    echo -e "${cyan}Checking SSL configuration...${normal}"
 
-    local ssl_config_output ssl_type
+    local ssl_config_output
     [ ! -f "$script_dir/$edit_ha_config_script" ] && {
       echo -e "${yellow}Script $edit_ha_config_script does not exist in $script_dir/${normal}";
       return 1;
       }
-    ssl_config_output=$(bash "$script_dir/$edit_ha_config_script" -u "$SSH_USER" "-ssl_check")
-    ssl_type=$(echo "$ssl_config_output" | tail -n1)
-    echo "SSL type: $ssl_type"
+    ssl_config_output=$(bash "$script_dir/$edit_ha_config_script" -u "$SSH_USER" "-ssl_check"| tail -n1)
+#    ssl_type=$(echo "$ssl_config_output" )
+    echo "$ssl_config_output"
     return 0
 }
 
 # Function to find consul leader node
 find_consul_leader() {
-    local ctrl_nodes="$1"
+#    local ctrl_nodes="$1"
+    local ssl_config_output
 
-    for node_info in $ctrl_nodes; do
+    for node_info in $NODES; do
         local node_name="${node_info%%:*}"
         local node_ip="${node_info#*:}"
 
         local leader
 
-        if ssl_type=$(check_ssl_config | tail -n 1); then
-            if [ "$ssl_type" = "mtls" ];then
+        if ssl_config_output=$(check_ssl_config); then
+            IFS=';' read -r -a parts <<< "$ssl_config_output"
+
+            mode="${parts[0]}"  # "mtls"
+            https_ssl_verify=$(echo "${parts[1]}" | awk -F' = ' '{print $2}' | xargs)
+            client_key=$(echo "${parts[2]}" | awk -F' = ' '{print $2}' | xargs)
+            client_cert=$(echo "${parts[3]}" | awk -F' = ' '{print $2}' | xargs)
+
+            if [ "$mode" = "mtls" ];then
+                leader=$(ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+                    "sudo $CONTAINER_ENGINE consul operator raft list-peers
+                     -http-addr=https://$node_ip:8501 -ca-file $https_ssl_verify
+                     -client-cert $client_cert
+                     -client-key $client_key 2>/dev/null" | \
+                    grep leader | awk '{print $1}')
+            else
                 leader=$(ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
                     "sudo $CONTAINER_ENGINE exec consul consul operator raft list-peers 2>/dev/null" | \
                     grep leader | awk '{print $1}')
             fi
         fi
-
-        leader=$(ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
-            "sudo $CONTAINER_ENGINE exec consul consul operator raft list-peers 2>/dev/null" | \
-            grep leader | awk '{print $1}')
 
         if [ -n "$leader" ]; then
             echo "$leader"
@@ -240,10 +264,10 @@ get_ssh_user
 
 # Get controller nodes list
 if [ -z "$CTRL_LIST" ]; then
-    CTRL_NODES=$(get_nodes_list "nt" "ctrl")
+    NODES=$(get_nodes_list "nt" "$nodes_type")
     [ $? -ne 0 ] && exit 1
 else
-    CTRL_NODES=$(get_nodes_list "nn" "$CTRL_LIST")
+    NODES=$(get_nodes_list "nn" "$CTRL_LIST")
     [ $? -ne 0 ] && exit 1
 fi
 
@@ -253,7 +277,7 @@ if [ "$ALL_CTRL" = "true" ]; then
     check_logs_on_all_ctrl
 else
     # Try to find consul leader
-    LEADER_NODE=$(find_consul_leader "$CTRL_NODES")
+    LEADER_NODE=$(find_consul_leader)
 
     if [ -n "$LEADER_NODE" ]; then
         echo -e "${cyan}Found consul leader: $LEADER_NODE${normal}"
