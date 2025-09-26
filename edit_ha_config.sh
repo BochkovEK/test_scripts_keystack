@@ -287,7 +287,7 @@ cat_conf() {
             config_content="${config_content}# Config from $node_name\n${node_config}"
         fi
     done
-    echo "$config_content"
+    echo -e "$config_content"
     return 0
 }
 
