@@ -99,6 +99,12 @@ check_ssl_config() {
 #        return 1
 #    fi
 
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG]:
+        config_file:
+        $config_file
+    "
+
     # Check if client key exists in config
     if ! grep -q "client_key = .*\.pem" "$config_file"; then
         echo -e "${yellow}No SSL client key found in configuration${normal}"
@@ -423,7 +429,7 @@ main() {
 
     if [ "$TS_DEBUG" = true ]; then
     echo -e "
-[DEBUG] NODES: $NODES
+    [DEBUG] NODES: $NODES
     "
     fi
 
