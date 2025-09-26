@@ -138,7 +138,7 @@ check_consul_log_one_node() {
 
     # Get node details using external script
     local node_info
-    node_info=$(get_nodes_list "nn" "$node_identifier")
+    node_info=$(get_nodes_list "-nn" "$node_identifier")
     [ $? -ne 0 ] && return 1
 
     local node_name="${node_info%%:*}"
