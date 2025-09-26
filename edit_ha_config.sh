@@ -120,7 +120,7 @@ check_ssl_config() {
     local https_ssl_verify client_key client_cert
 
     # Extract values with proper handling of quotes and spaces
-    https_ssl_verify=$(grep -qE "^https_ssl_verify\s*=" "$config_file" | head -1 | awk -F= '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
+    https_ssl_verify=$(echo "$config_file" | grep -qE "^https_ssl_verify\s*=" | head -1 | awk -F= '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
 #    client_key=$(grep -qE "^client_key\s*=" "$config_file" | head -1 | awk -F= '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
 #    client_cert=$(grep -qE "^client_cert\s*=" "$config_file" | head -1 | awk -F= '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
 #
