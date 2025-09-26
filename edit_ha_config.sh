@@ -139,9 +139,12 @@ get_nodes_list() {
     [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG]:
         Count parameters: $#
-        Parameters: $*"
+        Parameters: $*
+        nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
+    "
 
     local nodes_result=""
+
     nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
 
     [ "$TS_DEBUG" = true ] && echo -e "
