@@ -293,21 +293,21 @@ cat_conf() {
 pull_conf() {
     echo "Pulling $CONF_NAME from controller node..."
 
-    local nodes
+#    local nodes
     local first_node
 
     [ ! -d "$script_dir/$test_node_conf_dir" ] && mkdir -p "$script_dir/$test_node_conf_dir"
 
-    nodes=$(get_nodes_list -nt "$nodes_type")
+#    nodes=$(get_nodes_list -nt "$nodes_type")
 
     [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG]: nodes: $nodes"
 
-    first_node=$(echo "$nodes" | awk '{print $1}')
+    first_node=$(echo "$NODES" | awk '{print $1}')
 
-    if [ -z "$first_node" ]; then
-        echo -e "${red}No controller nodes found${normal}"
-        exit 1
-    fi
+#    if [ -z "$first_node" ]; then
+#        echo -e "${red}No controller nodes found${normal}"
+#        exit 1
+#    fi
 
     local node_name="${first_node%%:*}"
     local node_ip="${first_node#*:}"
