@@ -104,6 +104,10 @@ check_ssl_config() {
         return 1
     fi
 
+    echo "config_file:
+    $config_file
+    "
+
     [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG]:
         config_file:
