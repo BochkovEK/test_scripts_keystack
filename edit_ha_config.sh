@@ -110,11 +110,11 @@ check_ssl_config() {
         $config_file
     "
 
-    # Check if client key exists in config
-    if ! echo "$config_file" | grep -q "client_key = .*\.pem"; then
-        echo -e "${yellow}No SSL client key found in configuration${normal}"
-        return 1
-    fi
+#    # Check if client key exists in config
+#    if ! echo "$config_file" | grep -q "client_key = .*\.pem"; then
+#        echo -e "${yellow}No SSL client key found in configuration${normal}"
+#        return 1
+#    fi
 
     # Extract SSL parameters with better parsing
     local https_ssl_verify client_key client_cert
