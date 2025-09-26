@@ -218,7 +218,7 @@ find_consul_leader() {
             if [ "$mode" = "mtls" ];then
                 echo "
                 leader=\$(ssh -t -o StrictHostKeyChecking=no \"$SSH_USER@$node_ip\" \
-                    \"sudo $CONTAINER_ENGINE exec consul consul consul operator raft list-peers
+                    \"sudo $CONTAINER_ENGINE exec consul consul operator raft list-peers
                      -http-addr=https://$node_ip:8501 -ca-file $https_ssl_verify
                      -client-cert $client_cert
                      -client-key $client_key 2>/dev/null\" | \
