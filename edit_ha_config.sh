@@ -140,8 +140,8 @@ get_nodes_list() {
     [DEBUG]:
         Count parameters: $#
         Parameters: $*
-        nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
     "
+#        nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$@\")
 
     local nodes_result=""
 
