@@ -99,8 +99,6 @@ check_ssl_config() {
         return 1
     fi
 
-
-
     if ! config_file=$(cat_conf "$first_ctrl_node"); then
         echo -e "${red}Configuration file not found: $config_file${normal}"
         return 1
