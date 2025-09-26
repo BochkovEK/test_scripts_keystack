@@ -146,7 +146,7 @@ check_consul_log_one_node() {
 
     # Determine tail command options
     local tail_options="-n $LOG_LAST_LINES_NUMBER"
-    [ "$ALL_CTRL" != "true" ] || [ -n "$CTRL_LIST" ] && tail_options="-f"
+    [ "$ALL_CTRL" != "true" ] || [ -z "$CTRL_LIST" ] && tail_options="-f"
 
     # Display log header
     ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
