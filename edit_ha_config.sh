@@ -106,7 +106,7 @@ check_ssl_config() {
     "
 
     # Check if client key exists in config
-    if ! grep -q "client_key = .*\.pem" "$config_file"; then
+    if ! echo "$config_file" | grep -q "client_key = .*\.pem"; then
         echo -e "${yellow}No SSL client key found in configuration${normal}"
         return 1
     fi
