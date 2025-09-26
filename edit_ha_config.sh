@@ -118,11 +118,11 @@ check_ssl_config() {
 
     # Extract SSL parameters with better parsing
     local https_ssl_verify client_key client_cert
-#
-#    # Extract values with proper handling of quotes and spaces
-#    https_ssl_verify=$(grep -E "^https_ssl_verify\s*=" "$config_file" | head -1 | awk -F= '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
-#    client_key=$(grep -E "^client_key\s*=" "$config_file" | head -1 | awk -F= '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
-#    client_cert=$(grep -E "^client_cert\s*=" "$config_file" | head -1 | awk -F= '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
+
+    # Extract values with proper handling of quotes and spaces
+    https_ssl_verify=$(grep -E "^https_ssl_verify\s*=" "$config_file" | head -1 | awk -F= '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
+    client_key=$(grep -E "^client_key\s*=" "$config_file" | head -1 | awk -F= '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
+    client_cert=$(grep -E "^client_cert\s*=" "$config_file" | head -1 | awk -F= '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
 #
 #    # Set default values if not found or empty
 #    https_ssl_verify="${https_ssl_verify:-/etc/pki/tls/certs/ca-bundle.crt}"
