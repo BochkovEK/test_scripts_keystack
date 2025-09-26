@@ -136,19 +136,18 @@ check_ssl_config() {
 
 # Function to get nodes list using external script
 get_nodes_list() {
-    [ "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG]:
-        Count parameters: $#
-        Parameters: $*
-    "
-#        nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$@\")
+#    [ "$TS_DEBUG" = true ] && echo -e "
+#    [DEBUG]:
+#        Count parameters: $#
+#        Parameters: $*
+#    "
 
     local nodes_result=""
 
     nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
 
-    [ "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG] nodes_result: $nodes_result"
+#    [ "$TS_DEBUG" = true ] && echo -e "
+#    [DEBUG] nodes_result: $nodes_result"
 
     if [ -z "$nodes_result" ]; then
         echo -e "${red}Failed to determine node list - ERROR${normal}"
