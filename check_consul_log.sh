@@ -24,6 +24,7 @@ cyan=$(tput setaf 14)
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
 [[ -z $CTRL_LIST ]] && CTRL_LIST=""
 [[ -z $ALL_CTRL ]] && ALL_CTRL="false"
+[[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $CONTAINER_ENGINE ]] && CONTAINER_ENGINE=$default_container_engine
 
 # Function to display help information
@@ -37,6 +38,7 @@ show_help() {
       -all_ctrl                        Check logs on all controller nodes
       -u, -user <username>             SSH username
       -ce, -container_engine <engine>  Container engine: docker or podman
+      -v, -debug                       Enable debug output
       --help                           Show this help message
 
     Examples:
@@ -79,6 +81,12 @@ while [ -n "$1" ]; do
         -ce|-container_engine)
             CONTAINER_ENGINE="$2"
             echo "Found -docker_engine with value: $CONTAINER_ENGINE"
+            shift
+            ;;
+
+        -v|-debug)
+            TS_DEBUG="true"
+            echo "Found -debug with value: $TS_DEBUG"
             shift
             ;;
 
@@ -216,8 +224,8 @@ find_consul_leader() {
             client_cert=$(echo "${parts[3]}" | awk -F' = ' '{print $2}' | xargs)
 
             if [ "$mode" = "mtls" ];then
-                echo "
-                leader=\$(ssh -t -o StrictHostKeyChecking=no \"$SSH_USER@$node_ip\" \
+                [ "$TS_DEBUG" = true ] && echo -e "
+    leader=\$(ssh -t -o StrictHostKeyChecking=no \"$SSH_USER@$node_ip\" \
                     \"sudo $CONTAINER_ENGINE exec consul consul operator raft list-peers
                      -http-addr=https://$node_ip:8501 -ca-file $https_ssl_verify
                      -client-cert $client_cert
