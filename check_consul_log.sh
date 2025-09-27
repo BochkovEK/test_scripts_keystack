@@ -35,7 +35,7 @@ show_help() {
     Options:
       -ln, -line_numbers <number>      Number of log lines to display
       -ctrl_list <nodes>               Space-separated list of controller nodes
-      -all_ctrl                        Check logs on all controller nodes
+      -all, -all_ctrl                  Check logs on all controller nodes
       -u, -user <username>             SSH username
       -ce, -container_engine <engine>  Container engine: docker or podman
       -v, -debug                       Enable debug output
@@ -67,7 +67,7 @@ while [ -n "$1" ]; do
             shift
             ;;
 
-        -all_ctrl)
+        -all|-all_ctrl)
             ALL_CTRL="true"
             echo "Found -all_ctrl option"
             ;;

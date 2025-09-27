@@ -56,112 +56,6 @@ show_help() {
     "
 }
 
-# Function to define parameters from positional arguments
-define_parameters() {
-    [ "$count" = 1 ] && [ "$1" = "suffix" ] && {
-        CHECK_SUFFIX=true
-        echo "Check suffix parameter found"
-    }
-    [ "$count" = 1 ] && [ "$1" = "config_path" ] && {
-        GET_CONFIG_PATH=true
-        echo "Get config path parameter found"
-    }
-}
-
-# Function to check for SSL client key in config
-#check_ssl_config() {
-#    local config_file="$script_dir/$test_node_conf_dir/$CONF_NAME"
-#
-#    if [ ! -f "$config_file" ]; then
-#        echo -e "${red}Configuration file not found: $config_file${normal}"
-#        return 1
-#    fi
-#
-#    if grep -q "client_key = .*\.pem" "$config_file"; then
-#        echo "mtls"
-#        return 0
-#    else
-#        echo -e "${yellow}No SSL client key found in configuration${normal}"
-#        return 1
-#    fi
-#}
-
-# Function to check for SSL client key in config and extract SSL parameters
-check_ssl_config() {
-    local config_file
-    local first_ctrl_node
-
-    # Take only the first node for config reading
-    first_ctrl_node=$(echo "$NODES" | awk '{print $1}')
-    echo "first_ctrl_node: $first_ctrl_node"
-    if [ -z "$first_ctrl_node" ]; then
-        echo -e "${red}No nodes provided${normal}" >&2
-        return 1
-    fi
-
-    if ! config_file=$(cat_conf "$first_ctrl_node"); then
-        echo -e "${red}Configuration file not found: $config_file${normal}"
-        return 1
-    fi
-
-    [ "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG]:
-        config_file:
-        $config_file
-    "
-
-    # Check if client key exists in config
-    if ! echo "$config_file" | grep -q "client_key = .*\.pem"; then
-        echo -e "${yellow}No SSL client key found in configuration${normal}"
-        return 1
-    fi
-
-    # Extract SSL parameters with better parsing
-    local https_ssl_verify client_key client_cert
-
-    # Extract values with proper handling of quotes and spaces
-    https_ssl_verify=$(echo "$config_file" | grep -qE "^https_ssl_verify\s*=" | head -1 | awk -F= '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
-    client_key=$(echo "$config_file" | grep -qE "^client_key\s*=" | head -1 | awk -F= '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
-    client_cert=$(echo "$config_file" | grep -qE "^client_cert\s*=" | head -1 | awk -F= '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
-
-    # Set default values if not found or empty
-    https_ssl_verify="${https_ssl_verify:-/etc/pki/tls/certs/ca-bundle.crt}"
-    client_key="${client_key:-/etc/consul/certs/consul-key.pem}"
-    client_cert="${client_cert:-/etc/consul/certs/consul-cert.pem}"
-
-    # Return formatted string
-    echo "mtls; https_ssl_verify = $https_ssl_verify; client_key = $client_key; client_cert = $client_cert"
-    return 0
-}
-
-# Function to get nodes list using external script
-get_nodes_list() {
-#    [ "$TS_DEBUG" = true ] && echo -e "
-#    [DEBUG]:
-#        Count parameters: $#
-#        Parameters: $*
-#    "
-
-    local nodes_result=""
-
-    nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
-
-#    [ "$TS_DEBUG" = true ] && echo -e "
-#    [DEBUG] nodes_result: $nodes_result"
-
-    if [ -z "$nodes_result" ]; then
-        echo -e "${red}Failed to determine node list - ERROR${normal}"
-        exit 1
-    elif echo "$nodes_result" | grep -q "ERROR"; then
-        echo -e "${yellow}Node names could not be determined.${normal}"
-        echo -e "${yellow}Try: bash $utils_dir/$get_nodes_list_script -nt all${normal}"
-        echo -e "${red}Node names could not be determined - ERROR!${normal}"
-        exit 1
-    else
-        echo "$nodes_result"
-    fi
-}
-
 # Parse command line arguments
 parse_arguments() {
     local count=1
@@ -223,6 +117,112 @@ parse_arguments() {
                 ;;
         esac
     done
+}
+
+# Function to define parameters from positional arguments
+define_parameters() {
+    [ "$count" = 1 ] && [ "$1" = "suffix" ] && {
+        CHECK_SUFFIX=true
+        echo "Check suffix parameter found"
+    }
+    [ "$count" = 1 ] && [ "$1" = "config_path" ] && {
+        GET_CONFIG_PATH=true
+        echo "Get config path parameter found"
+    }
+}
+
+# Function to check for SSL client key in config
+#check_ssl_config() {
+#    local config_file="$script_dir/$test_node_conf_dir/$CONF_NAME"
+#
+#    if [ ! -f "$config_file" ]; then
+#        echo -e "${red}Configuration file not found: $config_file${normal}"
+#        return 1
+#    fi
+#
+#    if grep -q "client_key = .*\.pem" "$config_file"; then
+#        echo "mtls"
+#        return 0
+#    else
+#        echo -e "${yellow}No SSL client key found in configuration${normal}"
+#        return 1
+#    fi
+#}
+
+# Function to get nodes list using external script
+get_nodes_list() {
+#    [ "$TS_DEBUG" = true ] && echo -e "
+#    [DEBUG]:
+#        Count parameters: $#
+#        Parameters: $*
+#    "
+
+    local nodes_result=""
+
+    nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
+
+#    [ "$TS_DEBUG" = true ] && echo -e "
+#    [DEBUG] nodes_result: $nodes_result"
+
+    if [ -z "$nodes_result" ]; then
+        echo -e "${red}Failed to determine node list - ERROR${normal}"
+        exit 1
+    elif echo "$nodes_result" | grep -q "ERROR"; then
+        echo -e "${yellow}Node names could not be determined.${normal}"
+        echo -e "${yellow}Try: bash $utils_dir/$get_nodes_list_script -nt all${normal}"
+        echo -e "${red}Node names could not be determined - ERROR!${normal}"
+        exit 1
+    else
+        echo "$nodes_result"
+    fi
+}
+
+# Function to check for SSL client key in config and extract SSL parameters
+check_ssl_config() {
+    local config_file
+    local first_ctrl_node
+
+    # Take only the first node for config reading
+    first_ctrl_node=$(echo "$NODES" | awk '{print $1}')
+    echo "first_ctrl_node: $first_ctrl_node"
+    if [ -z "$first_ctrl_node" ]; then
+        echo -e "${red}No nodes provided${normal}" >&2
+        return 1
+    fi
+
+    if ! config_file=$(cat_conf "$first_ctrl_node"); then
+        echo -e "${red}Configuration file not found: $config_file${normal}"
+        return 1
+    fi
+
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG]:
+        config_file:
+        $config_file
+    "
+
+    # Check if client key exists in config
+    if ! echo "$config_file" | grep -q "client_key = .*\.pem"; then
+        echo -e "${yellow}No SSL client key found in configuration${normal}"
+        return 1
+    fi
+
+    # Extract SSL parameters with better parsing
+    local https_ssl_verify client_key client_cert
+
+    # Extract values with proper handling of quotes and spaces
+    https_ssl_verify=$(echo "$config_file" | grep -qE "^https_ssl_verify\s*=" | head -1 | awk -F= '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
+    client_key=$(echo "$config_file" | grep -qE "^client_key\s*=" | head -1 | awk -F= '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
+    client_cert=$(echo "$config_file" | grep -qE "^client_cert\s*=" | head -1 | awk -F= '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
+
+    # Set default values if not found or empty
+    https_ssl_verify="${https_ssl_verify:-/etc/pki/tls/certs/ca-bundle.crt}"
+    client_key="${client_key:-/etc/consul/certs/consul-key.pem}"
+    client_cert="${client_cert:-/etc/consul/certs/consul-cert.pem}"
+
+    # Return formatted string
+    echo "mtls; https_ssl_verify = $https_ssl_verify; client_key = $client_key; client_cert = $client_cert"
+    return 0
 }
 
 # Function to display configuration files

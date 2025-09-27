@@ -150,17 +150,6 @@ check_openstack_cli() {
     fi
 }
 
-# Function to check nova service list
-check_nova_service_list() {
-    echo -e "${violet}Checking nova service list...${normal}"
-    echo -e "openstack compute service list"
-    nova_state_list=$(openstack compute service list)
-    echo "$nova_state_list" | \
-        sed --unbuffered \
-            -e 's/\(.*disabled.*\)/\o033[31m\1\o033[39m/' \
-            -e 's/\(.*down.*\)/\o033[31m\1\o033[39m/'
-}
-
 # Function to get nodes list using external script
 get_nodes_list() {
     [ "$TS_DEBUG" = true ] && echo -e "
@@ -190,6 +179,32 @@ get_nodes_list() {
     else
         echo "$nodes_result"
     fi
+}
+
+# Function to check nova service list
+check_nova_service_list() {
+    echo -e "${violet}Checking nova service list...${normal}"
+    echo -e "openstack compute service list"
+    nova_state_list=$(openstack compute service list)
+    echo "$nova_state_list" | \
+        sed --unbuffered \
+            -e 's/\(.*disabled.*\)/\o033[31m\1\o033[39m/' \
+            -e 's/\(.*down.*\)/\o033[31m\1\o033[39m/'
+}
+
+# Function to handle yes/no questions using external script
+yes_no_answer() {
+    local question="$1"
+    local default_answer="${2:-"Yes"}"
+
+    # Export variables for external script
+    export TS_YES_NO_QUESTION="$question"
+    export TS_DEBUG="$TS_DEBUG"
+
+    # Call external script and capture result
+    local result
+    result=$(bash "$yes_no_script" "$question" "$default_answer")
+    echo "$result"
 }
 
 # Function to check connection to a node
@@ -254,21 +269,6 @@ check_ipmi_connections() {
             fi
         done
     done
-}
-
-# Function to handle yes/no questions using external script
-yes_no_answer() {
-    local question="$1"
-    local default_answer="${2:-"Yes"}"
-
-    # Export variables for external script
-    export TS_YES_NO_QUESTION="$question"
-    export TS_DEBUG="$TS_DEBUG"
-
-    # Call external script and capture result
-    local result
-    result=$(bash "$yes_no_script" "$question" "$default_answer")
-    echo "$result"
 }
 
 # Function to check and handle disabled compute nodes
@@ -377,12 +377,11 @@ check_consul_members() {
     echo -e "${violet}Checking consul members list...${normal}"
 
     local ssl_config_output
-    local first_ctrl_node
     local members_list
-
     local ctrl_nodes
+    local first_ctrl_node_pair
+
     ctrl_nodes=$(bash "$utils_dir/$get_nodes_list_script" -nt ctrl)
-    local first_ctrl_node
     first_ctrl_node_pair=$(echo "$ctrl_nodes" | awk '{print $1}')
 
     if [ -n "$first_ctrl_node_pair" ]; then
