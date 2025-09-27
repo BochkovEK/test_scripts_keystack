@@ -3,7 +3,10 @@
 #  bash baremetal_power_management.sh ebochkov-ks-sber-comp-05 check
 #  bash baremetal_power_management.sh ebochkov-ks-sber-comp-05 on
 
-edit_ha_config_script=edit_ha_config.sh
+
+utils_dir="$script_dir/utils"
+get_nodes_list_script="get_nodes_list.sh"
+edit_ha_config_script="edit_ha_config.sh"
 default_ssh_user="root"
 default_ssh_port=22
 
@@ -107,30 +110,32 @@ do
    shift
 done
 
-## Check openrc file
-#Check_openrc_file () {
-#    echo "Check openrc file here: $OPENRC_PATH"
-#    check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
-#    #echo $OPENRC_PATH
-#    #echo $check_openrc_file
-#    [[ -z "$check_openrc_file" ]] && { echo "openrc file not found in $OPENRC_PATH"; exit 1; }
-#}
+# Function to get nodes list using external script
+get_nodes_list() {
+#    [ "$TS_DEBUG" = true ] && echo -e "
+#    [DEBUG]:
+#        Count parameters: $#
+#        Parameters: $*
+#    "
 
-define_ssh_user () {
-  if [[ -z "$SSH_USER" ]]; then
-  # 3. Try to determine via whoami (with error handling)
-  SSH_USER=$(whoami 2>/dev/null) || {
-    echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
-    # 4. Use default value
-    SSH_USER="$default_ssh_user"
-  }
-fi
+    local nodes_result=""
 
-# Final value check
-if [[ -z "$SSH_USER" ]]; then
-  echo -e "${red}Error: Failed to determine user!${normal}" >&2
-  exit 1
-fi
+    nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
+
+#    [ "$TS_DEBUG" = true ] && echo -e "
+#    [DEBUG] nodes_result: $nodes_result"
+
+    if [ -z "$nodes_result" ]; then
+        echo -e "${red}Failed to determine node list - ERROR${normal}"
+        exit 1
+    elif echo "$nodes_result" | grep -q "ERROR"; then
+        echo -e "${yellow}Node names could not be determined.${normal}"
+        echo -e "${yellow}Try: bash $utils_dir/$get_nodes_list_script -nt all${normal}"
+        echo -e "${red}Node names could not be determined - ERROR!${normal}"
+        exit 1
+    else
+        echo "$nodes_result"
+    fi
 }
 
 check_connection_to_ipmi () {
@@ -164,10 +169,21 @@ python_script_execute () {
 wait_for_ssh_connection () {
   echo "Waiting for SSH availability on $HOST_NAME..."
 
+  local hv_pair
+
+  hv_pair=$(bash "$utils_dir/$get_nodes_list_script" -nn HOST_NAME)
+  if [ -n "$hv_pair" ]; then
+      local node_name="${hv_pair%%:*}"
+      local node_ip="${hv_pair#*:}"
+  else
+      echo -e "${yellow}Failed to define any ctrl node${normal}"
+      return 1
+  fi
+
   # SSH availability check loop
   for (( i=0; i<$SSH_TIMEOUT; i+=$SSH_INTERVAL )); do
     # Check port availability (using nc or ssh)
-    if nc -z -w 2 "$HOST_NAME" "$SSH_USER@$SSH_PORT" 2>/dev/null; then
+    if nc -z -w 2 "$node_ip" "$SSH_PORT" 2>/dev/null; then
       echo "SSH is available!"
       break
     fi
@@ -259,7 +275,29 @@ start_python_power_management_script () {
     esac
 }
 
-define_ssh_user
+# Get ssh user
+get_ssh_user () {
+    # Determine SSH user
+    if [[ -z "$SSH_USER" ]]; then
+        SSH_USER=$(whoami 2>/dev/null) || {
+            echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
+            SSH_USER="$default_ssh_user"
+        }
+    fi
+
+    # Final user validation
+    if [[ -z "$SSH_USER" ]]; then
+        echo -e "${red}Error: Failed to determine SSH user!${normal}" >&2
+        exit 1
+    fi
+}
+
+
+# Main execution
+
+# Determine SSH user
+get_ssh_user
+
 [ -z "$HOST_NAME" ] && [ -z "$IPMI_IP" ] && { echo "Host name or IP needed as env (HOST_NAME or IPMI_IP) or first start script parameter"; exit 1; }
 check_module_exist
 start_python_power_management_script
