@@ -30,8 +30,15 @@ yellow=$(tput setaf 3)
 [[ -z $TRY_TO_RISE ]] && TRY_TO_RISE="true"
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $CONTAINER_ENGINE ]] && CONTAINER_ENGINE=$default_container_engine
-[[ -z $CHECK_IPMI ]] && CHECK_IPMI="true"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
+# Check list
+[[ -z $CHECK_CONNECTIONS ]] && CHECK_CONNECTIONS="false"
+[[ -z $CHECK_IPMI_CONNECTIONS ]] && CHECK_IPMI_CONNECTIONS="false"
+[[ -z $CHECK_DISABLED_COMPUTES ]] && CHECK_DISABLED_COMPUTES="false"
+[[ -z $CHECK_CONTAINERS ]] && CHECK_CONTAINERS="false"
+[[ -z $CHECK_CONSUL_MEMBERS ]] && CHECK_CONSUL_MEMBERS="false"
+[[ -z $CHECK_CONSUL_LOGS ]] && CHECK_CONSUL_LOGS="false"
+[[ -z $CHECK_CONSUL_CONFIG ]] && CHECK_CONSUL_CONFIG="false"
 
 # Function to display help information
 show_help() {
@@ -44,9 +51,17 @@ show_help() {
       -dtr, -dont_try_to_rise             Don't attempt to rise disabled nova services
       -u, -user <username>                SSH username
       -ce, -docker_engine <docker\podman> Docker engine
-      -ipmi                               Enable IPMI connection checks
       -v, -debug                          Enable debug output
       --help                              Show this help message
+
+    Individual checks (use instead of CHECK_TYPE):
+      -conn, -connections                 Check connections to nodes
+      -ipmi_conn                          Check IPMI connections
+      -disabled_comp                      Check disabled computes
+      -cont, -containers                  Check containers state
+      -consul_members                     Check consul members
+      -consul_logs                        Check consul logs
+      -consul_config                      Check consul configuration
 
     Check types:
       nova    - Check nova state and try to raise disabled hosts
@@ -54,16 +69,6 @@ show_help() {
     "
 }
 
-# Function to define parameters from positional arguments
-define_parameters() {
-    [ "$TS_DEBUG" = true ] && echo "[DEBUG] Parameter: $1"
-    [ "$count" = 1 ] && [[ -n $1 ]] && {
-        CHECK="$1"
-        echo "Check parameter found with value: $CHECK"
-    }
-}
-
-# Parse command line arguments
 count=1
 while [ -n "$1" ]; do
     case "$1" in
@@ -106,9 +111,39 @@ while [ -n "$1" ]; do
             shift
             ;;
 
-        -ipmi)
-            CHECK_IPMI="true"
-            echo "Found -ipmi option"
+        -conn|-connections)
+            CHECK_CONNECTIONS="true"
+            echo "Found -connections option"
+            ;;
+
+        -ipmi_conn)
+            CHECK_IPMI_CONNECTIONS="true"
+            echo "Found -ipmi_conn option"
+            ;;
+
+        -disabled_comp)
+            CHECK_DISABLED_COMPUTES="true"
+            echo "Found -disabled_comp option"
+            ;;
+
+        -cont|-containers)
+            CHECK_CONTAINERS="true"
+            echo "Found -containers option"
+            ;;
+
+        -consul_members)
+            CHECK_CONSUL_MEMBERS="true"
+            echo "Found -consul_members option"
+            ;;
+
+        -consul_logs)
+            CHECK_CONSUL_LOGS="true"
+            echo "Found -consul_logs option"
+            ;;
+
+        -consul_config)
+            CHECK_CONSUL_CONFIG="true"
+            echo "Found -consul_config option"
             ;;
 
         --)
@@ -124,6 +159,7 @@ while [ -n "$1" ]; do
     esac
     shift
 done
+
 
 
 # Function to check and source openrc file
@@ -549,7 +585,38 @@ determine_ssh_user
 check_openstack_cli
 check_and_source_openrc_file
 
-# Handle specific check types
+any_specific_check="$CHECK_CONNECTIONS$CHECK_IPMI_CONNECTIONS$CHECK_DISABLED_COMPUTES$CHECK_CONTAINERS$CHECK_CONSUL_MEMBERS$CHECK_CONSUL_LOGS$CHECK_CONSUL_CONFIG"
+
+#echo $any_specific_check
+
+if [[ "$any_specific_check" == *"true"* ]]; then
+    echo "Performing specific checks only..."
+
+    [ "$CHECK_CONNECTIONS" = "true" ] && {
+        check_connections_to_nodes "ctrl"
+        check_connections_to_nodes "comp"
+    }
+
+    [ "$CHECK_IPMI_CONNECTIONS" = "true" ] && check_ipmi_connections
+
+    [ "$CHECK_DISABLED_COMPUTES" = "true" ] && {
+        check_nova_service_list
+        check_disabled_computes
+    }
+
+    [ "$CHECK_CONTAINERS" = "true" ] && {
+        check_containers "ctrl" "consul"
+        check_containers "comp" "consul"
+        check_containers "comp" "nova_compute"
+    }
+
+    [ "$CHECK_CONSUL_MEMBERS" = "true" ] && check_consul_members
+    [ "$CHECK_CONSUL_LOGS" = "true" ] && check_consul_logs
+    [ "$CHECK_CONSUL_CONFIG" = "true" ] && check_consul_config
+
+    exit 0
+fi
+
 case "$CHECK" in
     nova)
         echo "Performing nova checks..."
@@ -564,7 +631,6 @@ case "$CHECK" in
 esac
 
 check_nova_service_list
-# Perform comprehensive checks
 check_connections_to_nodes "ctrl"
 check_connections_to_nodes "comp"
 
