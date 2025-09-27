@@ -436,6 +436,15 @@ check_consul_members() {
         client_key=$(echo "${parts[2]}" | awk -F' = ' '{print $2}' | xargs)
         client_cert=$(echo "${parts[3]}" | awk -F' = ' '{print $2}' | xargs)
 
+        [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG]
+        ssl_config_output: $ssl_config_output
+        mode: $mode
+        https_ssl_verify: $https_ssl_verify
+        client_key: $client_key
+        client_cert: $client_cert
+        "
+
         if [ "$mode" = "mtls" ];then
             [ "$TS_DEBUG" = true ] && echo -e "
     members_list=\$(ssh -t -o StrictHostKeyChecking=no \"$SSH_USER@$node_ip\" \
