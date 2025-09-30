@@ -189,10 +189,10 @@ check_required_containers() {
             local container_required_note="${container_required#*:}"
             if [[ "$container_required" == *:* ]]; then
                 if [ -n "$container_required_note" ]; then
-                    echo -e "${yellow}Container not running - Warning $container_required${normal}"
+                    echo -e "${yellow}[Warning] Container $container_required_name not running $container_required_note${normal}"
                 fi
             else
-                echo -e "${red}Container $container_required not running - ERROR${normal}"
+                echo -e "${red}[ERROR] - Container $container_required not running${normal}"
             fi
         fi
     done
