@@ -48,7 +48,7 @@ ctrl_required_container_list=(
     "prometheus_memcached_exporter"
     "prometheus_mysqld_exporter"
     "prometheus_node_exporter"
-    "prometheus_server"
+    "prometheus_server:[NOTE] alternative containers victoriametrics_vminsert, victoriametrics_vmselect, victoriametrics_vmagent"
 )
 #    "prometheus_rabbitmq_exporter"
 
