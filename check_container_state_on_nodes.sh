@@ -188,21 +188,11 @@ check_required_containers() {
         if [ "$container_exists" = "false" ]; then
             local container_required_note="${container_required#*:}"
             if [[ "$container_required" == *:* ]]; then
-                # Если контейнер в формате image:tag
                 if [ -n "$container_required_note" ]; then
-                    echo "$container_required_note"
-                    echo -e "${yellow}Container $container_required not running - Warning${normal}"
-                else
                     echo -e "${yellow}Container $container_required not running - Warning${normal}"
                 fi
             else
-                # Если контейнер не в формате image:tag
-                if [ -n "$container_required_note" ]; then
-                    echo "$container_required_note"
-                    echo -e "${red}Container $container_required not running - ERROR${normal}"
-                else
-                    echo -e "${red}Container $container_required not running - ERROR${normal}"
-                fi
+                echo -e "${red}Container $container_required not running - ERROR${normal}"
             fi
         fi
     done
