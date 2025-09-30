@@ -46,11 +46,11 @@ ctrl_required_container_list=(
     "prometheus_openstack_exporter"
     "prometheus_alertmanager"
     "prometheus_memcached_exporter"
-    "prometheus_rabbitmq_exporter"
     "prometheus_mysqld_exporter"
     "prometheus_node_exporter"
     "prometheus_server"
 )
+#    "prometheus_rabbitmq_exporter"
 
 comp_required_container_list=(
     "iscsid:$virtual_stands_mark"
@@ -187,7 +187,7 @@ check_required_containers() {
 
         if [ "$container_exists" = "false" ]; then
             local container_required_note="${container_required#*:}"
-            if [ -n "$container_required_note" ]; then
+            if [ "$container_required" == "*:*" ] && [ -n "$container_required_note" ]; then
                 echo "$container_required_note"
                 echo -e "${yellow}Container $container_required not running - Warning${normal}"
             else
