@@ -8,6 +8,7 @@ utils_dir="$script_dir/utils"
 get_nodes_list_script="get_nodes_list.sh"
 default_ssh_user="root"
 default_container_engine="docker"
+virtual_stands_mark="[NOTE]for virtual stands"
 #script_name=$(basename "$0")
 
 # Colors
@@ -52,7 +53,7 @@ ctrl_required_container_list=(
 )
 
 comp_required_container_list=(
-    "iscsid"
+    "iscsid:$virtual_stands_mark"
     "consul"
     "neutron_openvswitch_agent"
     "openvswitch_vswitchd"
@@ -172,12 +173,13 @@ check_required_containers() {
 
     for container_required in "${required_containers[@]}"; do
         local container_exists="false"
+        local container_required_name="${container_required%%:*}"
 
         for container in $container_names; do
             [ "$TS_DEBUG" = true ] && echo -e "
-[DEBUG] Container: $container, Required: $container_required"
+[DEBUG] Container: $container, Required: container_required_name"
 
-            if [ "$container" = "$container_required" ]; then
+            if [ "$container" = "$container_required_name" ]; then
                 container_exists="true"
                 break
             fi
