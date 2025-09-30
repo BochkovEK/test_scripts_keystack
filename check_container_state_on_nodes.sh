@@ -188,7 +188,8 @@ check_required_containers() {
         if [ "$container_exists" = "false" ]; then
             local container_required_note="${container_required#*:}"
             echo "$container_required_note"
-            if [[ "$container_required" == "*:*" ]] && [ -n "$container_required_note" ]; then
+#            [[ "$container_required" == "*:*" ]] &&
+            if [ -n "$container_required_note" ]; then
                 echo "$container_required_note"
                 echo -e "${yellow}Container $container_required not running - Warning${normal}"
             else
