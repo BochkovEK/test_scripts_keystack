@@ -8,7 +8,7 @@ utils_dir="$script_dir/utils"
 get_nodes_list_script="get_nodes_list.sh"
 default_ssh_user="root"
 default_container_engine="docker"
-virtual_stands_mark="[NOTE]for virtual stands"
+virtual_stands_mark="[NOTE] for virtual stands"
 #script_name=$(basename "$0")
 
 # Colors
@@ -186,7 +186,12 @@ check_required_containers() {
         done
 
         if [ "$container_exists" = "false" ]; then
-            echo -e "${red}Container $container_required not running - ERROR${normal}"
+            local container_required_note="${container_required#*:}"
+            if [ -n "$container_required_note" ]; then
+                echo -e "${yellow}Container $container_required not running - Warning${normal}"
+            else
+              echo -e "${red}Container $container_required not running - ERROR${normal}"
+            fi
         fi
     done
 }
