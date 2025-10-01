@@ -287,7 +287,7 @@ check_vm_connectivity() {
     echo "Checking VM connectivity..."
 
     [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] VMS: $VMS"
-    for ip in $VMS; do
+    for ip in $VMs_IPs; do
         if ping -c 2 "$ip" &> /dev/null; then
             echo -e "${green}✓ Connectivty to $ip - OK${normal}"
         else
