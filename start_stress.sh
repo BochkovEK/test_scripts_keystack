@@ -373,7 +373,7 @@ main() {
 
     rm -f /root/.ssh/known_hosts 2>/dev/null
 
-    get_vms_vms
+    get_vms_ips
 
     get_mode_strings
 
