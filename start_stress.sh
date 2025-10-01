@@ -144,8 +144,8 @@ parse_arguments() {
     done
 }
 
-extract_vms_from_vm_list() {
-    local vm_list="$1"
+extract_ip_from_vms_list() {
+    local VM_LIST="$1"
     local vms=""
 
     while IFS= read -r line; do
@@ -155,7 +155,7 @@ extract_vms_from_vm_list() {
         else
             vms="$vms $line"
         fi
-    done <<< "$vm_list"
+    done <<< "$VM_LIST"
 
     echo "$vms" | tr -s ' ' | sed 's/^ //'
 }
@@ -171,15 +171,15 @@ get_vms_ips() {
         local command_args="-vms \"$VMS\""
         [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] Command args for VM list: $command_args"
 
-        local vm_list
-        vm_list=$(eval "bash \"$openstack_utils/$get_active_vms_list_script\" $command_args")
+#        local VM_LIST
+        VM_LIST=$(eval "bash \"$openstack_utils/$get_active_vms_list_script\" $command_args")
 
-        if echo "$vm_list" | grep -q "ERROR"; then
+        if echo "$VM_LIST" | grep -q "ERROR"; then
             echo -e "${red}Failed to get VMs list${normal}"
             exit 1
         fi
 
-        VMs_IPs=$(extract_vms_from_vm_list "$vm_list")
+        VMs_IPs=$(extract_ip_from_vms_list "$VM_LIST")
     else
         hv_info="VMs"
         [ -n "$HYPERVISOR_NAME" ] && hv_info="$hv_info on hypervisor: $HYPERVISOR_NAME"
@@ -194,15 +194,15 @@ get_vms_ips() {
 
         [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] Command args for VM list: $command_args"
 
-        local vm_list
-        vm_list=$(eval "bash \"$openstack_utils/$get_active_vms_list_script\" $command_args")
+#        local VM_LIST
+        VM_LIST=$(eval "bash \"$openstack_utils/$get_active_vms_list_script\" $command_args")
 
-        if echo "$vm_list" | grep -q "ERROR"; then
+        if echo "$VM_LIST" | grep -q "ERROR"; then
             echo -e "${red}Failed to get VMs list${normal}"
             exit 1
         fi
 
-        VMs_IPs=$(extract_vms_from_vm_list "$vm_list")
+        VMs_IPs=$(extract_ip_from_vms_list "$VM_LIST")
     fi
 
     if [ -z "$VMs_IPs" ]; then
@@ -358,7 +358,7 @@ ${violet}Stress Test Configuration:${normal}
     VM User:          $VM_USER
     Test Type:        $TYPE_TEST
     Mount to RAM:     $MOUNT_TO_RAM
-    VMS:          $VMS
+    VMS:              $VM_LIST
     $load_string
     $time_out_help_string
     Debug Mode:       $TS_DEBUG
