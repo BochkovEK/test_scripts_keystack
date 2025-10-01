@@ -227,10 +227,10 @@ get_mode_strings() {
     fi
 
     if [ -n "$TIME_OUT" ]; then
-        time_out_help_string="Timeout: $TIME_OUT seconds"
+        timeout_help_string="Timeout: $TIME_OUT seconds"
         stress_args="$stress_args -t $TIME_OUT"
     else
-        time_out_help_string="No timeout (run until stopped)"
+        timeout_help_string="No timeout (run until stopped)"
     fi
 
     [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] stress_args: $stress_args"
@@ -354,14 +354,14 @@ validate_environment() {
 check_configuration() {
     echo -e "
 ${violet}Stress Test Configuration:${normal}
-    SSH Key:          $KEY_PATH
-    VM User:          $VM_USER
-    Test Type:        $TYPE_TEST
-    Mount to RAM:     $MOUNT_TO_RAM
-    VMS:              $VM_LIST
-    $load_string
-    $time_out_help_string
-    Debug Mode:       $TS_DEBUG
+    SSH Key:              $KEY_PATH
+    VM User:              $VM_USER
+    Test Type:            $TYPE_TEST
+    Mount to RAM:         $MOUNT_TO_RAM
+    load_string:          $load_string
+    timeout_help_string:  $timeout_help_string
+    Debug Mode:           $TS_DEBUG
+    VMS:                  $VM_LIST
     "
 
     read -p "Press Enter to continue or Ctrl+C to cancel: "
