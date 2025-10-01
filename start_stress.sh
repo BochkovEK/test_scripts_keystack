@@ -244,7 +244,7 @@ copy_and_run_stress() {
 
     if [ "$TYPE_TEST" = "ram" ] && [ "$MOUNT_TO_RAM" = "true" ]; then
         echo "Starting ${yellow}'Mount to RAM'${normal} type ram load on $vm_ip using tmpfs..."
-
+        # !!! Units only GB or MB
         if [ "$UNITS" = "G" ]; then
             RAM_SIZE=$(($RAM * 1024))
         else
@@ -257,7 +257,7 @@ copy_and_run_stress() {
         ssh -o StrictHostKeyChecking=no -i "$KEY_PATH" "$VM_USER@$vm_ip" \
             "sudo dd if=/dev/urandom of=/mnt/ram/bigfile bs=1M count=${RAM_SIZE} status=progress"
 
-        echo -e "${green}RAM load started on $vm_ip using tmpfs${normal}"
+        echo -e "${green}\nRAM load started on $vm_ip using tmpfs${normal}"
         return 0
     fi
 

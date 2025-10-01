@@ -1,12 +1,16 @@
 #!/bin/bash
 
+script_dir=$(dirname "$0")
+utils_dir="$script_dir/utils"
+get_nodes_list_script="get_nodes_list.sh"
+
 # Colors
 normal=$(tput sgr0)
 cyan=$(tput setaf 6)
 red=$(tput setaf 1)
 green=$(tput setaf 2)
 blue=$(tput setaf 4)
-#yellow=$(tput setaf 3)
+yellow=$(tput setaf 3)
 
 # Function to show usage
 usage() {
@@ -21,19 +25,69 @@ if [ $# -ne 1 ]; then
     usage
 fi
 
-# Ask for SSH tunnel connection
-echo -e "${blue}Please provide SSH tunnel connection in format user@ip:${normal}"
-read -r SSH_TUNNEL
+# Determine SSH user
+determine_ssh_user() {
+    if [ -z "$SSH_USER" ]; then
+        SSH_USER=$(whoami 2>/dev/null) || {
+            echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
+            SSH_USER="root"
+        }
+    fi
 
-# Validate SSH tunnel format
-if ! echo "$SSH_TUNNEL" | grep -qE '^[a-zA-Z0-9_.-]+@[a-zA-Z0-9_.-]+$'; then
-    echo -e "${red}Error: Invalid SSH tunnel format. Use user@ip${normal}"
-    exit 1
+    if [ -z "$SSH_USER" ]; then
+        echo -e "${red}Error: Failed to determine SSH user!${normal}" >&2
+        exit 1
+    fi
+}
+
+# Get SSH tunnel IP from get_nodes_list.sh
+get_ssh_tunnel_ip() {
+    if [ -f "$utils_dir/$get_nodes_list_script" ]; then
+        local tunnel_ip
+        tunnel_ip=$(bash "$utils_dir/$get_nodes_list_script" -nt lcm 2>/dev/null | head -1 | cut -d: -f2)
+
+        if [ -n "$tunnel_ip" ]; then
+            echo "$tunnel_ip"
+            return 0
+        fi
+    fi
+
+    return 1
+}
+
+# Ask for SSH tunnel connection or use automatic detection
+echo -e "${blue}Please provide SSH tunnel connection in format user@ip (or press Enter for automatic detection):${normal}"
+read -r SSH_TUNNEL_INPUT
+
+if [ -z "$SSH_TUNNEL_INPUT" ]; then
+    # Automatic detection
+    determine_ssh_user
+    SSH_TUNNEL_IP=$(get_ssh_tunnel_ip)
+
+    if [ -n "$SSH_TUNNEL_IP" ]; then
+        SSH_TUNNEL="$SSH_USER@$SSH_TUNNEL_IP"
+        echo -e "${cyan}Auto-detected SSH tunnel: $SSH_TUNNEL${normal}"
+    else
+        echo -e "${red}Error: Failed to auto-detect SSH tunnel IP${normal}"
+        echo -e "${yellow}Please manually specify user@ip${normal}"
+        exit 1
+    fi
+else
+    # Manual input
+    SSH_TUNNEL="$SSH_TUNNEL_INPUT"
+
+    # Validate SSH tunnel format
+    if ! echo "$SSH_TUNNEL" | grep -qE '^[a-zA-Z0-9_.-]+@[a-zA-Z0-9_.-]+$'; then
+        echo -e "${red}Error: Invalid SSH tunnel format. Use user@ip${normal}"
+        exit 1
+    fi
+
+    # Extract user from SSH tunnel
+    SSH_USER=$(echo "$SSH_TUNNEL" | cut -d@ -f1)
 fi
 
-# Extract user and IP from SSH tunnel
-SSH_USER=$(echo "$SSH_TUNNEL" | cut -d@ -f1)
-SSH_IP=$(echo "$SSH_TUNNEL" | cut -d@ -f2)
+# Extract IP from SSH tunnel for display
+#SSH_IP=$(echo "$SSH_TUNNEL" | cut -d@ -f2)
 
 echo -e "${cyan}Using SSH tunnel: $SSH_TUNNEL${normal}"
 echo ""
