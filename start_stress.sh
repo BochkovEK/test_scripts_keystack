@@ -1,6 +1,7 @@
 #!/bin/bash
 
 green=$(tput setaf 2)
+yellow=$(tput setaf 3)
 red=$(tput setaf 1)
 violet=$(tput setaf 5)
 normal=$(tput sgr0)
@@ -242,7 +243,7 @@ copy_and_run_stress() {
     echo "Processing VM: $vm_ip"
 
     if [ "$TYPE_TEST" = "ram" ] && [ "$MOUNT_TO_RAM" = "true" ]; then
-        echo "Starting ${green}STABLE${normal} ram load on $vm_ip using tmpfs..."
+        echo "Starting ${yellow}'Mount to RAM'${normal} type ram load on $vm_ip using tmpfs..."
 
         if [ "$UNITS" = "G" ]; then
             RAM_SIZE=$(($RAM * 1024))
