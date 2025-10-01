@@ -179,7 +179,7 @@ get_vms_ips() {
             exit 1
         fi
 
-        VMs_IPs=$(extract_ips_from_vm_list "$vm_list")
+        VMs_IPs=$(extract_vms_from_vm_list "$vm_list")
     else
         hv_info="VMs"
         [ -n "$HYPERVISOR_NAME" ] && hv_info="$hv_info on hypervisor: $HYPERVISOR_NAME"
@@ -202,7 +202,7 @@ get_vms_ips() {
             exit 1
         fi
 
-        VMs_IPs=$(extract_ips_from_vm_list "$vm_list")
+        VMs_IPs=$(extract_vms_from_vm_list "$vm_list")
     fi
 
     if [ -z "$VMs_IPs" ]; then
