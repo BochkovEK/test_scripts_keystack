@@ -55,10 +55,6 @@ get_ssh_tunnel_ip() {
     return 1
 }
 
-# Ask for SSH tunnel connection or use automatic detection
-echo -e "${blue}Please provide SSH tunnel connection in format user@ip (or press Enter for automatic detection):${normal}"
-read -r SSH_TUNNEL_INPUT
-
 if [ -z "$SSH_TUNNEL_INPUT" ]; then
     # Automatic detection
     determine_ssh_user
@@ -85,6 +81,10 @@ else
     # Extract user from SSH tunnel
     SSH_USER=$(echo "$SSH_TUNNEL" | cut -d@ -f1)
 fi
+
+# Ask for SSH tunnel connection or use automatic detection
+echo -e "${blue}Please provide SSH tunnel connection in format $SSH_USER@$SSH_TUNNEL_IP (or press Enter for automatic detection):${normal}"
+read -r SSH_TUNNEL_INPUT
 
 # Extract IP from SSH tunnel for display
 #SSH_IP=$(echo "$SSH_TUNNEL" | cut -d@ -f2)
