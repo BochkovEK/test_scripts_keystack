@@ -215,6 +215,7 @@ get_vms_ips() {
 }
 
 get_mode_strings() {
+    foo
     if [ "$TYPE_TEST" = "cpu" ]; then
         load_string="CPU:            $CPUS cores"
         stress_args="-c $CPUS"
