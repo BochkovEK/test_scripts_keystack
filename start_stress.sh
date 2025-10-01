@@ -291,7 +291,7 @@ check_vm_connectivity() {
         if ping -c 2 "$ip" &> /dev/null; then
             echo -e "${green}✓ Connectivty to $ip - OK${normal}"
         else
-            echo -e "${red}✗ No connectivity to $ip${normal}"
+            echo -e "${red}✗ Ping to $ip failed${normal}"
         fi
 
         if ssh -o StrictHostKeyChecking=no -i "$KEY_PATH" -o ConnectTimeout=5 "$VM_USER@$ip" "echo SSH_OK" >/dev/null 2>&1; then
