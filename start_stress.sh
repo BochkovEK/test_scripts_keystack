@@ -313,7 +313,7 @@ batch_run_stress() {
     local success_count=0
     local total_count=0
 
-    for ip in $VMS; do
+    for ip in $VMs_IPs; do
         ((total_count++))
         if copy_and_run_stress "$ip"; then
             ((success_count++))
