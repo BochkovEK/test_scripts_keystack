@@ -142,4 +142,4 @@ while [[ $i -le $END_HOST ]]; do
 done
 
 echo ""
-echo -e "${green}Scan completed through SSH tunnel $SSH_TUNNEL!${normal}"
+echo -e "Scan completed through SSH tunnel $SSH_TUNNEL"
