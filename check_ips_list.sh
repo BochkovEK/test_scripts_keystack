@@ -55,6 +55,25 @@ get_ssh_tunnel_ip() {
     return 1
 }
 
+# Check SSH tunnel connectivity
+check_ssh_tunnel() {
+    local tunnel="$1"
+    echo -e "${cyan}Testing SSH tunnel connectivity to $tunnel...${normal}"
+
+    if ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o BatchMode=yes "$tunnel" "echo 'SSH_TUNNEL_OK'" &> /dev/null; then
+        echo -e "${green}SSH tunnel is available${normal}"
+        return 0
+    else
+        echo -e "${red}Error: Cannot establish SSH tunnel to $tunnel${normal}"
+        echo -e "${yellow}Please check:${normal}"
+        echo -e "${yellow}1. SSH service is running on the target host${normal}"
+        echo -e "${yellow}2. Network connectivity to the target host${normal}"
+        echo -e "${yellow}3. SSH key authentication or password access${normal}"
+        echo -e "${yellow}4. Firewall rules allowing SSH connections${normal}"
+        return 1
+    fi
+}
+
 # Ask for SSH tunnel connection or use automatic detection
 echo -e "${cyan}Please provide SSH tunnel connection in format ssh_user@ssh_tunnel_ip (or press Enter for automatic detection):${normal}"
 read -r SSH_TUNNEL_INPUT
@@ -86,8 +105,11 @@ else
     SSH_USER=$(echo "$SSH_TUNNEL" | cut -d@ -f1)
 fi
 
-# Extract IP from SSH tunnel for display
-#SSH_IP=$(echo "$SSH_TUNNEL" | cut -d@ -f2)
+# Check SSH tunnel connectivity
+if ! check_ssh_tunnel "$SSH_TUNNEL"; then
+    echo -e "${red}Error: Cannot establish SSH tunnel. Exiting.${normal}"
+    exit 1
+fi
 
 echo -e "${cyan}Using SSH tunnel: $SSH_TUNNEL${normal}"
 echo ""

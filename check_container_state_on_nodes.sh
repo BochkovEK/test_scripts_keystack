@@ -65,10 +65,10 @@ comp_required_container_list=(
     "prometheus_ovs_exporter"
     "prometheus_libvirt_exporter"
     "prometheus_node_exporter"
-    "prometheus_blackbox_exporter"
     "cron"
     "fluentd"
 )
+#    "prometheus_blackbox_exporter" remove from comp list (@chembaev telegram)
 
 # Default values
 [[ -z $CONTAINER_NAME ]] && CONTAINER_NAME=""
