@@ -1,12 +1,7 @@
 #!/bin/bash
 
-# =============================================================================
-# DRS Log Viewer Script
-#
-# This script reads and displays DRS logs from control nodes in an OpenStack
-# environment. It can show logs from specific nodes, all nodes, or automatically
-# detect the leader node.
-# =============================================================================
+# Script to display logs from drs service
+# Can check logs on specific nodes or automatically detect drs leader
 
 # Script configuration
 script_dir=$(dirname "$0")

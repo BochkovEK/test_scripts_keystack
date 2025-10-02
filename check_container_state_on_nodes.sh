@@ -8,7 +8,7 @@ utils_dir="$script_dir/utils"
 get_nodes_list_script="get_nodes_list.sh"
 default_ssh_user="root"
 default_container_engine="docker"
-virtual_stands_mark="[NOTE] for virtual stands"
+virtual_stands_mark="[NOTE] required for virtual stands"
 #script_name=$(basename "$0")
 
 # Colors
