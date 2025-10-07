@@ -19,7 +19,7 @@ module "VMs" {
 }
 
 module "AZs" {
-    source = "../../modules/aggregate"
+    source = "../../../tmp/aggregate"
     AZs    = var.AZs
 }
 

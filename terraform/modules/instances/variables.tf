@@ -1,4 +1,10 @@
-## VM
+# AZs
+variable "AZs" {
+  description = "AZs list source"
+  default = {}
+}
+
+# VM
 variable "default_image_name" {
   description = "Default image name"
   type        = string

@@ -1,3 +1,13 @@
+resource "openstack_compute_aggregate_v2" "aggr" {
+  for_each = var.AZs
+  name   = each.key
+  zone   = each.value.az_name #"az_1"
+  metadata = {
+    test_meta = "Created by Terraform AZ_module"
+  }
+  hosts = each.value.hosts_list
+}
+
 resource "openstack_compute_servergroup_v2" "vm_group" {
   for_each = {
     for vm_key, vm in var.VMs : vm_key => vm.server_group
@@ -9,8 +19,8 @@ resource "openstack_compute_servergroup_v2" "vm_group" {
 }
 
 resource "openstack_compute_instance_v2" "vm" {
-  for_each     = { for k, v in local.instances : v.name => v
-  }
+  for_each     = { for k, v in local.instances : v.name => v }
+
   name                        = each.value.name
   image_name                  = each.value.image_name
   flavor_name                 = each.value.flavor_name == "" ? "${each.value.base_name}-flavor" : each.value.flavor_name
@@ -58,7 +68,9 @@ resource "openstack_compute_instance_v2" "vm" {
   }
 
   depends_on = [
-    openstack_compute_flavor_v2.flavor
+    openstack_compute_flavor_v2.flavor,
+    openstack_compute_aggregate_v2.aggr,
+    openstack_compute_servergroup_v2.vm_group
   ]
 }
 

@@ -80,7 +80,7 @@ resource "openstack_compute_servergroup_v2" "servergroup" {
 }
 
 module "AZs" {
-    source = "../../modules/aggregate"
+    source = "../../../tmp/aggregate"
     AZs    = var.AZs
 }
 
