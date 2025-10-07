@@ -1,28 +1,13 @@
-#module "server_group" {
-#    source          = "../../../tmp/server_group"
-#    server_groups = var.server_groups
-#
-#    #    for_each = var.server_groups ? var.server_groups : {}
-#    #    name       = each.key
-#    #     policies = each.value.policies
-#    #    for_each = [for group in var.server_groups: {
-#    ##            boot_index = volume.boot_index
-#    ##            size = volume.size
-#    #      name       = group.name
-#    #     policies = group.policies
-#    #    }]
-#}
-
 module "VMs" {
     source = "../../modules/instances"
     VMs    = var.VMs
 }
 
-module "AZs" {
-    source = "../../../tmp/aggregate"
-    AZs    = var.AZs
-}
+#module "AZs" {
+#    source = "../../../tmp/aggregate"
+#    AZs    = var.AZs
+#}
 
-output "server_group_types" {
-  value = module.VMs.server_group_types
-}
+#output "server_group_types" {
+#  value = module.VMs.server_group_types
+#}
