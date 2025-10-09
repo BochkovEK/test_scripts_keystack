@@ -208,7 +208,6 @@ init_cleanup_state_file () {
         cat <<EOF > "$script_dir/$cleanup_file"
 # OpenStack VM Cleanup State
 # Created: $(date)
-# Project: $PROJECT
 
 # Batch resources will be added below
 EOF
@@ -243,8 +242,8 @@ update_cleanup_state () {
         echo "export CREATED_SECURITY_GROUP_ID_BATCH_${batch_num}=\"$SECURITY_GR_ID\"" >> "$script_dir/$cleanup_file"
     fi
 
-    if [ -n "$FLAVOR" ] && ! grep -q "CREATED_FLAVOR_NAME" "$script_dir/$cleanup_file"; then
-        echo "export CREATED_FLAVOR_NAME_BATCH_${batch_num}=\"$FLAVOR\"" >> "$script_dir/$cleanup_file"
+    if [ -n "$FLAVOR" ] && ! grep -q "${FLAVOR}_${PROJECT}" "$script_dir/$cleanup_file"; then
+        echo "export CREATED_FLAVOR_NAME_BATCH_${batch_num}=\"${FLAVOR}_${PROJECT}\"" >> "$script_dir/$cleanup_file"
     fi
 
     # Add keypair with user info only if it doesn't exist
@@ -842,7 +841,7 @@ create_vms () {
             # Get volume ID
             echo "Waiting for volume attachment..."
             local volume_attempts=0
-            local max_volume_attempts=12
+            local max_volume_attempts=60
             VOLUME_ID=""
 
             while [ $volume_attempts -lt $max_volume_attempts ] && [ -z "$VOLUME_ID" ]; do
