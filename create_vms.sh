@@ -201,17 +201,16 @@ check_and_source_config_file () {
     fi
 }
 
-# Initialize cleanup state file with reusable resources
+# Initialize cleanup state file with proper structure
 init_cleanup_state_file () {
     if [ ! -f "$script_dir/$cleanup_file" ]; then
         echo "Initializing cleanup state file..."
         cat <<EOF > "$script_dir/$cleanup_file"
-# Reusable resources for cleanup
-export CREATED_FLAVOR_NAME="$FLAVOR"
-export CREATED_KEYPAIR_NAME="$KEY_NAME"
-export CREATED_SECURITY_GROUP_NAME="$SECURITY_GR"
+# OpenStack VM Cleanup State
+# Created: $(date)
+# Project: $PROJECT
 
-# Temporary resources (batches)
+# Batch resources will be added below
 EOF
         echo -e "${green}Cleanup state file created: $cleanup_file${normal}"
     fi
@@ -231,16 +230,42 @@ update_cleanup_state () {
         return 1
     fi
 
-    # Append new batch to cleanup file
-    cat <<EOF >> "$script_dir/$cleanup_file"
+    # Add batch header
+    echo "" >> "$script_dir/$cleanup_file"
+    echo "# Batch $batch_num" >> "$script_dir/$cleanup_file"
 
-# Batch $batch_num
-export CREATED_VM_IDS_BATCH_${batch_num}="$vm_ids"
-export CREATED_BOOT_VOLUMES_BATCH_${batch_num}="$volume_ids"
-EOF
+    # Always add VM IDs and Volume IDs (unique per batch)
+    echo "export CREATED_VM_IDS_BATCH_${batch_num}=\"$vm_ids\"" >> "$script_dir/$cleanup_file"
+    echo "export CREATED_BOOT_VOLUMES_BATCH_${batch_num}=\"$volume_ids\"" >> "$script_dir/$cleanup_file"
+
+    # Add reusable resources only if they don't exist
+    if [ -n "$SECURITY_GR_ID" ] && ! grep -q "CREATED_SECURITY_GROUP_ID" "$script_dir/$cleanup_file"; then
+        echo "export CREATED_SECURITY_GROUP_ID_BATCH_${batch_num}=\"$SECURITY_GR_ID\"" >> "$script_dir/$cleanup_file"
+    fi
+
+    if [ -n "$FLAVOR" ] && ! grep -q "CREATED_FLAVOR_NAME" "$script_dir/$cleanup_file"; then
+        echo "export CREATED_FLAVOR_NAME_BATCH_${batch_num}=\"$FLAVOR\"" >> "$script_dir/$cleanup_file"
+    fi
+
+    # Add keypair with user info only if it doesn't exist
+    if [ -n "$KEY_NAME" ] && [ -n "$TEST_USER" ]; then
+        local keypair_user="$KEY_NAME:$TEST_USER"
+        if ! grep -q "CREATED_KEYPAIR_NAME_USER.*\"$keypair_user\"" "$script_dir/$cleanup_file"; then
+            echo "export CREATED_KEYPAIR_NAME_USER_BATCH_${batch_num}=\"$keypair_user\"" >> "$script_dir/$cleanup_file"
+        fi
+    fi
 
     echo -e "${green}Cleanup state updated with batch $batch_num${normal}"
     return 0
+}
+
+# Get security group ID if it exists
+get_security_group_id() {
+    if [ -z "$PROJ_ID" ]; then
+        check_project
+    fi
+    SECURITY_GR_ID=$(openstack security group list|grep -E "($SECURITY_GR(.)*$PROJ_ID)" | head -1 | awk '{print $2}')
+    echo "$SECURITY_GR_ID"
 }
 
 # Get next available batch number
@@ -738,7 +763,40 @@ create_vms () {
         SEQ=$VM_QTY
     fi
 
-    FLAVOR=$(openstack flavor list| grep $FLAVOR| head -n 1| awk '{print $4}')
+    # Get flavor name
+    FLAVOR_NAME=$(openstack flavor list| grep $FLAVOR| head -n 1| awk '{print $4}')
+    if [ -z "$FLAVOR_NAME" ]; then
+        echo -e "${red}Flavor $FLAVOR not found${normal}"
+        return 1
+    fi
+
+    # Get security group ID
+    SECURITY_GR_ID=$(get_security_group_id)
+    if [ -z "$SECURITY_GR_ID" ]; then
+        echo -e "${red}Security group $SECURITY_GR not found${normal}"
+        return 1
+    fi
+
+    # Build key string
+    local key_string=""
+    if [ "$NO_KEY" = "false" ] && [ -n "$KEY_NAME" ]; then
+        key_string="--key-name $KEY_NAME"
+    fi
+
+    # Build host string
+    local host=""
+    if [ -n "$HYPERVISOR_HOSTNAME" ]; then
+        host="--hypervisor-hostname $HYPERVISOR_HOSTNAME --os-compute-api-version $API_VERSION"
+    fi
+
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] Creation parameters:
+        FLAVOR: $FLAVOR_NAME
+        SECURITY_GR_ID: $SECURITY_GR_ID
+        KEY_STRING: $key_string
+        HOST: $host
+        ADD_KEY: $ADD_KEY
+    "
 
     for i in $(seq $SEQ); do
         if [ "$SEQ" = 1 ]; then
@@ -747,10 +805,10 @@ create_vms () {
             INSTANCE_NAME=$(printf "$VM_BASE_NAME-%02d" $i)
         fi
 
-        echo "Check for VM: \"$INSTANCE_NAME\" exist"
-        VM_EXIST=$(openstack server list| grep $INSTANCE_NAME| awk '{print $4}')
+        echo "Checking if VM exists: \"$INSTANCE_NAME\""
+        VM_EXIST=$(openstack server list --project $PROJECT | grep $INSTANCE_NAME| awk '{print $4}')
         if [ -n "$VM_EXIST" ]; then
-            printf "%s\n" "${orange}VM: \"$INSTANCE_NAME\" is already exist in project \"$PROJECT\"${normal}"
+            printf "%s\n" "${orange}VM: \"$INSTANCE_NAME\" already exists in project \"$PROJECT\"${normal}"
             if [[ ! $DONT_ASK = "true" ]]; then
                 read -p "Create VM: \"$INSTANCE_NAME\" in project \"$PROJECT\" [Yes]: " yn
                 yn=${yn:-"Yes"}
@@ -766,7 +824,7 @@ create_vms () {
         VM_CREATE_OUTPUT=$(openstack server create \
             $INSTANCE_NAME \
             --image $IMAGE \
-            --flavor $FLAVOR \
+            --flavor $FLAVOR_NAME \
             --security-group $SECURITY_GR_ID \
             $key_string \
             $host \
@@ -782,34 +840,67 @@ create_vms () {
             echo -e "${green}VM created with ID: $VM_ID${normal}"
 
             # Get volume ID
-            sleep 2
-            VOLUME_ID=$(openstack server show $VM_ID -c volumes_attached -f value | grep -oP "id='\K[^']+" | head -1)
+            echo "Waiting for volume attachment..."
+            local volume_attempts=0
+            local max_volume_attempts=12
+            VOLUME_ID=""
+
+            while [ $volume_attempts -lt $max_volume_attempts ] && [ -z "$VOLUME_ID" ]; do
+                sleep 5
+                VOLUME_ID=$(openstack server show $VM_ID -c volumes_attached -f value 2>/dev/null | grep -oP "id='\K[^']+" | head -1)
+                ((volume_attempts++))
+                echo "Volume check attempt $volume_attempts: $VOLUME_ID"
+            done
+
             if [ -n "$VOLUME_ID" ]; then
                 volume_ids="$volume_ids $VOLUME_ID"
                 echo -e "${green}Volume created with ID: $VOLUME_ID${normal}"
+            else
+                echo -e "${yellow}Warning: Could not retrieve volume ID for VM $VM_ID${normal}"
             fi
         else
             echo -e "${red}Failed to extract VM ID for $INSTANCE_NAME${normal}"
+            echo "VM creation output:"
+            echo "$VM_CREATE_OUTPUT"
         fi
 
-        [[ $i -ne $VM_QTY ]] && { sleep $TIMEOUT_BEFORE_NEXT_CREATION; }
+        # Timeout between VM creations (if not batch mode and not last VM)
+        if [ "$BATCH" != "true" ] && [ $i -ne $VM_QTY ]; then
+            echo "Waiting $TIMEOUT_BEFORE_NEXT_CREATION seconds before next VM creation..."
+            sleep $TIMEOUT_BEFORE_NEXT_CREATION
+        fi
     done
 
     # Update cleanup state with new batch
-    local next_batch=$(get_next_batch_number)
-    update_cleanup_state "$next_batch" "$vm_ids" "$volume_ids"
-
-    if [ "$WAIT_FOR_CREATED" = true ] && [ -n "$vm_ids" ]; then
-        echo "Waiting for VMs to become active..."
-        if wait_vms_created "$vm_ids"; then
-            echo -e "${green}All VMs are ready!${normal}"
+    if [ -n "$vm_ids" ]; then
+        local next_batch=$(get_next_batch_number)
+        if update_cleanup_state "$next_batch" "$vm_ids" "$volume_ids"; then
+            echo -e "${green}Cleanup state saved for batch $next_batch${normal}"
+            echo "VM IDs: $vm_ids"
+            if [ -n "$volume_ids" ]; then
+                echo "Volume IDs: $volume_ids"
+            fi
         else
-            echo -e "${yellow}Some VMs may not be ready, but continuing...${normal}"
+            echo -e "${yellow}Cleanup state not updated${normal}"
         fi
-        check_vms_list
+
+        if [ "$WAIT_FOR_CREATED" = true ]; then
+            echo "Waiting for VMs to become active..."
+            if wait_vms_created "$vm_ids"; then
+                echo -e "${green}All VMs are ready!${normal}"
+            else
+                echo -e "${yellow}Some VMs may not be ready, but continuing...${normal}"
+            fi
+        fi
     else
-        check_vms_list
+        echo -e "${red}No VMs were created successfully${normal}"
+        return 1
     fi
+
+    # Show final VMs list
+    check_vms_list
+
+    return 0
 }
 
 # Main execution flow
