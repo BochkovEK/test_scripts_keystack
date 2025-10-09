@@ -285,7 +285,6 @@ get_vm_details() {
     # Get VM name
     local vm_name=$(openstack server show "$vm_id" -c name -f value 2>/dev/null)
     if [ $? -ne 0 ]; then
-        echo "unknown:unknown"
         return 1
     fi
 
@@ -293,9 +292,9 @@ get_vm_details() {
     local vm_project_id=$(openstack server show "$vm_id" -c project_id -f value 2>/dev/null)
 
     # Get project name
-    local project_name=$(openstack project show "$vm_project_id" -c name -f value 2>/dev/null 2>/dev/null)
-    if [ $? -ne 0 ]; then
-        project_name="unknown"
+    local project_name=""
+    if [ -n "$vm_project_id" ]; then
+        project_name=$(openstack project show "$vm_project_id" -c name -f value 2>/dev/null 2>/dev/null)
     fi
 
     echo "$vm_name:$project_name"
@@ -318,51 +317,64 @@ show_batch_summary() {
 
     echo -e "${blue}Batch $batch_num:${normal}"
 
+    has_resources=false
+
     # Show VMs with names and projects
     if [ -n "$vm_ids" ] && [ "$vm_ids" != "null" ]; then
+        has_resources=true
         echo "  VMs:"
         for vm_id in $vm_ids; do
             if [ "$vm_id" != "null" ]; then
                 vm_details=$(get_vm_details "$vm_id")
-                vm_name=$(echo "$vm_details" | cut -d: -f1)
-                vm_project=$(echo "$vm_details" | cut -d: -f2)
-                echo "    - $vm_name (ID: $vm_id, Project: $vm_project)"
+                if [ $? -eq 0 ]; then
+                    vm_name=$(echo "$vm_details" | cut -d: -f1)
+                    vm_project=$(echo "$vm_details" | cut -d: -f2)
+                    if [ -n "$vm_project" ]; then
+                        echo "    - $vm_name (ID: $vm_id, Project: $vm_project)"
+                    else
+                        echo "    - $vm_name (ID: $vm_id)"
+                    fi
+                else
+                    echo "    - (ID: $vm_id)"
+                fi
             fi
         done
-    else
-        echo "  VMs: none"
     fi
 
-    # Show volumes count (оставляем как есть, т.к. у томов обычно нет понятных имен)
+    # Show volumes count
     if [ -n "$volumes" ] && [ "$volumes" != "null" ]; then
+        has_resources=true
         volume_count=$(echo $volumes | wc -w)
         echo "  Volumes: $volume_count"
-    else
-        echo "  Volumes: none"
     fi
 
     # Show security group with details
     if [ -n "$sg_id" ] && [ "$sg_id" != "null" ]; then
+        has_resources=true
         sg_details=$(get_security_group_details "$sg_id")
         sg_name=$(echo "$sg_details" | cut -d: -f1)
         sg_project=$(echo "$sg_details" | cut -d: -f2)
-        echo "  Security Group: $sg_name (ID: $sg_id, Project: $sg_project)"
-    else
-        echo "  Security Group: none"
+        if [ -n "$sg_project" ] && [ "$sg_project" != "unknown" ]; then
+            echo "  Security Group: $sg_name (ID: $sg_id, Project: $sg_project)"
+        else
+            echo "  Security Group: $sg_name (ID: $sg_id)"
+        fi
     fi
 
     # Show flavor
     if [ -n "$flavor_name" ] && [ "$flavor_name" != "null" ]; then
+        has_resources=true
         echo "  Flavor: $flavor_name"
-    else
-        echo "  Flavor: none"
     fi
 
     # Show keypair
     if [ -n "$keypair_user" ] && [ "$keypair_user" != "null" ]; then
+        has_resources=true
         echo "  Keypair: $keypair_user"
-    else
-        echo "  Keypair: none"
+    fi
+
+    if [ "$has_resources" = false ]; then
+        echo "  No resources found"
     fi
 
     echo ""
