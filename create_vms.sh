@@ -863,7 +863,6 @@ create_vms () {
             done
 
             if [ -n "$VOLUME_ID" ]; then
-                volume_ids="$volume_ids $VOLUME_ID"
                 if [ -z "$volume_ids" ]; then
                     volume_ids="$VOLUME_ID"
                 else
