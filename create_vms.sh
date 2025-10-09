@@ -670,42 +670,58 @@ check_vms_list () {
     fi
 }
 
-# Wait for VMs to be created
+# Wait for specific VMs to be created by their IDs
 wait_vms_created () {
-    building_vms=$VM_QTY
-    while [ $building_vms -ne 0 ]; do
-        building_vms=$VM_QTY
-        active=0
-        echo "Wait for $building_vms VMs created..."
-        building_vms=$VM_QTY
-        id_vms_list=$(openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks|grep -E "$1"|awk '{print $2}')
-        [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] building_id_vms_list: $id_vms_list"
+    local vm_ids="$1"  # Accept VM IDs instead of name pattern
+    local all_active=false
+    local attempts=0
+    local max_attempts=60  # 5 minutes with 5-second intervals
 
-        if [ -z "${id_vms_list}" ]; then
+    echo "Waiting for VMs to become active..."
+
+    while [ $attempts -lt $max_attempts ] && [ "$all_active" = false ]; do
+        all_active=true
+        active_count=0
+        total_count=0
+
+        for vm_id in $vm_ids; do
+            ((total_count++))
+            status=$(openstack server show $vm_id -c status -f value 2>/dev/null)
+
+            if [ "$status" = "ACTIVE" ]; then
+                ((active_count++))
+                echo -e "${green}VM $vm_id is ACTIVE${normal}"
+            elif [ "$status" = "ERROR" ]; then
+                echo -e "${red}VM $vm_id is in ERROR state${normal}"
+                all_active=false
+            elif [ "$status" = "BUILD" ]; then
+                echo -e "${yellow}VM $vm_id is still BUILDING${normal}"
+                all_active=false
+            elif [ -z "$status" ]; then
+                echo -e "${orange}VM $vm_id not found yet${normal}"
+                all_active=false
+            else
+                echo -e "${yellow}VM $vm_id status: $status${normal}"
+                all_active=false
+            fi
+        done
+
+        if [ "$all_active" = true ]; then
+            echo -e "${green}All $active_count/$total_count VMs are ACTIVE${normal}"
             break
         else
-            for id in $id_vms_list; do
-                [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] id: $id"
-                status=""
-                name=""
-                status=$(openstack server show $id|grep -E "\|\s+status\s+\|\s+\w+"| awk '{print $4}')
-                name=$(openstack server show $id|grep -E "\|\s+name\s+\|\s+\w+"| awk '{print $4}')
-                echo "server_name: $name"
-                echo "status: $status"| \
-                    sed --unbuffered \
-                    -e 's/\(.*BUILD.*\)/\o033[33m\1\o033[39m/' \
-                    -e 's/\(.*ACTIVE.*\)/\o033[32m\1\o033[39m/' \
-                    -e 's/\(.*ERROR.*\)/\o033[31m\1\o033[39m/'
-                if [ "$status" = ACTIVE ]; then
-                    active=$(( active + 1 ))
-                fi
-            done
-            if [ "$active" -ge "$VM_QTY" ]; then
-                break
-            fi
-            building_vms=$(( building_vms - active ))
+            echo "Progress: $active_count/$total_count VMs active"
+            ((attempts++))
+            sleep 5
         fi
     done
+
+    if [ "$all_active" = false ]; then
+        echo -e "${red}Timeout reached. Not all VMs became active.${normal}"
+        return 1
+    fi
+
+    return 0
 }
 
 # Create VMs
@@ -746,22 +762,6 @@ create_vms () {
 
         echo "Creating VM: $INSTANCE_NAME"
 
-        [ "$TS_DEBUG" = true ] && echo -e "
-        [DEBUG]
-        VM_BASE_NAME: $VM_BASE_NAME
-        IMAGE: $IMAGE
-        FLAVOR: $FLAVOR
-        SECURITY_GR_ID: $SECURITY_GR_ID
-        key_string: $key_string
-        host: $host
-        PROJECT: $PROJECT
-        NETWORK: $NETWORK
-        VOLUME_SIZE: $VOLUME_SIZE
-        VM_QTY: $VM_QTY
-        ADD_KEY: $ADD_KEY
-        MAX_KEY: $MAX_KEY
-        "
-
         # Create VM and capture output
         VM_CREATE_OUTPUT=$(openstack server create \
             $INSTANCE_NAME \
@@ -781,13 +781,15 @@ create_vms () {
             vm_ids="$vm_ids $VM_ID"
             echo -e "${green}VM created with ID: $VM_ID${normal}"
 
-            # Get volume ID (may need to wait a bit for volume attachment)
+            # Get volume ID
             sleep 2
             VOLUME_ID=$(openstack server show $VM_ID -c volumes_attached -f value | grep -oP "id='\K[^']+" | head -1)
             if [ -n "$VOLUME_ID" ]; then
                 volume_ids="$volume_ids $VOLUME_ID"
                 echo -e "${green}Volume created with ID: $VOLUME_ID${normal}"
             fi
+        else
+            echo -e "${red}Failed to extract VM ID for $INSTANCE_NAME${normal}"
         fi
 
         [[ $i -ne $VM_QTY ]] && { sleep $TIMEOUT_BEFORE_NEXT_CREATION; }
@@ -797,8 +799,13 @@ create_vms () {
     local next_batch=$(get_next_batch_number)
     update_cleanup_state "$next_batch" "$vm_ids" "$volume_ids"
 
-    if [ "$WAIT_FOR_CREATED" = true ]; then
-        wait_vms_created $VM_BASE_NAME
+    if [ "$WAIT_FOR_CREATED" = true ] && [ -n "$vm_ids" ]; then
+        echo "Waiting for VMs to become active..."
+        if wait_vms_created "$vm_ids"; then
+            echo -e "${green}All VMs are ready!${normal}"
+        else
+            echo -e "${yellow}Some VMs may not be ready, but continuing...${normal}"
+        fi
         check_vms_list
     else
         check_vms_list
