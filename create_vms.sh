@@ -835,7 +835,11 @@ create_vms () {
         VM_ID=$(echo "$VM_CREATE_OUTPUT" | grep -E "\|\s+id\s+\|" | awk '{print $4}')
 
         if [ -n "$VM_ID" ]; then
-            vm_ids="$vm_ids $VM_ID"
+            if [ -z "$vm_ids" ]; then
+                vm_ids="$vm_ids $VM_ID"
+            else
+                vm_ids="$VM_ID"
+            fi
             echo -e "${green}VM created with ID: $VM_ID${normal}"
 
             # Get volume ID
