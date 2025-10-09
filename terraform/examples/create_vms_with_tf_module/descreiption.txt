@@ -51,7 +51,6 @@ VMs = {
 
             #or template:
                 { template_file = "templates/cloud-init-2.yaml" }
-        }
     }
 }
 

@@ -13,4 +13,4 @@
 ./*-rc*.py
 ./utils/*-rc*.sh
 ./*-rc*.sh
-foo.json
+foo.yml
