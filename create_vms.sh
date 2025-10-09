@@ -846,7 +846,7 @@ create_vms () {
 
             while [ $volume_attempts -lt $max_volume_attempts ] && [ -z "$VOLUME_ID" ]; do
                 sleep 5
-                VOLUME_ID=$(openstack server show $VM_ID -c volumes_attached -f value 2>/dev/null | grep -oP "id='\K[^']+" | head -1)
+                VOLUME_ID=$(openstack server show $VM_ID -c volumes_attached -f json 2>/dev/null | jq -r '.volumes_attached[0].id' 2>/dev/null)
                 ((volume_attempts++))
                 echo "Volume check attempt $volume_attempts: $VOLUME_ID"
             done
