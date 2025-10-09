@@ -847,8 +847,16 @@ create_vms () {
             while [ $volume_attempts -lt $max_volume_attempts ] && [ -z "$VOLUME_ID" ]; do
                 sleep 5
                 VOLUME_ID=$(openstack server show $VM_ID -c volumes_attached -f json 2>/dev/null | jq -r '.volumes_attached[0].id' 2>/dev/null)
+
+                # Проверяем что VOLUME_ID не null и не пустой
+                if [ "$VOLUME_ID" = "null" ] || [ -z "$VOLUME_ID" ]; then
+                    VOLUME_ID=""
+                    echo "Volume check attempt $volume_attempts: volume not ready yet"
+                else
+                    echo "Volume check attempt $volume_attempts: $VOLUME_ID"
+                fi
+
                 ((volume_attempts++))
-                echo "Volume check attempt $volume_attempts: $VOLUME_ID"
             done
 
             if [ -n "$VOLUME_ID" ]; then
@@ -884,7 +892,7 @@ create_vms () {
         fi
 
         if [ "$WAIT_FOR_CREATED" = true ]; then
-            echo "Waiting for VMs to become active..."
+#            echo "Waiting for VMs to become active..."
             if wait_vms_created "$vm_ids"; then
                 echo -e "${green}All VMs are ready!${normal}"
             else
