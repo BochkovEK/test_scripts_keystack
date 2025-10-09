@@ -836,9 +836,9 @@ create_vms () {
 
         if [ -n "$VM_ID" ]; then
             if [ -z "$vm_ids" ]; then
-                vm_ids="$vm_ids $VM_ID"
-            else
                 vm_ids="$VM_ID"
+            else
+                vm_ids="$vm_ids $VM_ID"
             fi
             echo -e "${green}VM created with ID: $VM_ID${normal}"
 
@@ -852,7 +852,6 @@ create_vms () {
                 sleep 5
                 VOLUME_ID=$(openstack server show $VM_ID -c volumes_attached -f json 2>/dev/null | jq -r '.volumes_attached[0].id' 2>/dev/null)
 
-                # Проверяем что VOLUME_ID не null и не пустой
                 if [ "$VOLUME_ID" = "null" ] || [ -z "$VOLUME_ID" ]; then
                     VOLUME_ID=""
                     echo "Volume check attempt $volume_attempts: volume not ready yet"
@@ -865,6 +864,11 @@ create_vms () {
 
             if [ -n "$VOLUME_ID" ]; then
                 volume_ids="$volume_ids $VOLUME_ID"
+                if [ -z "$volume_ids" ]; then
+                    volume_ids="$VOLUME_ID"
+                else
+                    volume_ids="$volume_ids $VOLUME_ID"
+                fi
                 echo -e "${green}Volume created with ID: $VOLUME_ID${normal}"
             else
                 echo -e "${yellow}Warning: Could not retrieve volume ID for VM $VM_ID${normal}"
