@@ -141,17 +141,67 @@ error_output() {
     exit 1
 }
 
-# Function to check connectivity to nodes
-check_connection() {
-    for host in "${NODES[@]}"; do
-        echo "Checking connection to: $host"
-        sleep 1
-        if ping -c 2 "$host" &> /dev/null; then
-            printf "%40s\n" "${green}Connection to $host successful${normal}"
+# Standalone SSH check function that can be used independently
+test_ssh_connection() {
+    local node_name="$1"
+    local node_ip="$2"
+    local timeout="${3:-10}"
+
+    echo -e "${blue}Testing SSH connection to $node_name...${normal}"
+
+    # Check if required variables are set
+    if [ -z "$SSH_USER" ]; then
+        echo -e "${red}SSH_USER variable is not set${normal}"
+        return 1
+    fi
+
+    if [ -z "$node_ip" ]; then
+        echo -e "${red}Node IP is not specified${normal}"
+        return 1
+    fi
+
+    # Test basic connectivity with ping first (optional)
+    if command -v ping &> /dev/null; then
+        if ping -c 1 -W 2 "$node_ip" &> /dev/null; then
+            echo -e "${green}✓ Host $node_ip is reachable${normal}"
         else
-            printf "%40s\n" "${red}No connection to $host - error!${normal}"
+            echo -e "${yellow}⚠ Host $node_ip is not responding to ping${normal}"
         fi
-    done
+    fi
+
+    # Test SSH connection
+    local ssh_output
+    ssh_output=$(ssh -o StrictHostKeyChecking=no -o ConnectTimeout=$timeout -o BatchMode=yes \
+        "$SSH_USER@$node_ip" "echo 'SUCCESS'; whoami; hostname" 2>&1)
+
+    local ssh_exit_code=$?
+
+    if [ $ssh_exit_code -eq 0 ]; then
+        local remote_user=$(echo "$ssh_output" | sed -n '2p')
+        local remote_hostname=$(echo "$ssh_output" | sed -n '3p')
+        echo -e "${green}✓ SSH connection successful${normal}"
+        echo -e "${green}  Connected as: $remote_user${normal}"
+        echo -e "${green}  Remote host: $remote_hostname${normal}"
+        return 0
+    else
+        echo -e "${red}✗ SSH connection failed${normal}"
+        # Provide more detailed error information
+        case $ssh_exit_code in
+            255)
+                echo -e "${red}  Error: Network connection refused or host unreachable${normal}"
+                ;;
+            5)
+                echo -e "${red}  Error: Host key verification failed${normal}"
+                ;;
+            1)
+                echo -e "${red}  Error: Authentication failed${normal}"
+                ;;
+            *)
+                echo -e "${red}  Error: SSH connection failed (exit code: $ssh_exit_code)${normal}"
+                ;;
+        esac
+        return 1
+    fi
 }
 
 # Function to execute commands on all nodes

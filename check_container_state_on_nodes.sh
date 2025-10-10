@@ -229,10 +229,34 @@ get_nodes_list() {
     fi
 }
 
-# Function to check container status on a node
+# Function to check SSH connectivity to a node
+check_ssh_connectivity() {
+    local node_name="$1"
+    local node_ip="$2"
+
+    echo -e "${blue}Checking SSH connectivity to $node_name ($node_ip)${normal}"
+
+    # Try to connect with timeout and execute a simple command
+    if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -o BatchMode=yes \
+        "$SSH_USER@$node_ip" "echo 'SSH connection successful'" 2>/dev/null; then
+        echo -e "${green}✓ SSH connection to $node_name ($node_ip) is working${normal}"
+        return 0
+    else
+        echo -e "${red}✗ SSH connection to $node_name ($node_ip) failed${normal}"
+        return 1
+    fi
+}
+
+# Enhanced container status check with SSH connectivity verification
 check_container_status() {
     local node_name="$1"
     local node_ip="$2"
+
+    # First check SSH connectivity
+    if ! check_ssh_connectivity "$node_name" "$node_ip"; then
+        echo -e "${red}Cannot check containers on $node_name - SSH connection failed${normal}"
+        return 1
+    fi
 
     echo -e "${blue}Checking containers on $node_name ($node_ip)${normal}"
 
@@ -241,6 +265,7 @@ check_container_status() {
         format_option="--format 'table {{.ID}}\t{{.Image}}\t{{.Created}}\t{{.Status}}\t{{.Names}}'"
     fi
 
+    # Now check containers since SSH is working
     ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
         "sudo $CONTAINER_ENGINE ps -a $format_option" 2>/dev/null | \
         sed --unbuffered \
