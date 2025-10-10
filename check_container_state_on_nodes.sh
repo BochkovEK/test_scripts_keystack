@@ -158,6 +158,12 @@ check_required_containers() {
     local node_ip="$1"
     local node_type="$2"
 
+    # First check SSH connectivity
+    if ! check_ssh_connectivity "$node_name" "$node_ip"; then
+        echo -e "${red}Cannot check containers on $node_name - SSH connection failed${normal}"
+        return 1
+    fi
+
     echo -e "Checking required containers on $node_ip ($node_type)"
 
     local container_names
