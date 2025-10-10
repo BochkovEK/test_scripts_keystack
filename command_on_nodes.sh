@@ -14,7 +14,7 @@ green=$(tput setaf 2)
 red=$(tput setaf 1)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
-blue=$(tput setaf 4)
+blue=$(tput setaf 6)
 
 # Default values
 [[ -z $COMMAND ]] && COMMAND="ls -la"
@@ -204,6 +204,24 @@ test_ssh_connection() {
     fi
 }
 
+# Function to check SSH connectivity to a node
+check_ssh_connectivity() {
+    local node_name="$1"
+    local node_ip="$2"
+
+    echo -e "Checking SSH connectivity to $node_name ($node_ip)"
+
+    # Try to connect with timeout and execute a simple command
+    if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -o BatchMode=yes \
+        "$SSH_USER@$node_ip" "echo 'SSH connection successful'" 2>/dev/null; then
+        echo -e "✓ SSH connection to $node_name ($node_ip) is working"
+        return 0
+    else
+        echo -e "${red}✗ SSH connection to $node_name ($node_ip) failed${normal}"
+        return 1
+    fi
+}
+
 # Function to execute commands on all nodes
 start_commands_on_nodes() {
     if [ "$TS_DEBUG" = true ]; then
@@ -233,6 +251,11 @@ start_commands_on_nodes() {
 #    [DEBUG] Executing command: ssh -o StrictHostKeyChecking=no -t \"$SEND_ENV\" \"$SSH_USER@$node_ip\" \"$COMMAND\""
 #            export "$SEND_ENV" ssh -o StrictHostKeyChecking=no -t "$SEND_ENV" "$SSH_USER@$node_ip" "$COMMAND"
 #        else
+        # First check SSH connectivity
+        if ! check_ssh_connectivity "$node_name" "$node_ip"; then
+            echo -e "${red}Cannot check containers on $node_name - SSH connection failed${normal}"
+            continue
+        fi
         [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG] Executing command: ssh -o StrictHostKeyChecking=no -t \"$SSH_USER@$node_ip\" \"$COMMAND\""
 #        ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" "$COMMAND"
