@@ -495,6 +495,45 @@ delete_resources_by_category() {
     fi
 }
 
+# Function to offer cleanup state file removal
+offer_cleanup_file_removal() {
+    local state_file="$script_dir/$cleanup_file"
+
+    if [ ! -f "$state_file" ]; then
+        return 0
+    fi
+
+    echo ""
+    echo -e "${orange}=== CLEANUP COMPLETED SUCCESSFULLY ===${normal}"
+    echo "Cleanup state file: $state_file"
+    echo ""
+
+    if confirm_action "Remove cleanup state file to prevent accidental re-execution?"; then
+        if rm -f "$state_file"; then
+            echo -e "${green}Successfully removed state file: $cleanup_file${normal}"
+        else
+            echo -e "${red}Failed to remove state file: $cleanup_file${normal}"
+        fi
+    else
+        echo -e "${yellow}State file preserved: $cleanup_file${normal}"
+        echo "You can use it for future cleanup operations or remove it manually"
+    fi
+}
+
+# Function to check if all resources were successfully cleaned
+check_cleanup_success() {
+    # Simple check - if we processed any resources and no critical errors occurred
+    local total_resources=0
+    total_resources=$(( ${#all_vms[@]} + ${#all_volumes[@]} + ${#all_security_groups[@]} + ${#all_keypairs[@]} + ${#all_flavors[@]} ))
+
+    if [ $total_resources -eq 0 ]; then
+        echo -e "${yellow}No resources found to cleanup${normal}"
+        return 1
+    fi
+
+    return 0
+}
+
 # Main cleanup function
 main_cleanup() {
     check_openstack_cli
@@ -531,7 +570,15 @@ main_cleanup() {
     # Delete resources by category
     delete_resources_by_category "$batch_info"
 
-    echo -e "${green}Cleanup completed!${normal}"
+    # Check if cleanup was successful
+    if check_cleanup_success; then
+        echo -e "${green}Cleanup completed successfully!${normal}"
+        # Offer to remove state file
+        offer_cleanup_file_removal
+    else
+        echo -e "${yellow}Cleanup finished with warnings${normal}"
+        echo "State file preserved for possible re-execution"
+    fi
 }
 
 # Run main function
