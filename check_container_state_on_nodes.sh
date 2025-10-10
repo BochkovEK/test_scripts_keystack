@@ -208,7 +208,7 @@ check_required_containers() {
     done
 
     if [ "$check_succeeded" = "true" ]; then
-        echo "# Check of required containers completed successfully"
+        echo "✓ Check of required containers completed successfully"
     fi
 }
 
