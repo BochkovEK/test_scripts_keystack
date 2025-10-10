@@ -152,132 +152,6 @@ check_openstack_cli() {
     echo -e "${green}OpenStack CLI is available${normal}"
 }
 
-# Delete VMs
-delete_vms() {
-    local vm_ids="$1"
-    local batch_info="$2"
-
-    if [ -z "$vm_ids" ] || [ "$vm_ids" = "null" ]; then
-        echo -e "${yellow}No VMs to delete in $batch_info${normal}"
-        return 0
-    fi
-
-    echo -e "${orange}Deleting VMs from $batch_info...${normal}"
-
-    for vm_id in $vm_ids; do
-        if [ "$vm_id" != "null" ]; then
-            if confirm_action "Delete VM $vm_id"; then
-                echo "Deleting VM: $vm_id"
-                if openstack server delete $vm_id; then
-                    echo -e "${green}Successfully deleted VM: $vm_id${normal}"
-                else
-                    echo -e "${red}Failed to delete VM: $vm_id${normal}"
-                fi
-            fi
-        fi
-    done
-}
-
-# Delete volumes
-delete_volumes() {
-    local volume_ids="$1"
-    local batch_info="$2"
-
-    if [ -z "$volume_ids" ] || [ "$volume_ids" = "null" ]; then
-        echo -e "${yellow}No volumes to delete in $batch_info${normal}"
-        return 0
-    fi
-
-    echo -e "${orange}Deleting volumes from $batch_info...${normal}"
-
-    for volume_id in $volume_ids; do
-        if [ "$volume_id" != "null" ]; then
-            if confirm_action "Delete volume $volume_id"; then
-                echo "Deleting volume: $volume_id"
-                if openstack volume delete $volume_id; then
-                    echo -e "${green}Successfully deleted volume: $volume_id${normal}"
-                else
-                    echo -e "${red}Failed to delete volume: $volume_id${normal}"
-                fi
-            fi
-        fi
-    done
-}
-
-# Delete keypair
-delete_keypair() {
-    local keypair_user_var="$1"
-    local batch_info="$2"
-
-    if [ -z "$keypair_user_var" ] || [ "$keypair_user_var" = "null" ]; then
-        echo -e "${yellow}No keypair to delete in $batch_info${normal}"
-        return 0
-    fi
-
-    if confirm_action "Delete keypair: $keypair_user_var"; then
-        local key_name="${keypair_user_var%:*}"
-        echo "Deleting keypair: $key_name"
-        if openstack keypair delete "$key_name"; then
-            echo -e "${green}Successfully deleted keypair: $key_name${normal}"
-        else
-            echo -e "${red}Failed to delete keypair: $key_name${normal}"
-        fi
-    else
-        echo -e "${yellow}Skipping keypair deletion in $batch_info${normal}"
-    fi
-}
-
-# Delete security group
-delete_security_group() {
-    local sg_id="$1"
-    local batch_info="$2"
-
-    if [ -z "$sg_id" ] || [ "$sg_id" = "null" ]; then
-        echo -e "${yellow}No security group to delete in $batch_info${normal}"
-        return 0
-    fi
-
-    # Get security group details for confirmation message
-    sg_details=$(get_security_group_details "$sg_id")
-    sg_name=$(echo "$sg_details" | cut -d: -f1)
-    sg_project=$(echo "$sg_details" | cut -d: -f2)
-
-    local confirmation_message="Delete security group: $sg_name (ID: $sg_id, Project: $sg_project)"
-
-    if confirm_action "$confirmation_message"; then
-        echo "Deleting security group: $sg_id"
-        if openstack security group delete "$sg_id"; then
-            echo -e "${green}Successfully deleted security group: $sg_name${normal}"
-        else
-            echo -e "${red}Failed to delete security group: $sg_name${normal}"
-        fi
-    else
-        echo -e "${yellow}Skipping security group deletion in $batch_info${normal}"
-    fi
-}
-
-# Delete flavor
-delete_flavor() {
-    local flavor_name="$1"
-    local batch_info="$2"
-
-    if [ -z "$flavor_name" ] || [ "$flavor_name" = "null" ]; then
-        echo -e "${yellow}No flavor to delete in $batch_info${normal}"
-        return 0
-    fi
-
-    if confirm_action "Delete flavor: $flavor_name"; then
-        echo "Deleting flavor: $flavor_name"
-        if openstack flavor delete "$flavor_name"; then
-            echo -e "${green}Successfully deleted flavor: $flavor_name${normal}"
-        else
-            echo -e "${red}Failed to delete flavor: $flavor_name${normal}"
-        fi
-    else
-        echo -e "${yellow}Skipping flavor deletion in $batch_info${normal}"
-    fi
-}
-
 # Get VM details for summary
 get_vm_details() {
     local vm_id="$1"
@@ -300,114 +174,240 @@ get_vm_details() {
     echo "$vm_name:$project_name"
 }
 
-# Display batch summary with detailed VM info
-show_batch_summary() {
-    local batch_num="$1"
-    local vm_ids_var="CREATED_VM_IDS_BATCH_$batch_num"
-    local volumes_var="CREATED_BOOT_VOLUMES_BATCH_$batch_num"
-    local sg_var="CREATED_SECURITY_GROUP_ID_BATCH_$batch_num"
-    local flavor_var="CREATED_FLAVOR_NAME_BATCH_$batch_num"
-    local keypair_var="CREATED_KEYPAIR_NAME_USER_BATCH_$batch_num"
+# Collect all resources by category
+collect_resources_by_category() {
+    local batch_filter="$1"
 
-    eval "vm_ids=\"\$$vm_ids_var\""
-    eval "volumes=\"\$$volumes_var\""
-    eval "sg_id=\"\$$sg_var\""
-    eval "flavor_name=\"\$$flavor_var\""
-    eval "keypair_user=\"\$$keypair_var\""
+    # Initialize arrays
+    declare -gA all_vms=() all_volumes=() all_security_groups=() all_flavors=() all_keypairs=()
 
-    echo -e "${blue}Batch $batch_num:${normal}"
+    # Find all batches
+    if [ -z "$batch_filter" ]; then
+        batches=$(grep -o 'CREATED_VM_IDS_BATCH_[0-9]*' "$script_dir/$cleanup_file" | sed 's/CREATED_VM_IDS_BATCH_//' | sort -n)
+    else
+        batches="$batch_filter"
+    fi
 
-    has_resources=false
+    for batch_num in $batches; do
+        local vm_ids_var="CREATED_VM_IDS_BATCH_$batch_num"
+        local volumes_var="CREATED_BOOT_VOLUMES_BATCH_$batch_num"
+        local sg_var="CREATED_SECURITY_GROUP_ID_BATCH_$batch_num"
+        local flavor_var="CREATED_FLAVOR_NAME_BATCH_$batch_num"
+        local keypair_var="CREATED_KEYPAIR_NAME_USER_BATCH_$batch_num"
 
-    # Show VMs with names and projects
-    if [ -n "$vm_ids" ] && [ "$vm_ids" != "null" ]; then
-        has_resources=true
-        echo "  VMs:"
-        for vm_id in $vm_ids; do
-            if [ "$vm_id" != "null" ]; then
-                vm_details=$(get_vm_details "$vm_id")
-                if [ $? -eq 0 ]; then
-                    vm_name=$(echo "$vm_details" | cut -d: -f1)
-                    vm_project=$(echo "$vm_details" | cut -d: -f2)
-                    if [ -n "$vm_project" ]; then
-                        echo "    - $vm_name (ID: $vm_id, Project: $vm_project)"
-                    else
-                        echo "    - $vm_name (ID: $vm_id)"
-                    fi
-                else
-                    echo "    - (ID: $vm_id)"
+        eval "vm_ids=\"\$$vm_ids_var\""
+        eval "volumes=\"\$$volumes_var\""
+        eval "sg_id=\"\$$sg_var\""
+        eval "flavor_name=\"\$$flavor_var\""
+        eval "keypair_user=\"\$$keypair_var\""
+
+        # Collect VMs
+        if [ -n "$vm_ids" ] && [ "$vm_ids" != "null" ]; then
+            for vm_id in $vm_ids; do
+                if [ "$vm_id" != "null" ]; then
+                    all_vms["$vm_id"]="$batch_num"
                 fi
-            fi
-        done
-    fi
-
-    # Show volumes count
-    if [ -n "$volumes" ] && [ "$volumes" != "null" ]; then
-        has_resources=true
-        volume_count=$(echo $volumes | wc -w)
-        echo "  Volumes: $volume_count"
-    fi
-
-    # Show security group with details
-    if [ -n "$sg_id" ] && [ "$sg_id" != "null" ]; then
-        has_resources=true
-        sg_details=$(get_security_group_details "$sg_id")
-        sg_name=$(echo "$sg_details" | cut -d: -f1)
-        sg_project=$(echo "$sg_details" | cut -d: -f2)
-        if [ -n "$sg_project" ] && [ "$sg_project" != "unknown" ]; then
-            echo "  Security Group: $sg_name (ID: $sg_id, Project: $sg_project)"
-        else
-            echo "  Security Group: $sg_name (ID: $sg_id)"
+            done
         fi
-    fi
 
-    # Show flavor
-    if [ -n "$flavor_name" ] && [ "$flavor_name" != "null" ]; then
-        has_resources=true
-        echo "  Flavor: $flavor_name"
-    fi
+        # Collect volumes
+        if [ -n "$volumes" ] && [ "$volumes" != "null" ]; then
+            for volume_id in $volumes; do
+                if [ "$volume_id" != "null" ]; then
+                    all_volumes["$volume_id"]="$batch_num"
+                fi
+            done
+        fi
 
-    # Show keypair
-    if [ -n "$keypair_user" ] && [ "$keypair_user" != "null" ]; then
-        has_resources=true
-        echo "  Keypair: $keypair_user"
-    fi
+        # Collect security groups
+        if [ -n "$sg_id" ] && [ "$sg_id" != "null" ]; then
+            all_security_groups["$sg_id"]="$batch_num"
+        fi
 
-    if [ "$has_resources" = false ]; then
-        echo "  No resources found"
-    fi
+        # Collect flavors
+        if [ -n "$flavor_name" ] && [ "$flavor_name" != "null" ]; then
+            all_flavors["$flavor_name"]="$batch_num"
+        fi
 
-    echo ""
+        # Collect keypairs
+        if [ -n "$keypair_user" ] && [ "$keypair_user" != "null" ]; then
+            all_keypairs["$keypair_user"]="$batch_num"
+        fi
+    done
 }
 
-# Cleanup specific batch - ALL resources
-cleanup_batch() {
-    local batch_num="$1"
-    local vm_ids_var="CREATED_VM_IDS_BATCH_$batch_num"
-    local volumes_var="CREATED_BOOT_VOLUMES_BATCH_$batch_num"
-    local sg_var="CREATED_SECURITY_GROUP_ID_BATCH_$batch_num"
-    local flavor_var="CREATED_FLAVOR_NAME_BATCH_$batch_num"
-    local keypair_var="CREATED_KEYPAIR_NAME_USER_BATCH_$batch_num"
+# Show resources summary by category
+show_resources_summary() {
+    local batch_info="$1"
 
-    eval "vm_ids=\"\$$vm_ids_var\""
-    eval "volumes=\"\$$volumes_var\""
-    eval "sg_id=\"\$$sg_var\""
-    eval "flavor_name=\"\$$flavor_var\""
-    eval "keypair_user=\"\$$keypair_var\""
+    echo -e "${orange}=== CLEANUP SUMMARY $batch_info ===${normal}"
 
-    if [ -z "$vm_ids" ] && [ -z "$sg_id" ] && [ -z "$flavor_name" ] && [ -z "$keypair_user" ]; then
-        echo -e "${yellow}No resources found for batch $batch_num${normal}"
-        return 0
+    # VMs summary
+    if [ ${#all_vms[@]} -gt 0 ]; then
+        echo -e "${yellow}VIRTUAL MACHINES (${#all_vms[@]}):${normal}"
+        for vm_id in "${!all_vms[@]}"; do
+            vm_details=$(get_vm_details "$vm_id")
+            if [ $? -eq 0 ]; then
+                vm_name=$(echo "$vm_details" | cut -d: -f1)
+                vm_project=$(echo "$vm_details" | cut -d: -f2)
+                echo "  - $vm_name (ID: $vm_id, Project: $vm_project) [Batch ${all_vms[$vm_id]}]"
+            else
+                echo "  - (ID: $vm_id) [Batch ${all_vms[$vm_id]}]"
+            fi
+        done
+        echo ""
+    else
+        echo -e "${green}No virtual machines found${normal}"
     fi
 
-    echo -e "${orange}=== Cleaning up Batch $batch_num ===${normal}"
+    # Volumes summary
+    if [ ${#all_volumes[@]} -gt 0 ]; then
+        echo -e "${yellow}VOLUMES (${#all_volumes[@]}):${normal}"
+        for volume_id in "${!all_volumes[@]}"; do
+            echo "  - $volume_id [Batch ${all_volumes[$volume_id]}]"
+        done
+        echo ""
+    else
+        echo -e "${green}No volumes found${normal}"
+    fi
 
-    # Delete ALL resources in the batch
-    delete_vms "$vm_ids" "Batch $batch_num"
-    delete_volumes "$volumes" "Batch $batch_num"
-    delete_security_group "$sg_id" "Batch $batch_num"
-    delete_flavor "$flavor_name" "Batch $batch_num"
-    delete_keypair "$keypair_user" "Batch $batch_num"
+    # Security Groups summary
+    if [ ${#all_security_groups[@]} -gt 0 ]; then
+        echo -e "${yellow}SECURITY GROUPS (${#all_security_groups[@]}):${normal}"
+        for sg_id in "${!all_security_groups[@]}"; do
+            sg_details=$(get_security_group_details "$sg_id")
+            sg_name=$(echo "$sg_details" | cut -d: -f1)
+            sg_project=$(echo "$sg_details" | cut -d: -f2)
+            echo "  - $sg_name (ID: $sg_id, Project: $sg_project) [Batch ${all_security_groups[$sg_id]}]"
+        done
+        echo ""
+    else
+        echo -e "${green}No security groups found${normal}"
+    fi
+
+    # Keypairs summary
+    if [ ${#all_keypairs[@]} -gt 0 ]; then
+        echo -e "${yellow}KEYPAIRS (${#all_keypairs[@]}):${normal}"
+        for keypair_user in "${!all_keypairs[@]}"; do
+            key_name="${keypair_user%:*}"
+            user_name="${keypair_user#*:}"
+            echo "  - $key_name (User: $user_name) [Batch ${all_keypairs[$keypair_user]}]"
+        done
+        echo ""
+    else
+        echo -e "${green}No keypairs found${normal}"
+    fi
+
+    # Flavors summary
+    if [ ${#all_flavors[@]} -gt 0 ]; then
+        echo -e "${yellow}FLAVORS (${#all_flavors[@]}):${normal}"
+        for flavor_name in "${!all_flavors[@]}"; do
+            echo "  - $flavor_name [Batch ${all_flavors[$flavor_name]}]"
+        done
+        echo ""
+    else
+        echo -e "${green}No flavors found${normal}"
+    fi
+
+    echo -e "${orange}=================================${normal}"
+}
+
+# Delete resources by category
+delete_resources_by_category() {
+    local batch_info="$1"
+
+    echo -e "${orange}=== CLEANUP PROCESS $batch_info ===${normal}"
+
+    # 1. Delete all VMs
+    if [ ${#all_vms[@]} -gt 0 ]; then
+        echo -e "${yellow}=== VIRTUAL MACHINES (${#all_vms[@]}) ===${normal}"
+        if confirm_action "Delete all virtual machines?"; then
+            for vm_id in "${!all_vms[@]}"; do
+                echo "Deleting VM: $vm_id [Batch ${all_vms[$vm_id]}]"
+                if openstack server delete "$vm_id"; then
+                    echo -e "${green}Successfully deleted VM: $vm_id${normal}"
+                else
+                    echo -e "${red}Failed to delete VM: $vm_id${normal}"
+                fi
+            done
+        else
+            echo -e "${yellow}Skipping virtual machines deletion${normal}"
+        fi
+        echo ""
+    fi
+
+    # 2. Delete all volumes
+    if [ ${#all_volumes[@]} -gt 0 ]; then
+        echo -e "${yellow}=== VOLUMES (${#all_volumes[@]}) ===${normal}"
+        if confirm_action "Delete all volumes?"; then
+            for volume_id in "${!all_volumes[@]}"; do
+                echo "Deleting volume: $volume_id [Batch ${all_volumes[$volume_id]}]"
+                if openstack volume delete "$volume_id"; then
+                    echo -e "${green}Successfully deleted volume: $volume_id${normal}"
+                else
+                    echo -e "${red}Failed to delete volume: $volume_id${normal}"
+                fi
+            done
+        else
+            echo -e "${yellow}Skipping volumes deletion${normal}"
+        fi
+        echo ""
+    fi
+
+    # 3. Delete all security groups
+    if [ ${#all_security_groups[@]} -gt 0 ]; then
+        echo -e "${yellow}=== SECURITY GROUPS (${#all_security_groups[@]}) ===${normal}"
+        if confirm_action "Delete all security groups?"; then
+            for sg_id in "${!all_security_groups[@]}"; do
+                echo "Deleting security group: $sg_id [Batch ${all_security_groups[$sg_id]}]"
+                if openstack security group delete "$sg_id"; then
+                    echo -e "${green}Successfully deleted security group: $sg_id${normal}"
+                else
+                    echo -e "${red}Failed to delete security group: $sg_id${normal}"
+                fi
+            done
+        else
+            echo -e "${yellow}Skipping security groups deletion${normal}"
+        fi
+        echo ""
+    fi
+
+    # 4. Delete all keypairs
+    if [ ${#all_keypairs[@]} -gt 0 ]; then
+        echo -e "${yellow}=== KEYPAIRS (${#all_keypairs[@]}) ===${normal}"
+        if confirm_action "Delete all keypairs?"; then
+            for keypair_user in "${!all_keypairs[@]}"; do
+                key_name="${keypair_user%:*}"
+                echo "Deleting keypair: $key_name [Batch ${all_keypairs[$keypair_user]}]"
+                if openstack keypair delete "$key_name"; then
+                    echo -e "${green}Successfully deleted keypair: $key_name${normal}"
+                else
+                    echo -e "${red}Failed to delete keypair: $key_name${normal}"
+                fi
+            done
+        else
+            echo -e "${yellow}Skipping keypairs deletion${normal}"
+        fi
+        echo ""
+    fi
+
+    # 5. Delete all flavors
+    if [ ${#all_flavors[@]} -gt 0 ]; then
+        echo -e "${yellow}=== FLAVORS (${#all_flavors[@]}) ===${normal}"
+        if confirm_action "Delete all flavors?"; then
+            for flavor_name in "${!all_flavors[@]}"; do
+                echo "Deleting flavor: $flavor_name [Batch ${all_flavors[$flavor_name]}]"
+                if openstack flavor delete "$flavor_name"; then
+                    echo -e "${green}Successfully deleted flavor: $flavor_name${normal}"
+                else
+                    echo -e "${red}Failed to delete flavor: $flavor_name${normal}"
+                fi
+            done
+        else
+            echo -e "${yellow}Skipping flavors deletion${normal}"
+        fi
+        echo ""
+    fi
 }
 
 # Main cleanup function
@@ -415,21 +415,20 @@ main_cleanup() {
     check_openstack_cli
     load_cleanup_state
 
-    echo -e "${orange}=== CLEANUP SUMMARY ===${normal}"
-
+    # Determine batch info for messages
     if [ "$CLEANUP_ALL" = true ]; then
-        # Find all batches
-        batches=$(grep -o 'CREATED_VM_IDS_BATCH_[0-9]*' "$script_dir/$cleanup_file" | sed 's/CREATED_VM_IDS_BATCH_//' | sort -n)
-        echo "Cleaning up ALL batches:"
-        for batch_num in $batches; do
-            show_batch_summary "$batch_num"
-        done
-    elif [ -n "$SPECIFIC_BATCH" ]; then
-        echo "Cleaning up specific batch:"
-        show_batch_summary "$SPECIFIC_BATCH"
+        batch_info="(ALL BATCHES)"
+        batch_filter=""
+    else
+        batch_info="(BATCH $SPECIFIC_BATCH)"
+        batch_filter="$SPECIFIC_BATCH"
     fi
 
-    echo -e "${orange}========================${normal}"
+    # Collect resources by category
+    collect_resources_by_category "$batch_filter"
+
+    # Show summary
+    show_resources_summary "$batch_info"
 
     # Confirm overall cleanup
     if [ "$AUTO_CONFIRM" = false ]; then
@@ -439,19 +438,8 @@ main_cleanup() {
         fi
     fi
 
-    # Cleanup batches
-    if [ "$CLEANUP_ALL" = true ]; then
-        # Find all batches
-        batches=$(grep -o 'CREATED_VM_IDS_BATCH_[0-9]*' "$script_dir/$cleanup_file" | sed 's/CREATED_VM_IDS_BATCH_//' | sort -n)
-        for batch_num in $batches; do
-            cleanup_batch "$batch_num"
-        done
-    elif [ -n "$SPECIFIC_BATCH" ]; then
-        cleanup_batch "$SPECIFIC_BATCH"
-    else
-        echo -e "${yellow}No cleanup action specified${normal}"
-        exit 1
-    fi
+    # Delete resources by category
+    delete_resources_by_category "$batch_info"
 
     echo -e "${green}Cleanup completed!${normal}"
 }
