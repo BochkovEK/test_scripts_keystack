@@ -158,13 +158,13 @@ check_required_containers() {
     local node_ip="$1"
     local node_type="$2"
 
+    echo -e "Checking required containers on $node_ip ($node_type)"
+
     # First check SSH connectivity
     if ! check_ssh_connectivity "$node_name" "$node_ip"; then
         echo -e "${red}Cannot check containers on $node_name - SSH connection failed${normal}"
         return 1
     fi
-
-    echo -e "Checking required containers on $node_ip ($node_type)"
 
     local container_names
     container_names=$(ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
@@ -258,13 +258,13 @@ check_container_status() {
     local node_name="$1"
     local node_ip="$2"
 
+    echo -e "${blue}Checking containers on $node_name ($node_ip)${normal}"
+
     # First check SSH connectivity
     if ! check_ssh_connectivity "$node_name" "$node_ip"; then
         echo -e "${red}Cannot check containers on $node_name - SSH connection failed${normal}"
         return 1
     fi
-
-    echo -e "${blue}Checking containers on $node_name ($node_ip)${normal}"
 
     local format_option=""
     if [ "$CONTAINER_ENGINE" = "podman" ]; then
