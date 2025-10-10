@@ -13,9 +13,11 @@ virtual_stands_mark="[NOTE] required for virtual stands"
 
 # Colors
 normal=$(tput sgr0)
-blue=$(tput setaf 4)
 yellow=$(tput setaf 3)
 red=$(tput setaf 1)
+cyan=$(tput setaf 6)
+green=$(tput setaf 2)
+#blue=$(tput setaf 4)
 
 # Required container lists
 ctrl_required_container_list=(
@@ -240,7 +242,7 @@ check_ssh_connectivity() {
     local node_name="$1"
     local node_ip="$2"
 
-    echo -e "${blue}Checking SSH connectivity to $node_name ($node_ip)${normal}"
+    echo -e "Checking SSH connectivity to $node_name ($node_ip)"
 
     # Try to connect with timeout and execute a simple command
     if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -o BatchMode=yes \
@@ -258,7 +260,7 @@ check_container_status() {
     local node_name="$1"
     local node_ip="$2"
 
-    echo -e "${blue}Checking containers on $node_name ($node_ip)${normal}"
+    echo -e "${cyan}Checking containers on $node_name ($node_ip)${normal}"
 
     # First check SSH connectivity
     if ! check_ssh_connectivity "$node_name" "$node_ip"; then
