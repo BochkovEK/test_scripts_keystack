@@ -159,6 +159,7 @@ done
 check_required_containers() {
     local node_ip="$1"
     local node_type="$2"
+    local check_succeeded=true
 
     echo -e "Checking required containers on $node_ip ($node_type)"
 
@@ -201,9 +202,14 @@ check_required_containers() {
                 fi
             else
                 echo -e "${red}[ERROR] - Container $container_required not running${normal}"
+                check_succeeded=false
             fi
         fi
     done
+
+    if [ "$check_succeeded" = "true" ]; then
+        echo "# Check of required containers completed successfully"
+    fi
 }
 
 # Function to get nodes list using external script
