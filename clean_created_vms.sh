@@ -156,7 +156,7 @@ check_openstack_cli() {
     echo -e "${green}OpenStack CLI is available${normal}"
 }
 
-# Единый запрос для всех ВМ
+# Single request for all VMs
 prefetch_vm_details() {
     echo -e "${blue}Fetching VM details from OpenStack...${normal}"
 
@@ -172,14 +172,19 @@ prefetch_vm_details() {
     # Caching data
     while IFS= read -r line; do
         if [ -n "$line" ]; then
-            local vm_id=$(echo "$line" | awk '{print $1}')
-            local vm_name=$(echo "$line" | awk '{print $2}')
-            local project_id=$(echo "$line" | awk '{print $3}')
+            local vm_id vm_name project_id
+            vm_id=$(echo "$line" | awk '{print $1}')
+            vm_name=$(echo "$line" | awk '{print $2}')
+            project_id=$(echo "$line" | awk '{print $3}')
 
-            vm_cache_name["$vm_id"]="$vm_name"
-            vm_cache_project["$vm_id"]="$project_id"
+            if [ -n "$vm_id" ] && [ "$vm_id" != "null" ]; then
+                vm_cache_name["$vm_id"]="$vm_name"
+                vm_cache_project["$vm_id"]="$project_id"
+            fi
         fi
     done <<< "$all_vms_data"
+
+    echo -e "${green}Loaded details for ${#vm_cache_name[@]} VMs${normal}"
 
     # Additionally getting project names
     prefetch_project_details
@@ -188,13 +193,13 @@ prefetch_vm_details() {
 # Caching project names
 prefetch_project_details() {
     local unique_projects
-    unique_projects=$(printf '%s\n' "${vm_cache_project[@]}" | sort -u)
+    unique_projects=$(printf '%s\n' "${vm_cache_project[@]}" | sort -u | grep -v '^$')
 
     for project_id in $unique_projects; do
         if [ -n "$project_id" ] && [ "$project_id" != "null" ]; then
             local project_name
-            project_name=$(openstack project show "$project_id" -c name -f value 2>/dev/null)
-            if [ $? -eq 0 ]; then
+            project_name=$(openstack project show "$project_id" -c name -f value 2>/dev/null 2>/dev/null)
+            if [ $? -eq 0 ] && [ -n "$project_name" ]; then
                 vm_cache_project_name["$project_id"]="$project_name"
             else
                 vm_cache_project_name["$project_id"]="unknown"
@@ -209,10 +214,46 @@ get_vm_details_cached() {
 
     local vm_name="${vm_cache_name[$vm_id]}"
     local project_id="${vm_cache_project[$vm_id]}"
-    local project_name="${vm_cache_project_name[$project_id]}"
 
     if [ -z "$vm_name" ]; then
         return 1
+    fi
+
+    local project_name=""
+    if [ -n "$project_id" ]; then
+        project_name="${vm_cache_project_name[$project_id]}"
+    fi
+
+    # Если имя проекта не найдено в кэше, используем project_id
+    if [ -z "$project_name" ]; then
+        project_name="$project_id"
+    fi
+
+    echo "$vm_name:$project_name"
+}
+
+# Get VM details
+get_vm_details() {
+    local vm_id="$1"
+
+    # Пробуем кэш сначала
+    if [ ${#vm_cache_name[@]} -gt 0 ]; then
+        if get_vm_details_cached "$vm_id"; then
+            return 0
+        fi
+    fi
+
+    # Fallback к оригинальной логике
+    local vm_name=$(openstack server show "$vm_id" -c name -f value 2>/dev/null)
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+
+    local vm_project_id=$(openstack server show "$vm_id" -c project_id -f value 2>/dev/null)
+    local project_name=""
+
+    if [ -n "$vm_project_id" ]; then
+        project_name=$(openstack project show "$vm_project_id" -c name -f value 2>/dev/null 2>/dev/null)
     fi
 
     echo "$vm_name:$project_name"
@@ -290,7 +331,7 @@ show_resources_summary() {
     if [ ${#all_vms[@]} -gt 0 ]; then
         echo -e "${yellow}VIRTUAL MACHINES (${#all_vms[@]}):${normal}"
         for vm_id in "${!all_vms[@]}"; do
-            vm_details=$(get_vm_details_cached "$vm_id")
+            vm_details=$(get_vm_details "$vm_id")
             if [ $? -eq 0 ]; then
                 vm_name=$(echo "$vm_details" | cut -d: -f1)
                 vm_project=$(echo "$vm_details" | cut -d: -f2)
