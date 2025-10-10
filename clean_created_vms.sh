@@ -224,7 +224,7 @@ get_vm_details_cached() {
         project_name="${vm_cache_project_name[$project_id]}"
     fi
 
-    # Если имя проекта не найдено в кэше, используем project_id
+    # If the project name is not found in the cache, use project_id
     if [ -z "$project_name" ]; then
         project_name="$project_id"
     fi
@@ -236,14 +236,14 @@ get_vm_details_cached() {
 get_vm_details() {
     local vm_id="$1"
 
-    # Пробуем кэш сначала
+    # Try cache first
     if [ ${#vm_cache_name[@]} -gt 0 ]; then
         if get_vm_details_cached "$vm_id"; then
             return 0
         fi
     fi
 
-    # Fallback к оригинальной логике
+    # Fallback to original logic
     local vm_name=$(openstack server show "$vm_id" -c name -f value 2>/dev/null)
     if [ $? -ne 0 ]; then
         return 1
@@ -499,6 +499,11 @@ delete_resources_by_category() {
 main_cleanup() {
     check_openstack_cli
     load_cleanup_state
+
+    # Prefetch VM details for optimization
+    if ! prefetch_vm_details; then
+        echo -e "${yellow}Warning: Using individual VM queries (optimization failed)${normal}"
+    fi
 
     # Determine batch info for messages
     if [ "$CLEANUP_ALL" = true ]; then
