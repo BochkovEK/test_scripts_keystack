@@ -253,7 +253,7 @@ check_ssh_connectivity() {
     # Try to connect with timeout and execute a simple command
     if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -o BatchMode=yes \
         "$SSH_USER@$node_ip" "echo 'SSH connection successful'" 2>/dev/null; then
-        echo -e "${green}✓ SSH connection to $node_name ($node_ip) is working${normal}"
+        echo -e "✓ SSH connection to $node_name ($node_ip) is working"
         return 0
     else
         echo -e "${red}✗ SSH connection to $node_name ($node_ip) failed${normal}"
