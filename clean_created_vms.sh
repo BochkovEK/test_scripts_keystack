@@ -21,6 +21,10 @@ CLEANUP_ALL=true
 SPECIFIC_BATCH=""
 TS_DEBUG=false
 
+declare -gA vm_cache_name=()
+declare -gA vm_cache_project=()
+declare -gA vm_cache_project_name=()
+
 show_help() {
     echo -E "
     OpenStack VM Cleanup Script
@@ -152,23 +156,63 @@ check_openstack_cli() {
     echo -e "${green}OpenStack CLI is available${normal}"
 }
 
-# Get VM details for summary
-get_vm_details() {
-    local vm_id="$1"
+# Единый запрос для всех ВМ
+prefetch_vm_details() {
+    echo -e "${blue}Fetching VM details from OpenStack...${normal}"
 
-    # Get VM name
-    local vm_name=$(openstack server show "$vm_id" -c name -f value 2>/dev/null)
-    if [ $? -ne 0 ]; then
+    # Get all VMs with one request
+    local all_vms_data
+    all_vms_data=$(openstack server list --all-projects -c ID -c Name -c Project -f value 2>/dev/null)
+
+    if [ $? -ne 0 ] || [ -z "$all_vms_data" ]; then
+        echo -e "${yellow}Warning: Could not fetch VM list from OpenStack${normal}"
         return 1
     fi
 
-    # Get VM project
-    local vm_project_id=$(openstack server show "$vm_id" -c project_id -f value 2>/dev/null)
+    # Caching data
+    while IFS= read -r line; do
+        if [ -n "$line" ]; then
+            local vm_id=$(echo "$line" | awk '{print $1}')
+            local vm_name=$(echo "$line" | awk '{print $2}')
+            local project_id=$(echo "$line" | awk '{print $3}')
 
-    # Get project name
-    local project_name=""
-    if [ -n "$vm_project_id" ]; then
-        project_name=$(openstack project show "$vm_project_id" -c name -f value 2>/dev/null 2>/dev/null)
+            vm_cache_name["$vm_id"]="$vm_name"
+            vm_cache_project["$vm_id"]="$project_id"
+        fi
+    done <<< "$all_vms_data"
+
+    # Additionally getting project names
+    prefetch_project_details
+}
+
+# Caching project names
+prefetch_project_details() {
+    local unique_projects
+    unique_projects=$(printf '%s\n' "${vm_cache_project[@]}" | sort -u)
+
+    for project_id in $unique_projects; do
+        if [ -n "$project_id" ] && [ "$project_id" != "null" ]; then
+            local project_name
+            project_name=$(openstack project show "$project_id" -c name -f value 2>/dev/null)
+            if [ $? -eq 0 ]; then
+                vm_cache_project_name["$project_id"]="$project_name"
+            else
+                vm_cache_project_name["$project_id"]="unknown"
+            fi
+        fi
+    done
+}
+
+# Updated VM details retrieval function
+get_vm_details_cached() {
+    local vm_id="$1"
+
+    local vm_name="${vm_cache_name[$vm_id]}"
+    local project_id="${vm_cache_project[$vm_id]}"
+    local project_name="${vm_cache_project_name[$project_id]}"
+
+    if [ -z "$vm_name" ]; then
+        return 1
     fi
 
     echo "$vm_name:$project_name"
@@ -246,7 +290,7 @@ show_resources_summary() {
     if [ ${#all_vms[@]} -gt 0 ]; then
         echo -e "${yellow}VIRTUAL MACHINES (${#all_vms[@]}):${normal}"
         for vm_id in "${!all_vms[@]}"; do
-            vm_details=$(get_vm_details "$vm_id")
+            vm_details=$(get_vm_details_cached "$vm_id")
             if [ $? -eq 0 ]; then
                 vm_name=$(echo "$vm_details" | cut -d: -f1)
                 vm_project=$(echo "$vm_details" | cut -d: -f2)
