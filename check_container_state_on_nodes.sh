@@ -336,7 +336,7 @@ for node_pair in "${NODES[@]}"; do
     # First check SSH connectivity
     if ! check_ssh_connectivity "$node_name" "$node_ip"; then
         echo -e "${red}Cannot check containers on $node_name - SSH connection failed${normal}"
-        return 1
+        continue
     fi
 
     # Check container status
