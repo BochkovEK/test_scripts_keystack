@@ -168,45 +168,32 @@ def generate_host_entries():
     return entries
 
 
-def get_unique_groups():
-    """Identify groups that have unique hosts"""
-    unique_groups = {}
-    group_hosts = {}
+def is_network_subset_of_control():
+    """Check if network group hosts are a subset of control group hosts"""
+    network_hosts = set(hosts_by_group.get('network', []))
+    control_hosts = set(hosts_by_group.get('control', []))
 
-    # Collect all hosts by group
-    for group, hosts in hosts_by_group.items():
-        if hosts:  # Only consider non-empty groups
-            group_hosts[group] = set(hosts)
-
-    # Find groups that are subsets of other groups
-    groups_to_skip = set()
-
-    for group1, hosts1 in group_hosts.items():
-        for group2, hosts2 in group_hosts.items():
-            if group1 != group2 and hosts1.issubset(hosts2):
-                print(f"Group '{group1}' is a subset of '{group2}' - skipping {group1}")
-                groups_to_skip.add(group1)
-                break
-
-    # Return only unique groups
-    return {group: hosts for group, hosts in hosts_by_group.items()
-            if group not in groups_to_skip and hosts}
+    # Если network пустой или полностью содержится в control
+    return not network_hosts or network_hosts.issubset(control_hosts)
 
 
 def write_file(path_to_file, strings):
     """Write host entries to output file with simplified hostnames"""
     with open(path_to_file, "w") as file:
-        # Get unique groups
-        unique_groups = get_unique_groups()
-
-        print(f"Writing unique groups: {list(unique_groups.keys())}")
-
         # First write group-based entries
-        control_entries = [s for s in strings if 'ctrl-' in s] if 'control' in unique_groups else []
-        network_entries = [s for s in strings if 'net-' in s] if 'network' in unique_groups else []
-        compute_entries = [s for s in strings if 'comp-' in s] if 'compute' in unique_groups else []
+        control_entries = [s for s in strings if 'ctrl-' in s]
+        network_entries = [s for s in strings if 'net-' in s]
+        compute_entries = [s for s in strings if 'comp-' in s]
         lcm_entries = [s for s in strings if 'lcm-' in s]
         other_entries = [s for s in strings if not any(x in s for x in ['ctrl-', 'net-', 'comp-', 'lcm-'])]
+
+        # Check if network group is a subset of control group
+        network_subset_of_control = is_network_subset_of_control()
+
+        if network_subset_of_control and network_entries:
+            print("Network group hosts are subset of control group - skipping network section")
+        elif network_entries:
+            print("Network group has unique hosts - including network section")
 
         # Write group entries with separation
         if control_entries:
@@ -215,7 +202,8 @@ def write_file(path_to_file, strings):
                 file.write(entry + "\n")
             file.write("\n")
 
-        if network_entries:
+        # Only write network section if it has unique hosts (not subset of control)
+        if network_entries and not network_subset_of_control:
             file.write("# Network nodes\n")
             for entry in network_entries:
                 file.write(entry + "\n")
@@ -233,7 +221,6 @@ def write_file(path_to_file, strings):
                 file.write(entry + "\n")
             file.write("\n")
 
-        # Rest of the function remains the same...
         # Then write variable-based entries (only non-duplicates)
         file.write("# Additional entries from variables\n")
         written_ips = set()
