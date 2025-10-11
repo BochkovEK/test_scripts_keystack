@@ -284,6 +284,7 @@ check_output_file() {
     fi
 }
 
+load_external_scripts
 check_and_set_variables
 check_output_file
 python_script_execute
