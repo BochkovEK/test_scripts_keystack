@@ -6,6 +6,7 @@
 script_dir=$(dirname "$0")
 utils_dir="$script_dir/utils"
 get_nodes_list_script="get_nodes_list.sh"
+get_ssh_user_script="get_ssh_user.sh"
 default_ssh_user="root"
 default_container_engine="docker"
 virtual_stands_mark="[NOTE] required for virtual stands"
@@ -13,11 +14,15 @@ virtual_stands_mark="[NOTE] required for virtual stands"
 
 # Colors
 normal=$(tput sgr0)
+green=$(tput setaf 2)
 yellow=$(tput setaf 3)
 red=$(tput setaf 1)
 cyan=$(tput setaf 6)
-green=$(tput setaf 2)
-#blue=$(tput setaf 4)
+
+# External scripts array
+external_scripts=(
+    "$utils_dir/$get_ssh_user_script"
+)
 
 # Required container lists
 ctrl_required_container_list=(
@@ -285,77 +290,82 @@ check_container_status() {
             -e 's/\(.*restarting.*\)/\o033[31m\1\o033[39m/'
 }
 
-# Get ssh user
-get_ssh_user () {
-    # Determine SSH user
-    if [[ -z "$SSH_USER" ]]; then
-        SSH_USER=$(whoami 2>/dev/null) || {
-            echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
-            SSH_USER="$default_ssh_user"
-        }
-    fi
-
-    # Final user validation
-    if [[ -z "$SSH_USER" ]]; then
-        echo -e "${red}Error: Failed to determine SSH user!${normal}" >&2
-        exit 1
-    fi
+# Function to load external scripts
+load_external_scripts() {
+    for script_path in "${external_scripts[@]}"; do
+        if [ ! -f "$script_path" ]; then
+            echo -e "${red}Error: Required script not found: $script_path${normal}"
+            exit 1
+        fi
+        source "$script_path"
+    done
 }
 
 
-# Main execution
+# Main execution function
+main() {
+    # Load external scripts first
+    load_external_scripts
 
-# Determine SSH user
-get_ssh_user
+    # Determine SSH user using external function
+    SSH_USER=$(get_and_validate_ssh_user "$SSH_USER" "$default_ssh_user")
+    if [[ $? -ne 0 ]]; then
+        echo -e "${red}Error: Failed to determine valid SSH user!${normal}"
+        exit 1
+    fi
 
-# Get nodes list
-if [ -n "$NODES_NAME" ]; then
-    nodes=$(get_nodes_list -nn "$NODES_NAME")
-else
-    nodes=$(get_nodes_list -nt "$NODES_TYPE")
-fi
+    echo -e "${green}Using SSH user: $SSH_USER${normal}"
 
-if [ "$TS_DEBUG" = true ]; then
-    get_nodes_list -nn "$NODES_NAME"
-    get_nodes_list -nt "$NODES_TYPE"
-    echo -e "
+    # Get nodes list
+    if [ -n "$NODES_NAME" ]; then
+        nodes=$(get_nodes_list -nn "$NODES_NAME")
+    else
+        nodes=$(get_nodes_list -nt "$NODES_TYPE")
+    fi
+
+    if [ "$TS_DEBUG" = true ]; then
+        get_nodes_list -nn "$NODES_NAME"
+        get_nodes_list -nt "$NODES_TYPE"
+        echo -e "
     [DEBUG] nodes: $nodes
     "
-fi
-
-IFS=' ' read -ra NODES <<< "$nodes"
-
-[ "$TS_DEBUG" = true ] && echo -e "[DEBUG] Nodes: ${NODES[*]}"
-
-# Process each node
-for node_pair in "${NODES[@]}"; do
-    # Split node:ip format
-    node_name="${node_pair%%:*}"
-    node_ip="${node_pair#*:}"
-
-    # First check SSH connectivity
-    if ! check_ssh_connectivity "$node_name" "$node_ip"; then
-        echo -e "${red}Cannot check containers on $node_name - SSH connection failed${normal}"
-        continue
     fi
 
-    # Check container status
-    check_container_status "$node_name" "$node_ip"
+    IFS=' ' read -ra NODES <<< "$nodes"
 
-    # Determine node type and check required containers
-    if [ -z "$CONTAINER_NAME" ]; then
-#        local node_type
-        node_type=$(bash "$utils_dir/$get_nodes_list_script" -return_type "$node_name")
+    [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] Nodes: ${NODES[*]}"
 
-        [ "$TS_DEBUG" = true ] && echo -e "
+    # Process each node
+    for node_pair in "${NODES[@]}"; do
+        # Split node:ip format
+        node_name="${node_pair%%:*}"
+        node_ip="${node_pair#*:}"
+
+        # First check SSH connectivity
+        if ! check_ssh_connectivity "$node_name" "$node_ip"; then
+            echo -e "${red}Cannot check containers on $node_name - SSH connection failed${normal}"
+            continue
+        fi
+
+        # Check container status
+        check_container_status "$node_name" "$node_ip"
+
+        # Determine node type and check required containers
+        if [ -z "$CONTAINER_NAME" ]; then
+            node_type=$(bash "$utils_dir/$get_nodes_list_script" -return_type "$node_name")
+
+            [ "$TS_DEBUG" = true ] && echo -e "
 [DEBUG] Node: $node_name, Type: $node_type"
 
-        case "$node_type" in
-            ctrl|comp)
-                check_required_containers "$node_ip" "$node_type"
-                ;;
-        esac
-    fi
+            case "$node_type" in
+                ctrl|comp)
+                    check_required_containers "$node_ip" "$node_type"
+                    ;;
+            esac
+        fi
 
-    echo "----------------------------------------"
-done
+        echo "----------------------------------------"
+    done
+}
+
+main "$@"
