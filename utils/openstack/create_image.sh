@@ -13,11 +13,11 @@
 #     or
 #    2) bash ~/test_scripts_keystack/utils/openstack/create_image.sh cirros-0.6.2-x86_64-disk.img
 
-
-#Colors
+# Colors
+normal=$(tput sgr0)
 green=$(tput setaf 2)
 red=$(tput setaf 1)
-normal=$(tput sgr0)
+blue=$(tput setaf 4)
 yellow=$(tput setaf 3)
 
 script_name=$(basename "$0")
@@ -29,133 +29,211 @@ check_openrc_script="check_openrc.sh"
 check_openstack_cli_script="check_openstack_cli.sh"
 yes_no_answer_script="yes_no_answer.sh"
 
+default_api_version="2.74"
+
+# Default values
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
 [[ -z $IMAGE_SOURCE ]] && IMAGE_SOURCE="https://repo.itkey.com/repository/images"
 [[ -z $IMAGE ]] && IMAGE=$1
 [[ -z $IMAGE_DIR ]] && IMAGE_DIR="$HOME/images"
-# --min-disk $min_disk
 [[ -z $MIN_DISK ]] && MIN_DISK=""
-#[[ -z $PROJECT ]] && PROJECT="admin"
-[[ -z $API_VERSION ]] && API_VERSION="2.74"
-#[[ -z $TS_YES_NO_INPUT ]] && TS_YES_NO_INPUT=""
+[[ -z $API_VERSION ]] && API_VERSION="$default_api_version"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="true"
 
+# External scripts array
+external_scripts=(
+    "$utils_dir/$yes_no_answer_script"
+)
 
-error_output () {
-#  printf "%s\n" "${yellow}command not executed on $NODES_TYPE nodes${normal}"
-  if [ -n "${warning_message}" ]; then
-    printf "%s\n" "${yellow}$warning_message${normal}"
-    warning_message=""
-  fi
-  printf "%s\n" "${red}$error_message - ERROR${normal}"
-  exit 1
-}
-
-check_and_source_openrc_file () {
-#  echo "check openrc"
-  if bash $utils_dir/$check_openrc_script &> /dev/null; then
-#  if bash $utils_dir/$check_openrc_script 2>&1; then
-    openrc_file=$(bash $utils_dir/$check_openrc_script)
-    source $openrc_file
-  else
-    bash $utils_dir/$check_openrc_script
-    exit 1
-  fi
-}
-
-check_openstack_cli () {
-#  echo "check"
-  if [[ $CHECK_OPENSTACK = "true" ]]; then
-    if ! bash $utils_dir/$check_openstack_cli_script &> /dev/null; then
-      echo -e "${red}Failed to check openstack cli - ERROR${normal}"
-      exit 1
-    fi
-  fi
-}
-
-# Create image
-create_image () {
-  echo "Check for exist image: \"$IMAGE\""
-   #in project \"$PROJECT\""
-  image_exists_in_openstack=$(openstack image list| grep -m 1 "$IMAGE"| awk '{print $2}')
-  [ "$TS_DEBUG" = true ] && echo -e "image_exists_in_openstack: $image_exists_in_openstack"
-  if [ -n "$image_exists_in_openstack" ]; then
-    echo -e "${green}Image \"$IMAGE\" already exist - ok!${normal}"
-    exit 0
-  else
-    echo -e "${yellow}Image \"$IMAGE\" not found${normal}"
-     #in project \"$PROJECT\"${normal}"
-    if [ $DONT_ASK = "true" ]; then
-      yes_no_input="true"
-    else
-      export TS_YES_NO_QUESTION="Do you want to try to create $IMAGE [Yes]:"
-#       in project $PROJECT [Yes]:"
-      yes_no_input=$(bash $utils_dir/$yes_no_answer_script)
-    fi
-    if [ ! "$yes_no_input" = "true" ]; then
-      echo -e "${yellow}Image $IMAGE does not created${normal}"
-      exit 0
-    else
-      mkdir -p $IMAGE_DIR
-      if [ -f $script_dir/"$IMAGE" ]; then
-        cp $script_dir/"$IMAGE" $IMAGE_DIR/$IMAGE
-      fi
-      if [ -f $IMAGE_DIR/"$IMAGE" ]; then
-        echo -e "${green}File $IMAGE exist - ok!${normal}"
-      else
-        echo -e "${yellow}File $IMAGE does not exist${normal}"
-        if [ -z "$IMAGE_SOURCE" ]; then
-          warning_message="Global variable \$IMAGE_SOURCE does not define"
-          error_message="Image $IMAGE does not created"
-          error_output
-        else
-          if [ $DONT_ASK = "true" ]; then
-            yes_no_input="true"
-          else
-            export TS_YES_NO_QUESTION="Do you want to try to download $IMAGE from source: $IMAGE_SOURCE [Yes]:"
-            yes_no_input=$(bash $utils_dir/$yes_no_answer_script)
-          fi
-          if [ ! "$yes_no_input" = "true" ]; then
-            error_message="Image $IMAGE does not created"
-            error_output
-          else
-            curl -o $IMAGE_DIR/$IMAGE $IMAGE_SOURCE/$IMAGE
-          fi
+# Function to load external scripts
+load_external_scripts() {
+    for script_path in "${external_scripts[@]}"; do
+        if [ ! -f "$script_path" ]; then
+            echo -e "${red}Error: Required script not found: $script_path${normal}"
+            exit 1
         fi
-      fi
-      echo "Creating image \"$IMAGE\""
-#       in project \"$PROJECT\"..."
-      openstack image create "$IMAGE" \
+        if [ ! -r "$script_path" ]; then
+            echo -e "${red}Error: Script not readable: $script_path${normal}"
+            exit 1
+        fi
+        echo -e "${blue}Loading external script: $(basename "$script_path")${normal}"
+        source "$script_path"
+    done
+}
+
+# Universal confirmation function with DONT_ASK support
+confirm_action_universal() {
+    local message="$1"
+    local default_answer="${2:-"Yes"}"
+
+    if [[ $DONT_ASK = "true" ]]; then
+        echo -e "${green}Auto-confirmed (DONT_ASK): $message${normal}"
+        return 0
+    fi
+
+    # Use external confirmation function
+    confirm_action_external "$message" "$default_answer"
+}
+
+error_output() {
+    if [ -n "${warning_message}" ]; then
+        printf "%s\n" "${yellow}$warning_message${normal}"
+        warning_message=""
+    fi
+    printf "%s\n" "${red}$error_message - ERROR${normal}"
+    exit 1
+}
+
+check_and_source_openrc_file() {
+    if bash $utils_dir/$check_openrc_script &> /dev/null; then
+        openrc_file=$(bash $utils_dir/$check_openrc_script)
+        source $openrc_file
+    else
+        bash $utils_dir/$check_openrc_script
+        exit 1
+    fi
+}
+
+check_openstack_cli() {
+    if [[ $CHECK_OPENSTACK = "true" ]]; then
+        if ! bash $utils_dir/$check_openstack_cli_script &> /dev/null; then
+            echo -e "${red}Failed to check openstack cli - ERROR${normal}"
+            exit 1
+        fi
+    fi
+}
+
+download_image() {
+    local image_name="$1"
+
+    echo -e "${yellow}File $image_name does not exist locally${normal}"
+
+    if [ -z "$IMAGE_SOURCE" ]; then
+        warning_message="Global variable \$IMAGE_SOURCE is not defined"
+        error_message="Image $image_name cannot be downloaded"
+        error_output
+    fi
+
+    if confirm_action_universal "Do you want to download $image_name from source: $IMAGE_SOURCE?" "Yes"; then
+        echo "Downloading $image_name from $IMAGE_SOURCE..."
+        if curl -o $IMAGE_DIR/$image_name $IMAGE_SOURCE/$image_name; then
+            echo -e "${green}Successfully downloaded $image_name${normal}"
+            return 0
+        else
+            error_message="Failed to download $image_name from $IMAGE_SOURCE"
+            error_output
+        fi
+    else
+        error_message="Image $image_name download cancelled by user"
+        error_output
+    fi
+}
+
+create_image_in_openstack() {
+    local image_name="$1"
+
+    echo "Creating image \"$image_name\" in OpenStack..."
+
+    if openstack image create "$image_name" \
         --disk-format qcow2 \
         --container-format bare \
         --public \
-        $MIN_DISK --file $IMAGE_DIR/$IMAGE
+        $MIN_DISK --file $IMAGE_DIR/$image_name; then
+        echo -e "${green}Image $image_name created successfully${normal}"
+        return 0
+    else
+        return 1
     fi
-  fi
-  image_exists_in_openstack=$(openstack image list| grep -m 1 "$IMAGE"| awk '{print $2}')
-  echo "image_exists_in_openstack: $image_exists_in_openstack"
-  if [ -n "${image_exists_in_openstack}" ]; then
-    echo -E "${green}$IMAGE created in $PROJECT - ok!${normal}"
-  else
-    error_message="Image $IMAGE does not created"
-    error_output
-  fi
 }
 
+verify_image_creation() {
+    local image_name="$1"
+    local max_attempts=30
+    local attempt=1
 
+    echo "Verifying image creation..."
+
+    while [ $attempt -le $max_attempts ]; do
+        local image_exists_in_openstack=$(openstack image list | grep -m 1 "$image_name" | awk '{print $2}')
+
+        if [ -n "$image_exists_in_openstack" ]; then
+            echo -e "${green}Image $image_name successfully created in OpenStack - OK!${normal}"
+            return 0
+        fi
+
+        echo "Attempt $attempt/$max_attempts: Image not ready yet, waiting..."
+        sleep 2
+        ((attempt++))
+    done
+
+    error_message="Image $image_name creation verification timeout"
+    return 1
+}
+
+create_image() {
+    echo "Checking if image \"$IMAGE\" exists in OpenStack..."
+
+    local image_exists_in_openstack=$(openstack image list | grep -m 1 "$IMAGE" | awk '{print $2}')
+    [ "$TS_DEBUG" = true ] && echo -e "image_exists_in_openstack: $image_exists_in_openstack"
+
+    if [ -n "$image_exists_in_openstack" ]; then
+        echo -e "${green}Image \"$IMAGE\" already exists in OpenStack - OK!${normal}"
+        exit 0
+    fi
+
+    echo -e "${yellow}Image \"$IMAGE\" not found in OpenStack${normal}"
+
+    # Confirm image creation
+    if ! confirm_action_universal "Do you want to create image: $IMAGE?" "Yes"; then
+        echo -e "${yellow}Image $IMAGE creation cancelled${normal}"
+        exit 0
+    fi
+
+    # Prepare local image directory
+    mkdir -p $IMAGE_DIR
+
+    # Check if image file exists locally
+    if [ -f $script_dir/"$IMAGE" ]; then
+        echo "Copying image from script directory to $IMAGE_DIR..."
+        cp $script_dir/"$IMAGE" $IMAGE_DIR/$IMAGE
+    fi
+
+    if [ -f $IMAGE_DIR/"$IMAGE" ]; then
+        echo -e "${green}Local file $IMAGE exists - OK!${normal}"
+    else
+        # Download image if not exists locally
+        download_image "$IMAGE"
+    fi
+
+    # Create image in OpenStack
+    if create_image_in_openstack "$IMAGE"; then
+        verify_image_creation "$IMAGE"
+    else
+        error_message="Failed to create image $IMAGE in OpenStack"
+        error_output
+    fi
+}
+
+# Main execution
 echo "$script_name script started..."
 
-if [ -z $IMAGE ]; then
-  echo "Try to get images list from repo.itkey.com..."
-  echo "Execute curl command:"
-  echo "curl -X 'GET' 'https://repo.itkey.com/service/rest/v1/search?repository=images&name=*' -H 'accept: application/json'| jq '.items[]|.name'"
-  curl -X 'GET' 'https://repo.itkey.com/service/rest/v1/search?repository=images&name=*' -H 'accept: application/json'| jq '.items[]|.name'
-  error_message="You must define image name as start parameter script"
-  error_output
+# Validate input parameters
+if [ -z "$IMAGE" ]; then
+    echo "Available images from repo.itkey.com:"
+    echo "Executing: curl -X 'GET' 'https://repo.itkey.com/service/rest/v1/search?repository=images&name=*' -H 'accept: application/json' | jq '.items[]|.name'"
+
+    if ! curl -X 'GET' 'https://repo.itkey.com/service/rest/v1/search?repository=images&name=*' -H 'accept: application/json' 2>/dev/null | jq '.items[]|.name' 2>/dev/null; then
+        echo -e "${yellow}Could not fetch image list from repository${normal}"
+    fi
+
+    error_message="You must define image name as script parameter"
+    error_output
 fi
 
-[ "$TS_DEBUG" = true ] && echo -e "
+# Debug information
+if [ "$TS_DEBUG" = true ]; then
+    echo -e "
   [TS_DEBUG]
   OS_PROJECT_DOMAIN_NAME:   $OS_PROJECT_DOMAIN_NAME
   OS_USER_DOMAIN_NAME:      $OS_USER_DOMAIN_NAME
@@ -171,13 +249,17 @@ fi
   OS_AUTH_PLUGIN:           $OS_AUTH_PLUGIN
   OS_DRS_ENDPOINT_OVERRIDE: $OS_DRS_ENDPOINT_OVERRIDE
   ---
-  PROJECT:                  $PROJECT
   IMAGE:                    $IMAGE
   IMAGE_SOURCE:             $IMAGE_SOURCE
   IMAGE_DIR:                $IMAGE_DIR
+  DONT_ASK:                 $DONT_ASK
 "
+fi
 
+# Load external scripts and execute main logic
+load_external_scripts
 check_openstack_cli
 check_and_source_openrc_file
 create_image
 
+echo -e "${green}Script completed successfully!${normal}"

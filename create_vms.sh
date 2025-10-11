@@ -13,6 +13,11 @@ utils_dir=$script_dir/utils
 create_pub_network_script="openstack/create_pub_network.sh"
 create_image_script_script="openstack/create_image.sh"
 
+external_scripts=(
+    "$script_dir/utils/yes_no_answer.sh"
+    # "$script_dir/../utils/other_script.sh"
+)
+
 default_flavor="4c-4r"
 default_key_name="key_test"
 default_project="admin"
@@ -178,19 +183,12 @@ parse_arguments() {
 }
 
 # Function to get yes/no answer from user
-yes_no_answer () {
-    yes_no_input=""
-    while true; do
-        read -p "$yes_no_question" yn
-        yn=${yn:-"Yes"}
-        echo $yn
-        case $yn in
-            [Yy]* ) yes_no_input="true"; break;;
-            [Nn]* ) yes_no_input="false"; break ;;
-            * ) echo "Please answer yes or no.";;
-        esac
-    done
-    yes_no_question="<Empty yes\no question>"
+yes_no_answer() {
+    local question="$1"
+    local default_answer="${2:-"Yes"}"
+
+    # Use external confirmation function
+    confirm_action_external "$question" "$default_answer"
 }
 
 # Error output function
@@ -402,43 +400,6 @@ check_command () {
     fi
 }
 
-# Check wget
-check_wget () {
-    echo "Check wget..."
-    check_command wget
-    if [ -z $command_exist ]; then
-        printf "%s\n" "${yellow}'wget' not installed!${normal}"
-        yes_no_question="Do you want to try to install [Yes]: "
-        yes_no_answer
-        if [ "$yes_no_input" = "true" ]; then
-            [[ -f /etc/os-release ]] && os=$({ . /etc/os-release; echo ${ID,,}; })
-            case $os in
-                sberlinux)
-                    yum install -y wget
-                    check_command wget
-                    if [ -z $command_exist ]; then
-                        echo "For sberlinux try: yum install -y wget"
-                        printf "%s\n" "${red}wget not installed - error${normal}"
-                        exit 1
-                    else
-                        printf "%s\n" "${green}'wget' command is available - success${normal}"
-                    fi
-                    ;;
-                ubuntu)
-                    echo "Coming soon..."
-                    ;;
-                *)
-                    echo "No wget installation provision for $os"
-                    ;;
-            esac
-        else
-            exit 1
-        fi
-    else
-        printf "%s\n" "${green}'wget' command is available - success${normal}"
-    fi
-}
-
 # Check hypervisor
 check_hv () {
     echo "Check hypervisors..."
@@ -587,9 +548,7 @@ check_network () {
     if [ -z "$NETWORK_NAME_EXIST" ]; then
         printf "%s\n" "${yellow}Network \"$NETWORK\" not found in project \"$PROJECT\"${normal}"
         if [ "$NETWORK" = "pub_net" ]; then
-            yes_no_question="Do you want to try to create $NETWORK [Yes]:"
-            yes_no_answer
-            if [ "$yes_no_input" = "true" ]; then
+            if yes_no_answer "Do you want to try to create ${NETWORK}?" "Yes"; then
                 bash $utils_dir/$create_pub_network_script
             else
                 error_message="Network $NETWORK does not exist"
@@ -607,11 +566,9 @@ check_network () {
 
 # Create image
 create_image () {
-    [[ ! $DONT_ASK = "true" ]] && {
-        echo "Try to download image: \"$1\" and add to openstack?";
-        read -p "Press enter to continue: ";
-    }
-    bash $utils_dir/$create_image_script_script $1
+    if [[ $DONT_ASK = "true" ]] || yes_no_answer "Try to download image: \"$1\" and add to openstack?" "Yes"; then
+        bash $utils_dir/$create_image_script_script $1
+    fi
 }
 
 # Check if image exists in OpenStack
@@ -928,12 +885,25 @@ create_vms () {
     return 0
 }
 
+# Function for loading external scripts
+load_external_scripts() {
+    for script_path in "${external_scripts[@]}"; do
+        if [ ! -f "$script_path" ]; then
+            echo -e "${red}Error: Required script not found: $script_path${normal}"
+            exit 1
+        fi
+        source "$script_path"
+    done
+}
+
+
 # Main execution flow
 if [ $USE_ENV_FILE = "true" ]; then
     check_and_source_config_file
 fi
 
 parse_arguments "$@"
+load_external_scripts
 assign_vars_from_startup_keys
 output_of_initial_parameters
 
