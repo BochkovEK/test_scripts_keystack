@@ -5,6 +5,8 @@
 # bash ~/test_scripts_keystack/inventory_to_hosts.sh <path_to_inventory_file>
 # output "hosts_add_strings"
 
+script_file_path=$(realpath $0)
+script_dir=$(dirname "$script_file_path")
 env_file_name=".inventory_to_hosts_env"
 internal_prefix="internal"
 external_prefix="external"
