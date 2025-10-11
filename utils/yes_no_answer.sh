@@ -4,11 +4,10 @@
 # Can be used both as module (sourced) and standalone script
 
 # Color definitions
-GREEN=$(tput setaf 2)
-YELLOW=$(tput setaf 3)
-NORMAL=$(tput sgr0)
-BLUE=$(tput setaf 4)
-#RED=$(tput setaf 1)
+green=$(tput setaf 2)
+blue=$(tput setaf 4)
+normal=$(tput sgr0)
+yellow=$(tput setaf 3)
 
 # Default values
 TS_DEBUG=${TS_DEBUG:-"false"}
@@ -19,24 +18,24 @@ confirm_action_external() {
     local message="${1:-$TS_YES_NO_QUESTION}"
     local answer=""
 
-    [ "$TS_DEBUG" = "true" ] && echo -e "${BLUE}[DEBUG] Question: $message${NORMAL}"
+    [ "$TS_DEBUG" = "true" ] && echo -e "${blue}[DEBUG] Question: $message${normal}"
 
     while true; do
         read -rp "$message [y/N]: " answer
 
         # Handle empty input (default to No)
         if [ -z "$answer" ]; then
-            echo -e "${YELLOW}Skipped${NORMAL}"
+            echo -e "${yellow}Skipped${normal}"
             return 1
         fi
 
         case "$answer" in
             [Yy]|[Yy][Ee][Ss])
-                echo -e "${GREEN}Confirmed${NORMAL}"
+                echo -e "${green}Confirmed${normal}"
                 return 0
                 ;;
             [Nn]|[Nn][Oo])
-                echo -e "${YELLOW}Skipped${NORMAL}"
+                echo -e "${yellow}Skipped${normal}"
                 return 1
                 ;;
             *)

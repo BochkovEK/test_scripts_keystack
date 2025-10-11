@@ -12,9 +12,16 @@ region_name="stand-name"
 domain_name="vm.lab.itkey.com"
 gitlab_short_name="ks-lcm"
 parse_inventory_script="parse_inventory.py"
+yes_no_answer_script="yes_no_answer.sh"
 inventory_file_name="inventory"
 output_file_name="hosts_add_strings"
 add_strings="# ------ ADD strings ------"
+
+
+# External scripts array
+external_scripts=(
+    "$script_dir/utils/$yes_no_answer_script"
+)
 
 #Color
 red=$(tput setaf 1)
@@ -255,6 +262,29 @@ add_to_hosts () {
   fi
 }
 
+load_external_scripts() {
+    for script_path in "${external_scripts[@]}"; do
+        if [ ! -f "$script_path" ]; then
+            echo -e "${red}Error: Required script not found: $script_path${normal}"
+            exit 1
+        fi
+        source "$script_path"
+    done
+}
+
+check_output_file() {
+    if [ -f "$OUTPUT_FILE_PATH" ]; then
+        echo -e "${yellow}Output file already exists: $OUTPUT_FILE_PATH${normal}"
+
+        # Use external confirmation function
+        if ! confirm_action_external "Overwrite existing file $OUTPUT_FILE_PATH?" "No"; then
+            echo -e "${yellow}Operation cancelled by user${normal}"
+            exit 0
+        fi
+    fi
+}
+
 check_and_set_variables
+check_output_file
 python_script_execute
 add_to_hosts

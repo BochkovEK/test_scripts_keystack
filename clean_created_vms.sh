@@ -21,10 +21,10 @@ yellow=$(tput setaf 3)
 blue=$(tput setaf 4)
 
 # Default values
-AUTO_CONFIRM=false
-CLEANUP_ALL=true
-SPECIFIC_BATCH=""
-TS_DEBUG=false
+[[ -z $AUTO_CONFIRM ]] && AUTO_CONFIRM=false
+[[ -z $CLEANUP_ALL ]] && CLEANUP_ALL=true
+[[ -z $SPECIFIC_BATCH ]] && SPECIFIC_BATCH=""
+[[ -z $TS_DEBUG ]] && TS_DEBUG=false
 
 declare -gA vm_cache_name=()
 declare -gA vm_cache_project=()
