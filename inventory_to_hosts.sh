@@ -151,6 +151,7 @@ check_and_set_variables() {
             # Load variables from file
             source "${script_dir}/${env_file_name}"
             echo "${yellow}Environment variables file \"${script_dir}/${env_file_name}\" used${normal}"
+            cat "${script_dir}/${env_file_name}"
         fi
 #        # Prompt user for input
 #        echo "Required environment variables are not set."
