@@ -7,6 +7,11 @@
 script_dir=$(dirname "$0")
 cleanup_file=".vm_cleanup_state.env"
 
+external_scripts=(
+    "$script_dir/utils/yes_no_answer.sh"
+    # "$script_dir/../utils/other_script.sh"
+)
+
 # Colors
 green=$(tput setaf 2)
 red=$(tput setaf 1)
@@ -90,22 +95,8 @@ confirm_action() {
         return 0
     fi
 
-    while true; do
-        read -p "$message [y/N]: " yn
-        case $yn in
-            [Yy]* )
-                echo -e "${green}Confirmed${normal}"
-                return 0
-                ;;
-            [Nn]* | "" )
-                echo -e "${yellow}Skipped${normal}"
-                return 1
-                ;;
-            * )
-                echo "Please answer yes or no."
-                ;;
-        esac
-    done
+    # Use external confirmation function
+    confirm_action_external "$message"
 }
 
 # Check and source state file
@@ -534,10 +525,28 @@ check_cleanup_success() {
     return 0
 }
 
+# Function for loading external scripts
+load_external_scripts() {
+    for script_path in "${external_scripts[@]}"; do
+        if [ ! -f "$script_path" ]; then
+            echo -e "${red}Error: Required script not found: $script_path${normal}"
+            exit 1
+        fi
+        if [ ! -r "$script_path" ]; then
+            echo -e "${red}Error: Script not readable: $script_path${normal}"
+            exit 1
+        fi
+        echo -e "${blue}Loading external script: $(basename "$script_path")${normal}"
+        source "$script_path"
+    done
+}
+
 # Main cleanup function
 main_cleanup() {
     check_openstack_cli
     load_cleanup_state
+
+    load_external_scripts
 
     # Prefetch VM details for optimization
     if ! prefetch_vm_details; then

@@ -13,27 +13,13 @@
 #     or
 #    2) bash ~/test_scripts_keystack/utils/openstack/create_image.sh cirros-0.6.2-x86_64-disk.img
 
-#images_list=(
-##  "ubuntu-20.04-server-cloudimg-amd64.img"
-##  "jammy-server-cloudimg-amd64.img"
-#  "cirros-0.6.2-x86_64-disk.img"
-##  "ubuntu-20.04-server-cloudimg-amd64.img"
-#  )
-#public_images_list=(
-##  "ubuntu-20.04-server-cloudimg-amd64.img"
-#  "https://cloud-images.ubuntu.com/releases/focal/release/ubuntu-20.04-server-cloudimg-amd64.img"
-#  )
-
 
 #Colors
 green=$(tput setaf 2)
 red=$(tput setaf 1)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
-#orange=$(tput setaf 3)
-#violet=$(tput setaf 5)
 
-#Script_dir, current folder
 script_name=$(basename "$0")
 script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
@@ -41,9 +27,7 @@ parent_dir=$(dirname "$script_dir")
 utils_dir=$parent_dir
 check_openrc_script="check_openrc.sh"
 check_openstack_cli_script="check_openstack_cli.sh"
-#install_wget_script="install_wget.sh"
 yes_no_answer_script="yes_no_answer.sh"
-#install_package_script="install_package.sh"
 
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
@@ -67,21 +51,6 @@ error_output () {
   printf "%s\n" "${red}$error_message - ERROR${normal}"
   exit 1
 }
-
-#yes_no_answer () {
-#  yes_no_input=""
-#  while true; do
-#    read -p "$yes_no_question" yn
-#    yn=${yn:-"Yes"}
-#    echo $yn
-#    case $yn in
-#        [Yy]* ) yes_no_input="true"; break;;
-#        [Nn]* ) yes_no_input="false"; break ;;
-#        * ) echo "Please answer yes or no.";;
-#    esac
-#  done
-#  yes_no_question="<Empty yes\no question>"
-#}
 
 check_and_source_openrc_file () {
 #  echo "check openrc"
@@ -152,12 +121,6 @@ create_image () {
             error_output
           else
             curl -o $IMAGE_DIR/$IMAGE $IMAGE_SOURCE/$IMAGE
-#            if ! bash $utils_dir/$install_package_script wget; then
-#              error_message="Image $IMAGE does not created"
-#              error_output
-#            else
-#              wget  -P $IMAGE_DIR/
-#            fi
           fi
         fi
       fi
