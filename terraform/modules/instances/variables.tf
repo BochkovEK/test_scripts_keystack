@@ -18,7 +18,7 @@ variable "default_flavor_name" {
 }
 
 variable "default_flavor" {
-  #  description = "Default flavor name"
+  description = "Default flavor"
   default = {
     vcpus       = 2
     ram         = 2048
