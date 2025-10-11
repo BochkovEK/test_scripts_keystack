@@ -10,8 +10,8 @@ script_dir=$(dirname "$script_file_path")
 env_file_name=".inventory_to_hosts_env"
 internal_prefix="internal"
 external_prefix="external"
-region_name="stand-name"
-domain_name="vm.lab.itkey.com"
+#region_name="stand-name"
+#domain_name="vm.lab.itkey.com"
 gitlab_short_name="ks-lcm"
 parse_inventory_script="parse_inventory.py"
 yes_no_answer_script="yes_no_answer.sh"
@@ -287,6 +287,7 @@ check_output_file() {
 }
 
 load_external_scripts
+echo $OUTPUT_FILE_PATH
 check_and_set_variables
 check_output_file
 python_script_execute
