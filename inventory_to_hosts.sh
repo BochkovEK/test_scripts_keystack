@@ -287,8 +287,8 @@ check_output_file() {
 }
 
 load_external_scripts
-echo $OUTPUT_FILE_PATH
 check_and_set_variables
+echo "OUTPUT_FILE_PATH: $OUTPUT_FILE_PATH"
 check_output_file
 python_script_execute
 add_to_hosts
