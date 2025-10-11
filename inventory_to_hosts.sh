@@ -150,9 +150,10 @@ check_and_set_variables() {
         if [[ -f "${script_dir}/$env_file_name" ]]; then
             # Load variables from file
             source "${script_dir}/${env_file_name}"
+            echo "${yellow}Environment variables file \"${script_dir}/${env_file_name}\" used${normal}"
         fi
-        # Prompt user for input
-        echo "Required environment variables are not set."
+#        # Prompt user for input
+#        echo "Required environment variables are not set."
 
         while [[ -z "${INVENTORY_PATH}" ]]; do
           read -rp "Enter inventory file path [$script_dir/$inventory_file_name]: " INVENTORY_PATH
