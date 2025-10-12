@@ -385,7 +385,8 @@ ${green}VM Creation Configuration:${normal}
     Cleanup envs config file:         $CREATE_VMS_ENVS_FOLDER/$cleanup_file
         "
 
-    [[ ! $DONT_ASK = "true" ]] && { read -p "Press enter to continue: "; }
+#    [[ ! $DONT_ASK = "true" ]] && { read -p "Press enter to continue: "; }
+    read -p "Press enter to continue: "
 }
 
 # Check and source openrc file
