@@ -48,7 +48,7 @@ show_help() {
       -ping                   Only perform ping check
       -p, -project <name>     OpenStack project name (default: admin)
       -dont_ask               Perform actions automatically without confirmation
-      -vms                    Space-separated list of IP\name
+      -vms                    Space-separated list of IP\\name
       -v, -debug              Enable debug output
       -check                  Only check SSH access without executing commands
       -t, -timeout <seconds>  SSH connection timeout (default: 5)
