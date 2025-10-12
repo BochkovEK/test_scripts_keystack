@@ -25,6 +25,7 @@ blue=$(tput setaf 4)
 [[ -z $CLEANUP_ALL ]] && CLEANUP_ALL=true
 [[ -z $SPECIFIC_BATCH ]] && SPECIFIC_BATCH=""
 [[ -z $TS_DEBUG ]] && TS_DEBUG=false
+[[ -z $CREATE_VMS_ENVS_FOLDER ]] && CREATE_VMS_ENVS_FOLDER="$script_dir"
 
 declare -gA vm_cache_name=()
 declare -gA vm_cache_project=()
@@ -40,6 +41,7 @@ show_help() {
       -da, -y, -yes     Auto-confirm all actions (no prompts)
       -b, -batch <N>    Cleanup specific batch number (e.g., 1, 2, 3)
       -f, -file <path>  Use custom cleanup state file
+      -ef, -envs_folder <path> Use custom folder for environment files
       -debug            Enable debug output
       --help            Show this help message
 
@@ -47,6 +49,7 @@ show_help() {
       $0 -y             # Auto-cleanup all batches (default)
       $0 -batch 2       # Cleanup only batch 2 with confirmation
       $0 -file my_state.env -y  # Use custom state file
+      $0 -ef /path/to/configs   # Use custom folder for config files
     "
 }
 
@@ -68,6 +71,11 @@ parse_arguments() {
                 echo "Using custom state file: $cleanup_file"
                 shift
                 ;;
+            -ef|-envs_folder)
+                CREATE_VMS_ENVS_FOLDER="$2"
+                echo "Using envs config folder: $CREATE_VMS_ENVS_FOLDER"
+                shift
+                ;;
             -debug)
                 TS_DEBUG=true
                 echo "Debug mode enabled"
@@ -86,6 +94,22 @@ parse_arguments() {
     done
 }
 
+# Function for loading external scripts
+load_external_scripts() {
+    for script_path in "${external_scripts[@]}"; do
+        if [ ! -f "$script_path" ]; then
+            echo -e "${red}Error: Required script not found: $script_path${normal}"
+            exit 1
+        fi
+        if [ ! -r "$script_path" ]; then
+            echo -e "${red}Error: Script not readable: $script_path${normal}"
+            exit 1
+        fi
+        echo -e "${blue}Loading external script: $(basename "$script_path")${normal}"
+        source "$script_path"
+    done
+}
+
 # User confirmation function
 confirm_action() {
     local message="$1"
@@ -101,13 +125,16 @@ confirm_action() {
 
 # Check and source state file
 load_cleanup_state() {
-    if [ ! -f "$script_dir/$cleanup_file" ]; then
-        echo -e "${red}Cleanup state file not found: $cleanup_file${normal}"
+    local state_file_path="$CREATE_VMS_ENVS_FOLDER/$cleanup_file"
+
+    if [ ! -f "$state_file_path" ]; then
+        echo -e "${red}Cleanup state file not found: $state_file_path${normal}"
         exit 1
     fi
 
-    echo -e "${green}Loading cleanup state from: $cleanup_file${normal}"
-    source "$script_dir/$cleanup_file"
+    echo -e "${green}Loading cleanup state from: $state_file_path${normal}"
+
+    source "$state_file_path"
 
     if [ "$TS_DEBUG" = true ]; then
         echo -e "${blue}[DEBUG] Loaded variables:${normal}"
@@ -253,13 +280,14 @@ get_vm_details() {
 # Collect all resources by category
 collect_resources_by_category() {
     local batch_filter="$1"
+    local state_file_path="$CREATE_VMS_ENVS_FOLDER/$cleanup_file"
 
     # Initialize arrays
     declare -gA all_vms=() all_volumes=() all_security_groups=() all_flavors=() all_keypairs=()
 
     # Find all batches
     if [ -z "$batch_filter" ]; then
-        batches=$(grep -o 'CREATED_VM_IDS_BATCH_[0-9]*' "$script_dir/$cleanup_file" | sed 's/CREATED_VM_IDS_BATCH_//' | sort -n)
+        batches=$(grep -o 'CREATED_VM_IDS_BATCH_[0-9]*' "$state_file_path" | sed 's/CREATED_VM_IDS_BATCH_//' | sort -n)
     else
         batches="$batch_filter"
     fi
@@ -488,7 +516,7 @@ delete_resources_by_category() {
 
 # Function to offer cleanup state file removal
 offer_cleanup_file_removal() {
-    local state_file="$script_dir/$cleanup_file"
+    local state_file="$CREATE_VMS_ENVS_FOLDER/$cleanup_file"
 
     if [ ! -f "$state_file" ]; then
         return 0
@@ -525,22 +553,6 @@ check_cleanup_success() {
     return 0
 }
 
-# Function for loading external scripts
-load_external_scripts() {
-    for script_path in "${external_scripts[@]}"; do
-        if [ ! -f "$script_path" ]; then
-            echo -e "${red}Error: Required script not found: $script_path${normal}"
-            exit 1
-        fi
-        if [ ! -r "$script_path" ]; then
-            echo -e "${red}Error: Script not readable: $script_path${normal}"
-            exit 1
-        fi
-        echo -e "${blue}Loading external script: $(basename "$script_path")${normal}"
-        source "$script_path"
-    done
-}
-
 # Main cleanup function
 main_cleanup() {
     check_openstack_cli
@@ -569,12 +581,12 @@ main_cleanup() {
     show_resources_summary "$batch_info"
 
     # Confirm overall cleanup
-#    if [ "$AUTO_CONFIRM" = false ]; then
+    if [ "$AUTO_CONFIRM" = false ]; then
         if ! confirm_action "Proceed with cleanup?"; then
             echo -e "${yellow}Cleanup cancelled by user${normal}"
             exit 0
         fi
-#    fi
+    fi
 
     # Delete resources by category
     delete_resources_by_category "$batch_info"
