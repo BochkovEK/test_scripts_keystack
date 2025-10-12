@@ -65,6 +65,7 @@ CIRROS_IMAGE_NAME="cirros-0.6.3-x86_64-disk.img"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $WAIT_FOR_CREATED ]] && WAIT_FOR_CREATED="true"
 [[ -z $USE_ENV_FILE ]] && USE_ENV_FILE="false"
+[[ -z $CREATE_VMS_ENVS_FOLDER ]] && CREATE_VMS_ENVS_FOLDER="$script_dir"
 
 # Function to display help information
 show_help() {
@@ -95,10 +96,11 @@ show_help() {
                                   Examples:
                                     -add \"--availability-zone \$az_name\"
                                     -add \"--hint group=\$anti_aff_gr\"
-      -b            -batch          creating VMs without a timeout (without value)
-      -debug                        enabled debug output (without parameter)
-      -wait                         wait for vms created <true\false>
-      -uef          -use_env_file   use env file $config_file variables by default
+      -b,           -batch          creating VMs without a timeout (without value)
+      -debug,                       enabled debug output (without parameter)
+      -wait,                        wait for vms created <true\false>
+      -uef,         -use_env_file   use env file $config_file variables by default
+      -ef,          -envs_folder    directory where envs configs \'$config_file\', \'$cleanup_file\' will be saved and used
 
     State Files:
       $config_file    - creation configuration parameters
@@ -162,6 +164,9 @@ parse_arguments() {
             -uef|-use_env_file) USE_ENV_FILE="true"
                 echo "Found the -use_env_file. Using config file $config_file by default"
                 ;;
+            -ef|-envs_folder) create_vms_config_folder="$2"
+                echo "Found the -envs_folder. Using envs config folder $create_vms_config_folder"
+                shift ;;
             -b|-batch) batch=true
                 echo "Found the -batch. VMs will be created without a timeout"
                 ;;
@@ -204,23 +209,24 @@ error_output () {
 # Check and source config file
 check_and_source_config_file () {
     echo "Checking config file and sourcing it..."
-    if [ -f "$script_dir/$config_file" ]; then
-        source "$script_dir/$config_file"
-        echo -e "${green}Config file loaded: $config_file${normal}"
+
+    if [ -f "$create_vms_config_folder/$config_file" ]; then
+        source "$create_vms_config_folder/$config_file"
+        echo -e "${green}Config file loaded: $CREATE_VMS_ENVS_FOLDER/$config_file${normal}"
     fi
 }
 
 # Initialize cleanup state file with proper structure
 init_cleanup_state_file () {
-    if [ ! -f "$script_dir/$cleanup_file" ]; then
+    if [ ! -f "$create_vms_config_folder/$cleanup_file" ]; then
         echo "Initializing cleanup state file..."
-        cat <<EOF > "$script_dir/$cleanup_file"
+        cat <<EOF > "$create_vms_config_folder/$cleanup_file"
 # OpenStack VM Cleanup State
 # Created: $(date)
 
 # Batch resources will be added below
 EOF
-        echo -e "${green}Cleanup state file created: $cleanup_file${normal}"
+        echo -e "${green}Cleanup state file created: $create_vms_config_folder/$cleanup_file${normal}"
     fi
 }
 
@@ -233,33 +239,33 @@ update_cleanup_state () {
     echo "Updating cleanup state for batch $batch_num..."
 
     # Check if batch already exists
-    if grep -q "CREATED_VM_IDS_BATCH_$batch_num" "$script_dir/$cleanup_file"; then
+    if grep -q "CREATED_VM_IDS_BATCH_$batch_num" "$create_vms_config_folder/$cleanup_file"; then
         echo -e "${yellow}Batch $batch_num already exists in cleanup file${normal}"
         return 1
     fi
 
     # Add batch header
-    echo "" >> "$script_dir/$cleanup_file"
-    echo "# Batch $batch_num" >> "$script_dir/$cleanup_file"
+    echo "" >> "$create_vms_config_folder/$cleanup_file"
+    echo "# Batch $batch_num" >> "$create_vms_config_folder/$cleanup_file"
 
     # Always add VM IDs and Volume IDs (unique per batch)
-    echo "export CREATED_VM_IDS_BATCH_${batch_num}=\"$vm_ids\"" >> "$script_dir/$cleanup_file"
+    echo "export CREATED_VM_IDS_BATCH_${batch_num}=\"$vm_ids\"" >> "$create_vms_config_folder/$cleanup_file"
     echo "export CREATED_BOOT_VOLUMES_BATCH_${batch_num}=\"$volume_ids\"" >> "$script_dir/$cleanup_file"
 
     # Add reusable resources only if they don't exist
-    if [ -n "$SECURITY_GR_ID" ] && ! grep -q "CREATED_SECURITY_GROUP_ID" "$script_dir/$cleanup_file"; then
-        echo "export CREATED_SECURITY_GROUP_ID_BATCH_${batch_num}=\"$SECURITY_GR_ID\"" >> "$script_dir/$cleanup_file"
+    if [ -n "$SECURITY_GR_ID" ] && ! grep -q "CREATED_SECURITY_GROUP_ID" "$create_vms_config_folder/$cleanup_file"; then
+        echo "export CREATED_SECURITY_GROUP_ID_BATCH_${batch_num}=\"$SECURITY_GR_ID\"" >> "$create_vms_config_folder/$cleanup_file"
     fi
 
-    if [ -n "$FLAVOR" ] && ! grep -q "${FLAVOR}_${PROJECT}" "$script_dir/$cleanup_file"; then
-        echo "export CREATED_FLAVOR_NAME_BATCH_${batch_num}=\"${FLAVOR}_${PROJECT}\"" >> "$script_dir/$cleanup_file"
+    if [ -n "$FLAVOR" ] && ! grep -q "${FLAVOR}_${PROJECT}" "$create_vms_config_folder/$cleanup_file"; then
+        echo "export CREATED_FLAVOR_NAME_BATCH_${batch_num}=\"${FLAVOR}_${PROJECT}\"" >> "$create_vms_config_folder/$cleanup_file"
     fi
 
     # Add keypair with user info only if it doesn't exist
     if [ -n "$KEY_NAME" ] && [ -n "$TEST_USER" ]; then
         local keypair_user="$KEY_NAME:$TEST_USER"
-        if ! grep -q "CREATED_KEYPAIR_NAME_USER.*\"$keypair_user\"" "$script_dir/$cleanup_file"; then
-            echo "export CREATED_KEYPAIR_NAME_USER_BATCH_${batch_num}=\"$keypair_user\"" >> "$script_dir/$cleanup_file"
+        if ! grep -q "CREATED_KEYPAIR_NAME_USER.*\"$keypair_user\"" "$create_vms_config_folder/$cleanup_file"; then
+            echo "export CREATED_KEYPAIR_NAME_USER_BATCH_${batch_num}=\"$keypair_user\"" >> "$create_vms_config_folder/$cleanup_file"
         fi
     fi
 
@@ -280,9 +286,9 @@ get_security_group_id() {
 get_next_batch_number () {
     local last_batch=0
 
-    if [ -f "$script_dir/$cleanup_file" ]; then
+    if [ -f "$create_vms_config_folder/$cleanup_file" ]; then
         # Find the highest batch number in the file
-        last_batch=$(grep -o 'CREATED_VM_IDS_BATCH_[0-9]*' "$script_dir/$cleanup_file" | \
+        last_batch=$(grep -o 'CREATED_VM_IDS_BATCH_[0-9]*' "$create_vms_config_folder/$cleanup_file" | \
                     grep -o '[0-9]*' | sort -n | tail -1)
     fi
 
@@ -291,7 +297,7 @@ get_next_batch_number () {
 
 # Write configuration to file
 write_config_file () {
-    echo "Writing configuration to $config_file..."
+    echo "Writing configuration to $CREATE_VMS_ENVS_FOLDER/$config_file..."
 
     if [ $NO_KEY = "true" ]; then
         key_name_init_param="NO keypair"
@@ -299,7 +305,7 @@ write_config_file () {
         key_name_init_param="$KEY_NAME"
     fi
 
-    cat <<EOF > "$script_dir/$config_file"
+    cat <<EOF > "$CREATE_VMS_ENVS_FOLDER/$config_file"
 # VM Creation Configuration
 export OPENRC_PATH='$OPENRC_PATH'
 export VM_BASE_NAME='$VM_BASE_NAME'
@@ -319,9 +325,10 @@ export ADD_KEY='$ADD_KEY'
 export BATCH='$BATCH'
 export TS_DEBUG='$TS_DEBUG'
 export WAIT_FOR_CREATED='$WAIT_FOR_CREATED'
+export CREATE_VMS_ENVS_FOLDER='$CREATE_VMS_ENVS_FOLDER'
 EOF
 
-    echo -e "${green}Configuration saved to $config_file${normal}"
+    echo -e "${green}Configuration saved to $CREATE_VMS_ENVS_FOLDER/$config_file${normal}"
 }
 
 # Assign variables from command line arguments
@@ -345,6 +352,7 @@ assign_vars_from_startup_keys () {
     [[ -n $add_key ]] && ADD_KEY=$add_key
     [[ -n $wait_for_created ]] && WAIT_FOR_CREATED=$wait_for_created
     [[ -n $ts_debug ]] && TS_DEBUG=$ts_debug
+    [[ -n $create_vms_config_folder ]] && CREATE_VMS_ENVS_FOLDER=$create_vms_config_folder
 }
 
 # Display initial parameters
@@ -939,5 +947,5 @@ export OS_PROJECT_NAME='admin'
 export OS_PROJECT_ID=$ADMIN_PROJECT_ID
 
 echo -e "${green}VM creation completed successfully!${normal}"
-echo -e "${green}Configuration saved to: $config_file${normal}"
-echo -e "${green}Cleanup state saved to: $cleanup_file${normal}"
+#echo -e "${green}Configuration saved to: $CREATE_VMS_ENVS_FOLDER/$config_file${normal}"
+echo -e "${green}Cleanup state saved to: $create_vms_config_folder/$cleanup_file${normal}"
