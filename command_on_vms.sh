@@ -6,7 +6,6 @@
 # Color definitions
 green=$(tput setaf 2)
 red=$(tput setaf 1)
-#violet=$(tput setaf 5)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
 blue=$(tput setaf 4)
@@ -174,29 +173,7 @@ get_vms_ips() {
 
     VMS=$(bash "$openstack_utils/$get_vms_list_script" "${command_args[@]}")
 
-#    # Build command arguments based on provided parameters
-#    [ -n "$HYPERVISOR_NAME" ] && command_args="$command_args -hv $HYPERVISOR_NAME"
-#    [ -n "$VMS" ] && command_args="$command_args -vms \"$VMS\""
-#    [ -n "$PROJECT" ] && command_args="$command_args -p $PROJECT"
-#
-#    # Add debug flag if enabled
-##    [ "$TS_DEBUG" = "true" ] && command_args="$command_args -debug"
-#
-#    # Trim leading space from arguments
-#    command_args="$(echo "$command_args" | sed 's/^ //')"
-
-    # Execute the command and capture output
-#    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] VMS command: bash \"$openstack_utils/$get_vms_list_script\" $command_args"
-#    VMS=$(bash "$openstack_utils/$get_vms_list_script" $command_args)
-#     2>&1)
-#    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] command_args: $command_args"
-#    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] VMS: $VMS"
-#    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] exit_code $?"
-
     echo -e "[DEBUG] VMS: $VMS"
-#    echo "command_args"
-#    echo "$command_args"
-#    exit 0
     local exit_code=$?
     if [ $exit_code -ne 0 ]; then
         echo -e "${red}Failed to get VMs IPs (exit code: $exit_code)${normal}"
@@ -231,28 +208,6 @@ check_host_connectivity() {
         return 1
     fi
 }
-
-# Function to check SSH connectivity
-#check_ssh_connectivity() {
-#    local ip="$1"
-#
-#    local ssh_output
-#    ssh_output=$(ssh -o StrictHostKeyChecking=no \
-#        -o ConnectTimeout="$TS_SSH_TIMEOUT" \
-#        -o BatchMode=yes \
-#        -i "$KEY_PATH" \
-#        "$VM_USER@$ip" \
-#        "echo 'SSH_OK'" | grep 'SSH_OK')
-#
-##    echo "debug: ssh_output: $ssh_output"
-#    if [ "$ssh_output" = "SSH_OK" ]; then
-#        echo -e "${green}SSH connection successful: $ip${normal}"
-#        return 0
-#    else
-#        echo -e "${red}SSH connection failed: $ip - ssh_output: $ssh_output${normal}"
-#        return 1
-#    fi
-#}
 
 # Function to check SSH connectivity
 check_ssh_connectivity() {
@@ -349,7 +304,9 @@ batch_run_commands() {
         vm_status=$(echo "$vm_tripl" | awk -F':' '{print $2}')
         vm_ip=$(echo "$vm_tripl" | awk -F':' '{print $3}')
 
-#        [ "$TS_DEBUG" = "true" ] &&
+        echo -e "${cyan}Processing VM: $vm_name VM status: $vm_status VM ip: $vm_ip${normal}"
+
+        #        [ "$TS_DEBUG" = "true" ] &&
         echo -e "
     [DEBUG] Configuration:
       VM_USER:    $VM_USER
@@ -358,8 +315,6 @@ batch_run_commands() {
       vm_status:  $vm_status
       vm_ip:      $vm_ip
       "
-
-        echo -e "${cyan}Processing VM: $vm_name VM status: $vm_status VM ip: $vm_ip${normal}"
 
         # Check ping connectivity
         if ! check_host_connectivity "$vm_ip"; then
