@@ -569,12 +569,12 @@ main_cleanup() {
     show_resources_summary "$batch_info"
 
     # Confirm overall cleanup
-    if [ "$AUTO_CONFIRM" = false ]; then
+#    if [ "$AUTO_CONFIRM" = false ]; then
         if ! confirm_action "Proceed with cleanup?"; then
             echo -e "${yellow}Cleanup cancelled by user${normal}"
             exit 0
         fi
-    fi
+#    fi
 
     # Delete resources by category
     delete_resources_by_category "$batch_info"

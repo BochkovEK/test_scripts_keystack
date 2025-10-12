@@ -383,6 +383,8 @@ ${green}VM Creation Configuration:${normal}
     Creating VMs without a timeout:   $BATCH
     Debug:                            $TS_DEBUG
     Wait for creating:                $WAIT_FOR_CREATED
+    Output envs config file:          $CREATE_VMS_ENVS_FOLDER/$config_file
+    Cleanup envs config file:         $CREATE_VMS_ENVS_FOLDER/$cleanup_file
         "
 
     [[ ! $DONT_ASK = "true" ]] && { read -p "Press enter to continue: "; }
