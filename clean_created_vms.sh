@@ -113,8 +113,9 @@ load_external_scripts() {
 # User confirmation function
 confirm_action() {
     local message="$1"
+    local force_confirm="${2:-true}"
 
-    if [ "$AUTO_CONFIRM" = true ]; then
+    if [ "$AUTO_CONFIRM" = true ] && [ "$force_confirm" = true ]; then
         echo -e "${green}Auto-confirmed: $message${normal}"
         return 0
     fi
@@ -527,7 +528,7 @@ offer_cleanup_file_removal() {
     echo "Cleanup state file: $state_file"
     echo ""
 
-    if confirm_action "Remove cleanup state file to prevent accidental re-execution?"; then
+    if confirm_action "Remove cleanup state file to prevent accidental re-execution?" false; then
         if rm -f "$state_file"; then
             echo -e "${green}Successfully removed state file: $cleanup_file${normal}"
         else
