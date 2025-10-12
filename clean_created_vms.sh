@@ -37,7 +37,7 @@ show_help() {
     Usage: $0 [OPTIONS]
 
     Options:
-      -y, -yes          Auto-confirm all actions (no prompts)
+      -da, -y, -yes     Auto-confirm all actions (no prompts)
       -b, -batch <N>    Cleanup specific batch number (e.g., 1, 2, 3)
       -f, -file <path>  Use custom cleanup state file
       -debug            Enable debug output
@@ -53,7 +53,7 @@ show_help() {
 parse_arguments() {
     while [ -n "$1" ]; do
         case "$1" in
-            -y|-yes)
+            -da|-y|-yes)
                 AUTO_CONFIRM=true
                 echo "Auto-confirm mode enabled"
                 ;;
