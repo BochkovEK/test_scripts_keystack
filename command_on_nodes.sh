@@ -8,7 +8,7 @@ normal=$(tput sgr0)
 green=$(tput setaf 2)
 yellow=$(tput setaf 3)
 red=$(tput setaf 1)
-blue=$(tput setaf 6)
+blue=$(tput setaf 8)
 
 # Script paths
 script_dir=$(dirname "$0")
