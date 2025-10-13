@@ -11,7 +11,7 @@
 
 [[ -z $TIMEOUT ]] && TIMEOUT=180
 
-echo 'Start block_traffic.sh script'
+echo "$0 script"
 if [ -f ~/blocked_ips_list ]; then BLOCKED_IPS=$(cat ~/blocked_ips_list); else echo "IPS list to block not found (~/blocked_ips_list)"; exit 1; fi
 #[[ -z $BLOCKED_IPS ]] && { echo "IPS list to block not found (env BLOCKED_IPS)"; exit 1; }
 

@@ -4,7 +4,7 @@
 
 # BLOCKED_IPS="<IP_ctrl_1> <IP_ctrl_2> ... <IP_N>"
 # example
-# BLOCKED_IPS="10.224.133.138" "10.224.133.139" "10.224.133.133" "10.224.133.134" "10.224.133.135")
+# BLOCKED_IPS="10.224.133.138 10.224.133.139 10.224.133.133 10.224.133.134 10.224.133.135"
 
 # Color definitions
 normal=$(tput sgr0)
@@ -23,6 +23,7 @@ default_ssh_user="root"
 [[ -z $NODES_NAME ]] && NODES_NAME=""
 [[ -z $SSH_USER ]] && SSH_USER="$default_ssh_user"
 [[ -z $BLOCKED_IPS ]] && BLOCKED_IPS=""
+[[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 
 # Function to display help information
 show_help() {
@@ -32,7 +33,8 @@ show_help() {
     Copy block_traffic script to node and start it by ssh
 
     Options:
-      -n, -node <node_name>          Node name to block traffic on
+      -n, -nodes <nodes_name_list>   Node name to block traffic on \"<node_name_1> <node_name_2> ... <node_name_N>\"
+      -bl -black_list <black_list>   List of blocked IPs: \"<blocked_traffic_from_node_IP_1> <IP_2> ... <IP_N>\"
       -u, -user <username>           SSH username
       --help                         Show this help message
     "
@@ -46,9 +48,14 @@ parse_arguments() {
                 show_help
                 exit 0
                 ;;
-            -n|-node)
+            -n|-nodes)
                 NODES_NAME="$2"
                 echo "Found the -node <node_name> option, with parameter value $NODES_NAME"
+                shift
+                ;;
+            -bl|-black_list)
+                BLOCKED_IPS="$2"
+                echo "Found the -black_list option, with parameter value $BLOCKED_IPS"
                 shift
                 ;;
             -u|-user)
@@ -66,6 +73,57 @@ parse_arguments() {
         esac
         shift
     done
+}
+
+# Function to load external scripts
+load_external_scripts() {
+    local script_path="$utils_dir/$get_ssh_user_script"
+    if [ ! -f "$script_path" ]; then
+        echo -e "Error: Required script not found: $script_path"
+        exit 1
+    fi
+    source "$script_path"
+}
+
+# Function to confirm action
+confirm_blocking() {
+    local node_name="$1"
+    echo -e "${yellow}Traffic for \"$BLOCKED_IPS\" will be blocked on nodes \"$node_name\"${normal}"
+    read -p "Press Enter to continue or Ctrl+C to cancel..."
+}
+
+# Function to validate variables
+validate_variables() {
+    [[ -z "$REAL_NODE_NAME" ]] && { echo -e "${red}Error: NODE_NAME is empty${normal}"; exit 1; }
+    [[ -z "$BLOCKED_IPS" ]] && { echo -e "${red}Error: BLOCKED_IPS is empty${normal}"; exit 1; }
+}
+
+# Function to get blocked IPs list
+get_blocked_ips () {
+    blocked_nodes_pair=$(get_nodes_list "-nt" "all")
+    for bn in $blocked_nodes_pair; do
+        blocked_node_name="${bn%%:*}"
+        blocked_node_ip="${bn#*:}"
+        if [ -z "$BLOCKED_IPS" ]; then
+            BLOCKED_IPS="$blocked_node_ip"
+        else
+            BLOCKED_IPS="$BLOCKED_IPS $blocked_node_ip"
+        fi
+    done
+}
+
+# Function block traffic on node
+block_traffic_on_node () {
+    local node_name="$1"
+    local node_ip="$2"
+
+    confirm_blocking "$node_name"
+    echo "${yellow}Blocking traffic on ${node_name}...${normal}"
+
+    scp ./block_traffic.sh "$SSH_USER@$node_ip":~/
+    ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" 'sudo chmod 777 ~/block_traffic.sh'
+    ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" 'sudo echo '"${BLOCKED_IPS}"' > ~/blocked_ips_list'
+    ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" 'sudo bash ~/block_traffic.sh'
 }
 
 # Function to get nodes list using external script
@@ -99,31 +157,21 @@ get_nodes_list() {
     fi
 }
 
-# Function to load external scripts
-load_external_scripts() {
-    local script_path="$utils_dir/$get_ssh_user_script"
-    if [ ! -f "$script_path" ]; then
-        echo -e "Error: Required script not found: $script_path"
-        exit 1
-    fi
-    source "$script_path"
-}
-
-# Function to confirm action
-confirm_blocking() {
-    echo -e "${yellow}Traffic for $BLOCKED_IPS will be blocked on node $NODE_TO_BLOCK_TRAFFIC${normal}"
-    read -p "Press Enter to continue or Ctrl+C to cancel..."
-}
-
-# Function to validate variables
-validate_variables() {
-    [[ -z "$NODE_NAME" ]] && { echo -e "${red}Error: NODE_NAME is empty${normal}"; exit 1; }
-    [[ -z "$BLOCKED_IPS" ]] && { echo -e "${red}Error: BLOCKED_IPS is empty${normal}"; exit 1; }
+# Function block traffic
+block_traffic () {
+    local nodes_pair
+    nodes_pair=$(get_nodes_list "-nn" "$NODES_NAME")
+    for node_pair in $nodes_pair; do
+        node_name="${node_pair%%:*}"
+        node_ip="${node_pair#*:}"
+        block_traffic_on_node "$node_ip" "$node_ip"
+    done
 }
 
 # Main execution function
 main() {
     parse_arguments "$@"
+    loca nodes_pair
     load_external_scripts
 
     # Determine SSH user using external function
@@ -135,37 +183,18 @@ main() {
 
     echo "Using SSH user: $SSH_USER"
 
-    # Get nodes list
-    if [ -n "$NODES_NAME" ]; then
-        node_pair=$(get_nodes_list "-nn" "$NODES_NAME")
-        NODE_NAME="${node_pair%%:*}"
-        node_ip="${node_pair#*:}"
-    else
+    if [ -z "$NODES_NAME" ]; then
         echo -e "${yellow}node name needed to block traffic (env NODES_NAME) or start this script with key -n <node_name>${normal}";
         exit 1;
     fi
 
-    # Get blocked IPs list
+    [[ -z "$BLOCKED_IPS" ]] && get_blocked_ips
     if [ -z "$BLOCKED_IPS" ]; then
-        blocked_nodes_pair=$(get_nodes_list "-nt" "all")
-        for bn in $blocked_nodes_pair; do
-            blocked_node_name="${bn%%:*}"
-            blocked_node_ip="${bn#*:}"
-            if [ -z "$BLOCKED_IPS" ]; then
-                BLOCKED_IPS="$blocked_node_ip"
-            else
-                BLOCKED_IPS="$BLOCKED_IPS $blocked_node_ip"
-            fi
-        done
+        echo -e "${yellow}IP addresses needed to block traffic (env BLOCKED_IPS) or start this script with key -bl <ip_list>${normal}";
+        exit 1;
     fi
 
-    validate_variables
-    confirm_blocking
-
-    scp ./block_traffic.sh "$SSH_USER@$NODES_NAME":~/
-    ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" 'chmod 777 ~/block_traffic.sh'
-    ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" 'echo '"${BLOCKED_IPS[*]}"' > ~/blocked_ips_list'
-    ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" 'bash ~/block_traffic.sh'
+    block_traffic
 }
 
 # Run main function

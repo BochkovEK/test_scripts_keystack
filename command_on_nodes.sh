@@ -26,7 +26,7 @@ external_scripts=(
 
 # Default values
 [[ -z $COMMAND ]] && COMMAND="ls -la"
-[[ -z $NODES ]] && NODES=()
+[[ -z $NODES ]] && NODES=""
 [[ -z $NODES_NAME ]] && NODES_NAME=""
 [[ -z $NODES_TYPE ]] && NODES_TYPE="all"
 [[ -z $PING ]] && PING="false"
@@ -225,20 +225,18 @@ check_ssh_connectivity() {
 start_commands_on_nodes() {
     if [ "$TS_DEBUG" = true ]; then
         echo -e "
-    [DEBUG] Nodes list:"
-        for host in "${NODES[@]}"; do
-            echo "$host"
-        done
+    [DEBUG] Nodes list: $NODES"
     fi
 
     # Validate nodes list
-    if [ ${#NODES[@]} -eq 0 ]; then
+    if [ -z "$NODES" ]; then
         error_message="Failed to compile the list of nodes ($NODES_TYPE)"
         error_output
     fi
 
     # Execute command on each node
-    for node_pair in "${NODES[@]}"; do
+    local node_pair
+    while IFS= read -r node_pair; do
         # Split node:ip format
         node_name="${node_pair%%:*}"
         node_ip="${node_pair#*:}"
@@ -254,7 +252,7 @@ start_commands_on_nodes() {
         [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG] Executing command: ssh -o StrictHostKeyChecking=no -t \"$SSH_USER@$node_ip\" \"$COMMAND\""
         ssh -o StrictHostKeyChecking=no -t "$SSH_USER@$node_ip" "$COMMAND"
-    done
+    done <<< "$NODES"
 }
 
 # Function to get yes/no answer from user
@@ -276,8 +274,8 @@ check_ping() {
     else
         printf "%40s\n" "${red}No ping response from $node_ip${normal}"
         connection_problem="true"
-        # Remove problematic node from list
-        NODES=("${NODES[@]/$node_ip}")
+        # Remove problematic node from string
+        NODES=$(echo "$NODES" | grep -v "$node_ip")
     fi
 }
 
@@ -339,28 +337,27 @@ main() {
 
     # Get nodes list
     if [ -n "$NODES_NAME" ]; then
-        nodes=$(get_nodes_list "-nn" "$NODES_NAME")
+        NODES=$(get_nodes_list "-nn" "$NODES_NAME")
     else
-        nodes=$(get_nodes_list "-nt" "$NODES_TYPE")
+        NODES=$(get_nodes_list "-nt" "$NODES_TYPE")
     fi
 
     if [ "$TS_DEBUG" = true ]; then
         echo -e "
-    [DEBUG] nodes: $nodes
+    [DEBUG] nodes: $NODES
     "
     fi
 
-    IFS=' ' read -ra NODES <<< "$nodes"
-
     # Check connections if requested
     if [ "$DONT_CHECK_CONN" = false ]; then
-        for node_pair in "${NODES[@]}"; do
+        local node_pair
+        while IFS= read -r node_pair; do
             node_name="${node_pair%%:*}"
             node_ip="${node_pair#*:}"
 
             echo "Checking ping to $node_name ($node_ip)"
             check_ping "$node_ip"
-        done
+        done <<< "$NODES"
     fi
 
     # Handle connection problems
