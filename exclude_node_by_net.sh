@@ -88,7 +88,12 @@ load_external_scripts() {
 # Function to confirm action
 confirm_blocking() {
     local node_name="$1"
-    echo -e "${yellow}Traffic for:\n$(echo "$BLOCKED_NODES_PAIR" | tr ' ' '\n')\nwill be blocked on node \"$node_name\"${normal}"
+    local node_ip="$2"
+    echo -e "${yellow}============== BLOCKING TRAFFIC ===============
+Nodes to block:
+$(echo "$BLOCKED_NODES_PAIR" | tr ' ' '\n')
+Target node: ===> $node_name <===
+================================================${normal}"
     read -p "Press Enter to continue or Ctrl+C to cancel..."
 }
 
@@ -111,7 +116,7 @@ block_traffic_on_node () {
     local node_name="$1"
     local node_ip="$2"
 
-    confirm_blocking "$node_name"
+    confirm_blocking "$node_name" "$node_ip"
     echo "${yellow}Blocking traffic on ${node_name}...${normal}"
 
     scp ./block_traffic.sh "$SSH_USER@$node_ip":~/
@@ -158,7 +163,7 @@ block_traffic () {
     for node_pair in $nodes_pair; do
         node_name="${node_pair%%:*}"
         node_ip="${node_pair#*:}"
-        block_traffic_on_node "$node_ip" "$node_ip"
+        block_traffic_on_node "$node_name" "$node_ip"
     done
 }
 
