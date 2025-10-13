@@ -593,6 +593,8 @@ main() {
     check_connections_to_nodes "ctrl"
     check_connections_to_nodes "comp"
 
+    # Заменяем CHECK_IPMI на CHECK_IPMI_CONNECTIONS или устанавливаем по умолчанию
+    [[ -z $CHECK_IPMI_CONNECTIONS ]] && CHECK_IPMI_CONNECTIONS="true"
     [ "$CHECK_IPMI_CONNECTIONS" = "true" ] && check_ipmi_connections
 
     check_containers "ctrl" "consul"
