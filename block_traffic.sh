@@ -22,7 +22,7 @@ block_traffic () {
 # Blocking incoming traffic from IP
         echo "Block incoming traffic from ${IP}"
         iptables -A INPUT -s "$IP" -j DROP
-#Blocking outgoing traffic to IP
+# Blocking outgoing traffic to IP
         echo "Block outgoing traffic to ${IP}"
         iptables -A OUTPUT -d "$IP" -j DROP
         date
