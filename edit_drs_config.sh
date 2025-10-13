@@ -9,7 +9,14 @@ red=$(tput setaf 1)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
 cyan=$(tput setaf 14)
-#violet=$(tput setaf 5)
+
+# Script paths
+script_dir=$(dirname "$0")
+utils_dir="$script_dir/utils"
+get_nodes_list_script="get_nodes_list.sh"
+get_ssh_user_script="get_ssh_user.sh"
+default_container_engine="docker"
+default_ssh_user="root"
 
 # Service and path configuration
 service_name="drs"
@@ -18,23 +25,22 @@ test_node_conf_dir="kolla/$service_name"
 conf_dir="/etc/kolla/$service_name"
 conf_name="drs.ini"
 
-# Script paths
-script_dir=$(dirname "$0")
-utils_dir="$script_dir/utils"
-get_nodes_list_script="get_nodes_list.sh"
-default_ssh_user="root"
-#install_package_script="install_package.sh"
+# External scripts array
+external_scripts=(
+    "$utils_dir/$get_ssh_user_script"
+)
 
 # Default values
-ADD_DEBUG="${ADD_DEBUG:-false}"
-TS_DEBUG="${TS_DEBUG:-false}"
-ONLY_CONF_CHECK="${ONLY_CONF_CHECK:-false}"
-ADD_PROM_ALERT="${ADD_PROM_ALERT:-false}"
-PROMETHEUS_PASS="${PROMETHEUS_PASS:-}"
-PUSH="${PUSH:-false}"
-PULL="${PULL:-false}"
-CONF_NAME="${CONF_NAME:-$conf_name}"
-CONTAINER_ENGINE="${CONTAINER_ENGINE:-docker}"
+[[ -z $ADD_DEBUG ]] && ADD_DEBUG=false
+[[ -z $TS_DEBUG ]] && TS_DEBUG=false
+[[ -z $ONLY_CONF_CHECK ]] && ONLY_CONF_CHECK=false
+[[ -z $ADD_PROM_ALERT ]] && ADD_PROM_ALERT=false
+[[ -z $PROMETHEUS_PASS ]] && PROMETHEUS_PASS=""
+[[ -z $PUSH ]] && PUSH=false
+[[ -z $PULL ]] && PULL=false
+[[ -z $CONF_NAME ]] && CONF_NAME="$conf_name"
+[[ -z $CONTAINER_ENGINE ]] && CONTAINER_ENGINE=$default_container_engine
+[[ -z $VIRTUAL_ENV ]] && VIRTUAL_ENV="$script_dir"
 
 # Function to display help information
 show_help() {
@@ -69,48 +75,6 @@ show_help() {
       # Enable Prometheus alerting
       $0 -pa mypassword -push
     "
-}
-
-# Function to get nodes list using external script
-get_nodes_list() {
-    [ "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG]:
-        Count parameters: $#
-        Parameters: $*"
-
-    local nodes_result=""
-    nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
-
-    [ "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG] nodes_result: $nodes_result"
-
-    # Check for errors in node list
-    if [ -z "$nodes_result" ]; then
-        echo -e "${red}Failed to determine node list - ERROR${normal}"
-        exit 1
-    elif echo "$nodes_result" | grep -q "ERROR"; then
-        echo -e "${yellow}Node names could not be determined.${normal}"
-        echo -e "${yellow}Try: bash $utils_dir/$get_nodes_list_script -nt all${normal}"
-        echo -e "${red}Node names could not be determined - ERROR!${normal}"
-        exit 1
-    else
-        echo "$nodes_result"
-    fi
-}
-
-# Function to determine SSH user
-determine_ssh_user() {
-    if [ -z "$SSH_USER" ]; then
-        SSH_USER=$(whoami 2>/dev/null) || {
-            echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
-            SSH_USER="$default_ssh_user"
-        }
-    fi
-
-    if [ -z "$SSH_USER" ]; then
-        echo -e "${red}Error: Failed to determine SSH user!${normal}" >&2
-        exit 1
-    fi
 }
 
 # Parse command line arguments
@@ -175,6 +139,44 @@ parse_arguments() {
     done
 }
 
+# Function to get nodes list using external script
+get_nodes_list() {
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG]:
+        Count parameters: $#
+        Parameters: $*"
+
+    local nodes_result=""
+    nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
+
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] nodes_result: $nodes_result"
+
+    # Check for errors in node list
+    if [ -z "$nodes_result" ]; then
+        echo -e "${red}Failed to determine node list - ERROR${normal}"
+        exit 1
+    elif echo "$nodes_result" | grep -q "ERROR"; then
+        echo -e "${yellow}Node names could not be determined.${normal}"
+        echo -e "${yellow}Try: bash $utils_dir/$get_nodes_list_script -nt all${normal}"
+        echo -e "${red}Node names could not be determined - ERROR!${normal}"
+        exit 1
+    else
+        echo "$nodes_result"
+    fi
+}
+
+# Function to load external scripts
+load_external_scripts() {
+    for script_path in "${external_scripts[@]}"; do
+        if [ ! -f "$script_path" ]; then
+            echo -e "${red}Error: Required script not found: $script_path${normal}"
+            exit 1
+        fi
+        source "$script_path"
+    done
+}
+
 # Function to display configuration files
 cat_conf() {
     echo "Displaying all $service_name configurations..."
@@ -196,7 +198,7 @@ pull_conf() {
     echo "Pulling $CONF_NAME from controller node..."
 
     # Create local directory if it doesn't exist
-    [ ! -d "$script_dir/$test_node_conf_dir" ] && mkdir -p "$script_dir/$test_node_conf_dir"
+    [ ! -d "$VIRTUAL_ENV/$test_node_conf_dir" ] && mkdir -p "$VIRTUAL_ENV/$test_node_conf_dir"
 
     # Get nodes list
     local nodes
@@ -216,18 +218,18 @@ pull_conf() {
 
     # Copy configuration file
     ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
-        "sudo cat $conf_dir/$CONF_NAME" > "$script_dir/$test_node_conf_dir/${CONF_NAME}"
+        "sudo cat $conf_dir/$CONF_NAME" > "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}"
 
     # Create backup if it doesn't exist
-    [ ! -f "$script_dir/$test_node_conf_dir/${CONF_NAME}_backup" ] && \
-        cp "$script_dir/$test_node_conf_dir/${CONF_NAME}" "$script_dir/$test_node_conf_dir/${CONF_NAME}_backup"
+    [ ! -f "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}_backup" ] && \
+        cp "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}" "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}_backup"
 
     echo -e "
 To edit the configuration:
-  vi $script_dir/$test_node_conf_dir/$CONF_NAME
+  vi $VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME
 
 To apply the configuration:
-  bash $script_dir/$script_name -push
+  bash $script_dir/$(basename "$0") -push
 "
 }
 
@@ -235,8 +237,8 @@ To apply the configuration:
 push_conf() {
     echo "Pushing $CONF_NAME to controller nodes..."
 
-    if [ ! -f "$script_dir/$test_node_conf_dir/$CONF_NAME" ]; then
-        echo -e "${red}Configuration file not found: $script_dir/$test_node_conf_dir/$CONF_NAME${normal}"
+    if [ ! -f "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME" ]; then
+        echo -e "${red}Configuration file not found: $VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME${normal}"
         exit 1
     fi
 
@@ -263,7 +265,7 @@ push_conf() {
             # Replace API host IP
             sed -E "
                 s/api_host[[:space:]]*=[[:space:]]*[0-9.]+[0-9]+/api_host = $node_actual_ip/g
-            " "$script_dir/$test_node_conf_dir/$CONF_NAME" > "$temp_file"
+            " "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME" > "$temp_file"
 
             # Copy file to remote node
             scp -o StrictHostKeyChecking=no "$temp_file" "$SSH_USER@$node_ip:/tmp/$CONF_NAME"
@@ -284,13 +286,13 @@ push_conf() {
 add_debug_logging() {
     echo "Adding debug logging to DRS configuration..."
 
-    if [ ! -f "$script_dir/$test_node_conf_dir/$CONF_NAME" ]; then
+    if [ ! -f "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME" ]; then
         echo -e "${yellow}Configuration file not found locally, pulling first...${normal}"
         pull_conf
     fi
 
     # Add debug setting
-    sed -i 's/\[DEFAULT\]/\[DEFAULT\]\ndebug = true/' "$script_dir/$test_node_conf_dir/$CONF_NAME"
+    sed -i 's/\[DEFAULT\]/\[DEFAULT\]\ndebug = true/' "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME"
     echo -e "${green}Debug logging enabled in local configuration${normal}"
 }
 
@@ -303,21 +305,21 @@ add_prometheus_alerting() {
         return 1
     fi
 
-    if [ ! -f "$script_dir/$test_node_conf_dir/$CONF_NAME" ]; then
+    if [ ! -f "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME" ]; then
         echo -e "${yellow}Configuration file not found locally, pulling first...${normal}"
         pull_conf
     fi
 
     # Check if Prometheus settings already exist
     local prom_pass_exists
-    prom_pass_exists=$(grep 'prometheus_alert_manager_password' "$script_dir/$test_node_conf_dir/$CONF_NAME")
+    prom_pass_exists=$(grep 'prometheus_alert_manager_password' "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME")
 
     if [ -z "$prom_pass_exists" ]; then
         # Add Prometheus alerting settings
         sed -i "
             s/\[alerting\]/\[alerting\]\nenable_prometheus_alert_manager_auth = true\nprometheus_alert_manager_user = admin\nprometheus_alert_manager_password = $PROMETHEUS_PASS/
             s/enable_alerting = false/enable_alerting = true/
-        " "$script_dir/$test_node_conf_dir/$CONF_NAME"
+        " "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME"
 
         echo -e "${green}Prometheus alerting enabled in local configuration${normal}"
     else
@@ -328,7 +330,16 @@ add_prometheus_alerting() {
 # Main execution function
 main() {
     parse_arguments "$@"
-    determine_ssh_user
+    load_external_scripts
+
+    # Determine SSH user using external function
+    SSH_USER=$(get_and_validate_ssh_user "$SSH_USER" "$default_ssh_user")
+    if [[ $? -ne 0 ]]; then
+        echo -e "${red}Error: Failed to determine valid SSH user!${normal}"
+        exit 1
+    fi
+
+    echo -e "${green}Using SSH user: $SSH_USER${normal}"
 
     local config_changed=false
 

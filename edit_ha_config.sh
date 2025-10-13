@@ -16,6 +16,7 @@ script_name=$(basename "$0")
 utils_dir="$script_dir/utils"
 get_nodes_list_script="get_nodes_list.sh"
 get_ssh_user_script="get_ssh_user.sh"
+default_container_engine="docker"
 default_ssh_user="root"
 
 # Service and path configuration
@@ -40,6 +41,7 @@ external_scripts=(
 [[ -z $OS_REGION_NAME ]] && OS_REGION_NAME=""
 [[ -z $GET_CONFIG_PATH ]] && GET_CONFIG_PATH=false
 [[ -z $SSL_CHECK ]] && SSL_CHECK=false
+[[ -z $CONTAINER_ENGINE ]] && CONTAINER_ENGINE=$default_container_engine
 [[ -z $VIRTUAL_ENV ]] && VIRTUAL_ENV="$script_dir"
 
 # Function to display help information
@@ -136,6 +138,25 @@ define_parameters() {
         GET_CONFIG_PATH=true
         echo "Get config path parameter found"
     }
+}
+
+# Function to add debug logging to Consul configuration
+add_debug_logging() {
+    echo "Adding debug logging to Consul configuration..."
+
+    if [ ! -f "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME" ]; then
+        echo -e "${yellow}Configuration file not found locally, pulling first...${normal}"
+        pull_conf
+    fi
+
+    # Add debug setting for Consul (пример для ha-config.ini)
+    if grep -q "\[log\]" "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME"; then
+        sed -i 's/\[log\]/\[log\]\nlevel = DEBUG/' "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME"
+    else
+        echo -e "\n[log]\nlevel = DEBUG" >> "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME"
+    fi
+
+    echo -e "${green}Debug logging enabled in local configuration${normal}"
 }
 
 # Function to get nodes list using external script
@@ -338,8 +359,6 @@ load_external_scripts() {
 # Main execution function
 main() {
     parse_arguments "$@"
-
-    # Load external scripts first
     load_external_scripts
 
     # Determine SSH user using external function
@@ -362,6 +381,7 @@ main() {
         "
     fi
 
+    # Individual mode checks (exit immediately)
     if [ "$SSL_CHECK" = true ]; then
         check_ssl_config
         exit 0
@@ -387,13 +407,33 @@ main() {
         exit 0
     fi
 
-    if [ "$PUSH" = true ]; then
-        push_conf
-        echo "Restarting consul containers..."
-        bash "$script_dir/command_on_nodes.sh" -u "$SSH_USER" -nt $nodes_type -c "sudo $CONTAINER_ENGINE restart consul"
+    local config_changed=false
+
+    # Configuration modification functions
+    if [ "$ADD_DEBUG" = true ]; then
+        add_debug_logging
+        config_changed=true
     fi
 
-    cat_conf
+    # Push configuration if requested
+    if [ "$PUSH" = true ]; then
+        push_conf
+        config_changed=true
+    fi
+
+    # Handle configuration changes
+    if [ "$config_changed" = true ]; then
+        # Show configuration after changes
+        cat_conf "$NODES"
+
+        # Restart service only if configuration was changed
+        echo "Restarting consul containers..."
+        bash "$script_dir/command_on_nodes.sh" -u "$SSH_USER" -nt $nodes_type -c "sudo $CONTAINER_ENGINE restart consul"
+    else
+        # Show current configuration if no changes were made
+        echo -e "${yellow}No configuration changes were made${normal}"
+        cat_conf "$NODES"
+    fi
 }
 
 # Run main function
