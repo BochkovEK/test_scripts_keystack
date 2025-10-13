@@ -59,7 +59,7 @@ test_ssh_connection() {
     # Test basic connectivity with ping first (optional)
     if command -v ping &> /dev/null; then
         if ping -c 1 -W 2 "$node_ip" &> /dev/null; then
-            echo -e "${green}✓ Host $node_ip is reachable${normal}"
+            echo -e "✓ Host $node_ip is reachable"
         else
             echo -e "${yellow}⚠ Host $node_ip is not responding to ping${normal}"
         fi
