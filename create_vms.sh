@@ -3,6 +3,25 @@
 # Script for creating VMs in OpenStack environment
 # Supports batch creation and maintains state files for cleanup
 
+# Color definitions
+green=$(tput setaf 2)
+red=$(tput setaf 1)
+orange=$(tput setaf 3)
+normal=$(tput sgr0)
+yellow=$(tput setaf 3)
+
+# Default constants
+default_flavor="4c-4r"
+default_key_name="key_test"
+default_project="admin"
+default_test_user="admin"
+default_role="admin"
+default_api_version="2.74"
+default_network="pub_net"
+default_security_group_name="test_security_group"
+default_volume_size="5"
+default_vm_base_name="TEST_VM_FROM_SCRIPT"
+
 # Script_dir, current folder
 script_dir=$(dirname $0)
 utils_dir=$script_dir/utils
@@ -17,24 +36,6 @@ cleanup_file=".vm_cleanup_state.env"
 external_scripts=(
     "$utils_dir/$yes_no_answer_script"
 )
-
-default_flavor="4c-4r"
-default_key_name="key_test"
-default_project="admin"
-default_test_user="admin"
-default_role="admin"
-default_api_version="2.74"
-default_network="pub_net"
-default_security_group_name="test_security_group"
-default_volume_size="5"
-default_vm_base_name="TEST_VM_FROM_SCRIPT"
-
-#Colors
-green=$(tput setaf 2)
-red=$(tput setaf 1)
-orange=$(tput setaf 3)
-normal=$(tput sgr0)
-yellow=$(tput setaf 3)
 
 # Constants
 TIMEOUT_BEFORE_NEXT_CREATION=10
