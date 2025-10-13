@@ -4,6 +4,14 @@
 # identify nodes with disabled nova services and attempt to enable them
 # Can accept path to openrc file as parameter (./check_nova_consul.sh /path/to/openrc)
 
+# Color definitions
+green=$(tput setaf 2)
+red=$(tput setaf 1)
+violet=$(tput setaf 5)
+normal=$(tput sgr0)
+yellow=$(tput setaf 3)
+
+# Script paths
 script_dir=$(dirname "$0")
 utils_dir="$script_dir/utils"
 openstack_utils="$utils_dir/openstack"
@@ -18,19 +26,13 @@ check_container_state_on_nodes_script="check_container_state_on_nodes.sh"
 default_ssh_user="root"
 default_container_engine="docker"
 
-# Color definitions
-green=$(tput setaf 2)
-red=$(tput setaf 1)
-violet=$(tput setaf 5)
-normal=$(tput sgr0)
-yellow=$(tput setaf 3)
-
 # Default values
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
 [[ -z $TRY_TO_RISE ]] && TRY_TO_RISE="true"
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $CONTAINER_ENGINE ]] && CONTAINER_ENGINE=$default_container_engine
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
+
 # Check list
 [[ -z $CHECK_CONNECTIONS ]] && CHECK_CONNECTIONS="false"
 [[ -z $CHECK_IPMI_CONNECTIONS ]] && CHECK_IPMI_CONNECTIONS="false"
@@ -69,98 +71,96 @@ show_help() {
     "
 }
 
-count=1
-while [ -n "$1" ]; do
-    case "$1" in
-        --help)
-            show_help
-            exit 0
-            ;;
+# Function to define parameters from positional arguments
+define_parameters() {
+    [ "$count" = 1 ] && [ "$1" = "suffix" ] && {
+        CHECK_SUFFIX=true
+        echo "Check suffix parameter found"
+    }
+    [ "$count" = 1 ] && [ "$1" = "config_path" ] && {
+        GET_CONFIG_PATH=true
+        echo "Get config path parameter found"
+    }
+}
 
-        -o|-openrc)
-            OPENRC_PATH="$2"
-            echo "Found -openrc option with value: $OPENRC_PATH"
-            shift
-            ;;
-
-        -r|-region)
-            REGION="$2"
-            echo "Found -region option with value: $REGION"
-            shift
-            ;;
-
-        -dtr|-dont_try_to_rise)
-            TRY_TO_RISE="false"
-            echo "Found -dont_try_to_rise option"
-            ;;
-
-        -v|-debug)
-            TS_DEBUG="true"
-            echo "Found -debug option"
-            ;;
-
-        -u|-user)
-            SSH_USER="$2"
-            echo "Found -user option with value: $SSH_USER"
-            shift
-            ;;
-
-        -ce|-container_engine)
-            CONTAINER_ENGINE="$2"
-            echo "Found -docker_engine option with value: $CONTAINER_ENGINE"
-            shift
-            ;;
-
-        -conn|-connections)
-            CHECK_CONNECTIONS="true"
-            echo "Found -connections option"
-            ;;
-
-        -ipmi_conn)
-            CHECK_IPMI_CONNECTIONS="true"
-            echo "Found -ipmi_conn option"
-            ;;
-
-        -disabled_comp)
-            CHECK_DISABLED_COMPUTES="true"
-            echo "Found -disabled_comp option"
-            ;;
-
-        -cont|-containers)
-            CHECK_CONTAINERS="true"
-            echo "Found -containers option"
-            ;;
-
-        -consul_members)
-            CHECK_CONSUL_MEMBERS="true"
-            echo "Found -consul_members option"
-            ;;
-
-        -consul_logs)
-            CHECK_CONSUL_LOGS="true"
-            echo "Found -consul_logs option"
-            ;;
-
-        -consul_config)
-            CHECK_CONSUL_CONFIG="true"
-            echo "Found -consul_config option"
-            ;;
-
-        --)
-            shift
-            break
-            ;;
-
-        *)
-            echo "Parameter #$count: $1"
-            define_parameters "$1"
-            count=$((count + 1))
-            ;;
-    esac
-    shift
-done
-
-
+# Parse command line arguments
+parse_arguments() {
+    local count=1
+    while [ -n "$1" ]; do
+        case "$1" in
+            --help)
+                show_help
+                exit 0
+                ;;
+            -o|-openrc)
+                OPENRC_PATH="$2"
+                echo "Found -openrc option with value: $OPENRC_PATH"
+                shift
+                ;;
+            -r|-region)
+                REGION="$2"
+                echo "Found -region option with value: $REGION"
+                shift
+                ;;
+            -dtr|-dont_try_to_rise)
+                TRY_TO_RISE="false"
+                echo "Found -dont_try_to_rise option"
+                ;;
+            -v|-debug)
+                TS_DEBUG="true"
+                echo "Found -debug option"
+                ;;
+            -u|-user)
+                SSH_USER="$2"
+                echo "Found -user option with value: $SSH_USER"
+                shift
+                ;;
+            -ce|-container_engine)
+                CONTAINER_ENGINE="$2"
+                echo "Found -docker_engine option with value: $CONTAINER_ENGINE"
+                shift
+                ;;
+            -conn|-connections)
+                CHECK_CONNECTIONS="true"
+                echo "Found -connections option"
+                ;;
+            -ipmi_conn)
+                CHECK_IPMI_CONNECTIONS="true"
+                echo "Found -ipmi_conn option"
+                ;;
+            -disabled_comp)
+                CHECK_DISABLED_COMPUTES="true"
+                echo "Found -disabled_comp option"
+                ;;
+            -cont|-containers)
+                CHECK_CONTAINERS="true"
+                echo "Found -containers option"
+                ;;
+            -consul_members)
+                CHECK_CONSUL_MEMBERS="true"
+                echo "Found -consul_members option"
+                ;;
+            -consul_logs)
+                CHECK_CONSUL_LOGS="true"
+                echo "Found -consul_logs option"
+                ;;
+            -consul_config)
+                CHECK_CONSUL_CONFIG="true"
+                echo "Found -consul_config option"
+                ;;
+            --)
+                shift
+                break
+                ;;
+            *)
+                echo "Parameter #$count: $1"
+                define_parameters "$1"
+                count=$((count + 1))
+                ;;
+        esac
+        shift
+    done
+}
 
 # Function to check and source openrc file
 check_and_source_openrc_file() {
@@ -194,10 +194,6 @@ get_nodes_list() {
         Parameters: $*"
 
     local nodes_result=""
-
-    [ "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG]:
-      nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$*\")"
     nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
     [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG] nodes_result: $nodes_result
@@ -277,12 +273,10 @@ check_connections_to_nodes() {
 check_ipmi_connections() {
     echo -e "${violet}Checking IPMI connections from controllers to computes${normal}"
 
-#    [ -z "$nova_state_list" ] && nova_state_list=$(openstack compute service list)
-
     # Get nodes using external script
     local ctrl_nodes rmi_nodes
-
     local suffix_output suffix
+
     suffix_output=$(bash "$script_dir/$edit_ha_config_script" -u "$SSH_USER" "-suffix")
     suffix=$(echo "$suffix_output" | tail -n1 | sed 's/^-//')
     echo "BMC_SUFFIX: $suffix"
@@ -310,48 +304,46 @@ check_ipmi_connections() {
 # Function to check and handle disabled compute nodes
 check_disabled_computes() {
     echo -e "${violet}Checking for disabled compute nodes...${normal}"
-    local cmpt_disabled_nova_list
+    local comp_disabled_nova_list
     comp_disabled_nova_list=$(echo "$nova_state_list" | grep -E "(nova-compute.+disable)|(nova-compute.+down)" | awk '{print $6}')
+
     [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG]:
         nova_state_list: $nova_state_list
         comp_disabled_nova_list: $comp_disabled_nova_list
     "
-    if [ -n "$comp_disabled_nova_list" ]; then
-        [ "$TS_DEBUG" = true ] && echo -e "[DEBUG]: cmpt_disabled_nova_list: $cmpt_disabled_nova_list"
-        if [ "$TRY_TO_RISE" = "true" ]; then
-            [ "$TS_DEBUG" = true ] && echo -e "[DEBUG]: TRY_TO_RISE: $TRY_TO_RISE"
-            local try_to_rise="false"
 
-            for cmpt in $comp_disabled_nova_list; do
-                local response
-                response=$(yes_no_answer "Do you want to try to enable nova service on $cmpt? [Yes]: ")
-                [ "$TS_DEBUG" = true ] && echo -e "
+    if [ -n "$comp_disabled_nova_list" ]; then
+        local try_to_rise="false"
+
+        for cmpt in $comp_disabled_nova_list; do
+            local response
+            response=$(yes_no_answer "Do you want to try to enable nova service on $cmpt? [Yes]: ")
+            [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG]:
         cmpt: $cmpt
         response: $response
     "
-                if [ "$response" = "true" ]; then
-                    try_to_rise="true"
-#                    export OPENRC_PATH=$OPENRC_PATH
-                    export CHECK_OPENSTACK="false"
-                    export COMP_NODE_NAME="$cmpt"
-                    export CHECK_AFTER="false"
-                    export SSH_USER=$SSH_USER
-                    export CONTAINER_ENGINE=$CONTAINER_ENGINE
-                    [ "$TS_DEBUG" = true ] && echo -e "try check script file $openstack_utils/$try_to_rise_compute_node_script"
-                    if [ -f "$openstack_utils/$try_to_rise_compute_node_script" ]; then
-                        [ "$TS_DEBUG" = true ] && echo -e "$try_to_rise_compute_node_script exists - ok"
-                        bash "$openstack_utils/$try_to_rise_compute_node_script"
-                    else
-                        echo -e "${yellow}$try_to_rise_compute_node_script script not found${normal}"
-                    fi
-                fi
-            done
+            if [ "$response" = "true" ]; then
+                try_to_rise="true"
+                export CHECK_OPENSTACK="false"
+                export COMP_NODE_NAME="$cmpt"
+                export CHECK_AFTER="false"
+                export SSH_USER=$SSH_USER
+                export CONTAINER_ENGINE=$CONTAINER_ENGINE
 
-            if [ "$try_to_rise" = "true" ]; then
-                check_nova_service_list
+                [ "$TS_DEBUG" = true ] && echo -e "try check script file $openstack_utils/$try_to_rise_compute_node_script"
+                if [ -f "$openstack_utils/$try_to_rise_compute_node_script" ]; then
+                    [ "$TS_DEBUG" = true ] && echo -e "$try_to_rise_compute_node_script exists - ok"
+                    bash "$openstack_utils/$try_to_rise_compute_node_script"
+                else
+                    echo -e "${yellow}$try_to_rise_compute_node_script script not found${normal}"
+                fi
             fi
+        done
+
+        if [ "$try_to_rise" = "true" ]; then
+            check_nova_service_list
         fi
     else
         echo -e "${green}The nova-compute service on all compute nodes is in the state 'up' and status 'enabled' - ok${normal}"
@@ -390,20 +382,16 @@ check_containers() {
         -nn "$nodes_name_list" \
         -u "$SSH_USER" \
         -ce "$CONTAINER_ENGINE" 2>/dev/null | grep "$container_name"
-#        echo -e "${red}ERROR: Container $container_name has issues on $node_name${normal}"
 }
 
 # Function to check ssl config
 check_ssl_config() {
-#    echo -e "${cyan}Checking SSL configuration...${normal}"
-
     local ssl_config_output
     [ ! -f "$script_dir/$edit_ha_config_script" ] && {
       echo -e "${yellow}Script $edit_ha_config_script does not exist in $script_dir/${normal}";
       return 1;
       }
     ssl_config_output=$(bash "$script_dir/$edit_ha_config_script" -u "$SSH_USER" "-ssl_check"| tail -n1)
-#    ssl_type=$(echo "$ssl_config_output" )
     echo "$ssl_config_output"
     return 0
 }
@@ -446,23 +434,12 @@ check_consul_members() {
         "
 
         if [ "$mode" = "mtls" ];then
-            [ "$TS_DEBUG" = true ] && echo -e "
-    members_list=\$(ssh -t -o StrictHostKeyChecking=no \"$SSH_USER@$node_ip\" \
-        \"sudo $CONTAINER_ENGINE exec consul consul members \
-        -http-addr=https://$node_ip:8501 -ca-file $https_ssl_verify \
-        -client-cert $client_cert \
-        -client-key $client_key 2>/dev/null\")
-                "
             members_list=$(ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
                 "sudo $CONTAINER_ENGINE exec consul consul members \
                 -http-addr=https://$node_ip:8501 -ca-file $https_ssl_verify \
                 -client-cert $client_cert \
                 -client-key $client_key 2>/dev/null")
         else
-            [ "$TS_DEBUG" = true ] && echo -e "
-    members_list=\$(ssh -t -o StrictHostKeyChecking=no \"$SSH_USER@$node_ip\" \
-        \"sudo $CONTAINER_ENGINE exec -it consul consul members list 2>/dev/null\")
-            "
             members_list=$(ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
                 "sudo $CONTAINER_ENGINE exec -it consul consul members list 2>/dev/null")
         fi
@@ -503,34 +480,7 @@ check_consul_logs() {
     fi
 
     bash "$script_dir/$check_consul_log_script" -ctrl_list "$node_name"
-
     return 0
-#    if [ -n "$first_ctrl_node" ]; then
-#        local leader_node
-#        local node_name="${first_ctrl_node%%:*}"
-#        local node_ip="${first_ctrl_node#*:}"
-#        leader_node=$(ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" "sudo $CONTAINER_ENGINE exec -it consul consul operator raft list-peers" 2>/dev/null | grep leader | awk '{print $1}')
-#
-#        if [ -n "$leader_node" ]; then
-#            echo "Leader consul node is $leader_node"
-#            leader_node_pair=$(get_nodes_list -nn "$leader_node")
-#            local leader_node_name="${leader_node_pair%%:*}"
-#            local leader_node_ip="${leader_node_pair#*:}"
-#            echo -e "${yellow}ssh -o StrictHostKeyChecking=no \"$SSH_USER@$leader_node_ip\" sudo less /var/log/kolla/autoevacuate.log${normal}"
-#
-#            ssh -o StrictHostKeyChecking=no "$SSH_USER@$leader_node_ip" "sudo tail -n 50 /var/log/kolla/autoevacuate.log 2>/dev/null" | \
-#                sed --unbuffered \
-#                    -e 's/\(.*Force off.*\)/\o033[31m\1\o033[39m/' \
-#                    -e 's/\(.*Server.*\)/\o033[33m\1\o033[39m/' \
-#                    -e 's/\(.*Evacuating instance.*\)/\o033[33m\1\o033[39m/' \
-#                    -e 's/\(.*Starting fence.*\)/\o033[31m\1\o033[39m/' \
-#                    -e 's/\(.*IPMI \"power off\".*\)/\o033[31m\1\o033[39m/' \
-#                    -e 's/\(.*disabled,.*\)/\o033[33m\1\o033[39m/' \
-#                    -e 's/\(.*state: down.*\)/\o033[33m\1\o033[39m/' \
-#                    -e 's/\(.*CRITICAL.*\)/\o033[31m\1\o033[39m/' \
-#                    -e 's/\(.*WARNING.*\)/\o033[33m\1\o033[39m/'
-#        fi
-#    fi
 }
 
 # Function to check consul configuration
@@ -549,7 +499,7 @@ check_consul_config() {
         config_path=$(bash "$script_dir/$edit_ha_config_script" config_path 2>/dev/null | tail -n1)
 
         if [ -n "$config_path" ]; then
-            echo -e "${ORANGE}ssh -t -o StrictHostKeyChecking=no \"$SSH_USER@$node_ip\" sudo cat $config_path${NC}"
+            echo -e "${yellow}ssh -t -o StrictHostKeyChecking=no \"$SSH_USER@$node_ip\" sudo cat $config_path${normal}"
 
             local config_content
             config_content=$(ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" "sudo cat $config_path 2>/dev/null")
@@ -586,70 +536,74 @@ determine_ssh_user() {
     fi
 }
 
-# Main execution
+# Main execution function
+main() {
+    parse_arguments "$@"
+    determine_ssh_user
 
-determine_ssh_user
+    # Execute checks
+    check_openstack_cli
+    check_and_source_openrc_file
 
-# Execute checks
-check_openstack_cli
-check_and_source_openrc_file
+    any_specific_check="$CHECK_CONNECTIONS$CHECK_IPMI_CONNECTIONS$CHECK_DISABLED_COMPUTES$CHECK_CONTAINERS$CHECK_CONSUL_MEMBERS$CHECK_CONSUL_LOGS$CHECK_CONSUL_CONFIG"
 
-any_specific_check="$CHECK_CONNECTIONS$CHECK_IPMI_CONNECTIONS$CHECK_DISABLED_COMPUTES$CHECK_CONTAINERS$CHECK_CONSUL_MEMBERS$CHECK_CONSUL_LOGS$CHECK_CONSUL_CONFIG"
+    if [[ "$any_specific_check" == *"true"* ]]; then
+        echo "Performing specific checks only..."
 
-#echo $any_specific_check
+        [ "$CHECK_CONNECTIONS" = "true" ] && {
+            check_connections_to_nodes "ctrl"
+            check_connections_to_nodes "comp"
+        }
 
-if [[ "$any_specific_check" == *"true"* ]]; then
-    echo "Performing specific checks only..."
+        [ "$CHECK_IPMI_CONNECTIONS" = "true" ] && check_ipmi_connections
 
-    [ "$CHECK_CONNECTIONS" = "true" ] && {
-        check_connections_to_nodes "ctrl"
-        check_connections_to_nodes "comp"
-    }
+        [ "$CHECK_DISABLED_COMPUTES" = "true" ] && {
+            check_nova_service_list
+            check_disabled_computes
+        }
 
-    [ "$CHECK_IPMI_CONNECTIONS" = "true" ] && check_ipmi_connections
+        [ "$CHECK_CONTAINERS" = "true" ] && {
+            check_containers "ctrl" "consul"
+            check_containers "comp" "consul"
+            check_containers "comp" "nova_compute"
+        }
 
-    [ "$CHECK_DISABLED_COMPUTES" = "true" ] && {
-        check_nova_service_list
-        check_disabled_computes
-    }
+        [ "$CHECK_CONSUL_MEMBERS" = "true" ] && check_consul_members
+        [ "$CHECK_CONSUL_LOGS" = "true" ] && check_consul_logs
+        [ "$CHECK_CONSUL_CONFIG" = "true" ] && check_consul_config
 
-    [ "$CHECK_CONTAINERS" = "true" ] && {
-        check_containers "ctrl" "consul"
-        check_containers "comp" "consul"
-        check_containers "comp" "nova_compute"
-    }
-
-    [ "$CHECK_CONSUL_MEMBERS" = "true" ] && check_consul_members
-    [ "$CHECK_CONSUL_LOGS" = "true" ] && check_consul_logs
-    [ "$CHECK_CONSUL_CONFIG" = "true" ] && check_consul_config
-
-    exit 0
-fi
-
-case "$CHECK" in
-    nova)
-        echo "Performing nova checks..."
-        check_nova_service_list
-        check_disabled_computes
         exit 0
-        ;;
-    ipmi)
-        check_ipmi_connections
-        exit 0
-        ;;
-esac
+    fi
 
-check_nova_service_list
-check_connections_to_nodes "ctrl"
-check_connections_to_nodes "comp"
+    case "$CHECK" in
+        nova)
+            echo "Performing nova checks..."
+            check_nova_service_list
+            check_disabled_computes
+            exit 0
+            ;;
+        ipmi)
+            check_ipmi_connections
+            exit 0
+            ;;
+    esac
 
-[ "$CHECK_IPMI" = "true" ] && check_ipmi_connections
+    # Default checks if no specific options provided
+    check_nova_service_list
+    check_connections_to_nodes "ctrl"
+    check_connections_to_nodes "comp"
 
-check_containers "ctrl" "consul"
-check_containers "comp" "consul"
-check_containers "comp" "nova_compute"
+    [ "$CHECK_IPMI" = "true" ] && check_ipmi_connections
 
-check_disabled_computes
-check_consul_members
-check_consul_logs
-check_consul_config
+    check_containers "ctrl" "consul"
+    check_containers "comp" "consul"
+    check_containers "comp" "nova_compute"
+
+    check_disabled_computes
+    check_consul_members
+    check_consul_logs
+    check_consul_config
+}
+
+# Run main function
+main "$@"
