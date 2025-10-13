@@ -555,6 +555,7 @@ main() {
             check_connections_to_nodes "comp"
         }
 
+        # Only if individual check -ipmi_conn use
         [ "$CHECK_IPMI_CONNECTIONS" = "true" ] && check_ipmi_connections
 
         [ "$CHECK_DISABLED_COMPUTES" = "true" ] && {
@@ -592,8 +593,6 @@ main() {
     check_nova_service_list
     check_connections_to_nodes "ctrl"
     check_connections_to_nodes "comp"
-
-    [ "$CHECK_IPMI_CONNECTIONS" = "true" ] && check_ipmi_connections
 
     check_containers "ctrl" "consul"
     check_containers "comp" "consul"
