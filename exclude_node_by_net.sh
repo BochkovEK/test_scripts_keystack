@@ -92,7 +92,8 @@ confirm_blocking() {
     echo -e "${yellow}============== BLOCKING TRAFFIC ===============
 Nodes to block:
 $(echo "$BLOCKED_NODES_PAIR" | tr ' ' '\n')
-Target node: ===> $node_name <===
+Target node:
+    ===> $node_name <===
 ================================================${normal}"
     read -p "Press Enter to continue or Ctrl+C to cancel..."
 }
