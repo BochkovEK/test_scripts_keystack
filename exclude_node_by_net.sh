@@ -6,6 +6,12 @@
 # example
 # BLOCKED_IPS=("10.224.133.138" "10.224.133.139" "10.224.133.133" "10.224.133.134" "10.224.133.135")
 
+# Color definitions
+normal=$(tput sgr0)
+green=$(tput setaf 2)
+yellow=$(tput setaf 3)
+red=$(tput setaf 1)
+
 # Script paths
 script_dir=$(dirname "$0")
 utils_dir="$script_dir/utils"
@@ -85,7 +91,7 @@ main() {
     echo "Using SSH user: $SSH_USER"
 
     [[ -z $NODE_TO_BLOCK_TRAFFIC ]] && {
-        echo "node name needed to block traffic (env NODE_TO_BLOCK_TRAFFIC) or start this script with key -n <node_name>";
+        echo -e "${yellow}node name needed to block traffic (env NODE_TO_BLOCK_TRAFFIC) or start this script with key -n <node_name>${normal}";
         exit 1;
     }
 
