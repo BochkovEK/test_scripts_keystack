@@ -17,7 +17,7 @@ blocked_ips_list_dir="/tmp"
 echo "$0 script"
 
 block_traffic () {
-    exit 0
+#    exit 0
     for IP in ${BLOCKED_IPS}; do
 # Blocking incoming traffic from IP
         echo "Block incoming traffic from ${IP}"
