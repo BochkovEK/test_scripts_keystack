@@ -128,7 +128,7 @@ block_traffic_on_node () {
     scp "${script_dir}/${block_traffic_script}" "$SSH_USER@$node_ip":~/
     ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" "sudo chmod 777 ~/$block_traffic_script"
     ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" "sudo echo ${BLOCKED_IPS} > ${target_block_ips_list_dir}/${blocked_ips_list_file_name}"
-    ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" "sudo bash ~/$block_traffic_script"
+    ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" "sudo bash ~/$block_traffic_script > ${target_block_ips_list_dir}/block_traffic.log 2>&1 &"
 }
 
 # Function to get nodes list using external script
