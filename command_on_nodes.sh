@@ -138,16 +138,11 @@ check_ssh_connectivity() {
     local node_name="$1"
     local node_ip="$2"
 
-    echo -e "Checking SSH connectivity to $node_name ($node_ip)"
-
     # Use external SSH test module
     if bash "$utils_dir/$check_ssh_connectivity_script" "$node_ip" "$node_name" -u "$SSH_USER" -t 10; then
-        echo -e "✓ SSH connection to $node_name ($node_ip) is working"
         return 0
-    else
-        echo -e "${red}✗ SSH connection to $node_name ($node_ip) failed${normal}"
-        return 1
     fi
+    return 1
 }
 
 # Function to execute commands on all nodes
