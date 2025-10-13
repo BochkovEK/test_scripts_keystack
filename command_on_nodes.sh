@@ -14,14 +14,12 @@ blue=$(tput setaf 6)
 script_dir=$(dirname "$0")
 utils_dir="$script_dir/utils"
 get_nodes_list_script="get_nodes_list.sh"
-yes_no_answer_script="yes_no_answer.sh"
 get_ssh_user_script="get_ssh_user.sh"
 default_ssh_user="root"
 
 # External scripts array
 external_scripts=(
     "$utils_dir/$get_ssh_user_script"
-    "$utils_dir/$yes_no_answer_script"
 )
 
 # Default values
@@ -235,14 +233,23 @@ start_commands_on_nodes() {
     fi
 
     # Execute command on each node
-    local node_pair
-    while IFS= read -r node_pair; do
+    for node_pair in $NODES; do
         # Split node:ip format
         node_name="${node_pair%%:*}"
         node_ip="${node_pair#*:}"
         [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG] node_name: $node_name; node_ip: $node_ip"
-        echo -E "${blue}Executing command on ${node_name}${normal}"
+        echo -e "${blue}Executing command on ${node_name}${normal}"
+
+        # Check ping connectivity
+        if ping -c 2 "$node_ip" &> /dev/null; then
+            printf "%40s\n" "${green}Ping to $node_ip successful${normal}"
+            sleep 1
+        else
+            printf "%40s\n" "${red}No ping response from $node_ip${normal}"
+            echo -e "${red}Skipping $node_name due to ping failure${normal}"
+            continue
+        fi
 
         # First check SSH connectivity
         if ! check_ssh_connectivity "$node_name" "$node_ip"; then
@@ -252,31 +259,7 @@ start_commands_on_nodes() {
         [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG] Executing command: ssh -o StrictHostKeyChecking=no -t \"$SSH_USER@$node_ip\" \"$COMMAND\""
         ssh -o StrictHostKeyChecking=no -t "$SSH_USER@$node_ip" "$COMMAND"
-    done <<< "$NODES"
-}
-
-# Function to get yes/no answer from user
-yes_no_answer() {
-    local question="$1"
-    local default_answer="${2:-"Yes"}"
-
-    # Use external confirmation function
-    confirm_action_external "$question" "$default_answer"
-}
-
-# Function to check ping connectivity to a node
-check_ping() {
-    local node_ip="$1"
-
-    if ping -c 2 "$node_ip" &> /dev/null; then
-        printf "%40s\n" "${green}Ping to $node_ip successful${normal}"
-        sleep 1
-    else
-        printf "%40s\n" "${red}No ping response from $node_ip${normal}"
-        connection_problem="true"
-        # Remove problematic node from string
-        NODES=$(echo "$NODES" | grep -v "$node_ip")
-    fi
+    done
 }
 
 # Function to get nodes list using external script
@@ -348,31 +331,7 @@ main() {
     "
     fi
 
-    # Check connections if requested
-    if [ "$DONT_CHECK_CONN" = false ]; then
-        local node_pair
-        while IFS= read -r node_pair; do
-            node_name="${node_pair%%:*}"
-            node_ip="${node_pair#*:}"
-
-            echo "Checking ping to $node_name ($node_ip)"
-            check_ping "$node_ip"
-        done <<< "$NODES"
-    fi
-
-    # Handle connection problems
-    if [ "$connection_problem" = true ]; then
-        yes_no_input=$(yes_no_answer "Do you want to run a command on nodes without connection problems? [Yes]: ")
-        if [ "$yes_no_input" = "true" ]; then
-            start_commands_on_nodes
-        else
-            error_message="Command cancelled. Some nodes have connection problems"
-            error_output
-        fi
-    else
-        start_commands_on_nodes
-    fi
+    start_commands_on_nodes
 }
-
 # Run main function
 main "$@"

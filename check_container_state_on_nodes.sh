@@ -324,8 +324,8 @@ main() {
     fi
 
     if [ "$TS_DEBUG" = true ]; then
-        get_nodes_list -nn "$NODES_NAME"
-        get_nodes_list -nt "$NODES_TYPE"
+#        get_nodes_list -nn "$NODES_NAME"
+#        get_nodes_list -nt "$NODES_TYPE"
         echo -e "
     [DEBUG] nodes: $nodes
     "
