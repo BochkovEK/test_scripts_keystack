@@ -296,16 +296,16 @@ push_conf() {
 
         echo "Pushing configuration to $node_name"
 
-        local node_actual_ip
-        node_actual_ip=$(ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
-            "hostname -I | awk '{print \$1}'" 2>/dev/null)
+#        local node_actual_ip
+#        node_actual_ip=$(ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+#            "hostname -I | awk '{print \$1}'" 2>/dev/null)
 
-        if [ -n "$node_actual_ip" ]; then
+        if [ -n "$node_ip" ]; then
             local temp_file
             temp_file=$(mktemp)
             sed -E "
-                s/\"bind_address\"[[:space:]]*:[[:space:]]*\"[0-9.]+[0-9]+\"/\"bind_address\": \"$node_actual_ip\"/g
-                s/consul_host[[:space:]]*=[[:space:]]*[0-9.]+[0-9]+/consul_host = $node_actual_ip/g
+                s/\"bind_address\"[[:space:]]*:[[:space:]]*\"[0-9.]+[0-9]+\"/\"bind_address\": \"$node_ip\"/g
+                s/consul_host[[:space:]]*=[[:space:]]*[0-9.]+[0-9]+/consul_host = $node_ip/g
             " "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME" > "$temp_file"
 
             scp -o StrictHostKeyChecking=no "$temp_file" "$SSH_USER@$node_ip:/tmp/$CONF_NAME"
@@ -315,7 +315,7 @@ push_conf() {
             rm -f "$temp_file"
             echo -e "${green}Configuration pushed to $node_name${normal}"
         else
-            echo -e "${red}Failed to get IP address for $node_name${normal}"
+            echo -e "${red}Node IP is empty for $node_name${normal}"
         fi
     done
 }
@@ -368,7 +368,7 @@ main() {
         exit 1
     fi
 
-    echo -e "${green}Using SSH user: $SSH_USER${normal}"
+    echo -e "Using SSH user: $SSH_USER"
 
     # Get nodes list
     if ! NODES=$(get_nodes_list -nt $nodes_type); then

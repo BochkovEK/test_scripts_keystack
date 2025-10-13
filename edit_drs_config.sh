@@ -339,7 +339,7 @@ main() {
         exit 1
     fi
 
-    echo -e "${green}Using SSH user: $SSH_USER${normal}"
+    echo -e "Using SSH user: $SSH_USER"
 
     local config_changed=false
 
