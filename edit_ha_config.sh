@@ -277,7 +277,7 @@ cat_conf() {
 #        return 1
 #    fi
 
-    config_content=""
+#    config_content=""
     for node in $nodes_list; do
         local node_name="${node%%:*}"
         local node_ip="${node#*:}"
@@ -286,15 +286,17 @@ cat_conf() {
         node_config=$(ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
             "sudo cat $conf_dir/$CONF_NAME 2>/dev/null")
 
-        if [ -n "$node_config" ]; then
-            if [ -n "$config_content" ]; then
-                config_content="${config_content}\n---\n"
-            fi
+        echo -e "${cyan}Config from $node_name${normal}"
+        echo -e "$node_config"
+
+
+#        if [ -n "$node_config" ]; then
+#            if [ -n "$config_content" ]; then
+#                config_content="${config_content}\n---\n"
+#            fi
 #            config_content="${config_content}Config from $node_name\n${node_config}"
-        fi
+#        fi
     done
-    echo -e "${cyan}Config from $node_name${normal}"
-    echo -e "$config_content"
     return 0
 }
 
