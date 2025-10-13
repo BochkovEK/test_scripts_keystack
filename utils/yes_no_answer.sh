@@ -4,10 +4,10 @@
 # Can be used both as module (sourced) and standalone script
 
 # Color definitions
-green=$(tput setaf 2)
-blue=$(tput setaf 4)
 normal=$(tput sgr0)
+green=$(tput setaf 2)
 yellow=$(tput setaf 3)
+blue=$(tput setaf 6)
 
 # Default values
 TS_DEBUG=${TS_DEBUG:-"false"}
