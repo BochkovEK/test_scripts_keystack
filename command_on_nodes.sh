@@ -15,11 +15,13 @@ script_dir=$(dirname "$0")
 utils_dir="$script_dir/utils"
 get_nodes_list_script="get_nodes_list.sh"
 get_ssh_user_script="get_ssh_user.sh"
+check_ssh_connectivity_script="check_ssh_connectivity.sh"
 default_ssh_user="root"
 
 # External scripts array
 external_scripts=(
     "$utils_dir/$get_ssh_user_script"
+    "$utils_dir/$check_ssh_connectivity_script"
 )
 
 # Default values
@@ -27,7 +29,6 @@ external_scripts=(
 [[ -z $NODES ]] && NODES=""
 [[ -z $NODES_NAME ]] && NODES_NAME=""
 [[ -z $NODES_TYPE ]] && NODES_TYPE="all"
-[[ -z $PING ]] && PING="false"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $DONT_CHECK_CONN ]] && DONT_CHECK_CONN="true"
 
@@ -43,7 +44,6 @@ show_help() {
       -nt, -type_of_nodes <type>      Node type: 'ctrl', 'comp', 'net', 'all'
       -nn, -node_name <names>         Specific node names (space-separated)
       -u, -user <username>            SSH username
-      -p, -ping                       Ping nodes before executing command
       -check_conn                     Check connection before executing commands
       -debug                          Enable debug mode
       --help                          Show this help message
@@ -101,11 +101,6 @@ parse_arguments() {
                 shift
                 ;;
 
-            -p|-ping)
-                PING="true"
-                echo "Found -ping option"
-                ;;
-
             -debug)
                 TS_DEBUG="true"
                 echo "Found -debug option"
@@ -138,79 +133,15 @@ error_output() {
     exit 1
 }
 
-# Standalone SSH check function that can be used independently
-test_ssh_connection() {
-    local node_name="$1"
-    local node_ip="$2"
-    local timeout="${3:-10}"
-
-    echo -e "${blue}Testing SSH connection to $node_name...${normal}"
-
-    # Check if required variables are set
-    if [ -z "$SSH_USER" ]; then
-        echo -e "${red}SSH_USER variable is not set${normal}"
-        return 1
-    fi
-
-    if [ -z "$node_ip" ]; then
-        echo -e "${red}Node IP is not specified${normal}"
-        return 1
-    fi
-
-    # Test basic connectivity with ping first (optional)
-    if command -v ping &> /dev/null; then
-        if ping -c 1 -W 2 "$node_ip" &> /dev/null; then
-            echo -e "${green}✓ Host $node_ip is reachable${normal}"
-        else
-            echo -e "${yellow}⚠ Host $node_ip is not responding to ping${normal}"
-        fi
-    fi
-
-    # Test SSH connection
-    local ssh_output
-    ssh_output=$(ssh -o StrictHostKeyChecking=no -o ConnectTimeout=$timeout -o BatchMode=yes \
-        "$SSH_USER@$node_ip" "echo 'SUCCESS'; whoami; hostname" 2>&1)
-
-    local ssh_exit_code=$?
-
-    if [ $ssh_exit_code -eq 0 ]; then
-        local remote_user=$(echo "$ssh_output" | sed -n '2p')
-        local remote_hostname=$(echo "$ssh_output" | sed -n '3p')
-        echo -e "${green}✓ SSH connection successful${normal}"
-        echo -e "${green}  Connected as: $remote_user${normal}"
-        echo -e "${green}  Remote host: $remote_hostname${normal}"
-        return 0
-    else
-        echo -e "${red}✗ SSH connection failed${normal}"
-        # Provide more detailed error information
-        case $ssh_exit_code in
-            255)
-                echo -e "${red}  Error: Network connection refused or host unreachable${normal}"
-                ;;
-            5)
-                echo -e "${red}  Error: Host key verification failed${normal}"
-                ;;
-            1)
-                echo -e "${red}  Error: Authentication failed${normal}"
-                ;;
-            *)
-                echo -e "${red}  Error: SSH connection failed (exit code: $ssh_exit_code)${normal}"
-                ;;
-        esac
-        return 1
-    fi
-}
-
-# Function to check SSH connectivity to a node
+# Function to check SSH connectivity using external module
 check_ssh_connectivity() {
     local node_name="$1"
     local node_ip="$2"
 
     echo -e "Checking SSH connectivity to $node_name ($node_ip)"
 
-    # Try to connect with timeout and execute a simple command
-    if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -o BatchMode=yes \
-        "$SSH_USER@$node_ip" "echo 'SSH connection successful'" 2>/dev/null; then
+    # Use external SSH test module
+    if bash "$utils_dir/$check_ssh_connectivity_script" "$node_ip" "$node_name" -u "$SSH_USER" -t 10; then
         echo -e "✓ SSH connection to $node_name ($node_ip) is working"
         return 0
     else
@@ -241,21 +172,12 @@ start_commands_on_nodes() {
     [DEBUG] node_name: $node_name; node_ip: $node_ip"
         echo -e "${blue}Executing command on ${node_name}${normal}"
 
-        # Check ping connectivity
-        if ping -c 2 "$node_ip" &> /dev/null; then
-            printf "%40s\n" "${green}Ping to $node_ip successful${normal}"
-            sleep 1
-        else
-            printf "%40s\n" "${red}No ping response from $node_ip${normal}"
-            echo -e "${red}Skipping $node_name due to ping failure${normal}"
+        # Check SSH connectivity using external module (which includes ping check)
+        if ! check_ssh_connectivity "$node_name" "$node_ip"; then
+            echo -e "${red}Cannot execute command on $node_name - SSH connection failed${normal}"
             continue
         fi
 
-        # First check SSH connectivity
-        if ! check_ssh_connectivity "$node_name" "$node_ip"; then
-            echo -e "${red}Cannot check containers on $node_name - SSH connection failed${normal}"
-            continue
-        fi
         [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG] Executing command: ssh -o StrictHostKeyChecking=no -t \"$SSH_USER@$node_ip\" \"$COMMAND\""
         ssh -o StrictHostKeyChecking=no -t "$SSH_USER@$node_ip" "$COMMAND"
@@ -333,5 +255,6 @@ main() {
 
     start_commands_on_nodes
 }
+
 # Run main function
 main "$@"
