@@ -593,7 +593,7 @@ main() {
     check_connections_to_nodes "ctrl"
     check_connections_to_nodes "comp"
 
-    [ "$CHECK_IPMI" = "true" ] && check_ipmi_connections
+    [ "$CHECK_IPMI_CONNECTIONS" = "true" ] && check_ipmi_connections
 
     check_containers "ctrl" "consul"
     check_containers "comp" "consul"
