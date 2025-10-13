@@ -342,7 +342,7 @@ To edit the configuration:
   vi $VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME
 
 To apply the configuration:
-  bash $VIRTUAL_ENV/$script_name -push
+  bash $script_dir/$script_name -push
 "
 }
 
@@ -494,7 +494,7 @@ main() {
     if [ "$PUSH" = true ]; then
         push_conf
         echo "Restarting consul containers..."
-        bash "$VIRTUAL_ENV/command_on_nodes.sh" -u "$SSH_USER" -nt $nodes_type -c "sudo $CONTAINER_ENGINE restart consul"
+        bash "$script_dir/command_on_nodes.sh" -u "$SSH_USER" -nt $nodes_type -c "sudo $CONTAINER_ENGINE restart consul"
     fi
 
     cat_conf
