@@ -13,8 +13,9 @@ blue=$(tput setaf 6)
 # Script paths
 script_dir=$(dirname "$0")
 utils_dir="$script_dir/utils"
-yes_no_answer_script="$utils_dir/yes_no_answer.sh"
 get_nodes_list_script="get_nodes_list.sh"
+yes_no_answer_script="yes_no_answer.sh"
+get_ssh_user_script="get_ssh_user.sh"
 default_ssh_user="root"
 
 # External scripts array
