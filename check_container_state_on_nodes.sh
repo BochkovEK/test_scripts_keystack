@@ -3,6 +3,13 @@
 # Script to check container states on nodes
 # Supports Docker and Podman container engines
 
+# Colors
+normal=$(tput sgr0)
+green=$(tput setaf 2)
+yellow=$(tput setaf 3)
+red=$(tput setaf 1)
+cyan=$(tput setaf 6)
+
 script_dir=$(dirname "$0")
 utils_dir="$script_dir/utils"
 get_nodes_list_script="get_nodes_list.sh"
@@ -11,13 +18,6 @@ default_ssh_user="root"
 default_container_engine="docker"
 virtual_stands_mark="[NOTE] required for virtual stands"
 #script_name=$(basename "$0")
-
-# Colors
-normal=$(tput sgr0)
-green=$(tput setaf 2)
-yellow=$(tput setaf 3)
-red=$(tput setaf 1)
-cyan=$(tput setaf 6)
 
 # External scripts array
 external_scripts=(

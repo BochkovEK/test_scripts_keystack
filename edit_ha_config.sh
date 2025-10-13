@@ -8,7 +8,14 @@ green=$(tput setaf 2)
 red=$(tput setaf 1)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
-#cyan=$(tput setaf 6)
+cyan=$(tput setaf 6)
+
+# Script paths
+script_dir=$(dirname "$0")
+script_name=$(basename "$0")
+utils_dir="$script_dir/utils"
+get_nodes_list_script="get_nodes_list.sh"
+default_ssh_user="root"
 
 # Service and path configuration
 service_name="consul"
@@ -17,12 +24,10 @@ test_node_conf_dir="kolla/$service_name"
 conf_dir="/etc/kolla/$service_name"
 conf_name="ha-config.ini"
 
-# Script paths
-script_dir=$(dirname "$0")
-script_name=$(basename "$0")
-utils_dir="$script_dir/utils"
-get_nodes_list_script="get_nodes_list.sh"
-default_ssh_user="root"
+# External scripts array
+external_scripts=(
+    "$utils_dir/$get_ssh_user_script"
+)
 
 # Default values
 CHECK_SUFFIX="${CHECK_SUFFIX:-false}"
@@ -284,9 +289,10 @@ cat_conf() {
             if [ -n "$config_content" ]; then
                 config_content="${config_content}\n---\n"
             fi
-            config_content="${config_content}# Config from $node_name\n${node_config}"
+#            config_content="${config_content}Config from $node_name\n${node_config}"
         fi
     done
+    echo -e "${cyan}Config from $node_name${normal}"
     echo -e "$config_content"
     return 0
 }
@@ -418,10 +424,32 @@ determine_ssh_user() {
     fi
 }
 
+# Function to load external scripts
+load_external_scripts() {
+    for script_path in "${external_scripts[@]}"; do
+        if [ ! -f "$script_path" ]; then
+            echo -e "${red}Error: Required script not found: $script_path${normal}"
+            exit 1
+        fi
+        source "$script_path"
+    done
+}
+
 # Main execution function
 main() {
     parse_arguments "$@"
-    determine_ssh_user
+
+    # Load external scripts first
+    load_external_scripts
+
+    # Determine SSH user using external function
+    SSH_USER=$(get_and_validate_ssh_user "$SSH_USER" "$default_ssh_user")
+    if [[ $? -ne 0 ]]; then
+        echo -e "${red}Error: Failed to determine valid SSH user!${normal}"
+        exit 1
+    fi
+
+    echo -e "${green}Using SSH user: $SSH_USER${normal}"
 
     # Get nodes list
     if ! NODES=$(get_nodes_list -nt $nodes_type); then
