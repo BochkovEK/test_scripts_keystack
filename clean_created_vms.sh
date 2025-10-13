@@ -25,7 +25,7 @@ blue=$(tput setaf 4)
 [[ -z $CLEANUP_ALL ]] && CLEANUP_ALL=true
 [[ -z $SPECIFIC_BATCH ]] && SPECIFIC_BATCH=""
 [[ -z $TS_DEBUG ]] && TS_DEBUG=false
-[[ -z $CREATE_VMS_ENVS_FOLDER ]] && CREATE_VMS_ENVS_FOLDER="$script_dir"
+[[ -z $VIRTUAL_ENV ]] && VIRTUAL_ENV="$script_dir"
 
 declare -gA vm_cache_name=()
 declare -gA vm_cache_project=()
@@ -72,8 +72,8 @@ parse_arguments() {
                 shift
                 ;;
             -ef|-envs_folder)
-                CREATE_VMS_ENVS_FOLDER="$2"
-                echo "Using envs config folder: $CREATE_VMS_ENVS_FOLDER"
+                VIRTUAL_ENV="$2"
+                echo "Using envs config folder: $VIRTUAL_ENV"
                 shift
                 ;;
             -debug)
@@ -126,7 +126,7 @@ confirm_action() {
 
 # Check and source state file
 load_cleanup_state() {
-    local state_file_path="$CREATE_VMS_ENVS_FOLDER/$cleanup_file"
+    local state_file_path="$VIRTUAL_ENV/$cleanup_file"
 
     if [ ! -f "$state_file_path" ]; then
         echo -e "${red}Cleanup state file not found: $state_file_path${normal}"
@@ -281,7 +281,7 @@ get_vm_details() {
 # Collect all resources by category
 collect_resources_by_category() {
     local batch_filter="$1"
-    local state_file_path="$CREATE_VMS_ENVS_FOLDER/$cleanup_file"
+    local state_file_path="$VIRTUAL_ENV/$cleanup_file"
 
     # Initialize arrays
     declare -gA all_vms=() all_volumes=() all_security_groups=() all_flavors=() all_keypairs=()
@@ -517,7 +517,7 @@ delete_resources_by_category() {
 
 # Function to offer cleanup state file removal
 offer_cleanup_file_removal() {
-    local state_file="$CREATE_VMS_ENVS_FOLDER/$cleanup_file"
+    local state_file="$VIRTUAL_ENV/$cleanup_file"
 
     if [ ! -f "$state_file" ]; then
         return 0
