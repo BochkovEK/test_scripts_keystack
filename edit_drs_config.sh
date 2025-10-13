@@ -252,19 +252,14 @@ push_conf() {
 
         echo "Pushing configuration to $node_name"
 
-        # Get node IP for API host replacement
-        local node_actual_ip
-        node_actual_ip=$(ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
-            "hostname -I | awk '{print \$1}'" 2>/dev/null)
-
-        if [ -n "$node_actual_ip" ]; then
+        if [ -n "$node_ip" ]; then
             # Create temporary file with replaced IP addresses
             local temp_file
             temp_file=$(mktemp)
 
             # Replace API host IP
             sed -E "
-                s/api_host[[:space:]]*=[[:space:]]*[0-9.]+[0-9]+/api_host = $node_actual_ip/g
+                s/api_host[[:space:]]*=[[:space:]]*[0-9.]+[0-9]+/api_host = $node_ip/g
             " "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME" > "$temp_file"
 
             # Copy file to remote node

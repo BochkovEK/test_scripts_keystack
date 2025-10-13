@@ -296,10 +296,6 @@ push_conf() {
 
         echo "Pushing configuration to $node_name"
 
-#        local node_actual_ip
-#        node_actual_ip=$(ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
-#            "hostname -I | awk '{print \$1}'" 2>/dev/null)
-
         if [ -n "$node_ip" ]; then
             local temp_file
             temp_file=$(mktemp)
