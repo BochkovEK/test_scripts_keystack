@@ -9,13 +9,14 @@
 #<IP_3>
 #<IP_4>
 
+blocked_ips_list_file_name="blocked_ips_list"
+blocked_ips_list_dir="/tmp"
+
 [[ -z $TIMEOUT ]] && TIMEOUT=180
 
 echo "$0 script"
-if [ -f ~/blocked_ips_list ]; then BLOCKED_IPS=$(cat ~/blocked_ips_list); else echo "IPS list to block not found (~/blocked_ips_list)"; exit 1; fi
-#[[ -z $BLOCKED_IPS ]] && { echo "IPS list to block not found (env BLOCKED_IPS)"; exit 1; }
-
-#TIMEOUT=180
+if [ -f $blocked_ips_list_dir/$blocked_ips_list_file_name ]; then BLOCKED_IPS=$(cat $blocked_ips_list_dir/$blocked_ips_list_file_name);
+    else echo "IPS list to block not found ($blocked_ips_list_dir/$blocked_ips_list_file_name)"; exit 1; fi
 
 block_traffic () {
     for IP in ${BLOCKED_IPS}; do

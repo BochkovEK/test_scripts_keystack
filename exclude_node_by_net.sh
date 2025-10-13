@@ -18,6 +18,9 @@ utils_dir="$script_dir/utils"
 get_nodes_list_script="get_nodes_list.sh"
 get_ssh_user_script="get_ssh_user.sh"
 default_ssh_user="root"
+target_block_ips_list_dir="/tmp"
+block_traffic_script="block_traffic.sh"
+blocked_ips_list_file_name="blocked_ips_list"
 
 # Default values
 [[ -z $NODES_NAME ]] && NODES_NAME=""
@@ -123,9 +126,9 @@ block_traffic_on_node () {
     echo "${yellow}Blocking traffic on ${node_name}...${normal}"
 
     scp ./block_traffic.sh "$SSH_USER@$node_ip":~/
-    ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" 'sudo chmod 777 ~/block_traffic.sh'
-    ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" 'sudo echo '"${BLOCKED_IPS}"' > ~/blocked_ips_list'
-    ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" 'sudo bash ~/block_traffic.sh'
+    ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" "sudo chmod 777 ~/$block_traffic_script"
+    ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" "sudo echo ${BLOCKED_IPS} > ${target_block_ips_list_dir}/${blocked_ips_list_file_name}"
+    ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" "sudo bash ~/$block_traffic_script"
 }
 
 # Function to get nodes list using external script
