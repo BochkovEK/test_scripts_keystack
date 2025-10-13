@@ -3,15 +3,6 @@
 # OpenStack VM Cleanup Script
 # Removes resources created by create_vms script based on state files
 
-# Script directory
-script_dir=$(dirname "$0")
-cleanup_file=".vm_cleanup_state.env"
-
-external_scripts=(
-    "$script_dir/utils/yes_no_answer.sh"
-    # "$script_dir/../utils/other_script.sh"
-)
-
 # Colors
 green=$(tput setaf 2)
 red=$(tput setaf 1)
@@ -19,6 +10,17 @@ orange=$(tput setaf 3)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
 blue=$(tput setaf 4)
+
+# Script directory
+script_dir=$(dirname "$0")
+cleanup_file=".vm_cleanup_state.env"
+utils_dir="$script_dir/utils"
+yes_no_answer_script="$utils_dir/yes_no_answer.sh"
+
+# External scripts array
+external_scripts=(
+    "$utils_dir/$yes_no_answer_script"
+)
 
 # Default values
 [[ -z $AUTO_CONFIRM ]] && AUTO_CONFIRM=false

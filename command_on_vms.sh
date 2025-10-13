@@ -20,18 +20,18 @@ default_ssh_timeout=5
 get_vms_list_script="get_vms_list.sh"
 
 # Default values
-KEY_PATH="${KEY_PATH:-$script_dir/key_test.pem}"
-OPENRC_PATH="${OPENRC_PATH:-$HOME/openrc}"
-HYPERVISOR_NAME="${HYPERVISOR_NAME:-}"
-ONLY_PING="${ONLY_PING:-false}"
-ONLY_CHECK="${ONLY_CHECK:-false}"
-VM_USER="${VM_USER:-ubuntu}"
-COMMAND_STR="${COMMAND_STR:-ls -la}"
-PROJECT="${PROJECT:-}"
-DONT_ASK="${DONT_ASK:-true}"
-TS_DEBUG="${TS_DEBUG:-false}"
-VMS="${VMS:-}"
-TS_SSH_TIMEOUT="${TS_SSH_TIMEOUT:-$default_ssh_timeout}"
+[[ -z $KEY_PATH ]] && KEY_PATH="$script_dir/key_test.pem"
+[[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
+[[ -z $HYPERVISOR_NAME ]] && HYPERVISOR_NAME=""
+[[ -z $ONLY_PING ]] && ONLY_PING=false
+[[ -z $ONLY_CHECK ]] && ONLY_CHECK=false
+[[ -z $VM_USER ]] && VM_USER="ubuntu"
+[[ -z $COMMAND_STR ]] && COMMAND_STR="ls -la"
+[[ -z $PROJECT ]] && PROJECT=""
+[[ -z $DONT_ASK ]] && DONT_ASK=true
+[[ -z $TS_DEBUG ]] && TS_DEBUG=false
+[[ -z $VMS ]] && VMS=""
+[[ -z $TS_SSH_TIMEOUT ]] && TS_SSH_TIMEOUT="$default_ssh_timeout"
 
 # Function to display help information
 show_help() {

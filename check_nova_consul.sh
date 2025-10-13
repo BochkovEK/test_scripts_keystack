@@ -19,12 +19,20 @@ yes_no_script="$utils_dir/yes_no_answer.sh"
 check_openrc_script="check_openrc.sh"
 check_openstack_cli_script="check_openstack_cli.sh"
 get_nodes_list_script="get_nodes_list.sh"
+get_ssh_user_script="get_ssh_user.sh"
+yes_no_answer_script="yes_no_answer.sh"
 edit_ha_config_script="edit_ha_config.sh"
 check_consul_log_script="check_consul_log.sh"
 try_to_rise_compute_node_script="try_to_rise_compute_node.sh"
 check_container_state_on_nodes_script="check_container_state_on_nodes.sh"
 default_ssh_user="root"
 default_container_engine="docker"
+
+# External scripts array
+external_scripts=(
+    "$utils_dir/$get_ssh_user_script"
+    "$utils_dir/$yes_no_answer_script"
+)
 
 # Default values
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
@@ -521,25 +529,27 @@ check_consul_config() {
     fi
 }
 
-# Function to determine SSH user
-determine_ssh_user() {
-    if [ -z "$SSH_USER" ]; then
-        SSH_USER=$(whoami 2>/dev/null) || {
-            echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
-            SSH_USER="$default_ssh_user"
-        }
-    fi
-
-    if [ -z "$SSH_USER" ]; then
-        echo -e "${red}Error: Failed to determine SSH user!${normal}" >&2
-        exit 1
-    fi
+# Function to load external scripts
+load_external_scripts() {
+    for script_path in "${external_scripts[@]}"; do
+        if [ ! -f "$script_path" ]; then
+            echo -e "${red}Error: Required script not found: $script_path${normal}"
+            exit 1
+        fi
+        source "$script_path"
+    done
 }
 
 # Main execution function
 main() {
     parse_arguments "$@"
-    determine_ssh_user
+
+    # Determine SSH user using external function
+    SSH_USER=$(get_and_validate_ssh_user "$SSH_USER" "$default_ssh_user")
+    if [[ $? -ne 0 ]]; then
+        echo -e "${red}Error: Failed to determine valid SSH user!${normal}"
+        exit 1
+    fi
 
     # Execute checks
     check_openstack_cli

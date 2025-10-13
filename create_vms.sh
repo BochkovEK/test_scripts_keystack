@@ -6,15 +6,16 @@
 # Script_dir, current folder
 script_dir=$(dirname $0)
 utils_dir=$script_dir/utils
+yes_no_answer_script="$utils_dir/yes_no_answer.sh"
 check_openrc_script="check_openrc.sh"
-config_file=".vm_creation_config.env"
-cleanup_file=".vm_cleanup_state.env"
 create_pub_network_script="openstack/create_pub_network.sh"
 create_image_script_script="openstack/create_image.sh"
+config_file=".vm_creation_config.env"
+cleanup_file=".vm_cleanup_state.env"
 
+# External scripts array
 external_scripts=(
-    "$script_dir/utils/yes_no_answer.sh"
-    # "$script_dir/../utils/other_script.sh"
+    "$utils_dir/$yes_no_answer_script"
 )
 
 default_flavor="4c-4r"
@@ -906,47 +907,51 @@ load_external_scripts() {
 }
 
 
-# Main execution flow
-if [ $USE_ENV_FILE = "true" ]; then
-    check_and_source_config_file
-fi
-
-parse_arguments "$@"
-load_external_scripts
-assign_vars_from_startup_keys
-output_of_initial_parameters
-
-# Initialize state files
-write_config_file
-init_cleanup_state_file
-
-# Check OpenStack CLI
-if [[ $CHECK_OPENSTACK = "true" ]]; then
-    if ! bash $utils_dir/check_openstack_cli.sh; then
-        echo -e "${red}Failed to check openstack cli - error${normal}"
-        exit 1
+main() {
+    # Main execution flow
+    if [ $USE_ENV_FILE = "true" ]; then
+        check_and_source_config_file
     fi
-fi
 
-check_and_source_openrc_file
+    parse_arguments "$@"
+    load_external_scripts
+    assign_vars_from_startup_keys
+    output_of_initial_parameters
 
-# Resource checks and creation
-[[ ! $DONT_CHECK = "true" ]] && {
-    check_hv
-    check_project
-    check_network
-    check_and_add_secur_group
-    check_image
-    check_and_add_flavor
-    check_and_add_keypair
+    # Initialize state files
+    write_config_file
+    init_cleanup_state_file
+
+    # Check OpenStack CLI
+    if [[ $CHECK_OPENSTACK = "true" ]]; then
+        if ! bash $utils_dir/check_openstack_cli.sh; then
+            echo -e "${red}Failed to check openstack cli - error${normal}"
+            exit 1
+        fi
+    fi
+
+    check_and_source_openrc_file
+
+    # Resource checks and creation
+    [[ ! $DONT_CHECK = "true" ]] && {
+        check_hv
+        check_project
+        check_network
+        check_and_add_secur_group
+        check_image
+        check_and_add_flavor
+        check_and_add_keypair
+    }
+
+    create_vms
+
+    # Restore admin context
+    export OS_PROJECT_NAME='admin'
+    export OS_PROJECT_ID=$ADMIN_PROJECT_ID
+
+    echo -e "${green}VM creation completed successfully!${normal}"
+    echo -e "${green}Cleanup state saved to: $VIRTUAL_ENV/$cleanup_file${normal}"
 }
 
-create_vms
-
-# Restore admin context
-export OS_PROJECT_NAME='admin'
-export OS_PROJECT_ID=$ADMIN_PROJECT_ID
-
-echo -e "${green}VM creation completed successfully!${normal}"
-#echo -e "${green}Configuration saved to: $VIRTUAL_ENV/$config_file${normal}"
-echo -e "${green}Cleanup state saved to: $VIRTUAL_ENV/$cleanup_file${normal}"
+# Run main function
+main "$@"

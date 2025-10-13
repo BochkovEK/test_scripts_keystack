@@ -324,21 +324,6 @@ get_config_path() {
     echo "$conf_dir/$CONF_NAME"
 }
 
-# Function to determine SSH user
-determine_ssh_user() {
-    if [ -z "$SSH_USER" ]; then
-        SSH_USER=$(whoami 2>/dev/null) || {
-            echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
-            SSH_USER="$default_ssh_user"
-        }
-    fi
-
-    if [ -z "$SSH_USER" ]; then
-        echo -e "${red}Error: Failed to determine SSH user!${normal}" >&2
-        exit 1
-    fi
-}
-
 # Function to load external scripts
 load_external_scripts() {
     for script_path in "${external_scripts[@]}"; do
