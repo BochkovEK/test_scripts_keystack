@@ -4,10 +4,10 @@
 # Requires node IPs and names to be defined in /etc/hosts
 
 # Color definitions
-green=$(tput setaf 2)
-red=$(tput setaf 1)
 normal=$(tput sgr0)
+green=$(tput setaf 2)
 yellow=$(tput setaf 3)
+red=$(tput setaf 1)
 blue=$(tput setaf 6)
 
 # Script paths
