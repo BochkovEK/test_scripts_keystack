@@ -42,18 +42,23 @@ enable_traffic () {
 }
 
 check_ips_list () {
-  echo "check ips list..."
-  [[ ! -f ${blocked_ips_list_dir}/${blocked_ips_list_file_name} ]] && { echo "${blocked_ips_list_dir}/${blocked_ips_list_file_name} not found"; exit 1; }
-  BLOCKED_IPS=$(cat ${blocked_ips_list_dir}/${blocked_ips_list_file_name}) #"a b c d"
-  [[ -z $BLOCKED_IPS ]] && { echo "BLOCKED_IPS is empty"; exit 1; }
+    echo "check ips list..."
+    [[ ! -f ${blocked_ips_list_dir}/${blocked_ips_list_file_name} ]] && { echo "${blocked_ips_list_dir}/${blocked_ips_list_file_name} not found"; exit 1; }
+    BLOCKED_IPS=$(cat ${blocked_ips_list_dir}/${blocked_ips_list_file_name}) #"a b c d"
+    [[ -z $BLOCKED_IPS ]] && { echo "BLOCKED_IPS is empty"; exit 1; }
     for IP in ${BLOCKED_IPS}; do
         echo "$IP"
     done
 }
 
-check_ips_list
-block_traffic
-echo "The server is isolated from: ${BLOCKED_IPS[*]}"
-#iptables -S
-sleep $TIMEOUT
-enable_traffic
+main () {
+    check_ips_list
+    block_traffic
+    echo "The server is isolated from: ${BLOCKED_IPS[*]}"
+    #iptables -S
+    sleep $TIMEOUT
+    enable_traffic
+}
+
+# Run main function
+main "$@"
