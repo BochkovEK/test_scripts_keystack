@@ -31,15 +31,16 @@ external_scripts=(
 )
 
 # Default values
-CHECK_SUFFIX="${CHECK_SUFFIX:-false}"
-TS_DEBUG="${TS_DEBUG:-false}"
-ONLY_CONF_CHECK="${ONLY_CONF_CHECK:-false}"
-PUSH="${PUSH:-false}"
-PULL="${PULL:-false}"
-CONF_NAME="${CONF_NAME:-$conf_name}"
-OS_REGION_NAME="${OS_REGION_NAME:-}"
-GET_CONFIG_PATH="${GET_CONFIG_PATH:-false}"
-SSL_CHECK="${SSL_CHECK:-false}"
+[[ -z $CHECK_SUFFIX ]] && CHECK_SUFFIX=false
+[[ -z $TS_DEBUG ]] && TS_DEBUG=false
+[[ -z $ONLY_CONF_CHECK ]] && ONLY_CONF_CHECK=false
+[[ -z $PUSH ]] && PUSH=false
+[[ -z $PULL ]] && PULL=false
+[[ -z $CONF_NAME ]] && CONF_NAME="$conf_name"
+[[ -z $OS_REGION_NAME ]] && OS_REGION_NAME=""
+[[ -z $GET_CONFIG_PATH ]] && GET_CONFIG_PATH=false
+[[ -z $SSL_CHECK ]] && SSL_CHECK=false
+[[ -z $VIRTUAL_ENV ]] && VIRTUAL_ENV="$script_dir"
 
 # Function to display help information
 show_help() {
@@ -307,7 +308,7 @@ pull_conf() {
 #    local nodes
     local first_node
 
-    [ ! -d "$script_dir/$test_node_conf_dir" ] && mkdir -p "$script_dir/$test_node_conf_dir"
+    [ ! -d "$VIRTUAL_ENV/$test_node_conf_dir" ] && mkdir -p "$VIRTUAL_ENV/$test_node_conf_dir"
 
 #    nodes=$(get_nodes_list -nt "$nodes_type")
 
@@ -326,22 +327,22 @@ pull_conf() {
     echo "Copying $service_name configuration from $node_name:$conf_dir/$CONF_NAME"
 
     ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
-        "sudo cat $conf_dir/$CONF_NAME" > "$script_dir/$test_node_conf_dir/${CONF_NAME}"
+        "sudo cat $conf_dir/$CONF_NAME" > "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}"
 
-    if [ ! -f "$script_dir/$test_node_conf_dir/${CONF_NAME}" ]; then
+    if [ ! -f "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}" ]; then
         echo -e "${red}Configuration file is missing${normal}"
         exit 1
     fi
 
-    [ ! -f "$script_dir/$test_node_conf_dir/${CONF_NAME}_backup" ] && \
-        cp "$script_dir/$test_node_conf_dir/${CONF_NAME}" "$script_dir/$test_node_conf_dir/${CONF_NAME}_backup"
+    [ ! -f "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}_backup" ] && \
+        cp "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}" "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}_backup"
 
     echo -e "
 To edit the configuration:
-  vi $script_dir/$test_node_conf_dir/$CONF_NAME
+  vi $VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME
 
 To apply the configuration:
-  bash $script_dir/$script_name -push
+  bash $VIRTUAL_ENV/$script_name -push
 "
 }
 
@@ -349,8 +350,8 @@ To apply the configuration:
 push_conf() {
     echo "Pushing $CONF_NAME to controller nodes..."
 
-    if [ ! -f "$script_dir/$test_node_conf_dir/$CONF_NAME" ]; then
-        echo -e "${red}Configuration file not found: $script_dir/$test_node_conf_dir/$CONF_NAME${normal}"
+    if [ ! -f "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME" ]; then
+        echo -e "${red}Configuration file not found: $VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME${normal}"
         exit 1
     fi
 
@@ -373,7 +374,7 @@ push_conf() {
             sed -E "
                 s/\"bind_address\"[[:space:]]*:[[:space:]]*\"[0-9.]+[0-9]+\"/\"bind_address\": \"$node_actual_ip\"/g
                 s/consul_host[[:space:]]*=[[:space:]]*[0-9.]+[0-9]+/consul_host = $node_actual_ip/g
-            " "$script_dir/$test_node_conf_dir/$CONF_NAME" > "$temp_file"
+            " "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME" > "$temp_file"
 
             scp -o StrictHostKeyChecking=no "$temp_file" "$SSH_USER@$node_ip:/tmp/$CONF_NAME"
             ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
@@ -391,13 +392,13 @@ push_conf() {
 check_bmc_suffix() {
     pull_conf
 
-    if [ ! -f "$script_dir/$test_node_conf_dir/$CONF_NAME" ]; then
+    if [ ! -f "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME" ]; then
         echo -e "${red}Configuration file not found${normal}"
         exit 1
     fi
 
     local suffix_string_raw
-    suffix_string_raw=$(grep 'suffix' "$script_dir/$test_node_conf_dir/$CONF_NAME")
+    suffix_string_raw=$(grep 'suffix' "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME")
 
     if [ "$LEGACY_CONF" = true ]; then
         local suffix_string_raw_2="${suffix_string_raw//\"/}"
@@ -493,7 +494,7 @@ main() {
     if [ "$PUSH" = true ]; then
         push_conf
         echo "Restarting consul containers..."
-        bash "$script_dir/command_on_nodes.sh" -u "$SSH_USER" -nt $nodes_type -c "sudo $CONTAINER_ENGINE restart consul"
+        bash "$VIRTUAL_ENV/command_on_nodes.sh" -u "$SSH_USER" -nt $nodes_type -c "sudo $CONTAINER_ENGINE restart consul"
     fi
 
     cat_conf
