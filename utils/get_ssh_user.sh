@@ -8,7 +8,7 @@ green=$(tput setaf 2)
 red=$(tput setaf 1)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
-blue=$(tput setaf 4)
+blue=$(tput setaf 6)
 
 # Default values
 DEFAULT_SSH_USER=${DEFAULT_SSH_USER:-"root"}
