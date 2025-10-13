@@ -15,7 +15,7 @@ default_container_engine="docker"
 red=$(tput setaf 1)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
-cyan=$(tput setaf 14)
+cyan=$(tput setaf 6)
 #violet=$(tput setaf 5)
 
 # Default values
