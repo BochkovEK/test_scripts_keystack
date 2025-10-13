@@ -90,9 +90,11 @@ confirm_blocking() {
     local node_name="$1"
     local node_ip="$2"
 echo -e "${yellow}============== BLOCKING TRAFFIC ===============
-Nodes to block ⚠ :
+Nodes to block:
+⚠
 $(echo "$BLOCKED_NODES_PAIR" | tr ' ' '\n')
-Target node 💻 :
+Target node:
+💻
 $node_name
 ================================================${normal}"
     read -p "Press Enter to continue or Ctrl+C to cancel..."
