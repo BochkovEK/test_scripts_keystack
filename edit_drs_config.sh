@@ -258,9 +258,9 @@ push_conf() {
             temp_file=$(mktemp)
 
             # Replace API host IP
-            sed -E "
-                s/api_host[[:space:]]*=[[:space:]]*[0-9.]+[0-9]+/api_host = $node_ip/g
-            " "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME" > "$temp_file"
+#            sed -E "
+#                s/api_host[[:space:]]*=[[:space:]]*[0-9.]+[0-9]+/api_host = $node_ip/g
+#            " "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME" > "$temp_file"
 
             # Copy file to remote node
             scp -o StrictHostKeyChecking=no "$temp_file" "$SSH_USER@$node_ip:/tmp/$CONF_NAME"
