@@ -15,10 +15,9 @@ blocked_ips_list_dir="/tmp"
 [[ -z $TIMEOUT ]] && TIMEOUT=180
 
 echo "$0 script"
-if [ -f $blocked_ips_list_dir/$blocked_ips_list_file_name ]; then BLOCKED_IPS=$(cat $blocked_ips_list_dir/$blocked_ips_list_file_name);
-    else echo "IPS list to block not found ($blocked_ips_list_dir/$blocked_ips_list_file_name)"; exit 1; fi
 
 block_traffic () {
+    exit 0
     for IP in ${BLOCKED_IPS}; do
 # Blocking incoming traffic from IP
         echo "Block incoming traffic from ${IP}"
@@ -44,8 +43,9 @@ enable_traffic () {
 
 check_ips_list () {
   echo "check ips list..."
-  BLOCKED_IPS=$(cat ~/blocked_ips_list) #"a b c d"
-  [[ -z $BLOCKED_IPS ]] && { "BLOCKED_IPS is empty"; exit 1; }
+  [[ ! -f ${blocked_ips_list_dir}/${blocked_ips_list_file_name} ]] && { echo "${blocked_ips_list_dir}/${blocked_ips_list_file_name} not found"; exit 1; }
+  BLOCKED_IPS=$(cat ${blocked_ips_list_dir}/${blocked_ips_list_file_name}) #"a b c d"
+  [[ -z $BLOCKED_IPS ]] && { echo "BLOCKED_IPS is empty"; exit 1; }
     for IP in ${BLOCKED_IPS}; do
         echo "$IP"
     done
