@@ -89,11 +89,10 @@ load_external_scripts() {
 confirm_blocking() {
     local node_name="$1"
     local node_ip="$2"
-    echo -e "${yellow}============== BLOCKING TRAFFIC ===============
+echo -e "${yellow}============== BLOCKING TRAFFIC ===============
 Nodes to block:
 $(echo "$BLOCKED_NODES_PAIR" | tr ' ' '\n')
-Target node:
-    ===> $node_name <===
+Target node: 💻 $node_name ⚠
 ================================================${normal}"
     read -p "Press Enter to continue or Ctrl+C to cancel..."
 }
