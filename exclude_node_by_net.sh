@@ -88,7 +88,7 @@ load_external_scripts() {
 # Function to confirm action
 confirm_blocking() {
     local node_name="$1"
-    echo -e "${yellow}Traffic for \"$BLOCKED_NODES_PAIR\" will be blocked on nodes \"$node_name\"${normal}"
+    echo -e "${yellow}Traffic for:\n$(echo "$BLOCKED_NODES_PAIR" | tr ' ' '\n')\nwill be blocked on node \"$node_name\"${normal}"
     read -p "Press Enter to continue or Ctrl+C to cancel..."
 }
 
