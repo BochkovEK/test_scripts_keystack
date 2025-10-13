@@ -88,20 +88,14 @@ load_external_scripts() {
 # Function to confirm action
 confirm_blocking() {
     local node_name="$1"
-    echo -e "${yellow}Traffic for \"$BLOCKED_IPS\" will be blocked on nodes \"$node_name\"${normal}"
+    echo -e "${yellow}Traffic for \"$BLOCKED_NODES_PAIR\" will be blocked on nodes \"$node_name\"${normal}"
     read -p "Press Enter to continue or Ctrl+C to cancel..."
-}
-
-# Function to validate variables
-validate_variables() {
-    [[ -z "$REAL_NODE_NAME" ]] && { echo -e "${red}Error: NODE_NAME is empty${normal}"; exit 1; }
-    [[ -z "$BLOCKED_IPS" ]] && { echo -e "${red}Error: BLOCKED_IPS is empty${normal}"; exit 1; }
 }
 
 # Function to get blocked IPs list
 get_blocked_ips () {
-    blocked_nodes_pair=$(get_nodes_list "-nt" "all")
-    for bn in $blocked_nodes_pair; do
+    BLOCKED_NODES_PAIR=$(get_nodes_list "-nt" "all")
+    for bn in $BLOCKED_NODES_PAIR; do
         blocked_node_name="${bn%%:*}"
         blocked_node_ip="${bn#*:}"
         if [ -z "$BLOCKED_IPS" ]; then
