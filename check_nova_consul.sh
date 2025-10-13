@@ -543,6 +543,7 @@ load_external_scripts() {
 # Main execution function
 main() {
     parse_arguments "$@"
+    load_external_scripts
 
     # Determine SSH user using external function
     SSH_USER=$(get_and_validate_ssh_user "$SSH_USER" "$default_ssh_user")
