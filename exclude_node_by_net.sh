@@ -184,7 +184,7 @@ main() {
     echo "Using SSH user: $SSH_USER"
 
     if [ -z "$NODES_NAME" ]; then
-        echo -e "${yellow}node name needed to block traffic (env NODES_NAME) or start this script with key -n <node_name>${normal}";
+        echo -e "${yellow}Node name needed to block traffic (env NODES_NAME) or start this script with key -n <node_name>${normal}";
         exit 1;
     fi
 
