@@ -138,38 +138,10 @@ define_parameters() {
     }
 }
 
-# Function to check for SSL client key in config
-#check_ssl_config() {
-#    local config_file="$script_dir/$test_node_conf_dir/$CONF_NAME"
-#
-#    if [ ! -f "$config_file" ]; then
-#        echo -e "${red}Configuration file not found: $config_file${normal}"
-#        return 1
-#    fi
-#
-#    if grep -q "client_key = .*\.pem" "$config_file"; then
-#        echo "mtls"
-#        return 0
-#    else
-#        echo -e "${yellow}No SSL client key found in configuration${normal}"
-#        return 1
-#    fi
-#}
-
 # Function to get nodes list using external script
 get_nodes_list() {
-#    [ "$TS_DEBUG" = true ] && echo -e "
-#    [DEBUG]:
-#        Count parameters: $#
-#        Parameters: $*
-#    "
-
     local nodes_result=""
-
     nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
-
-#    [ "$TS_DEBUG" = true ] && echo -e "
-#    [DEBUG] nodes_result: $nodes_result"
 
     if [ -z "$nodes_result" ]; then
         echo -e "${red}Failed to determine node list - ERROR${normal}"
@@ -218,9 +190,9 @@ check_ssl_config() {
     local https_ssl_verify client_key client_cert
 
     # Extract values with proper handling of quotes and spaces
-    https_ssl_verify=$(echo "$config_file" | grep -qE "^https_ssl_verify\s*=" | head -1 | awk -F= '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
-    client_key=$(echo "$config_file" | grep -qE "^client_key\s*=" | head -1 | awk -F= '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
-    client_cert=$(echo "$config_file" | grep -qE "^client_cert\s*=" | head -1 | awk -F= '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
+    https_ssl_verify=$(echo "$config_file" | grep -E "^https_ssl_verify\s*=" | head -1 | awk -F= '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
+    client_key=$(echo "$config_file" | grep -E "^client_key\s*=" | head -1 | awk -F= '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
+    client_cert=$(echo "$config_file" | grep -E "^client_cert\s*=" | head -1 | awk -F= '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
 
     # Set default values if not found or empty
     https_ssl_verify="${https_ssl_verify:-/etc/pki/tls/certs/ca-bundle.crt}"
@@ -232,53 +204,9 @@ check_ssl_config() {
     return 0
 }
 
-# Function to display configuration files
-#cat_conf() {
-#    echo "Displaying all $service_name configurations..."
-#    local nodes
-#    nodes=$(get_nodes_list -nt "$nodes_type")
-#
-#    for node in $nodes; do
-#        local node_name="${node%%:*}"
-#        local node_ip="${node#*:}"
-#        echo -e "${cyan}Configuration on $node_name:${normal}"
-#        ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
-#            "sudo cat $conf_dir/$CONF_NAME 2>/dev/null || echo 'Configuration file not found'"
-#        echo "----------------------------------------"
-#    done
-#}
-
 # Function to display configuration files - returns config content
 cat_conf() {
     local nodes_list="$1"
-
-#    # If no nodes provided, get all nodes
-#    if [ -z "$nodes_list" ]; then
-#        nodes_list=$(get_node_names)
-#    fi
-
-
-
-#    # Get node IP for the first node
-#    local nodes
-#    nodes=$(get_nodes_list -nt "$nodes_type")
-#    local node_ip=""
-#
-#    for node in $nodes; do
-#        local node_name="${node%%:*}"
-#        local current_ip="${node#*:}"
-#        if [ "$node_name" = "$first_node" ]; then
-#            node_ip="$current_ip"
-#            break
-#        fi
-#    done
-
-#    if [ -z "$node_ip" ]; then
-#        echo -e "${red}Could not find IP for node: $first_node${normal}" >&2
-#        return 1
-#    fi
-
-#    config_content=""
     for node in $nodes_list; do
         local node_name="${node%%:*}"
         local node_ip="${node#*:}"
@@ -289,14 +217,6 @@ cat_conf() {
 
         echo -e "${cyan}Config from $node_name${normal}"
         echo -e "$node_config"
-
-
-#        if [ -n "$node_config" ]; then
-#            if [ -n "$config_content" ]; then
-#                config_content="${config_content}\n---\n"
-#            fi
-#            config_content="${config_content}Config from $node_name\n${node_config}"
-#        fi
     done
     return 0
 }
@@ -305,21 +225,12 @@ cat_conf() {
 pull_conf() {
     echo "Pulling $CONF_NAME from controller node..."
 
-#    local nodes
     local first_node
-
     [ ! -d "$VIRTUAL_ENV/$test_node_conf_dir" ] && mkdir -p "$VIRTUAL_ENV/$test_node_conf_dir"
-
-#    nodes=$(get_nodes_list -nt "$nodes_type")
 
     [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG]: nodes: $nodes"
 
     first_node=$(echo "$NODES" | awk '{print $1}')
-
-#    if [ -z "$first_node" ]; then
-#        echo -e "${red}No controller nodes found${normal}"
-#        exit 1
-#    fi
 
     local node_name="${first_node%%:*}"
     local node_ip="${first_node#*:}"
@@ -461,9 +372,9 @@ main() {
     fi
 
     if [ "$TS_DEBUG" = true ]; then
-    echo -e "
-    [DEBUG] NODES: $NODES
-    "
+        echo -e "
+        [DEBUG] NODES: $NODES
+        "
     fi
 
     if [ "$SSL_CHECK" = true ]; then
