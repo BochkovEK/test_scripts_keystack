@@ -387,6 +387,8 @@ main() {
     parse_arguments "$@"
     validate_environment
 
+    load_external_scripts
+
     rm -f /root/.ssh/known_hosts 2>/dev/null
 
     get_vms_ips
