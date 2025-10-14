@@ -258,9 +258,9 @@ load_external_scripts() {
     done
 }
 
-# Then in main code:
-echo -e "${cyan}Attempting to identify DRS leader node...${normal}"
-leader_drs_ctrl=$(find_drs_leader "$nodes")
+## Then in main code:
+#echo -e "${cyan}Attempting to identify DRS leader node...${normal}"
+#leader_drs_ctrl=$(find_drs_leader "$nodes")
 
 main() {
     # Parse command line arguments
