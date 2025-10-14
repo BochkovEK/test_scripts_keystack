@@ -141,16 +141,18 @@ get_nodes_list() {
 
 # Function to check consul logs on a single node
 read_logs() {
-    local node_identifier="$1"
+    local node_pair="$1"
     local use_follow="${2:-false}"
+    local node_name="${node_pair%%:*}"
+    local node_ip="${node_pair#*:}"
 
-    # Get node details using external script
-    local node_info
-    node_info=$(get_nodes_list "-nn" "$node_identifier")
-    [ $? -ne 0 ] && return 1
+#    # Get node details using external script
+#    local node_info
+#    node_info=$(get_nodes_list "-nn" "$node_identifier")
+#    [ $? -ne 0 ] && return 1
 
-    local node_name="${node_info%%:*}"
-    local node_ip="${node_info#*:}"
+#    local node_name="${node_info%%:*}"
+#    local node_ip="${node_info#*:}"
 
     local tail_options="-n ${LOG_LAST_LINES_NUMBER}"
 
