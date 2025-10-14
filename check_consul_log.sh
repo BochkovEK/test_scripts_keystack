@@ -54,61 +54,56 @@ show_help() {
 }
 
 # Parse command line arguments
-while [ -n "$1" ]; do
-    case "$1" in
-        --help)
-            show_help
-            exit 0
-            ;;
-
-        -ln|-line_numbers)
-            LOG_LAST_LINES_NUMBER="$2"
-            echo "Found -line_numbers with value: $LOG_LAST_LINES_NUMBER"
-            shift
-            ;;
-
-        -ctrl_list)
-            CTRL_LIST="$2"
-            echo "Found -ctrl_list with value: $CTRL_LIST"
-            shift
-            ;;
-
-        -all|-all_ctrl)
-            ALL_CTRL="true"
-            echo "Found -all_ctrl option"
-            ;;
-
-        -u|-user)
-            SSH_USER="$2"
-            echo "Found -user with value: $SSH_USER"
-            shift
-            ;;
-
-        -ce|-container_engine)
-            CONTAINER_ENGINE="$2"
-            echo "Found -docker_engine with value: $CONTAINER_ENGINE"
-            shift
-            ;;
-
-        -v|-debug)
-            TS_DEBUG="true"
-            echo "Found -debug with value: $TS_DEBUG"
-            shift
-            ;;
-
-        --)
-            shift
-            break
-            ;;
-
-        *)
-            echo "Unknown parameter: $1"
-            show_help
-            exit 1
-            ;;
-    esac
-    shift
-done
+parse_arguments() {
+    local count=1
+    while [ -n "$1" ]; do
+        case "$1" in
+            --help)
+                show_help
+                exit 0
+                ;;
+            -ln|-line_numbers)
+                LOG_LAST_LINES_NUMBER="$2"
+                echo "Found -line_numbers with value: $LOG_LAST_LINES_NUMBER"
+                shift
+                ;;
+            -ctrl_list)
+                CTRL_LIST="$2"
+                echo "Found -ctrl_list with value: $CTRL_LIST"
+                shift
+                ;;
+            -all|-all_ctrl)
+                ALL_CTRL="true"
+                echo "Found -all_ctrl option"
+                ;;
+            -u|-user)
+                SSH_USER="$2"
+                echo "Found -user with value: $SSH_USER"
+                shift
+                ;;
+            -ce|-container_engine)
+                CONTAINER_ENGINE="$2"
+                echo "Found -docker_engine with value: $CONTAINER_ENGINE"
+                shift
+                ;;
+            -v|-debug)
+                TS_DEBUG="true"
+                echo "Found -debug with value: $TS_DEBUG"
+                shift
+                ;;
+            --)
+                shift
+                break
+                ;;
+            *)
+              echo "Parameter #$count: $1"
+              define_parameters "$1"
+              count=$((count + 1))
+              ;;
+        esac
+        shift
+    done
+}
 
 # Function to get nodes list using external script
 get_nodes_list() {
