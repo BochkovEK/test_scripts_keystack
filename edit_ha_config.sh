@@ -249,7 +249,7 @@ pull_conf() {
     local first_node
     [ ! -d "$VIRTUAL_ENV/$test_node_conf_dir" ] && mkdir -p "$VIRTUAL_ENV/$test_node_conf_dir"
 
-    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG]: nodes: $nodes"
+    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG]: nodes: $NODES"
 
     first_node=$(echo "$NODES" | awk '{print $1}')
 

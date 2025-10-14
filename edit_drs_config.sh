@@ -255,6 +255,8 @@ push_conf() {
             local temp_file
             temp_file=$(mktemp)
 
+            cat "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME" > "$temp_file"
+
             # Copy file to remote node
             scp -o StrictHostKeyChecking=no "$temp_file" "$SSH_USER@$node_ip:/tmp/$CONF_NAME"
             ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
