@@ -218,8 +218,6 @@ find_leader() {
             client_cert=$(echo "${parts[3]}" | awk -F' = ' '{print $2}' | xargs)
 
             if [ "$mode" = "mtls" ];then
-                echo "mtls"
-                echo $client_cert $client_key $https_ssl_verify
                 leader=$(ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
                     "sudo $CONTAINER_ENGINE exec consul consul operator raft list-peers \
                      -http-addr=https://$node_ip:8501 -ca-file $https_ssl_verify \
@@ -235,13 +233,9 @@ find_leader() {
 
         if [ -n "$leader" ]; then
             # Find the node pair for the leader node name
-            for node in $NODES; do
-                local current_node_name="${node%%:*}"
-                if [ "$current_node_name" = "$leader" ]; then
-                    echo "$node"
-                    return 0
-                fi
-            done
+            leader_pair=$(get_nodes_list "-nn" "$leader")
+            echo "$leader_pair"
+            return 0
         fi
     done
 
