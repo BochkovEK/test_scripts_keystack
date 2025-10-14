@@ -133,7 +133,7 @@ read_logs() {
         tail_command="tail -f -n ${LOG_LAST_LINES_NUMBER}"
     fi
 
-    echo -e "${violet}View full log: ssh $SSH_USER@$node_ip sudo less $DRS_LOG_DIR/$DRS_LOG_FILE_NAME${normal}"
+    echo -e "${violet}View full log: ssh -t $SSH_USER@$node_ip sudo less $DRS_LOG_DIR/$DRS_LOG_FILE_NAME${normal}"
 
     if [ "$DEBUG_STRING_ONLY" = "true" ]; then
         echo -e "${yellow}DEBUG strings only${normal}"

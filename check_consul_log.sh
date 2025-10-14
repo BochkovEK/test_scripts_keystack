@@ -163,7 +163,7 @@ read_logs() {
 #\033[0;35mLogs from: $(hostname)\033[0m
 #\033[0;35mView full log: ssh $(hostname) less /var/log/kolla/autoevacuate.log\033[0m'"
 
-    echo -e "${violet}View full log: ssh $SSH_USER@$node_ip sudo less $CONSUL_LOG_DIR/$CONSUL_LOG_FILE_NAME${normal}"
+    echo -e "${violet}View full log: ssh -t $SSH_USER@$node_ip sudo less $CONSUL_LOG_DIR/$CONSUL_LOG_FILE_NAME${normal}"
 
     # Display colored log output
     ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
