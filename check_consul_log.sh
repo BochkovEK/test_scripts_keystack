@@ -182,7 +182,7 @@ check_logs_from_all_ctrl() {
     for node_info in $NODES; do
         local node_name="${node_info%%:*}"
         echo -e "${blue}Checking $LOG_LAST_LINES_NUMBER line from consul logs on $node_name...${normal}"
-        read_logs "$node_name"
+        read_logs "$node_info"
         echo "----------------------------------------"
     done
 }
