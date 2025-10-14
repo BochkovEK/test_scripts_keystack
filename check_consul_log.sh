@@ -9,6 +9,7 @@ green=$(tput setaf 2)
 yellow=$(tput setaf 3)
 red=$(tput setaf 1)
 blue=$(tput setaf 6)
+violet=$(tput setaf 5)
 
 script_dir=$(dirname "$0")
 utils_dir="$script_dir/utils"
@@ -137,7 +138,7 @@ get_nodes_list() {
 }
 
 # Function to check consul logs on a single node
-check_consul_log_one_node() {
+read_logs() {
     local node_identifier="$1"
 
     # Get node details using external script
@@ -152,11 +153,13 @@ check_consul_log_one_node() {
     local tail_options="-n $LOG_LAST_LINES_NUMBER"
     [ "$ALL_CTRL" != "true" ] && [ -z "$CTRL_LIST" ] && tail_options="-f"
 
-    # Display log header
-    ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
-        "echo -e '\033[0;35m$(date)\033[0m
-\033[0;35mLogs from: $(hostname)\033[0m
-\033[0;35mView full log: ssh $(hostname) less /var/log/kolla/autoevacuate.log\033[0m'"
+#    # Display log header
+#    ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+#        "echo -e '\033[0;35m$(date)\033[0m
+#\033[0;35mLogs from: $(hostname)\033[0m
+#\033[0;35mView full log: ssh $(hostname) less /var/log/kolla/autoevacuate.log\033[0m'"
+
+    echo -e "${violet}View full log: ssh $SSH_USER@$node_ip sudo less /var/log/kolla/autoevacuate.log${normal}"
 
     # Display colored log output
     ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
@@ -188,7 +191,7 @@ check_logs_on_all_ctrl() {
     for node_info in $NODES; do
         local node_name="${node_info%%:*}"
         echo -e "${blue}Checking $LOG_LAST_LINES_NUMBER line from consul logs on $node_name...${normal}"
-        check_consul_log_one_node "$node_name"
+        read_logs "$node_name"
         echo "----------------------------------------"
     done
 }
@@ -270,7 +273,6 @@ load_external_scripts() {
     done
 }
 
-
 # Main execution
 main() {
     # Parse command line arguments
@@ -306,8 +308,8 @@ main() {
         LEADER_NODE=$(find_leader)
 
         if [ -n "$LEADER_NODE" ]; then
-            echo -e "${blue}Found consul leader: $LEADER_NODE${normal}"
-            check_consul_log_one_node "$LEADER_NODE"
+            echo -e "${green}Leader node identified: $LEADER_NODE${normal}"
+            read_logs "$LEADER_NODE"
         else
             echo -e "${yellow}No leader found, checking all controller nodes${normal}"
             ALL_CTRL="true"

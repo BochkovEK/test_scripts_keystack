@@ -124,9 +124,9 @@ read_logs() {
     local node_ip="${node_pair#*:}"
 
 
-    echo -e "${blue}Checking $LOG_LAST_LINES_NUMBER line from consul logs on $node_name...${normal}"
+    echo -e "${blue}Checking $LOG_LAST_LINES_NUMBER line from drs logs on $node_name...${normal}"
     echo -e "${blue}DRS $LOG_LAST_LINES_NUMBER lines logs from $node_name${normal}"
-
+    local title=""
     local tail_command="tail -n ${LOG_LAST_LINES_NUMBER}"
 
     if [ "$use_follow" = "follow" ]; then
@@ -148,7 +148,7 @@ read_logs() {
 }
 
 # Function: read_logs_from_all_ctrl
-read_logs_from_all_ctrl() {
+check_logs_from_all_ctrl() {
     local nodes="$1"
 
 #    for node_info in $NODES; do
@@ -294,7 +294,7 @@ main() {
     else
         OPERATION="auto_leader"
         NODES=$(get_nodes_list "-nt" "$nodes_type")
-        echo -e "${blue}Attempting to identify DRS leader node automatically${normal}"
+#        echo -e "${blue}Attempting to identify DRS leader node automatically${normal}"
     fi
 
     [ "$TS_DEBUG" = "true" ] && echo -e "${blue}Nodes: $NODES${normal}"
@@ -305,7 +305,7 @@ main() {
             read_logs "$NODES" "follow"
             ;;
         "all_nodes")
-            read_logs_from_all_ctrl "$NODES"
+            check_logs_from_all_ctrl "$NODES"
             ;;
         "auto_leader")
             leader_drs_ctrl=$(find_drs_leader "$NODES")
