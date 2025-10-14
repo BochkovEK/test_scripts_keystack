@@ -151,23 +151,23 @@ parse_arguments() {
     done
 }
 
-extract_ip_from_vms_list() {
-    local VM_LIST="$1"
-    local vms=""
+#extract_ip_from_vms_list() {
+#    local VM_LIST="$1"
+#    local vms=""
+#
+#    while IFS= read -r line; do
+#        if [[ "$line" == *:*:* ]]; then
+#            local ip="${line##*:}"
+#            vms="$vms $ip"
+#        else
+#            vms="$vms $line"
+#        fi
+#    done <<< "$VM_LIST"
+#
+#    echo "$vms" | tr -s ' ' | sed 's/^ //'
+#}
 
-    while IFS= read -r line; do
-        if [[ "$line" == *:*:* ]]; then
-            local ip="${line##*:}"
-            vms="$vms $ip"
-        else
-            vms="$vms $line"
-        fi
-    done <<< "$VM_LIST"
-
-    echo "$vms" | tr -s ' ' | sed 's/^ //'
-}
-
-get_vms_ips() {
+get_vms_list() {
     local hv_info=""
 
     if [ -n "$VMS" ]; then
@@ -178,7 +178,6 @@ get_vms_ips() {
         local command_args="-vms \"$VMS\""
         [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] Command args for VM list: $command_args"
 
-#        local VM_LIST
         VM_LIST=$(eval "bash \"$openstack_utils/$get_active_vms_list_script\" $command_args")
 
         if echo "$VM_LIST" | grep -q "ERROR"; then
@@ -186,7 +185,7 @@ get_vms_ips() {
             exit 1
         fi
 
-        VMs_IPs=$(extract_ip_from_vms_list "$VM_LIST")
+        VMs_PAIRS=$(echo "$VM_LIST" | tr -s ' ' | sed 's/^ //;s/ $//')
     else
         hv_info="VMs"
         [ -n "$HYPERVISOR_NAME" ] && hv_info="$hv_info on hypervisor: $HYPERVISOR_NAME"
@@ -201,7 +200,6 @@ get_vms_ips() {
 
         [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] Command args for VM list: $command_args"
 
-#        local VM_LIST
         VM_LIST=$(eval "bash \"$openstack_utils/$get_active_vms_list_script\" $command_args")
 
         if echo "$VM_LIST" | grep -q "ERROR"; then
@@ -209,15 +207,15 @@ get_vms_ips() {
             exit 1
         fi
 
-        VMs_IPs=$(extract_ip_from_vms_list "$VM_LIST")
+        VMs_PAIRS=$(echo "$VM_LIST" | tr -s ' ' | sed 's/^ //;s/ $//')
     fi
 
-    if [ -z "$VMs_IPs" ]; then
+    if [ -z "$VMs_PAIRS" ]; then
         echo -e "${red}No VMs found for stress testing${normal}"
         exit 1
     fi
 
-    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] VMs_IPs: $VMs_IPs"
+    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] VMs pairs: $VMs_PAIRS"
     echo "$hv_info"
 }
 
@@ -295,7 +293,7 @@ check_vm_connectivity() {
 
     local all_connected=true
 
-    for ip in $VMs_IPs; do
+    for ip in $VMs_PAIRS; do
         echo -e "${blue}Testing VM: $ip${normal}"
 
         if test_ssh_connection "stress-test-vm" "$ip" "10" "$VM_USER"; then
@@ -318,7 +316,7 @@ batch_run_stress() {
     local success_count=0
     local total_count=0
 
-    for ip in $VMs_IPs; do
+    for ip in $VMs_PAIRS; do
         ((total_count++))
         if copy_and_run_stress "$ip"; then
             ((success_count++))
@@ -366,8 +364,13 @@ ${violet}Stress Test Configuration:${normal}
     load_string:          $load_string
     timeout_help_string:  $timeout_help_string
     Debug Mode:           $TS_DEBUG
-    VMS:                  $VM_LIST
-    "
+    VMS:"
+
+    for vm_pair in $VMs_PAIRS; do
+        echo "                  $vm_pair"
+    done
+
+    echo "    "
 
     read -p "Press Enter to continue or Ctrl+C to cancel: "
 }
@@ -391,7 +394,7 @@ main() {
 
     rm -f /root/.ssh/known_hosts 2>/dev/null
 
-    get_vms_ips
+    get_vms_list
 
     get_mode_strings
 
