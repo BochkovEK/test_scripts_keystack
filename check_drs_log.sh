@@ -33,15 +33,6 @@ external_scripts=(
 [[ -z $DEBUG_STRING_ONLY ]] && DEBUG_STRING_ONLY="false"
 [[ -z $CTRL_NAME ]] && CTRL_NAME=""
 [[ -z $ALL_CTRL ]] && ALL_CTRL="false"
-#[[ -z $OUTPUT_PERIOD ]] && OUTPUT_PERIOD=10
-
-# Function: define_parameters
-define_parameters() {
-  [ "$count" = 1 ] && [ "$1" = foo ] && {
-    FOO=true;
-    echo "Check FOO parameter found";
-  }
-}
 
 # Function: display_help
 display_help() {
@@ -54,7 +45,7 @@ Options:
   -n,   -node_name          <node_name>              Specific node to check
   -dso  -debug_string_only                           Output only DEBUG strings from logs
   -v,   -debug                                       Enable debug output
-  -all                                               Check logs on all control nodes
+  -all, -all_ctrl                                    Check logs on all control nodes
   -u,   -user               <user>                   Set user for SSH access
   --help                                            Display this help message
 
@@ -76,7 +67,6 @@ parse_arguments() {
               exit 0
               ;;
             -ln|-line_numbers)
-              validate_numeric_argument "$2" "line numbers"
               LOG_LAST_LINES_NUMBER="$2"
               echo "Found the -line_numbers option, with parameter value $LOG_LAST_LINES_NUMBER"
               shift
@@ -109,7 +99,6 @@ parse_arguments() {
               ;;
             *)
               echo "Parameter #$count: $1"
-              define_parameters "$1"
               count=$((count + 1))
               ;;
         esac
@@ -124,9 +113,6 @@ read_logs() {
     local node_name="${node_pair%%:*}"
     local node_ip="${node_pair#*:}"
 
-#    echo -e "${blue}Checking $LOG_LAST_LINES_NUMBER line from drs logs on $node_name...${normal}"
-#    echo -e "${blue}DRS $LOG_LAST_LINES_NUMBER lines logs from $node_name${normal}"
-#    local title=""
     local tail_options="-n ${LOG_LAST_LINES_NUMBER}"
 
     if [ "$use_follow" = "follow" ]; then
@@ -143,10 +129,6 @@ read_logs() {
         ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
         "sudo sh -c 'tail $tail_options $DRS_LOG_DIR/$DRS_LOG_FILE_NAME'"
     fi
-
-#    echo -e "${blue}$(date)${normal}"
-#    echo -e "To read all logs on $node_name:"
-#    echo -e "${yellow}ssh -o StrictHostKeyChecking=no \"$SSH_USER@$node_ip\" \"sudo sh -c 'less $DRS_LOG_DIR/$DRS_LOG_FILE_NAME'\"${normal}"
 }
 
 # Function: read_logs_from_all_ctrl
@@ -155,27 +137,11 @@ check_logs_from_all_ctrl() {
 
     for node_info in $nodes; do
         local node_name="${node_info%%:*}"
-        echo -e "${blue}Checking $LOG_LAST_LINES_NUMBER line from consul logs on $node_name...${normal}"
-        read_logs "$node_name"
+        echo -e "${blue}Checking $LOG_LAST_LINES_NUMBER line from DRS logs on $node_name...${normal}"
+        read_logs "$node_info"
         echo "----------------------------------------"
     done
-
-#    for node_pair in $nodes; do
-#        read_logs "$node_pair"
-#        echo -e "${yellow}--------------------------------------------------${normal}"
-#    done
 }
-
-## Function: find_leader
-#find_leader() {
-#    local node_pair="$1"
-#    local node_name="${node_pair%%:*}"
-#    local node_ip="${node_pair#*:}"
-#
-#    ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
-#        "sudo sh -c 'tail -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_DIR/$DRS_LOG_FILE_NAME'" | \
-#        grep -E 'leadership updated|becomes a leader'
-#}
 
 # Function: get_nodes_list
 get_nodes_list() {
@@ -185,11 +151,6 @@ get_nodes_list() {
         Parameters: $*"
 
     local nodes_result=""
-
-    [ "$TS_DEBUG" = "true" ] && echo -e "
-    [DEBUG]:
-      nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$*\")"
-
     nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
 
     [ "$TS_DEBUG" = "true" ] && echo -e "
@@ -210,34 +171,7 @@ get_nodes_list() {
     fi
 }
 
-# Function: debug_echo
-debug_echo() {
-    echo -e "
-    [DEBUG]:
-      $1"
-}
-
-## Function: find_drs_leader
-#find_leader() {
-#    local nodes="$1"
-#    local leader_drs_ctrl=""
-#
-#    for node_pair in $nodes; do
-#        [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG]: Checking node: $node_pair" >&2
-#
-#        local leader_exist
-#        leader_exist=$(find_leader "$node_pair")
-#
-#        if [ -n "$leader_exist" ]; then
-#          leader_drs_ctrl="$node_pair"
-#          [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG]: Found leader: $leader_drs_ctrl" >&2
-#          break
-#        fi
-#    done
-#
-#    echo "$leader_drs_ctrl"
-#}
-
+# Function: find_leader
 find_leader() {
     local nodes="$1"
     local leader_drs_ctrl=""
@@ -324,7 +258,6 @@ main() {
     else
         OPERATION="auto_leader"
         NODES=$(get_nodes_list "-nt" "$nodes_type")
-#        echo -e "${blue}Attempting to identify DRS leader node automatically${normal}"
     fi
 
     [ "$TS_DEBUG" = "true" ] && echo -e "${blue}Nodes: $NODES${normal}"
@@ -338,14 +271,14 @@ main() {
             check_logs_from_all_ctrl "$NODES"
             ;;
         "auto_leader")
-            leader_drs_ctrl=$(find_leader "$NODES")
-            if [ -z "$leader_drs_ctrl" ]; then
+            leader_ctrl=$(find_leader "$NODES")
+            if [ -z "$leader_ctrl" ]; then
                 echo -e "${yellow}Leader node could not be identified${normal}"
                 echo -e "${yellow}Falling back to reading logs from all nodes${normal}"
                 check_logs_from_all_ctrl "$NODES"
             else
-                echo -e "${green}Leader node identified: $leader_drs_ctrl${normal}"
-                read_logs "$leader_drs_ctrl" "follow"
+                echo -e "${green}Leader node identified: $leader_ctrl${normal}"
+                read_logs "$leader_ctrl" "follow"
             fi
             ;;
     esac

@@ -11,6 +11,7 @@ red=$(tput setaf 1)
 blue=$(tput setaf 6)
 violet=$(tput setaf 5)
 
+# Script configuration
 script_dir=$(dirname "$0")
 utils_dir="$script_dir/utils"
 get_nodes_list_script="get_nodes_list.sh"
@@ -38,24 +39,26 @@ external_scripts=(
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $CONTAINER_ENGINE ]] && CONTAINER_ENGINE=$default_container_engine
 
-# Function to display help information
-show_help() {
-    echo -E "
-    Usage: $0 [OPTIONS]
+# Function: display_help
+display_help() {
+  cat << EOF
 
-    Options:
-      -ln, -line_numbers <number>      Number of log lines to display
-      -ctrl_list <nodes>               Space-separated list of controller nodes
-      -all, -all_ctrl                  Check logs on all controller nodes
-      -u, -user <username>             SSH username
-      -ce, -container_engine <engine>  Container engine: docker or podman
-      -v, -debug                       Enable debug output
-      --help                           Show this help message
+The script outputs Consul logs from $CONSUL_LOG_DIR/$CONSUL_LOG_FILE_NAME on control nodes
 
-    Examples:
-      bash check_consul_log.sh -ctrl_list \"ctrl-01 ctrl-02\" -ln 50
-      bash check_consul_log.sh -all_ctrl
-    "
+Options:
+  -ln,  -line_numbers       <log_last_lines_number>  Number of log lines to display
+  -n,   -node_name          <node_name>              Specific node to check
+  -v,   -debug                                       Enable debug output
+  -all, -all_ctrl                                    Check logs on all control nodes
+  -u,   -user               <user>                   Set user for SSH access
+  --help                                            Display this help message
+
+Examples:
+  $0 -n node-01                 # Show logs from specific node
+  $0 -all                       # Show logs from all control nodes
+  $0 -ln 100                    # Show 100 lines only
+
+EOF
 }
 
 # Parse command line arguments
@@ -64,7 +67,7 @@ parse_arguments() {
     while [ -n "$1" ]; do
         case "$1" in
             --help)
-                show_help
+                display_help
                 exit 0
                 ;;
             -ln|-line_numbers)
@@ -72,7 +75,7 @@ parse_arguments() {
                 echo "Found -line_numbers with value: $LOG_LAST_LINES_NUMBER"
                 shift
                 ;;
-            -ctrl_list)
+            -n|-node_name)
                 CTRL_NAME="$2"
                 echo "Found -ctrl_list with value: $CTRL_NAME"
                 shift
@@ -94,7 +97,6 @@ parse_arguments() {
             -v|-debug)
                 TS_DEBUG="true"
                 echo "Found -debug with value: $TS_DEBUG"
-                shift
                 ;;
             --)
                 shift
@@ -102,7 +104,6 @@ parse_arguments() {
                 ;;
             *)
               echo "Parameter #$count: $1"
-              define_parameters "$1"
               count=$((count + 1))
               ;;
         esac
@@ -118,11 +119,8 @@ get_nodes_list() {
         Parameters: $*"
 
     local nodes_result=""
-
-    [ "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG]:
-      nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$*\")"
     nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
+
     [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG] nodes_result: $nodes_result
     "
@@ -160,12 +158,6 @@ read_logs() {
         tail_options="-f -n ${LOG_LAST_LINES_NUMBER}"
     fi
 
-#    # Display log header
-#    ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
-#        "echo -e '\033[0;35m$(date)\033[0m
-#\033[0;35mLogs from: $(hostname)\033[0m
-#\033[0;35mView full log: ssh $(hostname) less /var/log/kolla/autoevacuate.log\033[0m'"
-
     echo -e "${violet}View full log: ssh -t $SSH_USER@$node_ip sudo less $CONSUL_LOG_DIR/$CONSUL_LOG_FILE_NAME${normal}"
 
     # Display colored log output
@@ -191,10 +183,6 @@ read_logs() {
 
 # Function to check logs on all controller nodes
 check_logs_from_all_ctrl() {
-#    local ctrl_nodes
-#    ctrl_nodes=$(get_nodes_list "nt" "ctrl")
-#    [ $? -ne 0 ] && return 1
-
     for node_info in $NODES; do
         local node_name="${node_info%%:*}"
         echo -e "${blue}Checking $LOG_LAST_LINES_NUMBER line from consul logs on $node_name...${normal}"
@@ -205,22 +193,18 @@ check_logs_from_all_ctrl() {
 
 # Function to check ssl config
 check_ssl_config() {
-#    echo -e "${cyan}Checking SSL configuration...${normal}"
-
     local ssl_config_output
     [ ! -f "$script_dir/$edit_ha_config_script" ] && {
       echo -e "${yellow}Script $edit_ha_config_script does not exist in $script_dir/${normal}";
       return 1;
       }
     ssl_config_output=$(bash "$script_dir/$edit_ha_config_script" -u "$SSH_USER" "-ssl_check"| tail -n1)
-#    ssl_type=$(echo "$ssl_config_output" )
     echo "$ssl_config_output"
     return 0
 }
 
 # Function to find consul leader node
 find_leader() {
-#    local ctrl_nodes="$1"
     local ssl_config_output
 
     for node_info in $NODES; do
@@ -238,14 +222,6 @@ find_leader() {
             client_cert=$(echo "${parts[3]}" | awk -F' = ' '{print $2}' | xargs)
 
             if [ "$mode" = "mtls" ];then
-                [ "$TS_DEBUG" = true ] && echo -e "
-    leader=\$(ssh -t -o StrictHostKeyChecking=no \"$SSH_USER@$node_ip\" \
-                    \"sudo $CONTAINER_ENGINE exec consul consul operator raft list-peers
-                     -http-addr=https://$node_ip:8501 -ca-file $https_ssl_verify
-                     -client-cert $client_cert
-                     -client-key $client_key 2>/dev/null\" | \
-                    grep leader | awk '{print \$1}')
-                "
                 leader=$(ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
                     "sudo $CONTAINER_ENGINE exec consul consul operator raft list-peers \
                      -http-addr=https://$node_ip:8501 -ca-file $https_ssl_verify \
@@ -280,53 +256,6 @@ load_external_scripts() {
     done
 }
 
-## Main execution
-#main() {
-#    # Parse command line arguments
-#    parse_arguments "$@"
-#
-#    # Load external scripts first
-#    load_external_scripts
-#
-#    # Determine SSH user using external function
-#    SSH_USER=$(get_and_validate_ssh_user "$SSH_USER" "$default_ssh_user")
-#    if [[ $? -ne 0 ]]; then
-#        echo -e "${red}Error: Failed to determine valid SSH user!${normal}"
-#        exit 1
-#    fi
-#
-#    echo -e "Using SSH user: $SSH_USER"
-#
-#    # Get controller nodes list
-#    if [ -z "$CTRL_NAME" ]; then
-#        NODES=$(get_nodes_list "-nt" "$nodes_type")
-#        [ $? -ne 0 ] && exit 1
-#    else
-#        NODES=$(get_nodes_list "-nn" "$CTRL_NAME")
-#        [ $? -ne 0 ] && exit 1
-#    fi
-#
-#    # Determine which nodes to check
-#    if [ "$ALL_CTRL" = "true" ] || [ -n "$CTRL_NAME" ]; then
-#        echo -e "${blue}Checking logs on all controller nodes...${normal}"
-#        check_logs_on_all_ctrl
-#    else
-#        # Try to find consul leader
-#        LEADER_NODE=$(find_leader)
-#
-#        if [ -n "$LEADER_NODE" ]; then
-#            echo -e "${green}Leader node identified: $LEADER_NODE${normal}"
-#            read_logs "$LEADER_NODE"
-#        else
-#            echo -e "${yellow}No leader found, checking all controller nodes${normal}"
-#            ALL_CTRL="true"
-#            check_logs_on_all_ctrl
-#        fi
-#    fi
-#}
-#
-#main "$@"
-
 main() {
     # Parse command line arguments
     parse_arguments "$@"
@@ -355,7 +284,6 @@ main() {
     else
         OPERATION="auto_leader"
         NODES=$(get_nodes_list "-nt" "$nodes_type")
-#        echo -e "${blue}Attempting to identify DRS leader node automatically${normal}"
     fi
 
     [ "$TS_DEBUG" = "true" ] && echo -e "${blue}Nodes: $NODES${normal}"
@@ -369,14 +297,14 @@ main() {
             check_logs_from_all_ctrl "$NODES"
             ;;
         "auto_leader")
-            leader_drs_ctrl=$(find_leader "$NODES")
-            if [ -z "$leader_drs_ctrl" ]; then
+            leader_ctrl=$(find_leader "$NODES")
+            if [ -z "$leader_ctrl" ]; then
                 echo -e "${yellow}Leader node could not be identified${normal}"
                 echo -e "${yellow}Falling back to reading logs from all nodes${normal}"
                 check_logs_from_all_ctrl "$NODES"
             else
-                echo -e "${green}Leader node identified: $leader_drs_ctrl${normal}"
-                read_logs "$leader_drs_ctrl" "follow"
+                echo -e "${green}Leader node identified: $leader_ctrl${normal}"
+                read_logs "$leader_ctrl" "follow"
             fi
             ;;
     esac
