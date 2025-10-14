@@ -314,7 +314,7 @@ main() {
             if [ -z "$leader_drs_ctrl" ]; then
                 echo -e "${yellow}Leader node could not be identified${normal}"
                 echo -e "${yellow}Falling back to reading logs from all nodes${normal}"
-                read_logs_from_all_ctrl "$NODES"
+                check_logs_from_all_ctrl "$NODES"
             else
                 echo -e "${green}Leader node identified: $leader_drs_ctrl${normal}"
                 read_logs "$leader_drs_ctrl" "follow"
