@@ -129,7 +129,7 @@ read_logs() {
     local tail_command="tail -n ${LOG_LAST_LINES_NUMBER}"
 
     if [ "$use_follow" = "follow" ]; then
-        tail_command="tail -f"
+        tail_command="tail -f -n ${LOG_LAST_LINES_NUMBER}"
     fi
 
     if [ "$DEBUG_STRING_ONLY" = "true" ]; then
