@@ -187,8 +187,12 @@ cat_conf() {
         local node_name="${node%%:*}"
         local node_ip="${node#*:}"
         echo -e "${blue}Configuration on $node_name:${normal}"
-        ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
-            "sudo cat $conf_dir/$CONF_NAME 2>/dev/null || echo 'Configuration file not found'"
+#        ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+#            "sudo cat $conf_dir/$CONF_NAME 2>/dev/null || echo 'Configuration file not found'"
+        local node_config
+        node_config=$(ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+            "sudo cat $conf_dir/$CONF_NAME 2>/dev/null")
+        echo -e "$node_config"
     done
 }
 

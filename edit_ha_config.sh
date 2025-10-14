@@ -8,7 +8,7 @@ normal=$(tput sgr0)
 green=$(tput setaf 2)
 yellow=$(tput setaf 3)
 red=$(tput setaf 1)
-cyan=$(tput setaf 6)
+blue=$(tput setaf 6)
 
 # Script paths
 script_dir=$(dirname "$0")
@@ -231,12 +231,12 @@ cat_conf() {
     for node in $nodes_list; do
         local node_name="${node%%:*}"
         local node_ip="${node#*:}"
-
+        echo -e "${blue}Configuration on $node_name:${normal}"
         local node_config
         node_config=$(ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
             "sudo cat $conf_dir/$CONF_NAME 2>/dev/null")
 
-        echo -e "${cyan}Config from $node_name${normal}"
+#        echo -e "${cyan}Config from $node_name${normal}"
         echo -e "$node_config"
     done
     return 0
