@@ -160,6 +160,8 @@ read_logs() {
 
     echo -e "${violet}View full log: ssh -t $SSH_USER@$node_ip sudo less $CONSUL_LOG_DIR/$CONSUL_LOG_FILE_NAME${normal}"
 
+    echo "node_ip: $node_ip"
+
     # Display colored log output
     ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
         "sudo tail $tail_options $CONSUL_LOG_DIR/$CONSUL_LOG_FILE_NAME 2>/dev/null" | \
