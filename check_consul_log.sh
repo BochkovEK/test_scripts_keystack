@@ -232,8 +232,14 @@ find_leader() {
         fi
 
         if [ -n "$leader" ]; then
-            echo "$leader"
-            return 0
+            # Find the node pair for the leader node name
+            for node in $NODES; do
+                local current_node_name="${node%%:*}"
+                if [ "$current_node_name" = "$leader" ]; then
+                    echo "$node"
+                    return 0
+                fi
+            done
         fi
     done
 
