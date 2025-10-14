@@ -277,7 +277,53 @@ load_external_scripts() {
     done
 }
 
-# Main execution
+## Main execution
+#main() {
+#    # Parse command line arguments
+#    parse_arguments "$@"
+#
+#    # Load external scripts first
+#    load_external_scripts
+#
+#    # Determine SSH user using external function
+#    SSH_USER=$(get_and_validate_ssh_user "$SSH_USER" "$default_ssh_user")
+#    if [[ $? -ne 0 ]]; then
+#        echo -e "${red}Error: Failed to determine valid SSH user!${normal}"
+#        exit 1
+#    fi
+#
+#    echo -e "Using SSH user: $SSH_USER"
+#
+#    # Get controller nodes list
+#    if [ -z "$CTRL_NAME" ]; then
+#        NODES=$(get_nodes_list "-nt" "$nodes_type")
+#        [ $? -ne 0 ] && exit 1
+#    else
+#        NODES=$(get_nodes_list "-nn" "$CTRL_NAME")
+#        [ $? -ne 0 ] && exit 1
+#    fi
+#
+#    # Determine which nodes to check
+#    if [ "$ALL_CTRL" = "true" ] || [ -n "$CTRL_NAME" ]; then
+#        echo -e "${blue}Checking logs on all controller nodes...${normal}"
+#        check_logs_on_all_ctrl
+#    else
+#        # Try to find consul leader
+#        LEADER_NODE=$(find_leader)
+#
+#        if [ -n "$LEADER_NODE" ]; then
+#            echo -e "${green}Leader node identified: $LEADER_NODE${normal}"
+#            read_logs "$LEADER_NODE"
+#        else
+#            echo -e "${yellow}No leader found, checking all controller nodes${normal}"
+#            ALL_CTRL="true"
+#            check_logs_on_all_ctrl
+#        fi
+#    fi
+#}
+#
+#main "$@"
+
 main() {
     # Parse command line arguments
     parse_arguments "$@"
@@ -294,32 +340,45 @@ main() {
 
     echo -e "Using SSH user: $SSH_USER"
 
-    # Get controller nodes list
-    if [ -z "$CTRL_NAME" ]; then
-        NODES=$(get_nodes_list "-nt" "$nodes_type")
-        [ $? -ne 0 ] && exit 1
-    else
+    # Determine operation type and get nodes list
+    if [ -n "$CTRL_NAME" ]; then
+        OPERATION="specific_node"
         NODES=$(get_nodes_list "-nn" "$CTRL_NAME")
-        [ $? -ne 0 ] && exit 1
-    fi
-
-    # Determine which nodes to check
-    if [ "$ALL_CTRL" = "true" ] || [ -n "$CTRL_NAME" ]; then
+        echo -e "${blue}Reading logs from specific node: $CTRL_NAME${normal}"
+    elif [ "$ALL_CTRL" = "true" ]; then
+        OPERATION="all_nodes"
+        NODES=$(get_nodes_list "-nt" "$nodes_type")
         echo -e "${blue}Checking logs on all controller nodes...${normal}"
-        check_logs_on_all_ctrl
     else
-        # Try to find consul leader
-        LEADER_NODE=$(find_leader)
-
-        if [ -n "$LEADER_NODE" ]; then
-            echo -e "${green}Leader node identified: $LEADER_NODE${normal}"
-            read_logs "$LEADER_NODE"
-        else
-            echo -e "${yellow}No leader found, checking all controller nodes${normal}"
-            ALL_CTRL="true"
-            check_logs_on_all_ctrl
-        fi
+        OPERATION="auto_leader"
+        NODES=$(get_nodes_list "-nt" "$nodes_type")
+#        echo -e "${blue}Attempting to identify DRS leader node automatically${normal}"
     fi
+
+    [ "$TS_DEBUG" = "true" ] && echo -e "${blue}Nodes: $NODES${normal}"
+
+    # Execute the determined operation
+    case "$OPERATION" in
+        "specific_node")
+            read_logs "$NODES" "follow"
+            ;;
+        "all_nodes")
+            check_logs_from_all_ctrl "$NODES"
+            ;;
+        "auto_leader")
+            leader_drs_ctrl=$(find_drs_leader "$NODES")
+            if [ -z "$leader_drs_ctrl" ]; then
+                echo -e "${yellow}Leader node could not be identified${normal}"
+                echo -e "${yellow}Falling back to reading logs from all nodes${normal}"
+                read_logs_from_all_ctrl "$NODES"
+            else
+                echo -e "${green}Leader node identified: $leader_drs_ctrl${normal}"
+                read_logs "$leader_drs_ctrl" "follow"
+            fi
+            ;;
+    esac
+
+    echo -e "${blue}Script execution completed at: $(date)${normal}"
 }
 
 main "$@"
