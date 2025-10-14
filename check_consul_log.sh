@@ -187,7 +187,7 @@ check_logs_on_all_ctrl() {
 
     for node_info in $NODES; do
         local node_name="${node_info%%:*}"
-        echo -e "${blue}Checking logs on $node_name...${normal}"
+        echo -e "${blue}Checking $LOG_LAST_LINES_NUMBER line from consul logs on $node_name...${normal}"
         check_consul_log_one_node "$node_name"
         echo "----------------------------------------"
     done
@@ -209,7 +209,7 @@ check_ssl_config() {
 }
 
 # Function to find consul leader node
-find_consul_leader() {
+find_leader() {
 #    local ctrl_nodes="$1"
     local ssl_config_output
 
@@ -303,7 +303,7 @@ main() {
         check_logs_on_all_ctrl
     else
         # Try to find consul leader
-        LEADER_NODE=$(find_consul_leader)
+        LEADER_NODE=$(find_leader)
 
         if [ -n "$LEADER_NODE" ]; then
             echo -e "${blue}Found consul leader: $LEADER_NODE${normal}"

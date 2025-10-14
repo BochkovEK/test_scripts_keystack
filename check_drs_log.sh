@@ -7,8 +7,7 @@
 normal=$(tput sgr0)
 red=$(tput setaf 1)
 yellow=$(tput setaf 3)
-blue=$(tput setaf 4)
-cyan=$(tput setaf 14)
+blue=$(tput setaf 6)
 green=$(tput setaf 2)
 
 # Script configuration
@@ -124,7 +123,9 @@ read_logs() {
     local node_name="${node_pair%%:*}"
     local node_ip="${node_pair#*:}"
 
-    echo -e "${cyan}DRS $LOG_LAST_LINES_NUMBER lines logs from $node_name${normal}"
+
+    echo -e "${blue}Checking $LOG_LAST_LINES_NUMBER line from consul logs on $node_name...${normal}"
+    echo -e "${blue}DRS $LOG_LAST_LINES_NUMBER lines logs from $node_name${normal}"
 
     local tail_command="tail -n ${LOG_LAST_LINES_NUMBER}"
 
@@ -149,6 +150,13 @@ read_logs() {
 # Function: read_logs_from_all_ctrl
 read_logs_from_all_ctrl() {
     local nodes="$1"
+
+#    for node_info in $NODES; do
+#        local node_name="${node_info%%:*}"
+#        echo -e "${blue}Checking $LOG_LAST_LINES_NUMBER line from consul logs on $node_name...${normal}"
+#        check_consul_log_one_node "$node_name"
+#        echo "----------------------------------------"
+#    done
 
     for node_pair in $nodes; do
         read_logs "$node_pair"
@@ -258,10 +266,6 @@ load_external_scripts() {
     done
 }
 
-## Then in main code:
-#echo -e "${cyan}Attempting to identify DRS leader node...${normal}"
-#leader_drs_ctrl=$(find_drs_leader "$nodes")
-
 main() {
     # Parse command line arguments
     parse_arguments "$@"
@@ -282,15 +286,15 @@ main() {
     if [ -n "$NODE_NAME" ]; then
         OPERATION="specific_node"
         NODES=$(get_nodes_list "-nn" "$NODE_NAME")
-        echo -e "${cyan}Reading logs from specific node: $NODE_NAME${normal}"
+        echo -e "${blue}Reading logs from specific node: $NODE_NAME${normal}"
     elif [ "$ALL_NODES" = "true" ]; then
         OPERATION="all_nodes"
         NODES=$(get_nodes_list "-nt" "$nodes_type")
-        echo -e "${cyan}Reading logs from all control nodes${normal}"
+        echo -e "${blue}Reading logs from all control nodes${normal}"
     else
         OPERATION="auto_leader"
         NODES=$(get_nodes_list "-nt" "$nodes_type")
-        echo -e "${cyan}Attempting to identify DRS leader node automatically${normal}"
+        echo -e "${blue}Attempting to identify DRS leader node automatically${normal}"
     fi
 
     [ "$TS_DEBUG" = "true" ] && echo -e "${blue}Nodes: $NODES${normal}"
