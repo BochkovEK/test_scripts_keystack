@@ -237,7 +237,7 @@ debug_echo() {
 }
 
 # Function: find_drs_leader
-find_drs_leader() {
+find_leader() {
     local nodes="$1"
     local leader_drs_ctrl=""
 

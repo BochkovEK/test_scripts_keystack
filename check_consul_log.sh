@@ -366,7 +366,7 @@ main() {
             check_logs_from_all_ctrl "$NODES"
             ;;
         "auto_leader")
-            leader_drs_ctrl=$(find_drs_leader "$NODES")
+            leader_drs_ctrl=$(find_leader "$NODES")
             if [ -z "$leader_drs_ctrl" ]; then
                 echo -e "${yellow}Leader node could not be identified${normal}"
                 echo -e "${yellow}Falling back to reading logs from all nodes${normal}"
