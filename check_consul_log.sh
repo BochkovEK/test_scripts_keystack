@@ -3,6 +3,13 @@
 # Script to display logs from consul service
 # Can check logs on specific nodes or automatically detect consul leader
 
+# Colors
+normal=$(tput sgr0)
+green=$(tput setaf 2)
+yellow=$(tput setaf 3)
+red=$(tput setaf 1)
+blue=$(tput setaf 6)
+
 script_dir=$(dirname "$0")
 utils_dir="$script_dir/utils"
 get_nodes_list_script="get_nodes_list.sh"
@@ -11,12 +18,10 @@ nodes_type="ctrl"
 default_ssh_user="root"
 default_container_engine="docker"
 
-# Colors
-red=$(tput setaf 1)
-normal=$(tput sgr0)
-yellow=$(tput setaf 3)
-cyan=$(tput setaf 6)
-#violet=$(tput setaf 5)
+# External scripts array
+external_scripts=(
+    "$utils_dir/$get_ssh_user_script"
+)
 
 # Default values
 [[ -z $LOG_LAST_LINES_NUMBER ]] && LOG_LAST_LINES_NUMBER=35
@@ -106,19 +111,22 @@ done
 
 # Function to get nodes list using external script
 get_nodes_list() {
-#    [ "$TS_DEBUG" = true ] && echo -e "
-#    [DEBUG]:
-#        Count parameters: $#
-#        Parameters: $*
-#    "
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG]:
+        Count parameters: $#
+        Parameters: $*"
 
     local nodes_result=""
 
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG]:
+      nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$*\")"
     nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] nodes_result: $nodes_result
+    "
 
-#    [ "$TS_DEBUG" = true ] && echo -e "
-#    [DEBUG] nodes_result: $nodes_result"
-
+    # Check for errors in node list
     if [ -z "$nodes_result" ]; then
         echo -e "${red}Failed to determine node list - ERROR${normal}"
         exit 1
@@ -183,7 +191,7 @@ check_logs_on_all_ctrl() {
 
     for node_info in $NODES; do
         local node_name="${node_info%%:*}"
-        echo -e "${cyan}Checking logs on $node_name...${normal}"
+        echo -e "${blue}Checking logs on $node_name...${normal}"
         check_consul_log_one_node "$node_name"
         echo "----------------------------------------"
     done
@@ -255,52 +263,61 @@ find_consul_leader() {
     return 1
 }
 
-# Get ssh user
-get_ssh_user () {
-    # Determine SSH user
-    if [[ -z "$SSH_USER" ]]; then
-        SSH_USER=$(whoami 2>/dev/null) || {
-            echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
-            SSH_USER="$default_ssh_user"
-        }
-    fi
-
-    # Final user validation
-    if [[ -z "$SSH_USER" ]]; then
-        echo -e "${red}Error: Failed to determine SSH user!${normal}" >&2
-        exit 1
-    fi
+# Function to load external scripts
+load_external_scripts() {
+    for script_path in "${external_scripts[@]}"; do
+        if [ ! -f "$script_path" ]; then
+            echo -e "${red}Error: Required script not found: $script_path${normal}"
+            exit 1
+        fi
+        source "$script_path"
+    done
 }
 
 
 # Main execution
+main() {
+    # Parse command line arguments
+    parse_arguments "$@"
 
-# Determine SSH user
-get_ssh_user
+    # Load external scripts first
+    load_external_scripts
 
-# Get controller nodes list
-if [ -z "$CTRL_LIST" ]; then
-    NODES=$(get_nodes_list "-nt" "$nodes_type")
-    [ $? -ne 0 ] && exit 1
-else
-    NODES=$(get_nodes_list "-nn" "$CTRL_LIST")
-    [ $? -ne 0 ] && exit 1
-fi
-
-# Determine which nodes to check
-if [ "$ALL_CTRL" = "true" ] || [ -n "$CTRL_LIST" ]; then
-    echo -e "${cyan}Checking logs on all controller nodes...${normal}"
-    check_logs_on_all_ctrl
-else
-    # Try to find consul leader
-    LEADER_NODE=$(find_consul_leader)
-
-    if [ -n "$LEADER_NODE" ]; then
-        echo -e "${cyan}Found consul leader: $LEADER_NODE${normal}"
-        check_consul_log_one_node "$LEADER_NODE"
-    else
-        echo -e "${yellow}No leader found, checking all controller nodes${normal}"
-        ALL_CTRL="true"
-        check_logs_on_all_ctrl
+    # Determine SSH user using external function
+    SSH_USER=$(get_and_validate_ssh_user "$SSH_USER" "$default_ssh_user")
+    if [[ $? -ne 0 ]]; then
+        echo -e "${red}Error: Failed to determine valid SSH user!${normal}"
+        exit 1
     fi
-fi
+
+    echo -e "Using SSH user: $SSH_USER"
+
+    # Get controller nodes list
+    if [ -z "$CTRL_LIST" ]; then
+        NODES=$(get_nodes_list "-nt" "$nodes_type")
+        [ $? -ne 0 ] && exit 1
+    else
+        NODES=$(get_nodes_list "-nn" "$CTRL_LIST")
+        [ $? -ne 0 ] && exit 1
+    fi
+
+    # Determine which nodes to check
+    if [ "$ALL_CTRL" = "true" ] || [ -n "$CTRL_LIST" ]; then
+        echo -e "${blue}Checking logs on all controller nodes...${normal}"
+        check_logs_on_all_ctrl
+    else
+        # Try to find consul leader
+        LEADER_NODE=$(find_consul_leader)
+
+        if [ -n "$LEADER_NODE" ]; then
+            echo -e "${blue}Found consul leader: $LEADER_NODE${normal}"
+            check_consul_log_one_node "$LEADER_NODE"
+        else
+            echo -e "${yellow}No leader found, checking all controller nodes${normal}"
+            ALL_CTRL="true"
+            check_logs_on_all_ctrl
+        fi
+    fi
+}
+
+main "$@"
