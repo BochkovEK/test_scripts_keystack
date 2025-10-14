@@ -16,6 +16,8 @@ utils_dir="$script_dir/utils"
 get_nodes_list_script="get_nodes_list.sh"
 get_ssh_user_script="get_ssh_user.sh"
 edit_ha_config_script="edit_ha_config.sh"
+consul_log_dir="/var/log/kolla"
+consul_log_file_name="autoevacuate.log"
 nodes_type="ctrl"
 default_ssh_user="root"
 default_container_engine="docker"
@@ -29,7 +31,9 @@ external_scripts=(
 [[ -z $LOG_LAST_LINES_NUMBER ]] && LOG_LAST_LINES_NUMBER=35
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
-[[ -z $CTRL_LIST ]] && CTRL_LIST=""
+[[ -z $CONSUL_LOG_DIR ]] && CONSUL_LOG_DIR=$consul_log_dir
+[[ -z $CONSUL_LOG_FILE_NAME ]] && CONSUL_LOG_FILE_NAME=$consul_log_file_name
+[[ -z $CTRL_NAME ]] && CTRL_NAME=""
 [[ -z $ALL_CTRL ]] && ALL_CTRL="false"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $CONTAINER_ENGINE ]] && CONTAINER_ENGINE=$default_container_engine
@@ -69,8 +73,8 @@ parse_arguments() {
                 shift
                 ;;
             -ctrl_list)
-                CTRL_LIST="$2"
-                echo "Found -ctrl_list with value: $CTRL_LIST"
+                CTRL_NAME="$2"
+                echo "Found -ctrl_list with value: $CTRL_NAME"
                 shift
                 ;;
             -all|-all_ctrl)
@@ -151,7 +155,7 @@ read_logs() {
 
     # Determine tail command options
     local tail_options="-n $LOG_LAST_LINES_NUMBER"
-    [ "$ALL_CTRL" != "true" ] && [ -z "$CTRL_LIST" ] && tail_options="-f"
+    [ "$ALL_CTRL" != "true" ] && [ -z "$CTRL_NAME" ] && tail_options="-f"
 
 #    # Display log header
 #    ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
@@ -159,11 +163,11 @@ read_logs() {
 #\033[0;35mLogs from: $(hostname)\033[0m
 #\033[0;35mView full log: ssh $(hostname) less /var/log/kolla/autoevacuate.log\033[0m'"
 
-    echo -e "${violet}View full log: ssh $SSH_USER@$node_ip sudo less /var/log/kolla/autoevacuate.log${normal}"
+    echo -e "${violet}View full log: ssh $SSH_USER@$node_ip sudo less $CONSUL_LOG_DIR/$CONSUL_LOG_FILE_NAME${normal}"
 
     # Display colored log output
     ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
-        "sudo tail $tail_options /var/log/kolla/autoevacuate.log 2>/dev/null" | \
+        "sudo tail $tail_options $CONSUL_LOG_DIR/$CONSUL_LOG_FILE_NAME 2>/dev/null" | \
         sed --unbuffered \
             -e 's/\([1-9][0-9]* computes in maintenance\)/\o033[33m\1\o033[39m/' \
             -e 's/\(.*Force off.*\)/\o033[31m\1\o033[39m/' \
@@ -291,16 +295,16 @@ main() {
     echo -e "Using SSH user: $SSH_USER"
 
     # Get controller nodes list
-    if [ -z "$CTRL_LIST" ]; then
+    if [ -z "$CTRL_NAME" ]; then
         NODES=$(get_nodes_list "-nt" "$nodes_type")
         [ $? -ne 0 ] && exit 1
     else
-        NODES=$(get_nodes_list "-nn" "$CTRL_LIST")
+        NODES=$(get_nodes_list "-nn" "$CTRL_NAME")
         [ $? -ne 0 ] && exit 1
     fi
 
     # Determine which nodes to check
-    if [ "$ALL_CTRL" = "true" ] || [ -n "$CTRL_LIST" ]; then
+    if [ "$ALL_CTRL" = "true" ] || [ -n "$CTRL_NAME" ]; then
         echo -e "${blue}Checking logs on all controller nodes...${normal}"
         check_logs_on_all_ctrl
     else

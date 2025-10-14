@@ -9,6 +9,7 @@ red=$(tput setaf 1)
 yellow=$(tput setaf 3)
 blue=$(tput setaf 6)
 green=$(tput setaf 2)
+violet=$(tput setaf 5)
 
 # Script configuration
 script_dir=$(dirname "$0")
@@ -26,12 +27,12 @@ external_scripts=(
 
 # Default configuration values
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
-[[ -z $DRS_LOG_FOLDER ]] && DRS_LOG_FOLDER='/var/log/kolla/drs'
+[[ -z $DRS_LOG_DIR ]] && DRS_LOG_DIR='/var/log/kolla/drs'
 [[ -z $DRS_LOG_FILE_NAME ]] && DRS_LOG_FILE_NAME=$drs_log_file_name
 [[ -z $LOG_LAST_LINES_NUMBER ]] && LOG_LAST_LINES_NUMBER=50
-[[ -z $NODE_NAME ]] && NODE_NAME=""
 [[ -z $DEBUG_STRING_ONLY ]] && DEBUG_STRING_ONLY="false"
-[[ -z $ALL_NODES ]] && ALL_NODES="false"
+[[ -z $CTRL_NAME ]] && CTRL_NAME=""
+[[ -z $ALL_CTRL ]] && ALL_CTRL="false"
 #[[ -z $OUTPUT_PERIOD ]] && OUTPUT_PERIOD=10
 
 # Function: define_parameters
@@ -46,7 +47,7 @@ define_parameters() {
 display_help() {
   cat << EOF
 
-The script outputs DRS logs from $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME on control nodes
+The script outputs DRS logs from $DRS_LOG_DIR/$DRS_LOG_FILE_NAME on control nodes
 
 Options:
   -ln,  -line_numbers       <log_last_lines_number>  Number of log lines to display
@@ -81,8 +82,8 @@ parse_arguments() {
               shift
               ;;
             -n|-node_name)
-              NODE_NAME="$2"
-              echo "Found the -node_name option, with parameter value $NODE_NAME"
+              CTRL_NAME="$2"
+              echo "Found the -node_name option, with parameter value $CTRL_NAME"
               shift
               ;;
             -v|-debug)
@@ -94,8 +95,8 @@ parse_arguments() {
               echo "Found the -debug_string_only option, with parameter value $DEBUG_STRING_ONLY"
               ;;
             -all)
-              ALL_NODES="true"
-              echo "Found the -all option, with parameter value $ALL_NODES"
+              ALL_CTRL="true"
+              echo "Found the -all option, with parameter value $ALL_CTRL"
               ;;
             -u|-user)
               SSH_USER="$2"
@@ -123,45 +124,46 @@ read_logs() {
     local node_name="${node_pair%%:*}"
     local node_ip="${node_pair#*:}"
 
-
-    echo -e "${blue}Checking $LOG_LAST_LINES_NUMBER line from drs logs on $node_name...${normal}"
-    echo -e "${blue}DRS $LOG_LAST_LINES_NUMBER lines logs from $node_name${normal}"
-    local title=""
+#    echo -e "${blue}Checking $LOG_LAST_LINES_NUMBER line from drs logs on $node_name...${normal}"
+#    echo -e "${blue}DRS $LOG_LAST_LINES_NUMBER lines logs from $node_name${normal}"
+#    local title=""
     local tail_command="tail -n ${LOG_LAST_LINES_NUMBER}"
 
     if [ "$use_follow" = "follow" ]; then
         tail_command="tail -f -n ${LOG_LAST_LINES_NUMBER}"
     fi
 
+    echo -e "${violet}View full log: ssh $SSH_USER@$node_ip sudo less $DRS_LOG_DIR/$DRS_LOG_FILE_NAME${normal}"
+
     if [ "$DEBUG_STRING_ONLY" = "true" ]; then
         echo -e "${yellow}DEBUG strings only${normal}"
         ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
-          "sudo sh -c '$tail_command $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME'" | grep DEBUG
+          "sudo sh -c '$tail_command $DRS_LOG_DIR/$DRS_LOG_FILE_NAME'" | grep DEBUG
     else
         ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
-        "sudo sh -c '$tail_command $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME'"
+        "sudo sh -c '$tail_command $DRS_LOG_DIR/$DRS_LOG_FILE_NAME'"
     fi
 
-    echo -e "${blue}$(date)${normal}"
-    echo -e "To read all logs on $node_name:"
-    echo -e "${yellow}ssh -o StrictHostKeyChecking=no \"$SSH_USER@$node_ip\" \"sudo sh -c 'less $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME'\"${normal}"
+#    echo -e "${blue}$(date)${normal}"
+#    echo -e "To read all logs on $node_name:"
+#    echo -e "${yellow}ssh -o StrictHostKeyChecking=no \"$SSH_USER@$node_ip\" \"sudo sh -c 'less $DRS_LOG_DIR/$DRS_LOG_FILE_NAME'\"${normal}"
 }
 
 # Function: read_logs_from_all_ctrl
 check_logs_from_all_ctrl() {
     local nodes="$1"
 
-#    for node_info in $NODES; do
-#        local node_name="${node_info%%:*}"
-#        echo -e "${blue}Checking $LOG_LAST_LINES_NUMBER line from consul logs on $node_name...${normal}"
-#        check_consul_log_one_node "$node_name"
-#        echo "----------------------------------------"
-#    done
-
-    for node_pair in $nodes; do
-        read_logs "$node_pair"
-        echo -e "${yellow}--------------------------------------------------${normal}"
+    for node_info in $nodes; do
+        local node_name="${node_info%%:*}"
+        echo -e "${blue}Checking $LOG_LAST_LINES_NUMBER line from consul logs on $node_name...${normal}"
+        check_consul_log_one_node "$node_name"
+        echo "----------------------------------------"
     done
+
+#    for node_pair in $nodes; do
+#        read_logs "$node_pair"
+#        echo -e "${yellow}--------------------------------------------------${normal}"
+#    done
 }
 
 # Function: find_leader
@@ -171,7 +173,7 @@ find_leader() {
     local node_ip="${node_pair#*:}"
 
     ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
-        "sudo sh -c 'tail -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME'" | \
+        "sudo sh -c 'tail -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_DIR/$DRS_LOG_FILE_NAME'" | \
         grep -E 'leadership updated|becomes a leader'
 }
 
@@ -283,14 +285,14 @@ main() {
     echo -e "Using SSH user: $SSH_USER"
 
     # Determine operation type and get nodes list
-    if [ -n "$NODE_NAME" ]; then
+    if [ -n "$CTRL_NAME" ]; then
         OPERATION="specific_node"
-        NODES=$(get_nodes_list "-nn" "$NODE_NAME")
-        echo -e "${blue}Reading logs from specific node: $NODE_NAME${normal}"
-    elif [ "$ALL_NODES" = "true" ]; then
+        NODES=$(get_nodes_list "-nn" "$CTRL_NAME")
+        echo -e "${blue}Reading logs from specific node: $CTRL_NAME${normal}"
+    elif [ "$ALL_CTRL" = "true" ]; then
         OPERATION="all_nodes"
         NODES=$(get_nodes_list "-nt" "$nodes_type")
-        echo -e "${blue}Reading logs from all control nodes${normal}"
+        echo -e "${blue}Checking logs on all controller nodes...${normal}"
     else
         OPERATION="auto_leader"
         NODES=$(get_nodes_list "-nt" "$nodes_type")
