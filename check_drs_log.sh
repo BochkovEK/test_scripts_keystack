@@ -298,7 +298,7 @@ main() {
     # Execute the determined operation
     case "$OPERATION" in
         "specific_node")
-            read_logs "$NODES" "true"
+            read_logs "$NODES"
             ;;
         "all_nodes")
             read_logs_from_all_ctrl "$NODES"
