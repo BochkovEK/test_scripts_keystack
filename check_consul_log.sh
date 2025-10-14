@@ -144,6 +144,7 @@ get_nodes_list() {
 # Function to check consul logs on a single node
 read_logs() {
     local node_identifier="$1"
+    local use_follow="${2:-false}"
 
     # Get node details using external script
     local node_info
@@ -153,9 +154,11 @@ read_logs() {
     local node_name="${node_info%%:*}"
     local node_ip="${node_info#*:}"
 
-    # Determine tail command options
-    local tail_options="-n $LOG_LAST_LINES_NUMBER"
-    [ "$ALL_CTRL" != "true" ] && [ -z "$CTRL_NAME" ] && tail_options="-f"
+    local tail_options="-n ${LOG_LAST_LINES_NUMBER}"
+
+    if [ "$use_follow" = "follow" ]; then
+        tail_options="-f -n ${LOG_LAST_LINES_NUMBER}"
+    fi
 
 #    # Display log header
 #    ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \

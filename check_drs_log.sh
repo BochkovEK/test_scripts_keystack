@@ -127,10 +127,10 @@ read_logs() {
 #    echo -e "${blue}Checking $LOG_LAST_LINES_NUMBER line from drs logs on $node_name...${normal}"
 #    echo -e "${blue}DRS $LOG_LAST_LINES_NUMBER lines logs from $node_name${normal}"
 #    local title=""
-    local tail_command="tail -n ${LOG_LAST_LINES_NUMBER}"
+    local tail_options="-n ${LOG_LAST_LINES_NUMBER}"
 
     if [ "$use_follow" = "follow" ]; then
-        tail_command="tail -f -n ${LOG_LAST_LINES_NUMBER}"
+        tail_options="-f -n ${LOG_LAST_LINES_NUMBER}"
     fi
 
     echo -e "${violet}View full log: ssh -t $SSH_USER@$node_ip sudo less $DRS_LOG_DIR/$DRS_LOG_FILE_NAME${normal}"
@@ -138,10 +138,10 @@ read_logs() {
     if [ "$DEBUG_STRING_ONLY" = "true" ]; then
         echo -e "${yellow}DEBUG strings only${normal}"
         ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
-          "sudo sh -c '$tail_command $DRS_LOG_DIR/$DRS_LOG_FILE_NAME'" | grep DEBUG
+          "sudo sh -c 'tail $tail_options $DRS_LOG_DIR/$DRS_LOG_FILE_NAME'" | grep DEBUG
     else
         ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
-        "sudo sh -c '$tail_command $DRS_LOG_DIR/$DRS_LOG_FILE_NAME'"
+        "sudo sh -c 'tail $tail_options $DRS_LOG_DIR/$DRS_LOG_FILE_NAME'"
     fi
 
 #    echo -e "${blue}$(date)${normal}"
