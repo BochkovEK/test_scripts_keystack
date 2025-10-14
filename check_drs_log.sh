@@ -11,6 +11,11 @@ get_nodes_list_script="get_nodes_list.sh"
 drs_log_file_name="drs-api-error.log"
 default_ssh_user="root"
 
+# External scripts array
+external_scripts=(
+    "$utils_dir/$get_ssh_user_script"
+)
+
 # Color definitions for terminal output
 red=$(tput setaf 1)      # Error messages
 normal=$(tput sgr0)      # Reset to default
@@ -231,49 +236,73 @@ find_drs_leader() {
   echo "$leader_drs_ctrl"
 }
 
+# Function to load external scripts
+load_external_scripts() {
+    for script_path in "${external_scripts[@]}"; do
+        if [ ! -f "$script_path" ]; then
+            echo -e "${red}Error: Required script not found: $script_path${normal}"
+            exit 1
+        fi
+        source "$script_path"
+    done
+}
+
 # Then in main code:
 echo -e "${cyan}Attempting to identify DRS leader node...${normal}"
 leader_drs_ctrl=$(find_drs_leader "$nodes")
 
 # Main execution
+main () {
 
-# Parse command line arguments
-parse_command_line_arguments "$@"
+    # Parse command line arguments
+    parse_command_line_arguments "$@"
 
-# Determine SSH user
-get_ssh_user
+    # Load external scripts first
+    load_external_scripts
 
-# Retrieve node list based on parameters
-if [ -n "$NODE_NAME" ]; then
-    nodes=$(get_nodes_list "-nn" "$NODE_NAME")
-else
-    nodes=$(get_nodes_list "-nt" "$nodes_type")
-fi
+    # Determine SSH user using external function
+    SSH_USER=$(get_and_validate_ssh_user "$SSH_USER" "$default_ssh_user")
+    if [[ $? -ne 0 ]]; then
+        echo -e "${red}Error: Failed to determine valid SSH user!${normal}"
+        exit 1
+    fi
 
-[ "$TS_DEBUG" = "true" ] && echo -e "${blue}Nodes: $nodes${normal}"
+    echo -e "Using SSH user: $SSH_USER"
 
-# Main logic for log reading
-if [ -n "$NODE_NAME" ]; then
-  echo -e "${cyan}Reading logs from specific node: $NODE_NAME${normal}"
-  read_logs "$nodes"
+    # Retrieve node list based on parameters
+    if [ -n "$NODE_NAME" ]; then
+        nodes=$(get_nodes_list "-nn" "$NODE_NAME")
+    else
+        nodes=$(get_nodes_list "-nt" "$nodes_type")
+    fi
 
-elif [ "$ALL_NODES" = "true" ]; then
-  echo -e "${cyan}Reading logs from all control nodes${normal}"
-  read_logs_from_all_ctrl "$nodes"
+    [ "$TS_DEBUG" = "true" ] && echo -e "${blue}Nodes: $nodes${normal}"
 
-else
-  echo -e "${cyan}Attempting to identify DRS leader node automatically${normal}"
+    # Main logic for log reading
+    if [ -n "$NODE_NAME" ]; then
+      echo -e "${cyan}Reading logs from specific node: $NODE_NAME${normal}"
+      read_logs "$nodes"
 
-  leader_drs_ctrl=$(find_drs_leader "$nodes")
+    elif [ "$ALL_NODES" = "true" ]; then
+      echo -e "${cyan}Reading logs from all control nodes${normal}"
+      read_logs_from_all_ctrl "$nodes"
 
-  if [ -z "$leader_drs_ctrl" ]; then
-    echo -e "${yellow}Leader node could not be identified${normal}"
-    echo -e "${yellow}Falling back to reading logs from all nodes${normal}"
-    read_logs_from_all_ctrl "$nodes"
-  else
-    echo -e "${green}Leader node identified: $leader_drs_ctrl${normal}"
-    read_logs "$leader_drs_ctrl"
-  fi
-fi
+    else
+      echo -e "${cyan}Attempting to identify DRS leader node automatically${normal}"
 
-echo -e "${blue}Script execution completed at: $(date)${normal}"
+      leader_drs_ctrl=$(find_drs_leader "$nodes")
+
+      if [ -z "$leader_drs_ctrl" ]; then
+        echo -e "${yellow}Leader node could not be identified${normal}"
+        echo -e "${yellow}Falling back to reading logs from all nodes${normal}"
+        read_logs_from_all_ctrl "$nodes"
+      else
+        echo -e "${green}Leader node identified: $leader_drs_ctrl${normal}"
+        read_logs "$leader_drs_ctrl"
+      fi
+    fi
+
+    echo -e "${blue}Script execution completed at: $(date)${normal}"
+}
+
+main "$@"
