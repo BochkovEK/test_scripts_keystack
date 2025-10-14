@@ -13,6 +13,7 @@ blue=$(tput setaf 6)
 script_dir=$(dirname "$0")
 utils_dir="$script_dir/utils"
 get_nodes_list_script="get_nodes_list.sh"
+get_ssh_user_script="get_ssh_user.sh"
 edit_ha_config_script="edit_ha_config.sh"
 nodes_type="ctrl"
 default_ssh_user="root"
