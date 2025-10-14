@@ -187,7 +187,7 @@ read_logs() {
 }
 
 # Function to check logs on all controller nodes
-check_logs_on_all_ctrl() {
+check_logs_from_all_ctrl() {
 #    local ctrl_nodes
 #    ctrl_nodes=$(get_nodes_list "nt" "ctrl")
 #    [ $? -ne 0 ] && return 1
