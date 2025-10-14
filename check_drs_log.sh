@@ -120,7 +120,7 @@ parse_arguments() {
 # Function: read_logs
 read_logs() {
     local node_pair="$1"
-    local use_follow="${2:-true}"
+    local use_follow="${2:-false}"
     local node_name="${node_pair%%:*}"
     local node_ip="${node_pair#*:}"
 
@@ -129,7 +129,7 @@ read_logs() {
     local tail_command="tail -n ${LOG_LAST_LINES_NUMBER}"
 
     if [ "$use_follow" = "true" ]; then
-        tail_command="tail -f -n ${LOG_LAST_LINES_NUMBER}"
+        tail_command="tail -f"
     fi
 
     if [ "$DEBUG_STRING_ONLY" = "true" ]; then
