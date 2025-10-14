@@ -218,6 +218,8 @@ find_leader() {
             client_cert=$(echo "${parts[3]}" | awk -F' = ' '{print $2}' | xargs)
 
             if [ "$mode" = "mtls" ];then
+                echo "mtls"
+                echo $client_cert $client_key $https_ssl_verify
                 leader=$(ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
                     "sudo $CONTAINER_ENGINE exec consul consul operator raft list-peers \
                      -http-addr=https://$node_ip:8501 -ca-file $https_ssl_verify \
