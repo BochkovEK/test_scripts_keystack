@@ -8,6 +8,7 @@ script_dir=$(dirname "$0")
 utils_dir="$script_dir/utils"
 nodes_type="ctrl"
 get_nodes_list_script="get_nodes_list.sh"
+get_ssh_user_script="get_ssh_user.sh"
 drs_log_file_name="drs-api-error.log"
 default_ssh_user="root"
 
