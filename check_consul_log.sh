@@ -154,8 +154,6 @@ read_logs() {
 
     echo -e "${violet}View full log: ssh -t $SSH_USER@$node_ip sudo less $CONSUL_LOG_DIR/$CONSUL_LOG_FILE_NAME${normal}"
 
-    echo "node_ip: $node_ip"
-
     # Display colored log output
     ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
         "sudo tail $tail_options $CONSUL_LOG_DIR/$CONSUL_LOG_FILE_NAME 2>/dev/null" | \
@@ -218,14 +216,14 @@ find_leader() {
             client_cert=$(echo "${parts[3]}" | awk -F' = ' '{print $2}' | xargs)
 
             if [ "$mode" = "mtls" ];then
-                leader=$(ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+                leader=$(ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
                     "sudo $CONTAINER_ENGINE exec consul consul operator raft list-peers \
                      -http-addr=https://$node_ip:8501 -ca-file $https_ssl_verify \
                      -client-cert $client_cert \
                      -client-key $client_key 2>/dev/null" | \
                     grep leader | awk '{print $1}')
             else
-                leader=$(ssh -t -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+                leader=$(ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
                     "sudo $CONTAINER_ENGINE exec consul consul operator raft list-peers 2>/dev/null" | \
                     grep leader | awk '{print $1}')
             fi
