@@ -166,16 +166,16 @@ check_logs_from_all_ctrl() {
 #    done
 }
 
-# Function: find_leader
-find_leader() {
-    local node_pair="$1"
-    local node_name="${node_pair%%:*}"
-    local node_ip="${node_pair#*:}"
-
-    ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
-        "sudo sh -c 'tail -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_DIR/$DRS_LOG_FILE_NAME'" | \
-        grep -E 'leadership updated|becomes a leader'
-}
+## Function: find_leader
+#find_leader() {
+#    local node_pair="$1"
+#    local node_name="${node_pair%%:*}"
+#    local node_ip="${node_pair#*:}"
+#
+#    ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+#        "sudo sh -c 'tail -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_DIR/$DRS_LOG_FILE_NAME'" | \
+#        grep -E 'leadership updated|becomes a leader'
+#}
 
 # Function: get_nodes_list
 get_nodes_list() {
@@ -210,25 +210,6 @@ get_nodes_list() {
     fi
 }
 
-# Function: get_ssh_user
-get_ssh_user() {
-    # Use provided user or try to determine current user
-    if [[ -z "$SSH_USER" ]]; then
-        SSH_USER=$(whoami 2>/dev/null) || {
-          echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
-          SSH_USER="$default_ssh_user"
-        }
-    fi
-
-    # Final validation
-    if [[ -z "$SSH_USER" ]]; then
-        echo -e "${red}Error: Failed to determine SSH user!${normal}" >&2
-        exit 1
-    fi
-
-    echo -e "${blue}Using SSH user: $SSH_USER${normal}"
-}
-
 # Function: debug_echo
 debug_echo() {
     echo -e "
@@ -236,23 +217,70 @@ debug_echo() {
       $1"
 }
 
-# Function: find_drs_leader
-find_leader() {
+## Function: find_drs_leader
+#find_leader() {
+#    local nodes="$1"
+#    local leader_drs_ctrl=""
+#
+#    for node_pair in $nodes; do
+#        [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG]: Checking node: $node_pair" >&2
+#
+#        local leader_exist
+#        leader_exist=$(find_leader "$node_pair")
+#
+#        if [ -n "$leader_exist" ]; then
+#          leader_drs_ctrl="$node_pair"
+#          [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG]: Found leader: $leader_drs_ctrl" >&2
+#          break
+#        fi
+#    done
+#
+#    echo "$leader_drs_ctrl"
+#}
+
+find_drs_leader() {
     local nodes="$1"
     local leader_drs_ctrl=""
 
-    for node_pair in $nodes; do
-        [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG]: Checking node: $node_pair" >&2
+    # If only one node pair provided, check just that node
+    if [[ "$nodes" != *" "* ]] && [[ "$nodes" == *":"* ]]; then
+        # Single node case
+        local node_pair="$nodes"
+        local node_name="${node_pair%%:*}"
+        local node_ip="${node_pair#*:}"
+
+        [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG]: Checking single node: $node_pair" >&2
 
         local leader_exist
-        leader_exist=$(find_leader "$node_pair")
+        leader_exist=$(ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+            "sudo sh -c 'tail -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_DIR/$DRS_LOG_FILE_NAME'" | \
+            grep -E 'leadership updated|becomes a leader')
 
         if [ -n "$leader_exist" ]; then
-          leader_drs_ctrl="$node_pair"
-          [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG]: Found leader: $leader_drs_ctrl" >&2
-          break
+            leader_drs_ctrl="$node_pair"
+            [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG]: Found leader: $leader_drs_ctrl" >&2
         fi
-    done
+
+    else
+        # Multiple nodes case
+        for node_pair in $nodes; do
+            [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG]: Checking node: $node_pair" >&2
+
+            local node_name="${node_pair%%:*}"
+            local node_ip="${node_pair#*:}"
+
+            local leader_exist
+            leader_exist=$(ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+                "sudo sh -c 'tail -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_DIR/$DRS_LOG_FILE_NAME'" | \
+                grep -E 'leadership updated|becomes a leader')
+
+            if [ -n "$leader_exist" ]; then
+                leader_drs_ctrl="$node_pair"
+                [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG]: Found leader: $leader_drs_ctrl" >&2
+                break
+            fi
+        done
+    fi
 
     echo "$leader_drs_ctrl"
 }
