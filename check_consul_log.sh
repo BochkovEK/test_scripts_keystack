@@ -146,14 +146,6 @@ read_logs() {
     local node_name="${node_pair%%:*}"
     local node_ip="${node_pair#*:}"
 
-#    # Get node details using external script
-#    local node_info
-#    node_info=$(get_nodes_list "-nn" "$node_identifier")
-#    [ $? -ne 0 ] && return 1
-
-#    local node_name="${node_info%%:*}"
-#    local node_ip="${node_info#*:}"
-
     local tail_options="-n ${LOG_LAST_LINES_NUMBER}"
 
     if [ "$use_follow" = "follow" ]; then
