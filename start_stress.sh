@@ -200,13 +200,13 @@ check_vm_status() {
     local active_vms_count=0
     local problematic_vms=()
 
-    # Создаем временный список активных ВМ
+    # Create temporary list of active VMs
     local active_vms_list=""
 
     for vm_pair in $VMs_TRIPLE; do
         ((all_vms_count++))
 
-        # Разбираем строку имя:статус:ip
+        # Parse name:status:ip string
         local vm_name=$(echo "$vm_pair" | cut -d: -f1)
         local vm_status=$(echo "$vm_pair" | cut -d: -f2)
         local vm_ip=$(echo "$vm_pair" | cut -d: -f3)
@@ -221,7 +221,7 @@ check_vm_status() {
         fi
     done
 
-    # Убираем лишние пробелы и сохраняем активные ВМ
+    # Remove extra spaces and save active VMs
     VMS_ACTIVE=$(echo "$active_vms_list" | sed 's/^ //;s/ $//')
 
     echo -e "\n${cyan}=== Summary ===${normal}"
@@ -229,7 +229,7 @@ check_vm_status() {
     echo -e "Active VMs: ${green}$active_vms_count${normal}"
     echo -e "Problematic VMs: ${red}$(($all_vms_count - $active_vms_count))${normal}"
 
-    # Если есть проблемные ВМ, показываем их и запрашиваем подтверждение
+    # If there are problematic VMs, show them and ask for confirmation
     if [ ${#problematic_vms[@]} -gt 0 ]; then
         echo -e "\n${yellow}=== Problematic VMs ===${normal}"
         for problematic_vm in "${problematic_vms[@]}"; do
@@ -247,7 +247,7 @@ check_vm_status() {
             exit 1
         fi
 
-        # Используем модуль yes_no_answer для подтверждения
+        # Use yes_no_answer module for confirmation
         if ! confirm_action_external "Do you want to continue with only ACTIVE VMs?"; then
             echo "Operation cancelled by user."
             exit 0
@@ -289,7 +289,7 @@ get_mode_strings() {
 copy_and_run_stress() {
     local vm_pair="$1"
 
-    # Извлекаем данные из пары имя:статус:ip
+    # Extract data from name:status:ip pair
     local vm_name=$(echo "$vm_pair" | cut -d: -f1)
     local vm_ip=$(echo "$vm_pair" | cut -d: -f3)
 
@@ -363,7 +363,7 @@ check_vm_connectivity() {
 batch_run_stress() {
     echo "Starting stress..."
 
-    # Используем yes_no_answer для финального подтверждения
+    # Use yes_no_answer for final confirmation
     if ! confirm_action_external "Start stress test on all ACTIVE VMs?"; then
         echo "Stress test cancelled by user."
         exit 0
@@ -431,7 +431,7 @@ ${violet}Stress Test Configuration:${normal}
 
     echo "    "
 
-    # Используем yes_no_answer для подтверждения конфигурации
+    # Use yes_no_answer for configuration confirmation
     if ! confirm_action_external "Proceed with this configuration?"; then
         echo "Configuration cancelled by user."
         exit 0
@@ -459,7 +459,7 @@ main() {
 
     get_vms_list
 
-    # Проверяем статусы ВМ и создаем VMS_ACTIVE
+    # Check VM statuses and create VMS_ACTIVE
     check_vm_status
 
     get_mode_strings
