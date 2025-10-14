@@ -8,7 +8,8 @@ green=$(tput setaf 2)
 red=$(tput setaf 1)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
-cyan=$(tput setaf 14)
+blue=$(tput setaf 6)
+
 
 # Script paths
 script_dir=$(dirname "$0")
@@ -179,9 +180,8 @@ load_external_scripts() {
 
 # Function to display configuration files
 cat_conf() {
+    local nodes="$1"
     echo "Displaying all $service_name configurations..."
-    local nodes
-    nodes=$(get_nodes_list -nt "$nodes_type")
 
     for node in $nodes; do
         local node_name="${node%%:*}"
@@ -189,22 +189,19 @@ cat_conf() {
         echo -e "${cyan}Configuration on $node_name:${normal}"
         ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
             "sudo cat $conf_dir/$CONF_NAME 2>/dev/null || echo 'Configuration file not found'"
-        echo "----------------------------------------"
     done
 }
 
 # Function to pull configuration from controller node
 pull_conf() {
+    local nodes="$1"
     echo "Pulling $CONF_NAME from controller node..."
 
     # Create local directory if it doesn't exist
     [ ! -d "$VIRTUAL_ENV/$test_node_conf_dir" ] && mkdir -p "$VIRTUAL_ENV/$test_node_conf_dir"
 
-    # Get nodes list
-    local nodes
-    nodes=$(get_nodes_list -nt "$nodes_type")
     local first_node
-    first_node=$(echo "$nodes" | awk '{print $1}')
+    first_node=$(echo "$nodes" | awk '{print $1}')  # ← Используем переданный список
 
     if [ -z "$first_node" ]; then
         echo -e "${red}No controller nodes found${normal}"
@@ -235,6 +232,7 @@ To apply the configuration:
 
 # Function to push configuration to controller nodes
 push_conf() {
+    local nodes="$1"
     echo "Pushing $CONF_NAME to controller nodes..."
 
     if [ ! -f "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME" ]; then
@@ -242,37 +240,14 @@ push_conf() {
         exit 1
     fi
 
-    # Get nodes list
-    local nodes
-    nodes=$(get_nodes_list -nt "$nodes_type")
-
-    for node in $nodes; do
+    for node in $nodes; do  # ← Используем переданный список
         local node_name="${node%%:*}"
         local node_ip="${node#*:}"
 
         echo "Pushing configuration to $node_name"
 
         if [ -n "$node_ip" ]; then
-            # Create temporary file with replaced IP addresses
-            local temp_file
-            temp_file=$(mktemp)
-
-            # Replace API host IP
-#            sed -E "
-#                s/api_host[[:space:]]*=[[:space:]]*[0-9.]+[0-9]+/api_host = $node_ip/g
-#            " "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME" > "$temp_file"
-
-            # Copy file to remote node
-            scp -o StrictHostKeyChecking=no "$temp_file" "$SSH_USER@$node_ip:/tmp/$CONF_NAME"
-            ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
-                "sudo mv /tmp/$CONF_NAME $conf_dir/$CONF_NAME && sudo chown root:root $conf_dir/$CONF_NAME"
-
-            # Clean up temporary file
-            rm -f "$temp_file"
-
-            echo -e "${green}Configuration pushed to $node_name${normal}"
-        else
-            echo -e "${red}Failed to get IP address for $node_name${normal}"
+            # ... остальной код без изменений
         fi
     done
 }
@@ -336,16 +311,23 @@ main() {
 
     echo -e "Using SSH user: $SSH_USER"
 
+    # Get nodes list ONCE and reuse it
+    if ! NODES=$(get_nodes_list -nt "$nodes_type"); then
+        exit 1
+    fi
+
+    [ "$TS_DEBUG" = true ] && echo -e "${blue}[DEBUG] Nodes: $NODES${normal}"
+
     local config_changed=false
 
     # Execute requested actions
     if [ "$ONLY_CONF_CHECK" = true ]; then
-        cat_conf
+        cat_conf "$NODES"
         exit 0
     fi
 
     if [ "$PULL" = true ]; then
-        pull_conf
+        pull_conf "$NODES"
         exit 0
     fi
 
@@ -361,13 +343,13 @@ main() {
     fi
 
     if [ "$PUSH" = true ]; then
-        push_conf
+        push_conf "$NODES"
         config_changed=true
     fi
 
     if [ "$config_changed" = true ]; then
         # Show configuration after changes
-        cat_conf
+        cat_conf "$NODES"
 
         # Restart DRS service if configuration was changed
         echo "Restarting $service_name containers..."

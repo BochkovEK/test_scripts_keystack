@@ -287,10 +287,7 @@ push_conf() {
         exit 1
     fi
 
-    local nodes
-    nodes=$(get_nodes_list -nt "$nodes_type")
-
-    for node in $nodes; do
+    for node in $NODES; do
         local node_name="${node%%:*}"
         local node_ip="${node#*:}"
 

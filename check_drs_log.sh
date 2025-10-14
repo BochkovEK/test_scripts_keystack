@@ -252,9 +252,7 @@ load_external_scripts() {
 echo -e "${cyan}Attempting to identify DRS leader node...${normal}"
 leader_drs_ctrl=$(find_drs_leader "$nodes")
 
-# Main execution
-main () {
-
+main() {
     # Parse command line arguments
     parse_command_line_arguments "$@"
 
@@ -270,38 +268,43 @@ main () {
 
     echo -e "Using SSH user: $SSH_USER"
 
-    # Retrieve node list based on parameters
+    # Determine operation type and get nodes list
     if [ -n "$NODE_NAME" ]; then
-        nodes=$(get_nodes_list "-nn" "$NODE_NAME")
-    else
-        nodes=$(get_nodes_list "-nt" "$nodes_type")
-    fi
-
-    [ "$TS_DEBUG" = "true" ] && echo -e "${blue}Nodes: $nodes${normal}"
-
-    # Main logic for log reading
-    if [ -n "$NODE_NAME" ]; then
-      echo -e "${cyan}Reading logs from specific node: $NODE_NAME${normal}"
-      read_logs "$nodes"
-
+        OPERATION="specific_node"
+        NODES=$(get_nodes_list "-nn" "$NODE_NAME")
+        echo -e "${cyan}Reading logs from specific node: $NODE_NAME${normal}"
     elif [ "$ALL_NODES" = "true" ]; then
-      echo -e "${cyan}Reading logs from all control nodes${normal}"
-      read_logs_from_all_ctrl "$nodes"
-
+        OPERATION="all_nodes"
+        NODES=$(get_nodes_list "-nt" "$nodes_type")
+        echo -e "${cyan}Reading logs from all control nodes${normal}"
     else
-      echo -e "${cyan}Attempting to identify DRS leader node automatically${normal}"
-
-      leader_drs_ctrl=$(find_drs_leader "$nodes")
-
-      if [ -z "$leader_drs_ctrl" ]; then
-        echo -e "${yellow}Leader node could not be identified${normal}"
-        echo -e "${yellow}Falling back to reading logs from all nodes${normal}"
-        read_logs_from_all_ctrl "$nodes"
-      else
-        echo -e "${green}Leader node identified: $leader_drs_ctrl${normal}"
-        read_logs "$leader_drs_ctrl"
-      fi
+        OPERATION="auto_leader"
+        NODES=$(get_nodes_list "-nt" "$nodes_type")
+        echo -e "${cyan}Attempting to identify DRS leader node automatically${normal}"
     fi
+
+    [ "$TS_DEBUG" = "true" ] && echo -e "${blue}Nodes: $NODES${normal}"
+
+    # Execute the determined operation
+    case "$OPERATION" in
+        "specific_node")
+            read_logs "$NODES"
+            ;;
+        "all_nodes")
+            read_logs_from_all_ctrl "$NODES"
+            ;;
+        "auto_leader")
+            leader_drs_ctrl=$(find_drs_leader "$NODES")
+            if [ -z "$leader_drs_ctrl" ]; then
+                echo -e "${yellow}Leader node could not be identified${normal}"
+                echo -e "${yellow}Falling back to reading logs from all nodes${normal}"
+                read_logs_from_all_ctrl "$NODES"
+            else
+                echo -e "${green}Leader node identified: $leader_drs_ctrl${normal}"
+                read_logs "$leader_drs_ctrl"
+            fi
+            ;;
+    esac
 
     echo -e "${blue}Script execution completed at: $(date)${normal}"
 }
