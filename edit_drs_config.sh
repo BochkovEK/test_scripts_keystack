@@ -186,7 +186,7 @@ cat_conf() {
     for node in $nodes; do
         local node_name="${node%%:*}"
         local node_ip="${node#*:}"
-        echo -e "${cyan}Configuration on $node_name:${normal}"
+        echo -e "${blue}Configuration on $node_name:${normal}"
         ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
             "sudo cat $conf_dir/$CONF_NAME 2>/dev/null || echo 'Configuration file not found'"
     done
@@ -201,7 +201,7 @@ pull_conf() {
     [ ! -d "$VIRTUAL_ENV/$test_node_conf_dir" ] && mkdir -p "$VIRTUAL_ENV/$test_node_conf_dir"
 
     local first_node
-    first_node=$(echo "$nodes" | awk '{print $1}')  # ← Используем переданный список
+    first_node=$(echo "$nodes" | awk '{print $1}')
 
     if [ -z "$first_node" ]; then
         echo -e "${red}No controller nodes found${normal}"
@@ -240,16 +240,44 @@ push_conf() {
         exit 1
     fi
 
-    for node in $nodes; do  # ← Используем переданный список
+    for node in $nodes; do
         local node_name="${node%%:*}"
         local node_ip="${node#*:}"
 
         echo "Pushing configuration to $node_name"
 
         if [ -n "$node_ip" ]; then
-            # ... остальной код без изменений
+            # Create temporary file with replaced IP addresses
+            local temp_file
+            temp_file=$(mktemp)
+
+            # Copy file to remote node
+            scp -o StrictHostKeyChecking=no "$temp_file" "$SSH_USER@$node_ip:/tmp/$CONF_NAME"
+            ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+                "sudo mv /tmp/$CONF_NAME $conf_dir/$CONF_NAME && sudo chown root:root $conf_dir/$CONF_NAME"
+
+            # Clean up temporary file
+            rm -f "$temp_file"
+
+            echo -e "${green}Configuration pushed to $node_name${normal}"
+        else
+            echo -e "${red}Failed to get IP address for $node_name${normal}"
         fi
     done
+}
+
+# Function to add debug logging
+add_debug_logging() {
+    echo "Adding debug logging to DRS configuration..."
+
+    if [ ! -f "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME" ]; then
+        echo -e "${yellow}Configuration file not found locally, pulling first...${normal}"
+        pull_conf
+    fi
+
+    # Add debug setting
+    sed -i 's/\[DEFAULT\]/\[DEFAULT\]\ndebug = true/' "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME"
+    echo -e "${green}Debug logging enabled in local configuration${normal}"
 }
 
 # Function to add debug logging
