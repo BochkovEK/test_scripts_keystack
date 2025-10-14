@@ -128,7 +128,7 @@ read_logs() {
 
     local tail_command="tail -n ${LOG_LAST_LINES_NUMBER}"
 
-    if [ "$use_follow" = "true" ]; then
+    if [ "$use_follow" = "follow" ]; then
         tail_command="tail -f"
     fi
 
@@ -298,7 +298,7 @@ main() {
     # Execute the determined operation
     case "$OPERATION" in
         "specific_node")
-            read_logs "$NODES"
+            read_logs "$NODES" "follow"
             ;;
         "all_nodes")
             read_logs_from_all_ctrl "$NODES"
@@ -311,7 +311,7 @@ main() {
                 read_logs_from_all_ctrl "$NODES"
             else
                 echo -e "${green}Leader node identified: $leader_drs_ctrl${normal}"
-                read_logs "$leader_drs_ctrl" "true"
+                read_logs "$leader_drs_ctrl" "follow"
             fi
             ;;
     esac
