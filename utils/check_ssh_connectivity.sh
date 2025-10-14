@@ -13,6 +13,7 @@ blue=$(tput setaf 6)
 # Default values
 DEFAULT_SSH_USER="${SSH_USER:-root}"
 DEFAULT_TIMEOUT=10
+DEFAULT_SSH_KEY="${SSH_KEY:-}"
 
 # Function to display help
 show_help() {
@@ -22,11 +23,13 @@ show_help() {
     echo "Options:"
     echo "  -u, --user <username>    SSH username (default: $DEFAULT_SSH_USER)"
     echo "  -t, --timeout <seconds>  SSH connection timeout (default: $DEFAULT_TIMEOUT)"
+    echo "  -k, --key <key_path>     Path to SSH private key (default: auto-detect)"
     echo "  -h, --help              Show this help message"
     echo ""
     echo "Examples:"
     echo "  $0 192.168.1.100 my-server"
     echo "  $0 -u kolla -t 15 192.168.1.100"
+    echo "  $0 -k /path/to/key.pem 192.168.1.100"
     echo "  source ./ssh_test.sh && test_ssh_connection my-server 192.168.1.100 10"
 }
 
@@ -36,6 +39,7 @@ test_ssh_connection() {
     local node_ip="$2"
     local timeout="${3:-$DEFAULT_TIMEOUT}"
     local ssh_user="${4:-$DEFAULT_SSH_USER}"
+    local ssh_key="${5:-$DEFAULT_SSH_KEY}"
 
     # If no parameters provided and running standalone, show help
     if [ $# -eq 0 ] && [ "$0" = "$BASH_SOURCE" ]; then
@@ -56,6 +60,18 @@ test_ssh_connection() {
         return 1
     fi
 
+    # Build SSH command with optional key
+    local ssh_cmd="ssh -o StrictHostKeyChecking=no -o ConnectTimeout=$timeout -o BatchMode=yes"
+
+    if [ -n "$ssh_key" ] && [ -f "$ssh_key" ]; then
+        ssh_cmd="$ssh_cmd -i $ssh_key"
+        echo -e "${blue}Using SSH key: $ssh_key${normal}"
+    elif [ -n "$ssh_key" ] && [ ! -f "$ssh_key" ]; then
+        echo -e "${yellow}⚠ SSH key not found: $ssh_key, using default authentication${normal}"
+    fi
+
+    ssh_cmd="$ssh_cmd $ssh_user@$node_ip"
+
     # Test basic connectivity with ping first (optional)
     if command -v ping &> /dev/null; then
         if ping -c 1 -W 2 "$node_ip" &> /dev/null; then
@@ -67,8 +83,7 @@ test_ssh_connection() {
 
     # Test SSH connection
     local ssh_output
-    ssh_output=$(ssh -o StrictHostKeyChecking=no -o ConnectTimeout=$timeout -o BatchMode=yes \
-        "$ssh_user@$node_ip" "echo 'SUCCESS'; whoami; hostname" 2>&1)
+    ssh_output=$($ssh_cmd "echo 'SUCCESS'; whoami; hostname" 2>&1)
 
     local ssh_exit_code=$?
 
@@ -96,6 +111,12 @@ test_ssh_connection() {
                 echo -e "${red}  Error: SSH connection failed (exit code: $ssh_exit_code)${normal}"
                 ;;
         esac
+
+        # Additional debug info if key was specified
+        if [ -n "$ssh_key" ]; then
+            echo -e "${yellow}  Debug: Key authentication was attempted with: $ssh_key${normal}"
+        fi
+
         return 1
     fi
 }
@@ -106,6 +127,7 @@ parse_arguments() {
     local node_name=""
     local ssh_user="$DEFAULT_SSH_USER"
     local timeout="$DEFAULT_TIMEOUT"
+    local ssh_key="$DEFAULT_SSH_KEY"
 
     while [ $# -gt 0 ]; do
         case "$1" in
@@ -115,6 +137,10 @@ parse_arguments() {
                 ;;
             -t|--timeout)
                 timeout="$2"
+                shift 2
+                ;;
+            -k|--key)
+                ssh_key="$2"
                 shift 2
                 ;;
             -h|--help)
@@ -144,7 +170,7 @@ parse_arguments() {
     fi
 
     # Call the function with parsed arguments
-    test_ssh_connection "$node_name" "$node_ip" "$timeout" "$ssh_user"
+    test_ssh_connection "$node_name" "$node_ip" "$timeout" "$ssh_user" "$ssh_key"
 }
 
 # If script is executed directly (not sourced), parse arguments

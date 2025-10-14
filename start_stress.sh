@@ -348,7 +348,7 @@ check_vm_connectivity() {
 
         echo -e "${blue}Testing VM: $vm_name ($vm_ip)${normal}"
 
-        if test_ssh_connection "stress-test-vm" "$vm_ip" "10" "$VM_USER"; then
+        if test_ssh_connection "$vm_name" "$vm_ip" "10" "$VM_USER" "$KEY_PATH"; then
             echo -e "${green}✓ SSH access to $vm_name - OK${normal}"
         else
             echo -e "${red}✗ SSH access failed to $vm_name${normal}"
