@@ -25,7 +25,7 @@ external_scripts=(
     "$utils_dir/$get_ssh_user_script"
 )
 
-# Default configuration values
+# Initialize variables with defaults
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $DRS_LOG_DIR ]] && DRS_LOG_DIR='/var/log/kolla/drs'
 [[ -z $DRS_LOG_FILE_NAME ]] && DRS_LOG_FILE_NAME=$drs_log_file_name

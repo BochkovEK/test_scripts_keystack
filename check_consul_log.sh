@@ -28,7 +28,7 @@ external_scripts=(
     "$utils_dir/$get_ssh_user_script"
 )
 
-# Default values
+# Initialize variables with defaults
 [[ -z $LOG_LAST_LINES_NUMBER ]] && LOG_LAST_LINES_NUMBER=35
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
