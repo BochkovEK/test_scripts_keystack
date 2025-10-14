@@ -119,125 +119,132 @@ parse_arguments() {
 
 # Function: read_logs
 read_logs() {
-  local node_pair="$1"
-  local node_name="${node_pair%%:*}"
-  local node_ip="${node_pair#*:}"
+    local node_pair="$1"
+    local use_follow="${2:-true}"
+    local node_name="${node_pair%%:*}"
+    local node_ip="${node_pair#*:}"
 
-  echo -e "${cyan}DRS $LOG_LAST_LINES_NUMBER lines logs from $node_name${normal}"
+    echo -e "${cyan}DRS $LOG_LAST_LINES_NUMBER lines logs from $node_name${normal}"
 
-  if [ "$DEBUG_STRING_ONLY" = "true" ]; then
-    echo -e "${yellow}DEBUG strings only${normal}"
-    ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
-      "sudo sh -c 'tail -f -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME'" | grep DEBUG
-  else
-    ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
-      "sudo sh -c 'tail -f -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME'"
-  fi
+    local tail_command="tail -n ${LOG_LAST_LINES_NUMBER}"
 
-  echo -e "${blue}$(date)${normal}"
-  echo -e "To read all logs on $node_name:"
-  echo -e "${yellow}ssh -o StrictHostKeyChecking=no \"$SSH_USER@$node_ip\" \"sudo sh -c 'less $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME'\"${normal}"
+    if [ "$use_follow" = "true" ]; then
+        tail_command="tail -f -n ${LOG_LAST_LINES_NUMBER}"
+    fi
+
+    if [ "$DEBUG_STRING_ONLY" = "true" ]; then
+        echo -e "${yellow}DEBUG strings only${normal}"
+        ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+          "sudo sh -c '$tail_command $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME'" | grep DEBUG
+    else
+        ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+        "sudo sh -c '$tail_command $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME'"
+    fi
+
+    echo -e "${blue}$(date)${normal}"
+    echo -e "To read all logs on $node_name:"
+    echo -e "${yellow}ssh -o StrictHostKeyChecking=no \"$SSH_USER@$node_ip\" \"sudo sh -c 'less $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME'\"${normal}"
 }
 
 # Function: read_logs_from_all_ctrl
 read_logs_from_all_ctrl() {
-  local nodes="$1"
+    local nodes="$1"
 
-  for node_pair in $nodes; do
-    read_logs "$node_pair"
-    echo -e "${yellow}--------------------------------------------------${normal}"
-  done
+    for node_pair in $nodes; do
+        read_logs "$node_pair"
+        echo -e "${yellow}--------------------------------------------------${normal}"
+    done
 }
 
 # Function: find_leader
 find_leader() {
-  local node_pair="$1"
-  local node_name="${node_pair%%:*}"
-  local node_ip="${node_pair#*:}"
+    local node_pair="$1"
+    local node_name="${node_pair%%:*}"
+    local node_ip="${node_pair#*:}"
 
-  ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
-    "sudo sh -c 'tail -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME'" | \
-    grep -E 'leadership updated|becomes a leader'
+    ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+        "sudo sh -c 'tail -n ${LOG_LAST_LINES_NUMBER} $DRS_LOG_FOLDER/$DRS_LOG_FILE_NAME'" | \
+        grep -E 'leadership updated|becomes a leader'
 }
 
 # Function: get_nodes_list
 get_nodes_list() {
-  [ "$TS_DEBUG" = "true" ] && echo -e "
-  [DEBUG]:
-      Count parameters: $#
-      Parameters: $*"
+    [ "$TS_DEBUG" = "true" ] && echo -e "
+    [DEBUG]:
+        Count parameters: $#
+        Parameters: $*"
 
-  local nodes_result=""
+    local nodes_result=""
 
-  [ "$TS_DEBUG" = "true" ] && echo -e "
-  [DEBUG]:
-    nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$*\")"
+    [ "$TS_DEBUG" = "true" ] && echo -e "
+    [DEBUG]:
+      nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$*\")"
 
-  nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
+    nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
 
-  [ "$TS_DEBUG" = "true" ] && echo -e "
-  [DEBUG] nodes_result: $nodes_result
-  "
+    [ "$TS_DEBUG" = "true" ] && echo -e "
+    [DEBUG] nodes_result: $nodes_result
+    "
 
-  # Validate node list results
-  if [ -z "$nodes_result" ]; then
-    echo -e "${red}Failed to determine node list - ERROR${normal}"
-    exit 1
-  elif echo "$nodes_result" | grep -q "ERROR"; then
-    echo -e "${yellow}Node names could not be determined.${normal}"
-    echo -e "${yellow}Try: bash $utils_dir/$get_nodes_list_script -nt all${normal}"
-    echo -e "${red}Node names could not be determined - ERROR!${normal}"
-    exit 1
-  else
-    echo "$nodes_result"
-  fi
+    # Validate node list results
+    if [ -z "$nodes_result" ]; then
+        echo -e "${red}Failed to determine node list - ERROR${normal}"
+        exit 1
+    elif echo "$nodes_result" | grep -q "ERROR"; then
+        echo -e "${yellow}Node names could not be determined.${normal}"
+        echo -e "${yellow}Try: bash $utils_dir/$get_nodes_list_script -nt all${normal}"
+        echo -e "${red}Node names could not be determined - ERROR!${normal}"
+        exit 1
+    else
+        echo "$nodes_result"
+    fi
 }
 
 # Function: get_ssh_user
 get_ssh_user() {
-  # Use provided user or try to determine current user
-  if [[ -z "$SSH_USER" ]]; then
-    SSH_USER=$(whoami 2>/dev/null) || {
-      echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
-      SSH_USER="$default_ssh_user"
-    }
-  fi
+    # Use provided user or try to determine current user
+    if [[ -z "$SSH_USER" ]]; then
+        SSH_USER=$(whoami 2>/dev/null) || {
+          echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
+          SSH_USER="$default_ssh_user"
+        }
+    fi
 
-  # Final validation
-  if [[ -z "$SSH_USER" ]]; then
-    echo -e "${red}Error: Failed to determine SSH user!${normal}" >&2
-    exit 1
-  fi
+    # Final validation
+    if [[ -z "$SSH_USER" ]]; then
+        echo -e "${red}Error: Failed to determine SSH user!${normal}" >&2
+        exit 1
+    fi
 
-  echo -e "${blue}Using SSH user: $SSH_USER${normal}"
+    echo -e "${blue}Using SSH user: $SSH_USER${normal}"
 }
 
 # Function: debug_echo
 debug_echo() {
-  echo -e "
-  [DEBUG]:
-    $1"
+    echo -e "
+    [DEBUG]:
+      $1"
 }
 
 # Function: find_drs_leader
 find_drs_leader() {
-  local nodes="$1"
-  local leader_drs_ctrl=""
+    local nodes="$1"
+    local leader_drs_ctrl=""
 
-  for node_pair in $nodes; do
-    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG]: Checking node: $node_pair" >&2
+    for node_pair in $nodes; do
+        [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG]: Checking node: $node_pair" >&2
 
-    local leader_exist
-    leader_exist=$(find_leader "$node_pair")
+        local leader_exist
+        leader_exist=$(find_leader "$node_pair")
 
-    if [ -n "$leader_exist" ]; then
-      leader_drs_ctrl="$node_pair"
-      [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG]: Found leader: $leader_drs_ctrl" >&2
-      break
-    fi
-  done
+        if [ -n "$leader_exist" ]; then
+          leader_drs_ctrl="$node_pair"
+          [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG]: Found leader: $leader_drs_ctrl" >&2
+          break
+        fi
+    done
 
-  echo "$leader_drs_ctrl"
+    echo "$leader_drs_ctrl"
 }
 
 # Function to load external scripts
@@ -291,7 +298,7 @@ main() {
     # Execute the determined operation
     case "$OPERATION" in
         "specific_node")
-            read_logs "$NODES"
+            read_logs "$NODES" "true"
             ;;
         "all_nodes")
             read_logs_from_all_ctrl "$NODES"
@@ -304,7 +311,7 @@ main() {
                 read_logs_from_all_ctrl "$NODES"
             else
                 echo -e "${green}Leader node identified: $leader_drs_ctrl${normal}"
-                read_logs "$leader_drs_ctrl"
+                read_logs "$leader_drs_ctrl" "true"
             fi
             ;;
     esac
