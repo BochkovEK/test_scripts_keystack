@@ -1,15 +1,21 @@
 #!/bin/bash
 
+normal=$(tput sgr0)
 green=$(tput setaf 2)
 yellow=$(tput setaf 3)
 red=$(tput setaf 1)
+blue=$(tput setaf 6)
 violet=$(tput setaf 5)
-normal=$(tput sgr0)
 
 script_dir=$(dirname "$0")
 utils_dir="$script_dir/utils"
 openstack_utils="$utils_dir/openstack"
 get_active_vms_list_script="get_vms_list.sh"
+check_ssh_connectivity_script="check_ssh_connectivity.sh"
+
+external_scripts=(
+    "$utils_dir/$check_ssh_connectivity_script"
+)
 
 OPENRC_PATH="${OPENRC_PATH:-$HOME/openrc}"
 KEY_PATH="${KEY_PATH:-$script_dir/key_test.pem}"
@@ -287,23 +293,21 @@ copy_and_run_stress() {
 check_vm_connectivity() {
     echo "Checking VM connectivity..."
 
-    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] VMS: $VMs_IPs"
-    for ip in $VMs_IPs; do
-        if ping -c 2 "$ip" &> /dev/null; then
-            echo -e "${green}✓ Connectivty to $ip - OK${normal}"
-        else
-            echo -e "${red}✗ Ping to $ip failed${normal}"
-        fi
+    local all_connected=true
 
-        if ssh -o StrictHostKeyChecking=no -i "$KEY_PATH" -o ConnectTimeout=5 "$VM_USER@$ip" "echo SSH_OK" >/dev/null 2>&1; then
+    for ip in $VMs_IPs; do
+        echo -e "${blue}Testing VM: $ip${normal}"
+
+        if test_ssh_connection "stress-test-vm" "$ip" "10" "$VM_USER"; then
             echo -e "${green}✓ SSH access to $ip - OK${normal}"
         else
             echo -e "${red}✗ SSH access failed to $ip${normal}"
-            return 1
+            all_connected=false
         fi
+        echo ""
     done
 
-    return 0
+    return $([ "$all_connected" = true ])
 }
 
 batch_run_stress() {
@@ -366,6 +370,17 @@ ${violet}Stress Test Configuration:${normal}
     "
 
     read -p "Press Enter to continue or Ctrl+C to cancel: "
+}
+
+# Function to load external scripts
+load_external_scripts() {
+    for script_path in "${external_scripts[@]}"; do
+        if [ ! -f "$script_path" ]; then
+            echo -e "${red}Error: Required script not found: $script_path${normal}"
+            exit 1
+        fi
+        source "$script_path"
+    done
 }
 
 main() {
