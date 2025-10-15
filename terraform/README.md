@@ -316,8 +316,8 @@
       </details>
 - Run following commands in folders with <main.tf> ($HOME/test_scripts_keystack/terraform/examples/example_1):
   - terraform init
-  - terraform plan -var-file "\<name>.auto.tfvars"
-  - terraform apply
+  - terraform plan -var-file "\<name>.auto.tfvars" -out=plan.tfplan
+  - terraform apply "plan.tfplan"
   - type "yes"
   - or 
   - terraform apply -auto-approve
