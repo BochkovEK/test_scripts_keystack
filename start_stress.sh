@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# Colors
 normal=$(tput sgr0)
 green=$(tput setaf 2)
 yellow=$(tput setaf 3)
@@ -14,6 +15,8 @@ openstack_utils="$utils_dir/openstack"
 get_active_vms_list_script="get_vms_list.sh"
 check_ssh_connectivity_script="check_ssh_connectivity.sh"
 yes_no_script="yes_no_answer.sh"
+network_load_script="network_load.sh"
+default_key_name="key_test.pem"
 
 external_scripts=(
     "$utils_dir/$check_ssh_connectivity_script"
@@ -22,7 +25,7 @@ external_scripts=(
 
 # Initialize variables with defaults
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
-[[ -z $KEY_PATH ]] && KEY_PATH="$script_dir/key_test.pem"
+[[ -z $KEY_PATH ]] && KEY_PATH="$script_dir/$default_key_name"
 [[ -z $HYPERVISOR_NAME ]] && HYPERVISOR_NAME=""
 [[ -z $CPUS ]] && CPUS="2"
 [[ -z $RAM ]] && RAM="4"
@@ -34,13 +37,14 @@ external_scripts=(
 [[ -z $UNITS ]] && UNITS="G"
 [[ -z $VMS ]] && VMS=""
 [[ -z $MOUNT_TO_RAM ]] && MOUNT_TO_RAM="false"
+[[ -z $NETWORK_LOAD ]] && NETWORK_LOAD="on"  # on/off for network load
 
 
 # Function: display_help
 display_help() {
   cat << EOF
 
-CPU/RAM Stress Test for OpenStack VMs
+CPU/RAM/Network Stress Test for OpenStack VMs
 
 Usage: $0 [OPTIONS]
 
@@ -56,14 +60,22 @@ Options:
   -u, -vm_user <name>     VM SSH username
   -v, -debug              Enable debug output
   -vms <list>             Space-separated list of VM IPs
+
+  Network Load Options:
+  -net, -network          Run network stress test
+  -nload <on|off>         Network load action: on or off (default: on)
+
   --help                  Show this help message
 
-Example:
+Examples:
   $0 -cpu 2 -hv compute-01 -p myproject -t 300
+  $0 -net -hv compute-01 -nload on
+  $0 -net -vms "192.168.1.100 192.168.1.101" -nload off
 
 EOF
 }
 
+# Function to parse command line arguments
 parse_arguments() {
     while [ -n "$1" ]; do
         case "$1" in
@@ -128,6 +140,16 @@ parse_arguments() {
                 echo "Using tmpfs mount for RAM test"
                 shift
                 ;;
+            -net|-network)
+                TYPE_TEST="network"
+                echo "Network stress test selected"
+                shift
+                ;;
+            -nload)
+                NETWORK_LOAD="$2"
+                echo "Network load action: $NETWORK_LOAD"
+                shift 2
+                ;;
             --)
                 shift
                 break
@@ -141,6 +163,7 @@ parse_arguments() {
     done
 }
 
+# Function to get nodes list using external script
 get_vms_list() {
     local hv_info=""
 
@@ -193,6 +216,7 @@ get_vms_list() {
     echo "$hv_info"
 }
 
+# Function to check VM status and filter active ones
 check_vm_status() {
     echo -e "\n${cyan}=== Checking VM Status ===${normal}"
 
@@ -264,6 +288,7 @@ check_vm_status() {
     return 0
 }
 
+# Function to generate stress test parameters
 get_mode_strings() {
     if [ "$TYPE_TEST" = "cpu" ]; then
         load_string="CPU:            $CPUS cores"
@@ -271,12 +296,15 @@ get_mode_strings() {
     elif [ "$TYPE_TEST" = "ram" ]; then
         load_string="RAM:            $RAM $UNITS"
         stress_args="--vm 1 --vm-bytes ${RAM}${UNITS}"
+    elif [ "$TYPE_TEST" = "network" ]; then
+        load_string="NETWORK:        ping flood ($NETWORK_LOAD)"
+        stress_args=""
     else
         echo -e "${red}Unsupported test type: $TYPE_TEST${normal}"
         exit 1
     fi
 
-    if [ -n "$TIME_OUT" ]; then
+    if [ -n "$TIME_OUT" ] && [ "$TYPE_TEST" != "network" ]; then
         timeout_help_string="Timeout: $TIME_OUT seconds"
         stress_args="$stress_args -t $TIME_OUT"
     else
@@ -286,8 +314,51 @@ get_mode_strings() {
     [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] stress_args: $stress_args"
 }
 
+# Function to execute network stress test
+network_stress() {
+    local vm_pair="$1"
+
+    # Extract data from name:status:ip pair
+    local vm_name=$(echo "$vm_pair" | cut -d: -f1)
+    local vm_ip=$(echo "$vm_pair" | cut -d: -f3)
+
+    echo "Processing VM: $vm_name ($vm_ip)"
+
+    case $NETWORK_LOAD in
+        on)
+            echo "Starting network load on $vm_name..."
+            ssh -t -o StrictHostKeyChecking=no -i "$KEY_PATH" "$VM_USER@$vm_ip" \
+                "sudo sh -c 'echo \"@reboot root ping -f -s 1024 8.8.8.8\" >> /etc/crontab && reboot'"
+            ;;
+        off)
+            echo "Stopping network load on $vm_name..."
+            ssh -t -o StrictHostKeyChecking=no -i "$KEY_PATH" "$VM_USER@$vm_ip" \
+                "sudo sh -c 'sed -i '/ping/d' /etc/crontab && reboot'"
+            ;;
+        *)
+            echo -e "${red}Invalid network load value: $NETWORK_LOAD${normal}"
+            return 1
+            ;;
+    esac
+
+    if [ $? -eq 0 ]; then
+        echo -e "${green}Network load $NETWORK_LOAD completed on $vm_name${normal}"
+        return 0
+    else
+        echo -e "${red}Failed to configure network load on $vm_name${normal}"
+        return 1
+    fi
+}
+
+# Function to copy and run stress tool
 copy_and_run_stress() {
     local vm_pair="$1"
+
+    # For network test, use specialized function
+    if [ "$TYPE_TEST" = "network" ]; then
+        network_stress "$vm_pair"
+        return $?
+    fi
 
     # Extract data from name:status:ip pair
     local vm_name=$(echo "$vm_pair" | cut -d: -f1)
@@ -337,6 +408,7 @@ copy_and_run_stress() {
     return 0
 }
 
+# Function to check SSH connectivity to VMs
 check_vm_connectivity() {
     echo "Checking VM connectivity..."
 
@@ -360,6 +432,7 @@ check_vm_connectivity() {
     return $([ "$all_connected" = true ])
 }
 
+# Function to run stress tests in batch mode
 batch_run_stress() {
     echo "Starting stress..."
 
@@ -388,6 +461,7 @@ batch_run_stress() {
     fi
 }
 
+# Function to validate environment and prerequisites
 validate_environment() {
     if [ ! -f "$script_dir/stress" ]; then
         echo -e "${red}Stress binary not found: $script_dir/stress${normal}"
@@ -410,16 +484,23 @@ validate_environment() {
     fi
 }
 
+# Function to display and confirm test configuration
 check_configuration() {
     echo -e "
 ${violet}Stress Test Configuration:${normal}
     SSH Key:              $KEY_PATH
     VM User:              $VM_USER
-    Test Type:            $TYPE_TEST
-    Mount to RAM:         $MOUNT_TO_RAM
-    load_string:          $load_string
-    timeout_help_string:  $timeout_help_string
-    Debug Mode:           $TS_DEBUG
+    Test Type:            $TYPE_TEST"
+
+    if [ "$TYPE_TEST" = "network" ]; then
+        echo "    Network Load:        $NETWORK_LOAD"
+    else
+        echo "    Mount to RAM:         $MOUNT_TO_RAM"
+        echo "    load_string:          $load_string"
+        echo "    timeout_help_string:  $timeout_help_string"
+    fi
+
+    echo "    Debug Mode:           $TS_DEBUG
     Active VMs:"
 
     for vm_pair in $VMS_ACTIVE; do
@@ -430,6 +511,13 @@ ${violet}Stress Test Configuration:${normal}
     done
 
     echo "    "
+
+    # Special warning for network load
+    if [ "$TYPE_TEST" = "network" ]; then
+        echo -e "${yellow}Warning: Network load test will reboot all target VMs!${normal}"
+        echo -e "${yellow}This will configure cron jobs for persistent network load.${normal}"
+        echo ""
+    fi
 
     # Use yes_no_answer for configuration confirmation
     if ! confirm_action_external "Proceed with this configuration?"; then
@@ -449,10 +537,11 @@ load_external_scripts() {
     done
 }
 
+# Main function
 main() {
     parse_arguments "$@"
-    validate_environment
 
+    validate_environment
     load_external_scripts
 
     rm -f /root/.ssh/known_hosts 2>/dev/null
