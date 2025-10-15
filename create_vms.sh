@@ -1029,7 +1029,6 @@ main() {
     export OS_PROJECT_NAME='admin'
     export OS_PROJECT_ID=$ADMIN_PROJECT_ID
 
-    echo -e "${green}VM creation completed successfully!${normal}"
     echo -e "${green}Cleanup state saved to: $VIRTUAL_ENV/$cleanup_file${normal}"
 }
 

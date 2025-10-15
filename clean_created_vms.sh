@@ -107,7 +107,7 @@ load_external_scripts() {
             echo -e "${red}Error: Script not readable: $script_path${normal}"
             exit 1
         fi
-        echo -e "${blue}Loading external script: $(basename "$script_path")${normal}"
+#        echo -e "${blue}Loading external script: $(basename "$script_path")${normal}"
         source "$script_path"
     done
 }
