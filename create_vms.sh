@@ -29,12 +29,15 @@ yes_no_answer_script="yes_no_answer.sh"
 check_openrc_script="check_openrc.sh"
 create_pub_network_script="openstack/create_pub_network.sh"
 create_image_script_script="openstack/create_image.sh"
+check_ssh_connectivity_script="check_ssh_connectivity.sh"
+get_nodes_list_script="get_nodes_list.sh"
 config_file=".vm_creation_config.env"
 cleanup_file=".vm_cleanup_state.env"
 
 # External scripts array
 external_scripts=(
     "$utils_dir/$yes_no_answer_script"
+    "$utils_dir/$check_ssh_connectivity_script"
 )
 
 # Constants
@@ -411,38 +414,80 @@ check_command () {
     fi
 }
 
+# Function to get nodes list using external script
+get_nodes_list() {
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG]:
+        Count parameters: $#
+        Parameters: $*"
+
+    local nodes_result=""
+
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG]:
+      nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$*\")"
+    nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] nodes_result: $nodes_result
+    "
+
+    # Check for errors in node list
+    if [ -z "$nodes_result" ]; then
+        echo -e "${red}Failed to determine node list - ERROR${normal}"
+        exit 1
+    elif echo "$nodes_result" | grep -q "ERROR"; then
+        echo -e "${yellow}Node names could not be determined.${normal}"
+        echo -e "${yellow}Try: bash $utils_dir/$get_nodes_list_script -nt all${normal}"
+        echo -e "${red}Node names could not be determined - ERROR!${normal}"
+        exit 1
+    else
+        echo "$nodes_result"
+    fi
+}
+
 # Check hypervisor
-check_hv () {
+check_hv() {
     echo "Check hypervisors..."
-    if [ -z $HYPERVISOR_HOSTNAME ]; then
+
+    if [ -z "$HYPERVISOR_HOSTNAME" ]; then
         echo "Hypervisor is not defined. VMs will be created on different hypervisors"
         host=""
+        return 0
+    fi
+
+    echo "Check Hypervisor: $HYPERVISOR_HOSTNAME..."
+
+    local hypervisor_pair=$(get_nodes_list -nn "$HYPERVISOR_HOSTNAME")
+
+    if [ -z "$hypervisor_pair" ]; then
+        printf "%s\n" "${red}Hypervisor $HYPERVISOR_HOSTNAME not found - error!${normal}"
+        exit 1
+    fi
+
+    if check_ssh_connectivity "$hypervisor_pair"; then
+        printf "%s\n" "${green}Connection to $HYPERVISOR_HOSTNAME - success${normal}"
     else
-        host="--hypervisor-hostname $HYPERVISOR_HOSTNAME --os-compute-api-version $API_VERSION"
-        echo "Check Hypervisor: $HYPERVISOR_HOSTNAME..."
-        echo "Ping $HYPERVISOR_HOSTNAME..."
-        if ping -c 1 $HYPERVISOR_HOSTNAME &> /dev/null; then
-            printf "%s\n" "${green}Connection to $HYPERVISOR_HOSTNAME - success${normal}"
-        else
-            printf "%s\n" "${red}No connection to $HYPERVISOR_HOSTNAME - error!${normal}"
-            printf "%s\n" "${red}The node $HYPERVISOR_HOSTNAME may be powered off.${normal} "
-            exit 1
-        fi
-        echo "Check nova state on hypervisor: $HYPERVISOR_HOSTNAME..."
-        nova_state_list=$(openstack compute service list)
-        compute_state=$(echo "$nova_state_list" | grep -E "nova-comput(.)+$HYPERVISOR_HOSTNAME")
-        echo "$compute_state" | \
-            sed --unbuffered \
-                -e 's/\(.*enabled\s\+|\s\+up.*\)/\o033[92m\1\o033[39m/' \
-                -e 's/\(.*disabled.*\)/\o033[31m\1\o033[39m/' \
-                -e 's/\(.*down.*\)/\o033[31m\1\o033[39m/'
-        hv_fail_state=$(echo "$compute_state" | grep -E "($HYPERVISOR_HOSTNAME(.)+(disabled|down))|(Internal Server Error \(HTTP 500\))")
-        if [ -n "$hv_fail_state" ]; then
-            printf "%s\n" "${red}Nova state fail on $HYPERVISOR_HOSTNAME${normal}"
-            exit 1
-        else
-            printf "%s\n" "${green}Nova state on $HYPERVISOR_HOSTNAME - OK!${normal}"
-        fi
+        printf "%s\n" "${red}No connection to $HYPERVISOR_HOSTNAME - error!${normal}"
+        printf "%s\n" "${red}The node $HYPERVISOR_HOSTNAME may be powered off or SSH not accessible.${normal}"
+        exit 1
+    fi
+
+    echo "Check nova state on hypervisor: $HYPERVISOR_HOSTNAME..."
+    nova_state_list=$(openstack compute service list)
+    compute_state=$(echo "$nova_state_list" | grep -E "nova-comput(.)+$HYPERVISOR_HOSTNAME")
+
+    echo "$compute_state" | \
+        sed --unbuffered \
+            -e 's/\(.*enabled\s\+|\s\+up.*\)/\o033[92m\1\o033[39m/' \
+            -e 's/\(.*disabled.*\)/\o033[31m\1\o033[39m/' \
+            -e 's/\(.*down.*\)/\o033[31m\1\o033[39m/'
+
+    hv_fail_state=$(echo "$compute_state" | grep -E "($HYPERVISOR_HOSTNAME(.)+(disabled|down))|(Internal Server Error \(HTTP 500\))")
+    if [ -n "$hv_fail_state" ]; then
+        printf "%s\n" "${red}Nova state fail on $HYPERVISOR_HOSTNAME${normal}"
+        exit 1
+    else
+        printf "%s\n" "${green}Nova state on $HYPERVISOR_HOSTNAME - OK!${normal}"
     fi
 }
 
