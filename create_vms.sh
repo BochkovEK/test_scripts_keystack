@@ -445,6 +445,21 @@ get_nodes_list() {
     fi
 }
 
+# Function to check connection to a node
+check_ssh_connectivity() {
+    local node_pair=$1
+    local node_name="${node_pair%%:*}"
+    local node_ip="${node_pair#*:}"
+
+    if test_ssh_connection "$node_name" "$node_ip" "10" "$SSH_USER" "$KEY_PATH" > /dev/null 2>&1; then
+        echo -e "  ${green}✓ SSH connection successful${normal}"
+        return 0
+    else
+        echo -e "  ${red}✗ SSH connection failed${normal}"
+        return 1
+    fi
+}
+
 # Check hypervisor
 check_hv() {
     echo "Check hypervisors..."

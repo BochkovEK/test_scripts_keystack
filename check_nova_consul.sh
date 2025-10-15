@@ -262,6 +262,7 @@ yes_no_answer() {
 #    fi
 #}
 
+# Function to check connection to a node
 check_ssh_connectivity() {
     local node_pair=$1
     local node_name="${node_pair%%:*}"
