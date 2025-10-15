@@ -7,7 +7,7 @@
 # export FROM_PUBLIC=true
 # bash ~/test_scripts_keystack/utils/check_openstack_cli.sh
 
-public_repo="https://pypi.org/simple/"
+public_repo="https://repo.itkey.com/repository/k-pip/simple"
 
 #Colors:
 green=$(tput setaf 2)

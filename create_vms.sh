@@ -25,7 +25,7 @@ default_vm_base_name="TEST_VM_FROM_SCRIPT"
 # Script_dir, current folder
 script_dir=$(dirname $0)
 utils_dir=$script_dir/utils
-yes_no_answer_script="$utils_dir/yes_no_answer.sh"
+yes_no_answer_script="yes_no_answer.sh"
 check_openrc_script="check_openrc.sh"
 create_pub_network_script="openstack/create_pub_network.sh"
 create_image_script_script="openstack/create_image.sh"

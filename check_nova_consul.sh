@@ -25,6 +25,7 @@ edit_ha_config_script="edit_ha_config.sh"
 check_consul_log_script="check_consul_log.sh"
 try_to_rise_compute_node_script="try_to_rise_compute_node.sh"
 check_container_state_on_nodes_script="check_container_state_on_nodes.sh"
+check_ssh_connectivity_script="check_ssh_connectivity.sh"
 default_ssh_user="root"
 default_container_engine="docker"
 
@@ -32,6 +33,7 @@ default_container_engine="docker"
 external_scripts=(
     "$utils_dir/$get_ssh_user_script"
     "$utils_dir/$yes_no_answer_script"
+    "$utils_dir/$check_ssh_connectivity_script"
 )
 
 # Default values
@@ -247,16 +249,30 @@ yes_no_answer() {
     echo "$result"
 }
 
-# Function to check connection to a node
+## Function to check connection to a node
+#check_connection_to_node() {
+#    node_pair=$1
+#    local node_name="${node_pair%%:*}"
+#    local node_ip="${node_pair#*:}"
+#    if ping -c 2 "$node_ip" &> /dev/null; then
+#        echo -e "${green}Connection to $node_name successful${normal}"
+#    else
+#        echo -e "${red}No connection to $node_name - error!${normal}"
+#        echo -e "${red}Node may be powered off${normal}\n"
+#    fi
+#}
+
 check_connection_to_node() {
-    node_pair=$1
+    local node_pair=$1
     local node_name="${node_pair%%:*}"
     local node_ip="${node_pair#*:}"
-    if ping -c 2 "$node_ip" &> /dev/null; then
-        echo -e "${green}Connection to $node_name successful${normal}"
+
+    if check_ssh_connectivity "$node_name" "$node_ip"; then
+        echo -e "${green}SSH connection to $node_name successful${normal}"
+        return 0
     else
-        echo -e "${red}No connection to $node_name - error!${normal}"
-        echo -e "${red}Node may be powered off${normal}\n"
+        echo -e "${red}SSH connection to $node_name failed${normal}"
+        return 1
     fi
 }
 
