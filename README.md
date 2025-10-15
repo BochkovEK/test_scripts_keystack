@@ -58,11 +58,11 @@ curl -O https://repo.itkey.com/repository/bootstrap/terraform/terraform_1.8.5_li
 chmod 777 terraform_1.8.5_linux_amd64
 ```
 2) Переместить бинарник Terraform в /bin
-- [Вариант 1] /usr/local/
+- [Вариант 1] /usr/local/bin
 ```bash
-mv ./terraform_1.8.5_linux_amd64 /usr/local/terraform
+sudo mv ./terraform_1.8.5_linux_amd64 /usr/local/bin/terraform
 ```
-- [Вариант 2] $VIRTUAL_ENV/bin/terraform # terraform доступен только для VENV
+- [Вариант 2] $VIRTUAL_ENV/bin # terraform доступен только для VENV
 ```bash
 mv ./terraform_1.8.5_linux_amd64 $VIRTUAL_ENV/bin/terraform
 
