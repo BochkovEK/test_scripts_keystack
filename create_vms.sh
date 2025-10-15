@@ -1016,4 +1016,10 @@ main() {
 }
 
 # Run main function
-main "$@"
+#main "$@"
+
+    # Main execution flow
+    if [ $USE_ENV_FILE = "true" ]; then
+        echo "HERE"
+        check_and_source_config_file
+    fi
