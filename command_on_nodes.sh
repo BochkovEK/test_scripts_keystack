@@ -133,16 +133,30 @@ error_output() {
     exit 1
 }
 
-# Function to check SSH connectivity using external module
-check_ssh_connectivity() {
-    local node_name="$1"
-    local node_ip="$2"
+## Function to check SSH connectivity using external module
+#check_ssh_connectivity() {
+#    local node_name="$1"
+#    local node_ip="$2"
+#
+#    # Use external SSH test module
+#    if bash "$utils_dir/$check_ssh_connectivity_script" "$node_ip" "$node_name" -u "$SSH_USER" -t 10; then
+#        return 0
+#    fi
+#    return 1
+#}
 
-    # Use external SSH test module
-    if bash "$utils_dir/$check_ssh_connectivity_script" "$node_ip" "$node_name" -u "$SSH_USER" -t 10; then
+#Function to check SSH connectivity using external module
+check_ssh_connectivity() {
+    local node_pair=$1
+    local node_name="${node_pair%%:*}"
+    local node_ip="${node_pair#*:}"
+
+    # Просто вызываем функцию - она сама все выведет
+    if test_ssh_connection "$node_name" "$node_ip" "10" "$SSH_USER" "$KEY_PATH"; then
         return 0
+    else
+        return 1
     fi
-    return 1
 }
 
 # Function to execute commands on all nodes
