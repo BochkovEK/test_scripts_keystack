@@ -222,7 +222,7 @@ def write_file(path_to_file, strings):
             file.write("\n")
 
         # Then write variable-based entries (only non-duplicates)
-        file.write("# Additional entries from variables\n")
+        file.write("# Additional strings\n")
         written_ips = set()
 
         # Track IPs from group entries to avoid duplicates
