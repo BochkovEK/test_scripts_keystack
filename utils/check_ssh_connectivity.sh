@@ -47,7 +47,7 @@ test_ssh_connection() {
         return 1
     fi
 
-    echo -e "Testing SSH connection to ${node_name:-$node_ip}..."
+    echo -e "Testing SSH connection as $remote_user to ${node_name:-$node_ip}..."
 
     # Check if required variables are set
     if [ -z "$ssh_user" ]; then
@@ -91,8 +91,6 @@ test_ssh_connection() {
         local remote_user=$(echo "$ssh_output" | sed -n '2p')
         local remote_hostname=$(echo "$ssh_output" | sed -n '3p')
         echo -e "✓ SSH connection successful"
-        echo -e "  Connected as: $remote_user"
-        echo -e "  Remote host: $remote_hostname"
         return 0
     else
         echo -e "${red}✗ SSH connection failed${normal}"
