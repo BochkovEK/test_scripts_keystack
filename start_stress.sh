@@ -327,6 +327,9 @@ network_stress() {
     case $NETWORK_LOAD in
         on)
             echo "Starting network load on $vm_name..."
+            # ping --help
+            # -s use <size> as number of data bytes to be sent
+            # -f flood ping
             ssh -t -o StrictHostKeyChecking=no -i "$KEY_PATH" "$VM_USER@$vm_ip" \
                 "sudo sh -c 'echo \"@reboot root ping -f -s 1024 8.8.8.8\" >> /etc/crontab && reboot'"
             ;;
