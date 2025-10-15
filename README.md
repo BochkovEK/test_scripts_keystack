@@ -199,7 +199,7 @@ terraform init
 
 3) Создать план выполнения Terraform
 ```bash
-terraform plan -var-file "*.auto.tfvars" -out=plan.tfplan
+terraform plan -var-file *.auto.tfvars -out=plan.tfplan
 ```
 **ПРИМЕЧАНИЕ:** Во избежании конфликтов описаний файл *.auto.tfvars в каталоге foo должен быть только один
 
@@ -214,7 +214,3 @@ terraform apply "plan.tfplan"
 terraform destroy
 <type> "yes"
 ```
-
-
-
-
