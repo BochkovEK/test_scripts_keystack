@@ -585,7 +585,7 @@ main_cleanup() {
 
     # Confirm overall cleanup
     if [ "$AUTO_CONFIRM" = false ]; then
-        if ! confirm_action "Proceed with cleanup?"; then
+        if ! confirm_action "Proceed with cleanup?" false; then
             echo -e "${yellow}Cleanup cancelled by user${normal}"
             exit 0
         fi
