@@ -15,7 +15,7 @@ blue=$(tput setaf 4)
 script_dir=$(dirname "$0")
 cleanup_file=".vm_cleanup_state.env"
 utils_dir="$script_dir/utils"
-yes_no_answer_script="$utils_dir/yes_no_answer.sh"
+yes_no_answer_script="yes_no_answer.sh"
 
 # External scripts array
 external_scripts=(
