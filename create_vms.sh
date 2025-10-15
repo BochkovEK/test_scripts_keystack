@@ -112,6 +112,27 @@ show_help() {
     "
 }
 
+# Function to use config file
+use_env_file () {
+    while [ -n "$1" ]; do
+        case "$1" in
+            -uef|-use_env_file) USE_ENV_FILE="true"
+                echo "Found the -use_env_file. Using config file $config_file by default"
+                ;;
+            --) shift
+                break ;;
+            *) echo "$1 is not an option";;
+        esac
+        shift
+    done
+
+    if [ $USE_ENV_FILE = "true" ]; then
+        echo "HERE"
+        check_and_source_config_file
+    fi
+
+}
+
 # Parse command line arguments
 parse_arguments() {
     while [ -n "$1" ]; do
@@ -968,12 +989,9 @@ load_external_scripts() {
 }
 
 
+# Main execution flow
 main() {
-    # Main execution flow
-    if [ $USE_ENV_FILE = "true" ]; then
-        echo "HERE"
-        check_and_source_config_file
-    fi
+    use_env_file "$@"
 
     parse_arguments "$@"
     load_external_scripts
@@ -1016,10 +1034,4 @@ main() {
 }
 
 # Run main function
-#main "$@"
-
-    # Main execution flow
-    if [ $USE_ENV_FILE = "true" ]; then
-        echo "HERE"
-        check_and_source_config_file
-    fi
+main "$@"
