@@ -151,7 +151,6 @@ check_ssh_connectivity() {
     local node_name="${node_pair%%:*}"
     local node_ip="${node_pair#*:}"
 
-    # Просто вызываем функцию - она сама все выведет
     if test_ssh_connection "$node_name" "$node_ip" "10" "$SSH_USER" "$KEY_PATH"; then
         return 0
     else

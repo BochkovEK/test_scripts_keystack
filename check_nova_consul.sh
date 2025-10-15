@@ -262,16 +262,14 @@ yes_no_answer() {
 #    fi
 #}
 
-check_connection_to_node() {
+check_ssh_connectivity() {
     local node_pair=$1
     local node_name="${node_pair%%:*}"
     local node_ip="${node_pair#*:}"
 
-    if check_ssh_connectivity "$node_name" "$node_ip"; then
-        echo -e "${green}SSH connection to $node_name successful${normal}"
+    if test_ssh_connection "$node_name" "$node_ip" "10" "$SSH_USER" "$KEY_PATH"; then
         return 0
     else
-        echo -e "${red}SSH connection to $node_name failed${normal}"
         return 1
     fi
 }
@@ -289,7 +287,7 @@ check_connections_to_nodes() {
     nodes=$(get_nodes_list -nt $node_type)
 
     for node_pair in $nodes; do
-        check_connection_to_node "$node_pair"
+        check_ssh_connectivity "$node_pair"
     done
 }
 
