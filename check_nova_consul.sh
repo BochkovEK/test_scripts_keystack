@@ -503,7 +503,7 @@ check_consul_logs() {
         return 1
     fi
 
-    bash "$script_dir/$check_consul_log_script" -ctrl_list "$node_name"
+    bash "$script_dir/$check_consul_log_script" "-all"
     return 0
 }
 
