@@ -971,6 +971,7 @@ load_external_scripts() {
 main() {
     # Main execution flow
     if [ $USE_ENV_FILE = "true" ]; then
+        echo "HERE"
         check_and_source_config_file
     fi
 
