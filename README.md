@@ -209,7 +209,7 @@ terraform apply "plan.tfplan"
 <type> "yes"
 ```
 
-5) Удаление ресурсов
+### Удаление виртуальных машин (VMs)
 ```bash
 terraform destroy
 <type> "yes"
