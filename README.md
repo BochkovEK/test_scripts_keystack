@@ -53,34 +53,34 @@
 ## Уствновка Terraform
 
 1) Скачать бинарник Terraform:
-````
+```bash
 curl -O https://repo.itkey.com/repository/bootstrap/terraform/terraform_1.8.5_linux_amd64
 chmod 777 terraform_1.8.5_linux_amd64
-````
+```
 2) Переместить бинарник Terraform в /bin
 - [Вариант 1] /usr/local/
-````
+```bash
 mv ./terraform_1.8.5_linux_amd64 /usr/local/terraform
-````
+```
 - [Вариант 2] $VIRTUAL_ENV/bin/terraform # terraform доступен только для VENV
-````
+```bash
 mv ./terraform_1.8.5_linux_amd64 $VIRTUAL_ENV/bin/terraform
 
 #  for apply changes
 deactivate
 source ~/$venv_folder_name/bin/activate
-````
+```
 
 ## Создание файла переменных окружения для работы с Terraform модулем cloud.yml
 
 1) Получить id тестового проекта
-````
+```bash
 vi $VIRTUAL_ENV/openrcopenstack project list
 export  test_projcet_id=<id>
-````
+```
 
 2) Создать cloud.yml
-````
+```bash
 cat <<-EOF > $VIRTUAL_ENV/clouds.yml
 clouds:
   openstack:
@@ -95,25 +95,25 @@ clouds:
     identity_api_version: 3
     cacert: "$OS_CACERT"
 EOF
-````
+```
 
 3) Задать переменную окружения указав путь до сloud.yml
-````
+```bash
 export OS_CLIENT_CONFIG_FILE="$VIRTUAL_ENV/clouds.yml"
-````
+```
 
 ## Подготовка каталога модуля Terraform (create_vms_with_tf_module)
 
 1) Скопировать исходный каталог 'create_vms_with_tf_module'
-````
+```bash
 cp -r ~/test_scripts_keystack/terraform/examples/create_vms_with_tf_module/ $VIRTUAL_ENV
-````
+```
 2) Отредактировать конфиг main.tf изменив путь к каталогу скриптов тестирования
-````
+```bash
 vi $VIRTUAL_ENV/create_vms_with_module/main.tf
 # set for all modules (source)
 source = "/path/to/test_scripts_keystack/terraform/modules/instances"
-````
+```
 
 
 ## Конфигурация и создание ресурсов
@@ -123,7 +123,7 @@ source = "/path/to/test_scripts_keystack/terraform/modules/instances"
 Файл *.auto.tfvars должен иметь формат **json** и находится в каталоге 'create_vms_with_tf_module'
 
 ### Описание параметров ВМ (*.auto.tfvars)
-````
+```hcl
 VMs = {
     <vm_name> = {
         vm_qty                              = <vms_quantity>
@@ -185,35 +185,35 @@ AZs = {
         hosts_list = [ "<list_hosts>" ]
     }
 }
-````
+```
 ### Создание виртуальных машин (VMs)
 1) Перейти в каталог 'create_vms_with_tf_module'
-````
+```bash
 cd $VIRTUAL_ENV/create_vms_with_tf_module
-````
+```
 
 2) Инициализировать Terraform
-````
+```bash
 terraform init
-````
+```
 
 3) Создать план выполнения Terraform
-````
+```bash
 terraform plan -var-file "*.auto.tfvars" -out=plan.tfplan
-````
+```
 **ПРИМЕЧАНИЕ:** Во избежании конфликтов описаний файл *.auto.tfvars в каталоге foo должен быть только один
 
 4) Создание ресурсов
-````
+```bash
 terraform apply "plan.tfplan"
 <type> "yes"
-````
+```
 
 5) Удаление ресурсов
-````
+```bash
 terraform destroy
 <type> "yes"
-````
+```
 
 
 
