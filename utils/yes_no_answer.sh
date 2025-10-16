@@ -7,7 +7,7 @@
 normal=$(tput sgr0)
 green=$(tput setaf 2)
 yellow=$(tput setaf 3)
-blue=$(tput setaf 6)
+dark_blue=$(tput setaf 4)
 
 # Default values
 TS_DEBUG=${TS_DEBUG:-"false"}
@@ -18,7 +18,7 @@ confirm_action_external() {
     local message="${1:-$TS_YES_NO_QUESTION}"
     local answer=""
 
-    [ "$TS_DEBUG" = "true" ] && echo -e "${blue}[DEBUG] Question: $message${normal}"
+    [ "$TS_DEBUG" = "true" ] && echo -e "${dark_blue}[DEBUG] Question: $message${normal}"
 
     while true; do
         read -rp "$message [y/N]: " answer
