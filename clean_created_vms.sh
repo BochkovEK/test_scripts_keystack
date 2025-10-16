@@ -6,7 +6,6 @@
 # Colors
 green=$(tput setaf 2)
 red=$(tput setaf 1)
-orange=$(tput setaf 3)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
 blue=$(tput setaf 4)
@@ -205,7 +204,7 @@ prefetch_vm_details() {
         fi
     done <<< "$all_vms_data"
 
-    echo -e "${green}Loaded details for ${#vm_cache_name[@]} VMs${normal}"
+    echo -e "${blue}Loaded details for ${#vm_cache_name[@]} VMs${normal}"
 
     # Additionally getting project names
     prefetch_project_details
@@ -347,14 +346,15 @@ collect_resources_by_category() {
 show_resources_summary() {
     local batch_info="$1"
 
-    echo -e "${orange}=== CLEANUP SUMMARY $batch_info ===${normal}"
+    echo -e "${normal}=== CLEANUP SUMMARY $batch_info ===${normal}"
 
     # VMs summary
     if [ ${#all_vms[@]} -gt 0 ]; then
-        echo -e "${yellow}VIRTUAL MACHINES (${#all_vms[@]}):${normal}"
+        echo -e "${normal}VIRTUAL MACHINES (${#all_vms[@]}):${normal}"
         for vm_id in "${!all_vms[@]}"; do
             vm_details=$(get_vm_details "$vm_id")
             if [ $? -eq 0 ]; then
+                echo "vm_details: $vm_details"
                 vm_name=$(echo "$vm_details" | cut -d: -f1)
                 vm_project=$(echo "$vm_details" | cut -d: -f2)
                 echo "  - $vm_name (ID: $vm_id, Project: $vm_project) [Batch ${all_vms[$vm_id]}]"
@@ -369,7 +369,7 @@ show_resources_summary() {
 
     # Volumes summary
     if [ ${#all_volumes[@]} -gt 0 ]; then
-        echo -e "${yellow}VOLUMES (${#all_volumes[@]}):${normal}"
+        echo -e "${normal}VOLUMES (${#all_volumes[@]}):${normal}"
         for volume_id in "${!all_volumes[@]}"; do
             echo "  - $volume_id [Batch ${all_volumes[$volume_id]}]"
         done
@@ -380,7 +380,7 @@ show_resources_summary() {
 
     # Security Groups summary
     if [ ${#all_security_groups[@]} -gt 0 ]; then
-        echo -e "${yellow}SECURITY GROUPS (${#all_security_groups[@]}):${normal}"
+        echo -e "${normal}SECURITY GROUPS (${#all_security_groups[@]}):${normal}"
         for sg_id in "${!all_security_groups[@]}"; do
             sg_details=$(get_security_group_details "$sg_id")
             sg_name=$(echo "$sg_details" | cut -d: -f1)
@@ -394,7 +394,7 @@ show_resources_summary() {
 
     # Keypairs summary
     if [ ${#all_keypairs[@]} -gt 0 ]; then
-        echo -e "${yellow}KEYPAIRS (${#all_keypairs[@]}):${normal}"
+        echo -e "${normal}KEYPAIRS (${#all_keypairs[@]}):${normal}"
         for keypair_user in "${!all_keypairs[@]}"; do
             key_name="${keypair_user%:*}"
             user_name="${keypair_user#*:}"
@@ -407,7 +407,7 @@ show_resources_summary() {
 
     # Flavors summary
     if [ ${#all_flavors[@]} -gt 0 ]; then
-        echo -e "${yellow}FLAVORS (${#all_flavors[@]}):${normal}"
+        echo -e "${normal}FLAVORS (${#all_flavors[@]}):${normal}"
         for flavor_name in "${!all_flavors[@]}"; do
             echo "  - $flavor_name [Batch ${all_flavors[$flavor_name]}]"
         done
@@ -416,18 +416,18 @@ show_resources_summary() {
         echo -e "${green}No flavors found${normal}"
     fi
 
-    echo -e "${orange}=================================${normal}"
+    echo -e "${normal}===================================${normal}"
 }
 
 # Delete resources by category
 delete_resources_by_category() {
     local batch_info="$1"
 
-    echo -e "${orange}=== CLEANUP PROCESS $batch_info ===${normal}"
+    echo -e "${normal}=== CLEANUP PROCESS $batch_info ===${normal}"
 
     # 1. Delete all VMs
     if [ ${#all_vms[@]} -gt 0 ]; then
-        echo -e "${yellow}=== VIRTUAL MACHINES (${#all_vms[@]}) ===${normal}"
+        echo -e "${normal}=== VIRTUAL MACHINES (${#all_vms[@]}) ===${normal}"
         if confirm_action "Delete all virtual machines?"; then
             for vm_id in "${!all_vms[@]}"; do
                 echo "Deleting VM: $vm_id [Batch ${all_vms[$vm_id]}]"
@@ -445,7 +445,7 @@ delete_resources_by_category() {
 
     # 2. Delete all volumes
     if [ ${#all_volumes[@]} -gt 0 ]; then
-        echo -e "${yellow}=== VOLUMES (${#all_volumes[@]}) ===${normal}"
+        echo -e "${normal}=== VOLUMES (${#all_volumes[@]}) ===${normal}"
         if confirm_action "Delete all volumes?"; then
             for volume_id in "${!all_volumes[@]}"; do
                 echo "Deleting volume: $volume_id [Batch ${all_volumes[$volume_id]}]"
@@ -463,7 +463,7 @@ delete_resources_by_category() {
 
     # 3. Delete all security groups
     if [ ${#all_security_groups[@]} -gt 0 ]; then
-        echo -e "${yellow}=== SECURITY GROUPS (${#all_security_groups[@]}) ===${normal}"
+        echo -e "${normal}=== SECURITY GROUPS (${#all_security_groups[@]}) ===${normal}"
         if confirm_action "Delete all security groups?"; then
             for sg_id in "${!all_security_groups[@]}"; do
                 echo "Deleting security group: $sg_id [Batch ${all_security_groups[$sg_id]}]"
@@ -481,7 +481,7 @@ delete_resources_by_category() {
 
     # 4. Delete all keypairs
     if [ ${#all_keypairs[@]} -gt 0 ]; then
-        echo -e "${yellow}=== KEYPAIRS (${#all_keypairs[@]}) ===${normal}"
+        echo -e "${normal}=== KEYPAIRS (${#all_keypairs[@]}) ===${normal}"
         if confirm_action "Delete all keypairs?"; then
             for keypair_user in "${!all_keypairs[@]}"; do
                 key_name="${keypair_user%:*}"
@@ -500,7 +500,7 @@ delete_resources_by_category() {
 
     # 5. Delete all flavors
     if [ ${#all_flavors[@]} -gt 0 ]; then
-        echo -e "${yellow}=== FLAVORS (${#all_flavors[@]}) ===${normal}"
+        echo -e "${normal}=== FLAVORS (${#all_flavors[@]}) ===${normal}"
         if confirm_action "Delete all flavors?"; then
             for flavor_name in "${!all_flavors[@]}"; do
                 echo "Deleting flavor: $flavor_name [Batch ${all_flavors[$flavor_name]}]"
@@ -526,7 +526,7 @@ offer_cleanup_file_removal() {
     fi
 
     echo ""
-    echo -e "${orange}=== CLEANUP COMPLETED SUCCESSFULLY ===${normal}"
+    echo -e "${normal}=== CLEANUP COMPLETED SUCCESSFULLY ===${normal}"
     echo "Cleanup state file: $state_file"
     echo ""
 
