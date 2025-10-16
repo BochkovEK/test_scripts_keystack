@@ -28,8 +28,8 @@ get_vms_list_script="get_vms_list.sh"
 [[ -z $VM_USER ]] && VM_USER="ubuntu"
 [[ -z $COMMAND_STR ]] && COMMAND_STR="ls -la"
 [[ -z $PROJECT ]] && PROJECT=""
-[[ -z $DONT_ASK ]] && DONT_ASK=true
-[[ -z $TS_DEBUG ]] && TS_DEBUG=false
+[[ -z $DONT_ASK ]] && DONT_ASK="true"
+[[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $VMS ]] && VMS=""
 [[ -z $TS_SSH_TIMEOUT ]] && TS_SSH_TIMEOUT="$default_ssh_timeout"
 
@@ -306,7 +306,7 @@ batch_run_commands() {
 
         echo -e "${cyan}Processing VM: $vm_name VM status: $vm_status VM ip: $vm_ip${normal}"
 
-        #        [ "$TS_DEBUG" = "true" ] &&
+        [ "$TS_DEBUG" = "true" ] &&
         echo -e "
     [DEBUG] Configuration:
       VM_USER:    $VM_USER
