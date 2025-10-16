@@ -6,7 +6,6 @@
 # Color definitions
 green=$(tput setaf 2)
 red=$(tput setaf 1)
-orange=$(tput setaf 3)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
 
@@ -537,7 +536,7 @@ check_project () {
     fi
     PROJ_ID=$(openstack project list| grep -E -m 1 "\s$PROJECT\s"| awk '{print $2}')
     if [ -z "$PROJ_ID" ]; then
-        printf "%s\n" "${orange}Project \"$PROJECT\" does not exist${normal}"
+        printf "%s\n" "${yellow}Project \"$PROJECT\" does not exist${normal}"
         [[ ! $DONT_ASK = "true" ]] && {
             echo "Create a Project with name: \"$PROJECT\"?";
             read -p "Press enter to continue: ";
@@ -550,7 +549,7 @@ check_project () {
     echo "Check for user: \"$TEST_USER\" exist"
     USER_EXIST=$(openstack user list| grep -E " $TEST_USER "| awk '{print $4}')
     if [ -z $USER_EXIST ]; then
-        printf "%s\n" "${orange}User: \"$TEST_USER\" does not exist${normal}"
+        printf "%s\n" "${yellow}User: \"$TEST_USER\" does not exist${normal}"
         [[ ! $DONT_ASK = "true" ]] && {
             echo "Create a user with name: \"$TEST_USER\"?";
             read -p "Press enter to continue: ";
@@ -562,7 +561,7 @@ check_project () {
     echo "Check for role assignment: \"$ROLE\" for user: \"$TEST_USER\" in project: \"$PROJECT\""
     ROLE_IN_PROJECT=$(openstack role assignment list --user $TEST_USER --project $PROJECT --names|grep -E "$ROLE(.)+$TEST_USER(.)+$PROJECT")
     if [[ -z $ROLE_IN_PROJECT ]]; then
-        printf "%s\n" "${orange}Role: \"$ROLE\" is not assigned to user: \"$TEST_USER\" in project: \"$PROJECT\"${normal}"
+        printf "%s\n" "${yellow}Role: \"$ROLE\" is not assigned to user: \"$TEST_USER\" in project: \"$PROJECT\"${normal}"
         [[ ! $DONT_ASK = "true" ]] && {
             echo "Assign the role: \"$ROLE\" to user: \"$TEST_USER\" in project: \"$PROJECT\"?";
             read -p "Press enter to continue: ";
@@ -589,7 +588,7 @@ check_and_add_secur_group () {
     fi
     SECURITY_GR_ID=$(openstack security group list|grep -E "($SECURITY_GR(.)*$PROJ_ID)" | head -1 | awk '{print $2}')
     if [ -z "$SECURITY_GR_ID" ]; then
-        printf "%s\n" "${orange}Security group \"$SECURITY_GR\" not found in project \"$PROJECT\"${normal}"
+        printf "%s\n" "${yellow}Security group \"$SECURITY_GR\" not found in project \"$PROJECT\"${normal}"
         [[ ! $DONT_ASK = "true" ]] && {
             echo "Create a Security group with a name: \"$SECURITY_GR\"?";
             read -p "Press enter to continue: ";
@@ -616,7 +615,7 @@ check_and_add_keypair () {
         echo "Check for exist keypair: \"$KEY_NAME\""
         KEY_NAME_EXIST=$(openstack keypair list | grep -E "\s$KEY_NAME\s"| awk '{print $2}')
         if [ -z "$KEY_NAME_EXIST" ]; then
-            printf "%s\n" "${orange}Keypair \"$KEY_NAME\" not found in project \"$PROJECT\"${normal}"
+            printf "%s\n" "${yellow}Keypair \"$KEY_NAME\" not found in project \"$PROJECT\"${normal}"
             [[ ! $DONT_ASK = "true" ]] && {
                 echo "Create a key pair with a name: \"$KEY_NAME\"?";
                 read -p "Press enter to continue: ";
@@ -684,7 +683,7 @@ check_image () {
         printf "%s\n" "${red}Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
         exit 1
     elif [ -z "$IMAGE_NAME_EXIST" ] && [ -n "$is_ubuntu" ]; then
-        printf "%s\n" "${orange}Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
+        printf "%s\n" "${yellow}Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
         if [ -z "$(image_exists_in_openstack $UBUNTU_IMAGE_NAME)" ]; then
             create_image $UBUNTU_IMAGE_NAME
         else
@@ -693,7 +692,7 @@ check_image () {
             IMAGE=$UBUNTU_IMAGE_NAME
         fi
     elif [ -z "$IMAGE_NAME_EXIST" ] && [ -n "$is_cirros" ]; then
-        printf "%s\n" "${orange}Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
+        printf "%s\n" "${yellow}Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
         if [ -z "$(image_exists_in_openstack $CIRROS_IMAGE_NAME)" ]; then
             create_image $CIRROS_IMAGE_NAME
         else
@@ -712,14 +711,14 @@ check_and_add_flavor () {
     echo "Check for exist flavor: \"$FLAVOR\""
     FLAVOR_EXST=$(openstack flavor list| grep $FLAVOR| head -n 1| awk '{print $4}')
     if [ -z $FLAVOR_EXST ]; then
-        printf "%s\n" "${orange}Flavor \"$FLAVOR\" not found in project \"$PROJECT\"${normal}"
+        printf "%s\n" "${yellow}Flavor \"$FLAVOR\" not found in project \"$PROJECT\"${normal}"
         CPU_DRAFT=$(echo "${FLAVOR%-*}")
         RAM_DRAFT=$(echo "${FLAVOR##*-}")
         CPU_QTY=$(echo "${CPU_DRAFT%c*}")
         RAM_GB=$(echo "${RAM_DRAFT%r*}")
 
         if [[ -z $CPU_QTY || -z $RAM_GB ]]; then
-            printf "%s\n" "${orange}The flavor name format should be: <CPUs>c-<RAM GB>r instead: \"$FLAVOR\"${normal}"
+            printf "%s\n" "${yellow}The flavor name format should be: <CPUs>c-<RAM GB>r instead: \"$FLAVOR\"${normal}"
             printf "%s\n" "${red}Can't create a flavor by name: \"$FLAVOR\"\n"
             exit 1
         fi
@@ -744,13 +743,15 @@ check_vms_list () {
     if [ -n "$HYPERVISOR_HOSTNAME" ]; then
         check_host="--host $HYPERVISOR_HOSTNAME"
         echo "Check VMs list on $HYPERVISOR_HOSTNAME:"
-        openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks
+#        openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks
+        openstack server list --all-projects --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks
         echo "Command for check VMs list on $HYPERVISOR_HOSTNAME:"
-        printf "%s\n" "${orange}openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
+#       echo -e "${yellow}openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
+        echo -e "${yellow}openstack server list --all-projects --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
     else
         openstack server list --all-projects --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks
         echo "Command for check VMs list:"
-        printf "%s\n" "${orange}openstack server list --all-projects --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
+        printf "%s\n" "${yellow}openstack server list --all-projects --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
     fi
 }
 
@@ -782,7 +783,7 @@ wait_vms_created () {
                 echo -e "${yellow}VM $vm_id is still BUILDING${normal}"
                 all_active=false
             elif [ -z "$status" ]; then
-                echo -e "${orange}VM $vm_id not found yet${normal}"
+                echo -e "${yellow}VM $vm_id not found yet${normal}"
                 all_active=false
             else
                 echo -e "${yellow}VM $vm_id status: $status${normal}"
@@ -867,7 +868,7 @@ create_vms () {
         echo "Checking if VM exists: \"$INSTANCE_NAME\""
         VM_EXIST=$(openstack server list --project $PROJECT | grep $INSTANCE_NAME| awk '{print $4}')
         if [ -n "$VM_EXIST" ]; then
-            printf "%s\n" "${orange}VM: \"$INSTANCE_NAME\" already exists in project \"$PROJECT\"${normal}"
+            printf "%s\n" "${yellow}VM: \"$INSTANCE_NAME\" already exists in project \"$PROJECT\"${normal}"
             if [[ ! $DONT_ASK = "true" ]]; then
                 read -p "Create VM: \"$INSTANCE_NAME\" in project \"$PROJECT\" [Yes]: " yn
                 yn=${yn:-"Yes"}
