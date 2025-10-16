@@ -318,7 +318,6 @@ main() {
 
     # Get nodes list
     if [ -n "$NODES_NAME" ]; then
-        get_nodes_list -nn "$NODES_NAME"
         nodes=$(get_nodes_list -nn "$NODES_NAME")
     else
         nodes=$(get_nodes_list -nt "$NODES_TYPE")
@@ -332,12 +331,13 @@ main() {
     "
     fi
 
-    IFS=' ' read -ra NODES <<< "$nodes"
+#    IFS=' ' read -ra NODES <<< "$nodes"
 
-    [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] Nodes: ${NODES[*]}"
+#    [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] Nodes: ${NODES[*]}"
 
     # Process each node
-    for node_pair in "${NODES[@]}"; do
+#    for node_pair in "${NODES[@]}"; do
+    for node_pair in $nodes; do
         # Split node:ip format
         node_name="${node_pair%%:*}"
         node_ip="${node_pair#*:}"
