@@ -19,7 +19,7 @@ get_ssh_user() {
     local preferred_user="${1:-$SSH_USER}"
     local default_user="${2:-$DEFAULT_SSH_USER}"
 
-    [ "$TS_DEBUG" = "true" ] && echo -e "${blue}[DEBUG] get_ssh_user: preferred_user=$preferred_user, default_user=$default_user${normal}"
+    [ "$TS_DEBUG" = "true" ] && echo -e "${blue}[DEBUG] get_ssh_user: preferred_user=$preferred_user, default_user=$default_user${normal}" >&2
 
     # If SSH_USER is already set, use it
     if [[ -n "$preferred_user" ]]; then
