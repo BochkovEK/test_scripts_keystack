@@ -218,7 +218,7 @@ get_nodes_list() {
     [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG]:
         Count parameters: $#
-        Parameters: $*"
+        Parameters: $*" >&2
 
     local nodes_result=""
 
