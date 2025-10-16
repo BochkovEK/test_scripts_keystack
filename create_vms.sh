@@ -120,8 +120,8 @@ use_env_file () {
                 echo "Found the -use_env_file. Using config file $config_file by default"
                 ;;
             --) shift
-                break ;;
-            *) echo "$1 is not an option";;
+                break
+                ;;
         esac
         shift
     done
