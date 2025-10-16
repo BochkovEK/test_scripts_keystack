@@ -277,7 +277,8 @@ update_cleanup_state () {
     echo "export CREATED_BOOT_VOLUMES_BATCH_${batch_num}=\"$volume_ids\"" >> "$VIRTUAL_ENV/$cleanup_file"
 
     # Add reusable resources only if they don't exist
-    if [ -n "$SECURITY_GR_ID" ] && ! grep -q "CREATED_SECURITY_GROUP_ID" "$VIRTUAL_ENV/$cleanup_file"; then
+#    if [ -n "$SECURITY_GR_ID" ] && ! grep -q "CREATED_SECURITY_GROUP_ID" "$VIRTUAL_ENV/$cleanup_file"; then
+    if [ -n "$SECURITY_GR_ID" ]; then
         echo "export CREATED_SECURITY_GROUP_ID_BATCH_${batch_num}=\"$SECURITY_GR_ID\"" >> "$VIRTUAL_ENV/$cleanup_file"
     fi
 
