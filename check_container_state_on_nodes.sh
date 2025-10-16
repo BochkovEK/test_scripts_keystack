@@ -14,6 +14,7 @@ script_dir=$(dirname "$0")
 utils_dir="$script_dir/utils"
 get_nodes_list_script="get_nodes_list.sh"
 get_ssh_user_script="get_ssh_user.sh"
+check_ssh_connectivity_script="check_ssh_connectivity.sh"
 default_ssh_user="root"
 default_container_engine="docker"
 virtual_stands_mark="[NOTE] required for virtual stands"
@@ -22,6 +23,7 @@ virtual_stands_mark="[NOTE] required for virtual stands"
 # External scripts array
 external_scripts=(
     "$utils_dir/$get_ssh_user_script"
+    "$utils_dir/$check_ssh_connectivity_script"
 )
 
 # Required container lists
@@ -243,22 +245,36 @@ get_nodes_list() {
 }
 
 # Function to check SSH connectivity to a node
+# Function to check connection to a node
 check_ssh_connectivity() {
-    local node_name="$1"
-    local node_ip="$2"
+    local node_pair=$1
+    local node_name="${node_pair%%:*}"
+    local node_ip="${node_pair#*:}"
 
-    echo -e "Checking SSH connectivity to $node_name ($node_ip)"
-
-    # Try to connect with timeout and execute a simple command
-    if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -o BatchMode=yes \
-        "$SSH_USER@$node_ip" "echo 'SSH connection successful'" 2>/dev/null; then
-        echo -e "✓ SSH connection to $node_name ($node_ip) is working"
+    if test_ssh_connection "$node_name" "$node_ip" "10" "$SSH_USER" "$KEY_PATH" > /dev/null 2>&1; then
+        echo -e "  ✓ SSH connection successful"
         return 0
     else
-        echo -e "${red}✗ SSH connection to $node_name ($node_ip) failed${normal}"
+        echo -e "  ${red}✗ SSH connection failed${normal}"
         return 1
     fi
 }
+#check_ssh_connectivity() {
+#    local node_name="$1"
+#    local node_ip="$2"
+#
+#    echo -e "Checking SSH connectivity to $node_name ($node_ip)"
+#
+#    # Try to connect with timeout and execute a simple command
+#    if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -o BatchMode=yes \
+#        "$SSH_USER@$node_ip" "echo 'SSH connection successful'" 2>/dev/null; then
+#        echo -e "✓ SSH connection to $node_name ($node_ip) is working"
+#        return 0
+#    else
+#        echo -e "${red}✗ SSH connection to $node_name ($node_ip) failed${normal}"
+#        return 1
+#    fi
+#}
 
 # Enhanced container status check with SSH connectivity verification
 check_container_status() {
