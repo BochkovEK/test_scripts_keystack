@@ -133,19 +133,6 @@ error_output() {
     exit 1
 }
 
-## Function to check SSH connectivity using external module
-#check_ssh_connectivity() {
-#    local node_name="$1"
-#    local node_ip="$2"
-#
-#    # Use external SSH test module
-#    if bash "$utils_dir/$check_ssh_connectivity_script" "$node_ip" "$node_name" -u "$SSH_USER" -t 10; then
-#        return 0
-#    fi
-#    return 1
-#}
-
-#Function to check SSH connectivity using external module
 check_ssh_connectivity() {
     local node_pair=$1
     local node_name="${node_pair%%:*}"
