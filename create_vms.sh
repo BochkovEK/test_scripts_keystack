@@ -3,6 +3,10 @@
 # Script for creating VMs in OpenStack environment
 # Supports batch creation and maintains state files for cleanup
 
+# TO DO
+# improve BATCH
+# when deleting VMs, take disk information for delete config from the VMs themselves
+
 # Color definitions
 green=$(tput setaf 2)
 red=$(tput setaf 1)
