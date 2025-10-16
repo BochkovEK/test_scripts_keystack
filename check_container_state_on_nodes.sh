@@ -334,6 +334,7 @@ main() {
 
     # Get nodes list
     if [ -n "$NODES_NAME" ]; then
+        echo "here"
         nodes=$(get_nodes_list -nn "$NODES_NAME")
     else
         nodes=$(get_nodes_list -nt "$NODES_TYPE")
