@@ -308,6 +308,7 @@ main() {
     load_external_scripts
 
     # Determine SSH user using external function
+    echo "SSH_USER=\$(get_and_validate_ssh_user \"$SSH_USER\" \"$default_ssh_user\")"
     SSH_USER=$(get_and_validate_ssh_user "$SSH_USER" "$default_ssh_user")
     echo $SSH_USER
     if [[ $? -ne 0 ]]; then
