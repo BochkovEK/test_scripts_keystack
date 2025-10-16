@@ -341,6 +341,7 @@ main() {
 #    for node_pair in "${NODES[@]}"; do
     for node_pair in $nodes; do
         # Split node:ip format
+        echo "$node_pair"
         node_name="${node_pair%%:*}"
         node_ip="${node_pair#*:}"
 
