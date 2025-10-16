@@ -227,6 +227,7 @@ prefetch_vm_details() {
     # Debug output (only if TS_DEBUG is true)
     if [ "$TS_DEBUG" = "true" ]; then
         for vm_id in "${!vm_cache_name[@]}"; do
+            echo -e "${blue}[DEBUG]:${normal}"
             echo "VM: ${vm_cache_name[$vm_id]} (ID: $vm_id) -> Project: ${vm_cache_project_name[$vm_id]} (${vm_cache_project[$vm_id]})"
         done
     fi
@@ -299,6 +300,7 @@ get_vm_details_cached() {
 
     local vm_name="${vm_cache_name[$vm_id]}"
     local project_id="${vm_cache_project[$vm_id]}"
+#    local project_name="${vm_cache_project_name[$vm_id]}"
 
     if [ -z "$vm_name" ]; then
         return 1
@@ -306,7 +308,7 @@ get_vm_details_cached() {
 
     local project_name=""
     if [ -n "$project_id" ]; then
-        project_name="${vm_cache_project_name[$project_id]}"
+        project_name="${vm_cache_project_name[$vm_id]}"
     fi
 
     # If the project name is not found in the cache, use project_id
