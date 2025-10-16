@@ -255,7 +255,7 @@ check_ssh_connectivity() {
         echo -e "✓ SSH connection successful"
         return 0
     else
-        echo -e "  ${red}✗ SSH connection failed${normal}"
+        echo -e "${red}✗ SSH connection failed${normal}"
         return 1
     fi
 }
@@ -308,9 +308,9 @@ main() {
     load_external_scripts
 
     # Determine SSH user using external function
-    echo "SSH_USER=\$(get_and_validate_ssh_user \"$SSH_USER\" \"$default_ssh_user\")"
+#    echo "SSH_USER=\$(get_and_validate_ssh_user \"$SSH_USER\" \"$default_ssh_user\")"
     SSH_USER=$(get_and_validate_ssh_user "$SSH_USER" "$default_ssh_user")
-    echo $SSH_USER
+#    echo $SSH_USER
     if [[ $? -ne 0 ]]; then
         echo -e "${red}Error: Failed to determine valid SSH user!${normal}"
         exit 1
@@ -345,7 +345,7 @@ main() {
         node_ip="${node_pair#*:}"
 
         # First check SSH connectivity
-        if ! check_ssh_connectivity "$node_name" "$node_ip"; then
+        if ! check_ssh_connectivity "$node_pair"; then
             echo -e "${red}Cannot check containers on $node_name - SSH connection failed${normal}"
             continue
         fi
