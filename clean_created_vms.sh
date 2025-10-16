@@ -173,7 +173,7 @@ check_openstack_cli() {
         echo -e "${red}OpenStack CLI not found${normal}"
         exit 1
     fi
-    echo -e "${green}OpenStack CLI is available${normal}"
+#    echo -e "${green}OpenStack CLI is available${normal}"
 }
 
 # Single request for all VMs
@@ -218,7 +218,7 @@ prefetch_project_details() {
     for project_id in $unique_projects; do
         if [ -n "$project_id" ] && [ "$project_id" != "null" ]; then
             local project_name
-            project_name=$(openstack project show "$project_id" -c name -f value 2>/dev/null 2>/dev/null)
+            project_name=$(openstack project show "$project_id" -c name -f value 2>/dev/null)
             if [ $? -eq 0 ] && [ -n "$project_name" ]; then
                 vm_cache_project_name["$project_id"]="$project_name"
             else
