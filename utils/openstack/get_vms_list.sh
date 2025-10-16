@@ -164,10 +164,12 @@ get_vms_info() {
 #    "
 #        vm_list=$(openstack server list $project_string $host_string --long -f value -c Name -c Status -c Networks 2>/dev/null)
          [ "$TS_DEBUG" = "true" ] && echo -e "
-#    [DEBUG]:
-#        Command: openstack server list $project_string --long -f value -c Name -c Status -c Networks -c Host 2>/dev/null)
-#    "
-        vm_list=$(openstack server list $project_string --long -f value -c Name -c Status -c Networks -c Host 2>/dev/null)
+    [DEBUG]:
+        Command: openstack server list $project_string --long -f value -c Name -c Status -c Networks -c Host | \
+                    grep "$HYPERVISOR_NAME" 2>/dev/null)
+    "
+        vm_list=$(openstack server list $project_string --long -f value -c Name -c Status -c Networks -c Host | \
+            grep "$HYPERVISOR_NAME" 2>/dev/null)
     fi
 
     [ "$TS_DEBUG" = "true" ] && echo -e "
