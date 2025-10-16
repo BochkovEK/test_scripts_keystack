@@ -206,6 +206,14 @@ prefetch_vm_details() {
 
     echo -e "${blue}Loaded details for ${#vm_cache_name[@]} VMs${normal}"
 
+    for node in "${vm_cache_name[@]}"; do
+      echo "vm_cache_name: $node"
+    done
+
+    for project in "${vm_cache_project[@]}"; do
+      echo "vm_cache_project: $project"
+    done
+
     # Additionally getting project names
     prefetch_project_details
 }
