@@ -259,22 +259,6 @@ check_ssh_connectivity() {
         return 1
     fi
 }
-#check_ssh_connectivity() {
-#    local node_name="$1"
-#    local node_ip="$2"
-#
-#    echo -e "Checking SSH connectivity to $node_name ($node_ip)"
-#
-#    # Try to connect with timeout and execute a simple command
-#    if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -o BatchMode=yes \
-#        "$SSH_USER@$node_ip" "echo 'SSH connection successful'" 2>/dev/null; then
-#        echo -e "✓ SSH connection to $node_name ($node_ip) is working"
-#        return 0
-#    else
-#        echo -e "${red}✗ SSH connection to $node_name ($node_ip) failed${normal}"
-#        return 1
-#    fi
-#}
 
 # Enhanced container status check with SSH connectivity verification
 check_container_status() {
@@ -334,7 +318,7 @@ main() {
 
     # Get nodes list
     if [ -n "$NODES_NAME" ]; then
-        echo "here"
+        get_nodes_list -nn "$NODES_NAME"
         nodes=$(get_nodes_list -nn "$NODES_NAME")
     else
         nodes=$(get_nodes_list -nt "$NODES_TYPE")

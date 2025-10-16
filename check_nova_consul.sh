@@ -249,19 +249,6 @@ yes_no_answer() {
     echo "$result"
 }
 
-## Function to check connection to a node
-#check_connection_to_node() {
-#    node_pair=$1
-#    local node_name="${node_pair%%:*}"
-#    local node_ip="${node_pair#*:}"
-#    if ping -c 2 "$node_ip" &> /dev/null; then
-#        echo -e "${green}Connection to $node_name successful${normal}"
-#    else
-#        echo -e "${red}No connection to $node_name - error!${normal}"
-#        echo -e "${red}Node may be powered off${normal}\n"
-#    fi
-#}
-
 # Function to check connection to a node
 check_ssh_connectivity() {
     local node_pair=$1
