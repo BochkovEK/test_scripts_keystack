@@ -173,7 +173,8 @@ get_vms_ips() {
 
     VMS=$(bash "$openstack_utils/$get_vms_list_script" "${command_args[@]}")
 
-    echo -e "[DEBUG] VMS: $VMS"
+    echo -e "VMS:
+    $VMS"
     local exit_code=$?
     if [ $exit_code -ne 0 ]; then
         echo -e "${red}Failed to get VMs IPs (exit code: $exit_code)${normal}"

@@ -176,7 +176,7 @@ block_traffic () {
 # Main execution function
 main() {
     parse_arguments "$@"
-    loca nodes_pair
+    local nodes_pair
     load_external_scripts
 
     # Determine SSH user using external function
