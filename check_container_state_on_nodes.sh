@@ -224,11 +224,11 @@ get_nodes_list() {
 
     [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG]:
-      nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$*\")"
+      nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$*\")" >&2
     nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
     [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG] nodes_result: $nodes_result
-    "
+    " >&2
 
     # Check for errors in node list
     if [ -z "$nodes_result" ]; then
