@@ -230,7 +230,8 @@ check_and_set_variables() {
                     echo -e "${red}Error: $var is required - cannot be empty${normal}"
                     exit 1
                 fi
-                declare "$var=$value"
+
+                export "$var=$value"
             done
 
             # Save variables for future use
