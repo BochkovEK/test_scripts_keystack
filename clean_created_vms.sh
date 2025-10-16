@@ -180,43 +180,100 @@ check_openstack_cli() {
 prefetch_vm_details() {
     echo -e "${blue}Fetching VM details from OpenStack...${normal}"
 
-    # Get all VMs with one request
+    # Get all VMs with project names in one go
     local all_vms_data
-    all_vms_data=$(openstack server list --all-projects -c ID -c Name -c Project -f value 2>/dev/null)
+    all_vms_data=$(openstack project list -c ID -c Name -f value 2>/dev/null | while read project_id project_name; do
+        openstack server list -c ID -c Name --project "$project_id" -f value 2>/dev/null | while read vm_id vm_name; do
+            if [ -n "$vm_id" ] && [ "$vm_id" != "null" ]; then
+                echo "$vm_id $vm_name $project_id $project_name"
+            fi
+        done
+    done)
 
     if [ $? -ne 0 ] || [ -z "$all_vms_data" ]; then
         echo -e "${yellow}Warning: Could not fetch VM list from OpenStack${normal}"
         return 1
     fi
 
+#    # Clear previous cache
+#    unset vm_cache_name
+#    unset vm_cache_project
+#    unset vm_cache_project_name
+#    declare -gA vm_cache_name
+#    declare -gA vm_cache_project
+#    declare -gA vm_cache_project_name
+
     # Caching data
+    local count=0
     while IFS= read -r line; do
         if [ -n "$line" ]; then
-            local vm_id vm_name project_id
+            local vm_id vm_name project_id project_name
             vm_id=$(echo "$line" | awk '{print $1}')
             vm_name=$(echo "$line" | awk '{print $2}')
             project_id=$(echo "$line" | awk '{print $3}')
+            project_name=$(echo "$line" | awk '{print $4}')
 
             if [ -n "$vm_id" ] && [ "$vm_id" != "null" ]; then
                 vm_cache_name["$vm_id"]="$vm_name"
                 vm_cache_project["$vm_id"]="$project_id"
+                vm_cache_project_name["$vm_id"]="$project_name"
+                ((count++))
             fi
         fi
     done <<< "$all_vms_data"
 
-    echo -e "${blue}Loaded details for ${#vm_cache_name[@]} VMs${normal}"
+    echo -e "${blue}Loaded details for $count VMs${normal}"
 
-    for node in "${vm_cache_name[@]}"; do
-      echo "vm_cache_name: $node"
-    done
+    # Debug output (only if TS_DEBUG is true)
+    if [ "$TS_DEBUG" = "true" ]; then
+        for vm_id in "${!vm_cache_name[@]}"; do
+            echo "VM: ${vm_cache_name[$vm_id]} (ID: $vm_id) -> Project: ${vm_cache_project_name[$vm_id]} (${vm_cache_project[$vm_id]})"
+        done
+    fi
 
-    for project in "${vm_cache_project[@]}"; do
-      echo "vm_cache_project: $project"
-    done
-
-    # Additionally getting project names
-    prefetch_project_details
+    # No need for additional project details since we already have them
+    echo -e "${green}VM details prefetch completed${normal}"
 }
+#prefetch_vm_details() {
+#    echo -e "${blue}Fetching VM details from OpenStack...${normal}"
+#
+#    # Get all VMs with one request
+#    local all_vms_data
+#    all_vms_data=$(openstack server list --all-projects -c ID -c Name -c Project -f value 2>/dev/null)
+#
+#    if [ $? -ne 0 ] || [ -z "$all_vms_data" ]; then
+#        echo -e "${yellow}Warning: Could not fetch VM list from OpenStack${normal}"
+#        return 1
+#    fi
+#
+#    # Caching data
+#    while IFS= read -r line; do
+#        if [ -n "$line" ]; then
+#            local vm_id vm_name project_id
+#            vm_id=$(echo "$line" | awk '{print $1}')
+#            vm_name=$(echo "$line" | awk '{print $2}')
+#            project_id=$(echo "$line" | awk '{print $3}')
+#
+#            if [ -n "$vm_id" ] && [ "$vm_id" != "null" ]; then
+#                vm_cache_name["$vm_id"]="$vm_name"
+#                vm_cache_project["$vm_id"]="$project_id"
+#            fi
+#        fi
+#    done <<< "$all_vms_data"
+#
+#    echo -e "${blue}Loaded details for ${#vm_cache_name[@]} VMs${normal}"
+#
+#    for node in "${vm_cache_name[@]}"; do
+#      echo "vm_cache_name: $node"
+#    done
+#
+#    for project in "${vm_cache_project[@]}"; do
+#      echo "vm_cache_project: $project"
+#    done
+#
+#    # Additionally getting project names
+#    prefetch_project_details
+#}
 
 # Caching project names
 prefetch_project_details() {
