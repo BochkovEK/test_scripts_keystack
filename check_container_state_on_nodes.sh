@@ -307,9 +307,7 @@ main() {
     load_external_scripts
 
     # Determine SSH user using external function
-#    echo "SSH_USER=\$(get_and_validate_ssh_user \"$SSH_USER\" \"$default_ssh_user\")"
     SSH_USER=$(get_and_validate_ssh_user "$SSH_USER" "$default_ssh_user")
-#    echo $SSH_USER
     if [[ $? -ne 0 ]]; then
         echo -e "${red}Error: Failed to determine valid SSH user!${normal}"
         exit 1
@@ -325,19 +323,11 @@ main() {
     fi
 
     if [ "$TS_DEBUG" = true ]; then
-#        get_nodes_list -nn "$NODES_NAME"
-#        get_nodes_list -nt "$NODES_TYPE"
         echo -e "
     [DEBUG] nodes: $nodes
     "
     fi
 
-#    IFS=' ' read -ra NODES <<< "$nodes"
-
-#    [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] Nodes: ${NODES[*]}"
-
-    # Process each node
-#    for node_pair in "${NODES[@]}"; do
     for node_pair in $nodes; do
         # Split node:ip format
         echo "$node_pair"

@@ -171,7 +171,7 @@ start_commands_on_nodes() {
         echo -e "${blue}Executing command on ${node_name}${normal}"
 
         # Check SSH connectivity using external module (which includes ping check)
-        if ! check_ssh_connectivity "$node_name" "$node_ip"; then
+        if ! check_ssh_connectivity "$node_pair"; then
             echo -e "${red}Cannot execute command on $node_name - SSH connection failed${normal}"
             continue
         fi
