@@ -820,7 +820,7 @@ create_vms () {
         MAX_KEY="--max $VM_QTY"
         SEQ=1
     else
-        echo "Creating $VM_QTY VMs with timeout: $TIMEOUT_BEFORE_NEXT_CREATION..."
+#        echo "Creating $VM_QTY VMs with timeout: $TIMEOUT_BEFORE_NEXT_CREATION..."
         SEQ=$VM_QTY
     fi
 
@@ -942,7 +942,7 @@ create_vms () {
 
         # Timeout between VM creations (if not batch mode and not last VM)
         if [ "$BATCH" != "true" ] && [ $i -ne $VM_QTY ]; then
-            echo "Waiting $TIMEOUT_BEFORE_NEXT_CREATION seconds before next VM creation..."
+#            echo "Waiting $TIMEOUT_BEFORE_NEXT_CREATION seconds before next VM creation..."
             sleep $TIMEOUT_BEFORE_NEXT_CREATION
         fi
     done
