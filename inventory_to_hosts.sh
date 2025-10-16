@@ -33,9 +33,8 @@ green=$(tput setaf 2)
 yellow=$(tput setaf 3)
 
 # Default values with fallback
-[[ -z $INVENTORY_PATH ]] && INVENTORY_PATH="$script_dir/$inventory_file_name"
+[[ -z $INVENTORY_FILE_NAME ]] && INVENTORY_FILE_NAME="$inventory_file_name"
 [[ -z $OUTPUT_FILE_NAME ]] && OUTPUT_FILE_NAME="$output_file_name"
-[[ -z $OUTPUT_FILE_PATH ]] && OUTPUT_FILE_PATH="$script_dir/$output_file_name"
 [[ -z $DOMAIN ]] && DOMAIN=""
 [[ -z $REGION ]] && REGION=""
 [[ -z $INT_PREF ]] && INT_PREF=""
@@ -43,6 +42,9 @@ yellow=$(tput setaf 3)
 [[ -z $GITLAB_SHORT_NAME ]] && GITLAB_SHORT_NAME="$gitlab_short_name"
 [[ -z $ADD_STRINGS ]] && ADD_STRINGS="$add_strings"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
+[[ -z $VIRTUAL_ENV ]] && VIRTUAL_ENV="$script_dir"
+[[ -z $INVENTORY_PATH ]] && INVENTORY_PATH="$VIRTUAL_ENV/$inventory_file_name"
+[[ -z $OUTPUT_FILE_PATH ]] && OUTPUT_FILE_PATH="$VIRTUAL_ENV/$output_file_name"
 
 # Required variables for Python script
 REQUIRED_VARS=("INVENTORY_PATH" "OUTPUT_FILE_PATH" "DOMAIN" "REGION" "INT_PREF" "EXT_PREF" "GITLAB_SHORT_NAME")
@@ -171,9 +173,9 @@ validate_inventory_file() {
 # Save variables to environment file
 save_variables_to_file() {
     echo "Saving variables to ${env_file_name}..."
-    > "${script_dir}/$env_file_name"
+    > "${VIRTUAL_ENV}/$env_file_name"
     for var in "${REQUIRED_VARS[@]}"; do
-        echo "export ${var}=\"${!var}\"" >> "${script_dir}/$env_file_name"
+        echo "export ${var}=\"${!var}\"" >> "${VIRTUAL_ENV}/$env_file_name"
     done
 }
 
@@ -193,9 +195,9 @@ check_and_set_variables() {
         echo "Some required environment variables are not set: ${missing_vars[*]}"
 
         # Try to load from environment file
-        if [[ -f "${script_dir}/$env_file_name" ]]; then
+        if [[ -f "${VIRTUAL_ENV}/$env_file_name" ]]; then
             echo -e "${yellow}Loading variables from ${env_file_name}${normal}"
-            source "${script_dir}/${env_file_name}"
+            source "${VIRTUAL_ENV}/${env_file_name}"
 
             # Re-check after loading
             missing_vars=()
@@ -212,8 +214,8 @@ check_and_set_variables() {
             for var in "${missing_vars[@]}"; do
                 local default_value=""
                 case "$var" in
-                    "INVENTORY_PATH") default_value="$script_dir/$inventory_file_name" ;;
-                    "OUTPUT_FILE_PATH") default_value="$script_dir/$output_file_name" ;;
+                    "INVENTORY_PATH") default_value="$VIRTUAL_ENV/$inventory_file_name" ;;
+                    "OUTPUT_FILE_PATH") default_value="$VIRTUAL_ENV/$output_file_name" ;;
                     "INT_PREF") default_value="$default_internal_prefix" ;;
                     "EXT_PREF") default_value="$default_external_prefix" ;;
                     "REGION") default_value="$default_region_name" ;;
