@@ -8,7 +8,8 @@ green=$(tput setaf 2)
 red=$(tput setaf 1)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
-blue=$(tput setaf 4)
+dark_blue=$(tput setaf 4)
+blue=$(tput setaf 6)
 
 # Script directory
 script_dir=$(dirname "$0")
@@ -139,7 +140,7 @@ load_cleanup_state() {
     source "$state_file_path"
 
     if [ "$TS_DEBUG" = true ]; then
-        echo -e "${blue}[DEBUG] Loaded variables:${normal}"
+        echo -e "${dark_blue}[DEBUG] Loaded variables:${normal}"
         set | grep -E "^(CREATED_|BATCH_)"
     fi
 }
@@ -195,14 +196,6 @@ prefetch_vm_details() {
         return 1
     fi
 
-#    # Clear previous cache
-#    unset vm_cache_name
-#    unset vm_cache_project
-#    unset vm_cache_project_name
-#    declare -gA vm_cache_name
-#    declare -gA vm_cache_project
-#    declare -gA vm_cache_project_name
-
     # Caching data
     local count=0
     while IFS= read -r line; do
@@ -227,7 +220,7 @@ prefetch_vm_details() {
     # Debug output (only if TS_DEBUG is true)
     if [ "$TS_DEBUG" = "true" ]; then
         for vm_id in "${!vm_cache_name[@]}"; do
-            echo -e "${blue}[DEBUG]:${normal}"
+            echo -e "${dark_blue}[DEBUG]:${normal}"
             echo "VM: ${vm_cache_name[$vm_id]} (ID: $vm_id) -> Project: ${vm_cache_project_name[$vm_id]} (${vm_cache_project[$vm_id]})"
         done
     fi
@@ -235,46 +228,6 @@ prefetch_vm_details() {
     # No need for additional project details since we already have them
     echo -e "${green}VM details prefetch completed${normal}"
 }
-#prefetch_vm_details() {
-#    echo -e "${blue}Fetching VM details from OpenStack...${normal}"
-#
-#    # Get all VMs with one request
-#    local all_vms_data
-#    all_vms_data=$(openstack server list --all-projects -c ID -c Name -c Project -f value 2>/dev/null)
-#
-#    if [ $? -ne 0 ] || [ -z "$all_vms_data" ]; then
-#        echo -e "${yellow}Warning: Could not fetch VM list from OpenStack${normal}"
-#        return 1
-#    fi
-#
-#    # Caching data
-#    while IFS= read -r line; do
-#        if [ -n "$line" ]; then
-#            local vm_id vm_name project_id
-#            vm_id=$(echo "$line" | awk '{print $1}')
-#            vm_name=$(echo "$line" | awk '{print $2}')
-#            project_id=$(echo "$line" | awk '{print $3}')
-#
-#            if [ -n "$vm_id" ] && [ "$vm_id" != "null" ]; then
-#                vm_cache_name["$vm_id"]="$vm_name"
-#                vm_cache_project["$vm_id"]="$project_id"
-#            fi
-#        fi
-#    done <<< "$all_vms_data"
-#
-#    echo -e "${blue}Loaded details for ${#vm_cache_name[@]} VMs${normal}"
-#
-#    for node in "${vm_cache_name[@]}"; do
-#      echo "vm_cache_name: $node"
-#    done
-#
-#    for project in "${vm_cache_project[@]}"; do
-#      echo "vm_cache_project: $project"
-#    done
-#
-#    # Additionally getting project names
-#    prefetch_project_details
-#}
 
 # Caching project names
 prefetch_project_details() {
@@ -421,7 +374,7 @@ show_resources_summary() {
         for vm_id in "${!all_vms[@]}"; do
             vm_details=$(get_vm_details "$vm_id")
             if [ $? -eq 0 ]; then
-                echo "vm_details: $vm_details"
+#                echo "vm_details: $vm_details"
                 vm_name=$(echo "$vm_details" | cut -d: -f1)
                 vm_project=$(echo "$vm_details" | cut -d: -f2)
                 echo "  - $vm_name (ID: $vm_id, Project: $vm_project) [Batch ${all_vms[$vm_id]}]"
