@@ -84,43 +84,75 @@ parse_arguments() {
                 exit 0
                 ;;
             -hv)
+                if [ -z "$2" ]; then
+                    echo -e "${red}Error: -hv requires a hypervisor name${normal}"
+                    exit 1
+                fi
                 HYPERVISOR_NAME="$2"
                 echo "Targeting hypervisor: $HYPERVISOR_NAME"
                 shift 2
                 ;;
             -cpu)
+                if [ -z "$2" ]; then
+                    echo -e "${red}Error: -cpu requires a number of cores${normal}"
+                    exit 1
+                fi
                 CPUS="$2"
                 TYPE_TEST="cpu"
                 echo "CPU stress with $CPUS cores"
                 shift 2
                 ;;
             -ram)
+                if [ -z "$2" ]; then
+                    echo -e "${red}Error: -ram requires a GB amount${normal}"
+                    exit 1
+                fi
                 RAM="$2"
                 TYPE_TEST="ram"
                 echo "RAM stress with $RAM GB"
                 shift 2
                 ;;
             -units)
+                if [ -z "$2" ]; then
+                    echo -e "${red}Error: -units requires a unit (B, K, M, G)${normal}"
+                    exit 1
+                fi
                 UNITS="$2"
                 echo "Using units: $UNITS"
                 shift 2
                 ;;
             -key)
+                if [ -z "$2" ]; then
+                    echo -e "${red}Error: -key requires a path to SSH key${normal}"
+                    exit 1
+                fi
                 KEY_PATH="$2"
                 echo "Using SSH key: $KEY_PATH"
                 shift 2
                 ;;
             -p|-project)
+                if [ -z "$2" ]; then
+                    echo -e "${red}Error: -project requires a project name${normal}"
+                    exit 1
+                fi
                 PROJECT="$2"
                 echo "Using project: $PROJECT"
                 shift 2
                 ;;
             -u|-vm_user)
+                if [ -z "$2" ]; then
+                    echo -e "${red}Error: -vm_user requires a username${normal}"
+                    exit 1
+                fi
                 VM_USER="$2"
                 echo "Using VM user: $VM_USER"
                 shift 2
                 ;;
             -t|-time_out)
+                if [ -z "$2" ]; then
+                    echo -e "${red}Error: -time_out requires a timeout in seconds${normal}"
+                    exit 1
+                fi
                 TIME_OUT="$2"
                 echo "Timeout: $TIME_OUT seconds"
                 shift 2
@@ -131,6 +163,10 @@ parse_arguments() {
                 shift
                 ;;
             -vms)
+                if [ -z "$2" ]; then
+                    echo -e "${red}Error: -vms requires a list of IPs${normal}"
+                    exit 1
+                fi
                 VMS="$2"
                 echo "Using IP list: $VMS"
                 shift 2
@@ -146,6 +182,10 @@ parse_arguments() {
                 shift
                 ;;
             -nload)
+                if [ -z "$2" ]; then
+                    echo -e "${red}Error: -nload requires on/off value${normal}"
+                    exit 1
+                fi
                 NETWORK_LOAD="$2"
                 echo "Network load action: $NETWORK_LOAD"
                 shift 2
@@ -155,7 +195,7 @@ parse_arguments() {
                 break
                 ;;
             *)
-                echo "Unknown parameter: $1"
+                echo -e "${red}Unknown parameter: $1${normal}"
                 display_help
                 exit 1
                 ;;
