@@ -764,19 +764,9 @@ check_and_add_flavor () {
 # Check VMs list
 check_vms_list () {
     echo "Check VMs list..."
-    if [ -n "$HYPERVISOR_HOSTNAME" ]; then
-        check_host="--host $HYPERVISOR_HOSTNAME"
-        echo "Check VMs list on $HYPERVISOR_HOSTNAME:"
-#        openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks
-        openstack server list --all-projects --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks
-        echo "Command for check VMs list on $HYPERVISOR_HOSTNAME:"
-#       echo -e "${yellow}openstack server list --all-projects $check_host --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
-        echo -e "${yellow}openstack server list --all-projects --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
-    else
-        openstack server list --all-projects --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks
-        echo "Command for check VMs list:"
-        warning_output "openstack server list --all-projects --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
-    fi
+    openstack server list --all-projects --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks
+    echo "Command for check VMs list:"
+    warning_output "openstack server list --all-projects --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
 }
 
 # Wait for specific VMs to be created by their IDs and names
@@ -957,6 +947,9 @@ create_vms () {
         echo -e "${red}No VMs were created successfully${normal}"
         return 1
     fi
+
+    # Show final VMs list
+    check_vms_list
 
     return 0
 }
