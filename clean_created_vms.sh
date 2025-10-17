@@ -610,7 +610,7 @@ offer_cleanup_file_removal() {
     fi
 
     echo ""
-    echo -e "${normal}=== CLEANUP COMPLETED SUCCESSFULLY ===${normal}"
+    echo -e "======================================${normal}"
     echo "Cleanup state file: $state_file"
     echo ""
 
