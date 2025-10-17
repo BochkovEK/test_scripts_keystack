@@ -198,26 +198,6 @@ collect_volumes_from_vms() {
     echo "$volume_ids"
 }
 
-# Get volume details with name
-get_volume_details() {
-    local volume_id="$1"
-
-    # Get volume name using openstack CLI
-    local volume_name
-    volume_name=$(openstack volume show "$volume_id" -c name -f value 2>/dev/null)
-
-    if [ $? -ne 0 ] || [ -z "$volume_name" ] || [ "$volume_name" = "null" ]; then
-        echo "[no name]"
-    else
-        # Filter out any debug messages or invalid names
-        if [[ "$volume_name" =~ ^[a-zA-Z0-9._-]+$ ]]; then
-            echo "$volume_name"
-        else
-            echo "[no name]"
-        fi
-    fi
-}
-
 # Get security group details
 get_security_group_details() {
     local sg_id="$1"
@@ -233,7 +213,7 @@ get_security_group_details() {
     local sg_project_id=$(openstack security group show "$sg_id" -c project_id -f value 2>/dev/null)
 
     # Get project name
-    local project_name=$(openstack project show "$sg_project_id" -c name -f value 2>/dev/null 2>/dev/null)
+    local project_name=$(openstack project show "$sg_project_id" -c name -f value 2>/dev/null)
     if [ $? -ne 0 ]; then
         project_name="unknown"
     fi
@@ -365,7 +345,7 @@ get_vm_details() {
     local project_name=""
 
     if [ -n "$vm_project_id" ]; then
-        project_name=$(openstack project show "$vm_project_id" -c name -f value 2>/dev/null 2>/dev/null)
+        project_name=$(openstack project show "$vm_project_id" -c name -f value 2>/dev/null)
     fi
 
     echo "$vm_name:$project_name"
@@ -378,7 +358,7 @@ collect_resources_by_category() {
 
     echo "Collect resources by category..."
     # Initialize arrays
-    declare -gA all_vms=() all_volumes=() all_security_groups=() all_flavors=() all_keypairs=()
+    declare -gA all_vms=() all_volumes=() all_security_groups=() all_flavors=() all_keypairs=() volume_to_vm_map=()
 
     # Find all batches
     if [ -z "$batch_filter" ]; then
@@ -404,11 +384,11 @@ collect_resources_by_category() {
                 if [ "$vm_id" != "null" ]; then
                     all_vms["$vm_id"]="$batch_num"
 
-                    # COLLECT VOLUMES FROM VM ID (FIXED VERSION)
                     local volumes_for_vm=$(collect_volumes_from_vms "$vm_id")
                     for volume_id in $volumes_for_vm; do
                         if [ -n "$volume_id" ] && [ "$volume_id" != "null" ]; then
                             all_volumes["$volume_id"]="$batch_num"
+                            volume_to_vm_map["$volume_id"]="$vm_id"
                         fi
                     done
                 fi
@@ -432,7 +412,7 @@ collect_resources_by_category() {
     done
 }
 
-# Show resources summary by category - FIXED VOLUMES DISPLAY
+# Show resources summary by category
 show_resources_summary() {
     local batch_info="$1"
 
@@ -457,20 +437,25 @@ show_resources_summary() {
         echo -e "${green}No virtual machines found${normal}"
     fi
 
-    # Volumes summary - FIXED VERSION
     if [ ${#all_volumes[@]} -gt 0 ]; then
         echo -e "${normal}VOLUMES (${#all_volumes[@]}):${normal}"
         for volume_id in "${!all_volumes[@]}"; do
-            volume_name=$(get_volume_details "$volume_id")
-            # Additional filtering to ensure we only show valid volume names
-            if [[ "$volume_name" =~ ^[a-zA-Z0-9._-]+$ ]] || [[ "$volume_name" == "[no name]" ]]; then
-                echo "  - $volume_name (ID: $volume_id) [Batch ${all_volumes[$volume_id]}]"
-            else
-                # Skip invalid volume entries that contain debug messages
-                if [ "$TS_DEBUG" = true ]; then
-                    echo "  - [Skipped invalid volume entry: $volume_name]"
+            local vm_id_for_volume="${volume_to_vm_map[$volume_id]}"
+            local vm_name_for_volume=""
+
+            if [ -n "$vm_id_for_volume" ]; then
+                vm_name_for_volume="${vm_cache_name[$vm_id_for_volume]}"
+            fi
+
+            if [ -z "$vm_name_for_volume" ]; then
+                if [ -n "$vm_id_for_volume" ]; then
+                    vm_name_for_volume="VM_${vm_id_for_volume:0:8}"
+                else
+                    vm_name_for_volume="unknown"
                 fi
             fi
+
+            echo "  - ${vm_name_for_volume}_volume (ID: $volume_id) [Batch ${all_volumes[$volume_id]}]"
         done
         echo ""
     else
