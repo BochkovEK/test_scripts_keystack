@@ -299,7 +299,7 @@ update_cleanup_state () {
         echo "export CREATED_SECURITY_GROUP_ID_BATCH_${batch_num}=\"$SECURITY_GR_ID\"" >> "$VIRTUAL_ENV/$cleanup_file"
     fi
 
-    if [ -n "$FLAVOR" ] && ! grep -q "${FLAVOR}_${PROJECT}" "$VIRTUAL_ENV/$cleanup_file"; then
+    if [ -n "$FLAVOR" ] && [ "$NEW_FLAVOR_CREATED" = "true" ] && ! grep -q "${FLAVOR}_${PROJECT}" "$VIRTUAL_ENV/$cleanup_file"; then
         echo "export CREATED_FLAVOR_NAME_BATCH_${batch_num}=\"${FLAVOR}_${PROJECT}\"" >> "$VIRTUAL_ENV/$cleanup_file"
     fi
 
@@ -590,7 +590,7 @@ check_project () {
 }
 
 # Check and add security group
-check_and_add_secur_group () {
+check_security_group () {
     echo "Check for exist security group: \"$SECURITY_GR\""
     if [ -z "$PROJ_ID" ]; then
         check_project
@@ -604,6 +604,9 @@ check_and_add_secur_group () {
             }
         echo "Creating security group \"$SECURITY_GR\" in project \"$PROJECT\"..."
         SECURITY_GR_ID=$(openstack security group create --project $PROJECT $SECURITY_GR|grep "id"| head -1 | awk '{print $4}')
+        if [ $? -ne 0 ] || [ -z "$SECURITY_GR_ID" ]; then
+            error_output "Failed to create security group: $SECURITY_GR"
+        fi
         echo "Security group \"$SECURITY_GR\": $SECURITY_GR_ID was created in project \"$PROJECT\""
         echo "Creating rules for \"$SECURITY_GR\" security group...";
         openstack security group rule create --egress --ethertype IPv4 --protocol tcp $SECURITY_GR_ID
@@ -617,7 +620,7 @@ check_and_add_secur_group () {
 }
 
 # Check and add keypair
-check_and_add_keypair () {
+check_keypair () {
     if [ ! $NO_KEY = "false" ]; then
         key_string=""
     else
@@ -632,6 +635,9 @@ check_and_add_keypair () {
             echo "Creating \"$KEY_NAME\" in project \"$PROJECT\"..."
             touch $script_dir/$KEY_NAME.pem
             openstack keypair create $KEY_NAME --public-key $script_dir/"$KEY_NAME".pub
+            if [ $? -ne 0 ]; then
+                error_output "Failed to create keypair: $KEY_NAME"
+            fi
             chmod 400 $script_dir/$KEY_NAME.pem
             echo "Keypair \"$KEY_NAME\" was created in project \"$PROJECT\""
         else
@@ -732,7 +738,7 @@ create_image () {
 }
 
 # Check and add flavor
-check_and_add_flavor () {
+check_flavor () {
     echo "Check for exist flavor: \"$FLAVOR\""
     FLAVOR_EXST=$(openstack flavor list| grep $FLAVOR| head -n 1| awk '{print $4}')
     if [ -z $FLAVOR_EXST ]; then
@@ -756,6 +762,10 @@ check_and_add_flavor () {
 
         echo "Creating flavor \"$FLAVOR\" with $CPU_QTY cpus and $RAM_MB Mb...";
         openstack flavor create --public --vcpus $CPU_QTY --ram $RAM_MB --disk 0 ${FLAVOR}_${PROJECT}
+        if [ $? -ne 0 ]; then
+            error_output "Failed to create flavor: ${FLAVOR}_${PROJECT}"
+        fi
+        NEW_FLAVOR_CREATED="true"
     else
        echo -e "${green}Flavor \"$FLAVOR\" already exist${normal}"
     fi
@@ -990,10 +1000,10 @@ main() {
         check_hv
         check_project
         check_network
-        check_and_add_secur_group
+        check_security_group
         check_image
-        check_and_add_flavor
-        check_and_add_keypair
+        check_flavor
+        check_keypair
     }
 
     create_vms
