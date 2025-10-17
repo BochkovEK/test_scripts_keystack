@@ -258,11 +258,11 @@ EOF
     fi
 }
 
-# Update cleanup state with new batch - адаптируем для пустых volume_ids
+# Update cleanup state with new batch
 update_cleanup_state () {
     local batch_num="$1"
     local vm_ids="$2"
-    local volume_ids="$3"  # Может быть пустым
+    local volume_ids="$3"  # Can be empty
 
     echo "Updating cleanup state for batch $batch_num..."
 
@@ -276,10 +276,10 @@ update_cleanup_state () {
     echo "" >> "$VIRTUAL_ENV/$cleanup_file"
     echo "# Batch $batch_num" >> "$VIRTUAL_ENV/$cleanup_file"
 
-    # Всегда добавляем VM IDs
+    # Add VM IDs
     echo "export CREATED_VM_IDS_BATCH_${batch_num}=\"$vm_ids\"" >> "$VIRTUAL_ENV/$cleanup_file"
 
-    # Volume IDs добавляем только если они есть
+    # Add volume IDs only if they exist
     if [ -n "$volume_ids" ]; then
         echo "export CREATED_BOOT_VOLUMES_BATCH_${batch_num}=\"$volume_ids\"" >> "$VIRTUAL_ENV/$cleanup_file"
     else
@@ -766,38 +766,46 @@ check_vms_list () {
     fi
 }
 
-# Wait for specific VMs to be created by their IDs
+# Wait for specific VMs to be created by their IDs and names
+# Wait for specific VMs to be created by their IDs and names
 wait_vms_created () {
-    local vm_ids="$1"  # Accept VM IDs instead of name pattern
+    local vm_ids="$1"
+    local vm_names="$2"
     local all_active=false
     local attempts=0
-    local max_attempts=60  # 5 minutes with 5-second intervals
+    local max_attempts=60
 
     echo "Waiting for VMs to become active..."
+
+    # Создаём массивы для удобства
+    local id_array=($vm_ids)
+    local name_array=($vm_names)
+    local total_count=${#id_array[@]}
 
     while [ $attempts -lt $max_attempts ] && [ "$all_active" = false ]; do
         all_active=true
         active_count=0
-        total_count=0
 
-        for vm_id in $vm_ids; do
-            ((total_count++))
+        for i in "${!id_array[@]}"; do
+            local vm_id="${id_array[i]}"
+            local vm_name="${name_array[i]}"
+
             status=$(openstack server show $vm_id -c status -f value 2>/dev/null)
 
             if [ "$status" = "ACTIVE" ]; then
                 ((active_count++))
-                echo -e "${green}VM $vm_id is ACTIVE${normal}"
+                echo -e "${green}✓ $vm_name ($vm_id) is ACTIVE${normal}"
             elif [ "$status" = "ERROR" ]; then
-                echo -e "${red}VM $vm_id is in ERROR state${normal}"
+                echo -e "${red}✗ $vm_name ($vm_id) is in ERROR state${normal}"
                 all_active=false
             elif [ "$status" = "BUILD" ]; then
-                echo -e "${yellow}VM $vm_id is still BUILDING${normal}"
+                echo -e "${yellow}⏳ $vm_name ($vm_id) is BUILDING${normal}"
                 all_active=false
             elif [ -z "$status" ]; then
-                echo -e "${yellow}VM $vm_id not found yet${normal}"
+                echo -e "${yellow}? $vm_name ($vm_id) not found yet${normal}"
                 all_active=false
             else
-                echo -e "${yellow}VM $vm_id status: $status${normal}"
+                echo -e "${yellow}? $vm_name ($vm_id) status: $status${normal}"
                 all_active=false
             fi
         done
@@ -825,16 +833,6 @@ create_vms () {
     local vm_ids=""
     local vm_names=""
     local vm_info=""
-#    local volume_ids=""
-
-#    if [ "$BATCH" = "true" ]; then
-#        echo "Creating $VM_QTY VMs (batch)..."
-#        MAX_KEY="--max $VM_QTY"
-#        SEQ=1
-#    else
-##        echo "Creating $VM_QTY VMs with timeout: $TIMEOUT_BEFORE_NEXT_CREATION..."
-#        SEQ=$VM_QTY
-#    fi
 
     # Get flavor name
     FLAVOR_NAME=$(openstack flavor list| grep $FLAVOR| head -n 1| awk '{print $4}')
@@ -931,13 +929,9 @@ create_vms () {
     if [ -n "$vm_ids" ]; then
         local next_batch=$(get_next_batch_number)
 
-        # Передаём и IDs и names
+        # We pass both IDs and names
         if update_cleanup_state "$next_batch" "$vm_ids" "$vm_names" ""; then
             echo -e "${green}Cleanup state saved for batch $next_batch${normal}"
-            echo "VM IDs: $vm_ids"
-            echo "VM Names: $vm_names"
-            echo "Volume IDs: Will be collected during cleanup"
-
             if [ "$TS_DEBUG" = "true" ]; then
                 echo "[DEBUG] VM info pairs: $vm_info"
             fi
@@ -945,7 +939,7 @@ create_vms () {
             echo -e "${yellow}Cleanup state not updated${normal}"
         fi
 
-        # Ожидаем создания ВМ, передавая и ID и имена
+        # We are waiting for VM creation, passing both IDs and names
         if [ "$WAIT_FOR_CREATED" = true ]; then
             if wait_vms_created "$vm_ids" "$vm_names"; then
                 echo -e "${green}All VMs are ACTIVE!${normal}"
