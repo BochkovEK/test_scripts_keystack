@@ -10,4 +10,7 @@
 /.idea/deployment.xml
 ./test_text_file.txt
 ./output.txt
-foo*
+./*-rc*.py
+./utils/*-rc*.sh
+./*-rc*.sh
+foo.yml

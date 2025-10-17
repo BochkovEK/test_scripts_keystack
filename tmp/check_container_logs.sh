@@ -1,46 +1,21 @@
 #!/bin/bash
 
-#The scrip check logs
+#The scrip check container logs
 
-# example nodes list define
-# NODES=("<IP_1>" "<IP_2>" "<IP_3>" "...")
-
-comp_pattern="\-comp\-..$"
-ctrl_pattern="\-ctrl\-..$"
-net_pattern="\-net\-..$"
-nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
+default_ssh_user="root"
+default_docker_engine="docker"
 
 #Colors
-green=$(tput setaf 2)
+#green=$(tput setaf 2)
 red=$(tput setaf 1)
-violet=$(tput setaf 5)
+#violet=$(tput setaf 5)
 normal=$(tput sgr0)
 
-[[ -z $SERVICE_NAME ]] && SERVICE_NAME=""
-[[ -z $NODES ]] && NODES=()
+[[ -z $CONTAINER_NAME ]] && CONTAINER_NAME=""
+[[ -z $NODES_NAME ]] && NODES_NAME=""
+[[ -z $NODES_TYPE ]] && NODES_TYPE="all"
 #======================
 
-note_type_func () {
-  case "$1" in
-        ctrl)
-          nodes_to_find=$ctrl_pattern
-          echo "Сontainer will be checked on ctrl nodes"
-          ;;
-        comp)
-          nodes_to_find=$comp_pattern
-          echo "Сontainer will be checked on comp nodes"
-          ;;
-        net)
-          nodes_to_find=$net_pattern
-          echo "Сontainer will be checked on net nodes"
-          ;;
-        *)
-          echo "type is not specified correctly. Сontainers will be checked on ctr, comp, net nodes"
-          ;;
-        esac
-}
-
-#======================
 
 # Define parameters
 define_parameters () {
@@ -53,17 +28,24 @@ do
   case "$1" in
     --help) echo -E "
       <container_name> as parameter
-      -c, 	-container_name		<container_name>
-      -nt, 	-type_of_nodes		<type_of_nodes> 'ctrl', 'comp', 'net'
+
+      -c, -container_name <container_name>
+      -nn, node_name <node_name_list>       example -nn \"comp-01 comp-02 ... comp-N\"
+      -nt, -type_of_nodes	<type_of_nodes>   available values: 'ctrl', 'comp', 'net'
 "
       exit 0
       break ;;
-	  -c|-container_name) CONTAINER_NAME="$2"
+	  -c|-container_name)
+	    CONTAINER_NAME="$2"
 	    echo "Found the -container_name <container_name> option, with parameter value $CONTAINER_NAME"
       shift ;;
     -nt|-type_of_nodes)
+      NODES_TYPE=$2
       echo "Found the -type_of_nodes  with parameter value $2"
-      note_type_func "$2"
+      shift ;;
+    -nn|-type_of_nodes)
+      NODES_TYPE=$2
+      echo "Found the -type_of_nodes  with parameter value $2"
       shift ;;
     --) shift
       break ;;
@@ -71,8 +53,6 @@ do
       esac
       shift
 done
-
-[[ -z ${NODES[0]} ]] && { srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}'); for i in $srv; do NODES+=("$i"); done; }
 
 echo "Nodes for container checking:"
 echo "${NODES[*]}"

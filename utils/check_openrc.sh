@@ -3,15 +3,9 @@
 # The script check openrc file
 
 #Colors
-green=$(tput setaf 2)
-red=$(tput setaf 1)
-orange=$(tput setaf 3)
-violet=$(tput setaf 5)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
-
-#Script_dir, current folder
-script_dir=$(dirname $0)
+red=$(tput setaf 1)
 
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH=$HOME/openrc
 [[ -z $CHECK_OPENRC ]] && CHECK_OPENRC="true"
@@ -30,5 +24,6 @@ check_and_source_openrc_file () {
     echo $OPENRC_PATH
   fi
 }
+
 
 check_and_source_openrc_file

@@ -9,20 +9,20 @@
 #<IP_3>
 #<IP_4>
 
+blocked_ips_list_file_name="blocked_ips_list"
+blocked_ips_list_dir="/tmp"
+
 [[ -z $TIMEOUT ]] && TIMEOUT=180
 
-echo 'Start block_traffic.sh script'
-if [ -f ~/blocked_ips_list ]; then BLOCKED_IPS=$(cat ~/blocked_ips_list); else echo "IPS list to block not found (~/blocked_ips_list)"; exit 1; fi
-#[[ -z $BLOCKED_IPS ]] && { echo "IPS list to block not found (env BLOCKED_IPS)"; exit 1; }
-
-#TIMEOUT=180
+echo "$0 script"
 
 block_traffic () {
+#    exit 0
     for IP in ${BLOCKED_IPS}; do
 # Blocking incoming traffic from IP
         echo "Block incoming traffic from ${IP}"
         iptables -A INPUT -s "$IP" -j DROP
-#Blocking outgoing traffic to IP
+# Blocking outgoing traffic to IP
         echo "Block outgoing traffic to ${IP}"
         iptables -A OUTPUT -d "$IP" -j DROP
         date
@@ -42,17 +42,23 @@ enable_traffic () {
 }
 
 check_ips_list () {
-  echo "check ips list..."
-  BLOCKED_IPS=$(cat ~/blocked_ips_list) #"a b c d"
-  [[ -z $BLOCKED_IPS ]] && { "BLOCKED_IPS is empty"; exit 1; }
+    echo "check ips list..."
+    [[ ! -f ${blocked_ips_list_dir}/${blocked_ips_list_file_name} ]] && { echo "${blocked_ips_list_dir}/${blocked_ips_list_file_name} not found"; exit 1; }
+    BLOCKED_IPS=$(cat ${blocked_ips_list_dir}/${blocked_ips_list_file_name}) #"a b c d"
+    [[ -z $BLOCKED_IPS ]] && { echo "BLOCKED_IPS is empty"; exit 1; }
     for IP in ${BLOCKED_IPS}; do
         echo "$IP"
     done
 }
 
-check_ips_list
-block_traffic
-echo "The server is isolated from: ${BLOCKED_IPS[*]}"
-#iptables -S
-sleep $TIMEOUT
-enable_traffic
+main () {
+    check_ips_list
+    block_traffic
+    echo "The server is isolated from: ${BLOCKED_IPS[*]}"
+    #iptables -S
+    sleep $TIMEOUT
+    enable_traffic
+}
+
+# Run main function
+main "$@"

@@ -1,348 +1,433 @@
-# The script for edit HA conf
-# To start: bash ~/test_scripts_keystack/edit_ha_config.sh --help
+#!/bin/bash
 
-#ctrl_pattern="\-ctrl\-..$"
-service_name=consul
-nodes_type="ctrl"
-test_node_conf_dir=kolla/$service_name
-conf_dir=/etc/kolla/$service_name
-conf_name="ha-config.ini"
+# Script for managing HA configuration files across consul nodes
+# Supports pulling, pushing, and checking configuration files
+
+# Color definitions
+normal=$(tput sgr0)
+green=$(tput setaf 2)
+yellow=$(tput setaf 3)
+red=$(tput setaf 1)
+blue=$(tput setaf 6)
+
+# Script paths
 script_dir=$(dirname "$0")
 script_name=$(basename "$0")
 utils_dir="$script_dir/utils"
-check_openrc_script="check_openrc.sh"
 get_nodes_list_script="get_nodes_list.sh"
-default_user="root"
-#install_package_script="install_package.sh"
+get_ssh_user_script="get_ssh_user.sh"
+default_container_engine="docker"
+default_ssh_user="root"
 
-#Colors
-green=$(tput setaf 2)
-red=$(tput setaf 1)
-violet=$(tput setaf 5)
-normal=$(tput sgr0)
-yellow=$(tput setaf 3)
+# Service and path configuration
+service_name="consul"
+nodes_type="ctrl"
+test_node_conf_dir="kolla/$service_name"
+conf_dir="/etc/kolla/$service_name"
+conf_name="ha-config.ini"
 
-#[[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
-#[[ -z $ALIVE_THRSHOLD ]] && ALIVE_THRSHOLD=""
-#[[ -z $DEAD_THRSHOLD ]] && DEAD_THRSHOLD=""
-#[[ -z $IPMI_FENCING ]] && IPMI_FENCING=""
-#[[ -z $NOVA_FENCING ]] && NOVA_FENCING=""
-[[ -z $CHECK_SUFFIX ]] && CHECK_SUFFIX="false"
-[[ -z $TS_DEBUG ]] && DEBUG="false"
-[[ -z $ONLY_CONF_CHECK ]] && ONLY_CONF_CHECK="false"
-[[ -z $PUSH ]] && PUSH="false"
-[[ -z $PULL ]] && PULL="false"
-[[ -z $LEGACY_CONF ]] && LEGACY_CONF="false"
-[[ -z $CONF_NAME ]] && CONF_NAME=$conf_name
+# External scripts array
+external_scripts=(
+    "$utils_dir/$get_ssh_user_script"
+)
+
+# Default values
+[[ -z $CHECK_SUFFIX ]] && CHECK_SUFFIX=false
+[[ -z $TS_DEBUG ]] && TS_DEBUG=false
+[[ -z $ONLY_CONF_CHECK ]] && ONLY_CONF_CHECK=false
+[[ -z $PUSH ]] && PUSH=false
+[[ -z $PULL ]] && PULL=false
+[[ -z $CONF_NAME ]] && CONF_NAME="$conf_name"
 [[ -z $OS_REGION_NAME ]] && OS_REGION_NAME=""
-[[ -z $GET_CONFIG_PATH ]] && GET_CONFIG_PATH="false"
-[[ -z $USER ]] && USER="$default_user"
+[[ -z $GET_CONFIG_PATH ]] && GET_CONFIG_PATH=false
+[[ -z $SSL_CHECK ]] && SSL_CHECK=false
+[[ -z $CONTAINER_ENGINE ]] && CONTAINER_ENGINE=$default_container_engine
+[[ -z $VIRTUAL_ENV ]] && VIRTUAL_ENV="$script_dir"
 
+# Function to display help information
+show_help() {
+    echo -E "
+    Usage: $0 [OPTIONS]
 
-#[[ -z "${1}" ]] && { echo "Alive threshold value required as parameter script"; exit 1; }
+    Manage HA configuration files across consul nodes.
 
-# Define parameters
-define_parameters () {
-#  pass
-  [ "$count" = 1 ] && [ "$1" = suffix ] && { CHECK_SUFFIX=true; echo "Check suffix parameter found"; }
-  [ "$count" = 1 ] && [ "$1" = config_path ] && { GET_CONFIG_PATH=true; echo "Get config path parameter found"; }
-#  [ "$count" = 1 ] && [ "$1" = check ] && { ONLY_CONF_CHECK=true; echo "Only conf check parameter found"; }
+    Options:
+      suffix                            Return BMC suffix
+      config_path                       Return configuration file path
+      -v, -debug                        Enable debug output
+      -pull                             Pull configuration from controller node to local directory
+      -push                             Push configuration from local directory to all controller nodes
+      -check                            Only check configuration without making changes
+      -u, -ssh_user <user>              Set SSH user for remote access
+      -ce, -container_engine <engine>   Container engine (docker/podman)
+      -suffix                           Get BMC suffix
+      -sc, -ssl_check                   Check for SSL client key in config
+    "
 }
 
-count=1
-while [ -n "$1" ]
-do
-  case "$1" in
-    --help) echo -E "
-      The script change consul region config
-
-        -v, -debug    without value, set DEBUG=\"true\"
-        -pull         pull consul config from ctrl node to $script_dir/$test_node_conf_dir
-                      $script_dir/$test_node_conf_dir to
-        -push         push consul config from $script_dir/$test_node_conf_dir to all ctrl nodes
-        -check        only check option
-        -l, legacy    edit legacy consul region config; work with -push, -pull, -check keys
-        -u, user      set user for ssh access
-
-      Note:
-        In case of legacy versions of consul, to change the config you need to:
-          1) Specify the key -l; -legacy
-          2) Define the global variable OS_REGION_NAME, or add a file ~/openrc containing it
-          Example command: bash ~/test_scripts_keystack/$service_name -check -l
-      "
-#      -push        without value, push region-config_<region_name>.json from
-#     region-config_<region_name>.json from
-#                   /etc/kolla/consul/region-config_<region_name>.json on ctrl node to
-#        start script with parameter suffix: bash edit_ha_region_config.sh check  - return contents of the config file
-#        start script with parameter suffix: bash edit_ha_region_config.sh suffix - return bmc suffix
-#        openrc file required in ~/
-#        -a,   -alive_threshold          <alive_compute_threshold>
-#        -d,   -dead_threshold           <dead_compute_threshold>
-#        -i,   -ipmi_fencing             <true\false>
-#        -n,   -nova_fencing             <true\false>
-      exit 0
-      break ;;
-#	      -a|-alive_threshold) ALIVE_THRSHOLD="$2"
-#	        echo "Found the -alive_threshold <alive_threshold> option, with parameter value $ALIVE_THRSHOLD"
-#          shift ;;
-#        -d|-dead_threshold) DEAD_THRSHOLD="$2"
-#	        echo "Found the -dead_threshold <dead_threshold> option, with parameter value $DEAD_THRSHOLD"
-#          shift ;;
-#        -i|-ipmi_fencing) IPMI_FENCING="$2"
-#          echo "Found the -ipmi_fencing <true\false> option, with parameter value $IPMI_FENCING"
-#          shift ;;
-#        -n|-nova_fencing) NOVA_FENCING="$2"
-#          echo "Found the -nova_fencing <true\false> option, with parameter value $NOVA_FENCING"
-#          shift ;;
-    -v|-debug) DEBUG="true"
-      echo "Found the -debug, parameter set $TS_DEBUG"
-      ;;
-    -pull) PULL="true"
-      echo "Found the -pull, parameter set $PULL"
-      ;;
-    -push) PUSH="true"
-      echo "Found the -push, parameter set $PUSH"
-      ;;
-    -check) ONLY_CONF_CHECK="true"
-      echo "Found the -check, parameter set $ONLY_CONF_CHECK"
-      ;;
-    -l|-legacy) LEGACY_CONF="true"
-      echo "Found the -legacy, parameter set $LEGACY_CONF"
-      ;;
-    -u|-user) USER="$2"
-      USER_STR="-u $USER"
-      echo "Found the -user parameter with value $USER"
-      shift
-      ;;
-    --) shift
-      break ;;
-    *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
-      esac
-      shift
-done
-
-#source $OPENRC_PATH
-
-
-#Check_openrc_file () {
-#    echo "Check openrc file here: $OPENRC_PATH"
-#    check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
-#    #echo $OPENRC_PATH
-#    #echo $check_openrc_file
-#    [[ -z "$check_openrc_file" ]] && { echo "openrc file not found in $OPENRC_PATH"; exit 1; }
-#}
-
-#debug echo
-debug_echo () {
-  echo -e "
-  [DEBUG]:
-    $1"
+# Parse command line arguments
+parse_arguments() {
+    local count=1
+    while [ -n "$1" ]; do
+        case "$1" in
+            --help)
+                show_help
+                exit 0
+                ;;
+            -v|-debug)
+                TS_DEBUG="true"
+                echo "Debug mode enabled"
+                shift
+                ;;
+            -pull)
+                PULL="true"
+                echo "Pull mode enabled"
+                shift
+                ;;
+            -push)
+                PUSH="true"
+                echo "Push mode enabled"
+                shift
+                ;;
+            -check)
+                ONLY_CONF_CHECK="true"
+                echo "Check mode enabled"
+                shift
+                ;;
+            -ce|-container_engine)
+                CONTAINER_ENGINE="$2"
+                echo "Using container engine: $CONTAINER_ENGINE"
+                shift 2
+                ;;
+            -suffix)
+                CHECK_SUFFIX="true"
+                echo "Suffix check enabled"
+                shift
+                ;;
+            -sc|-ssl_check)
+                SSL_CHECK="true"
+                echo "SSL check enabled"
+                shift
+                ;;
+            -u|-ssh_user)
+                SSH_USER="$2"
+                echo "Using SSH user: $SSH_USER"
+                shift 2
+                ;;
+            --)
+                shift
+                break
+                ;;
+            *)
+                echo "Parameter #$count: $1"
+                define_parameters "$1"
+                count=$((count + 1))
+                shift
+                ;;
+        esac
+    done
 }
 
-# Check openrc file
-check_and_source_openrc_file () {
-  echo -e "${violet}Check openrc file...${normal}"
-  if bash $utils_dir/$check_openrc_script &> /dev/null; then
-    openrc_file=$(bash $utils_dir/$check_openrc_script)
-    echo -e "${green}$openrc_file file exist - success${normal}"
-    source $openrc_file
-  else
-    bash $utils_dir/$check_openrc_script
-    echo -e "${red}openrc file not found in $openrc_file${normal} - ERROR"
-    exit 1
-  fi
+# Function to define parameters from positional arguments
+define_parameters() {
+    [ "$count" = 1 ] && [ "$1" = "suffix" ] && {
+        CHECK_SUFFIX=true
+        echo "Check suffix parameter found"
+    }
+    [ "$count" = 1 ] && [ "$1" = "config_path" ] && {
+        GET_CONFIG_PATH=true
+        echo "Get config path parameter found"
+    }
 }
 
-cat_conf () {
-  echo "Cat all $service_name configs..."
-  bash $script_dir/command_on_nodes.sh $USER_STR -nt $nodes_type -c "sudo sh -c 'echo \"cat $conf_dir/$CONF_NAME\"; cat $conf_dir/$CONF_NAME'"
+# Function to add debug logging to Consul configuration
+add_debug_logging() {
+    echo "Adding debug logging to Consul configuration..."
+
+    if [ ! -f "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME" ]; then
+        echo -e "${yellow}Configuration file not found locally, pulling first...${normal}"
+        pull_conf
+    fi
+
+    # Add debug setting for Consul (пример для ha-config.ini)
+    if grep -q "\[log\]" "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME"; then
+        sed -i 's/\[log\]/\[log\]\nlevel = DEBUG/' "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME"
+    else
+        echo -e "\n[log]\nlevel = DEBUG" >> "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME"
+    fi
+
+    echo -e "${green}Debug logging enabled in local configuration${normal}"
 }
 
-#pull_conf () {
-#  echo "Pulling $CONF_NAME..."
-#  echo "Check and create folder $test_node_conf_dir in $script_dir folder"
-#  [ ! -d $script_dir/$test_node_conf_dir ] && { mkdir -p $script_dir/$test_node_conf_dir; }
-#
-##  echo "ctrl_pattern: $ctrl_pattern"
-#  echo "Try parse /etc/hosts to find ctrl node..."
-##  ctrl_node=$(cat /etc/hosts | grep -m 1 -E ${ctrl_pattern} | awk '{print $1}')
-#
-#  nova_state_list=$(openstack compute service list)
-#  ctrl_node=$(echo "$nova_state_list" | grep -m 1 -E "nova-scheduler" | awk '{print $6}')
-#  echo "Pull consul conf from $ctrl_node:$conf_dir/region-config_${REGION}.json"
-#  scp -o StrictHostKeyChecking=no $ctrl_node:$conf_dir/region-config_${REGION}.json $script_dir/$test_node_conf_dir
-#}
+# Function to get nodes list using external script
+get_nodes_list() {
+    local nodes_result=""
+    nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
 
-pull_conf () {
-  echo "Pulling $CONF_NAME..."
-  [ ! -d $script_dir/$test_node_conf_dir ] && { mkdir -p $script_dir/$test_node_conf_dir; }
+    if [ -z "$nodes_result" ]; then
+        echo -e "${red}Failed to determine node list - ERROR${normal}"
+        exit 1
+    elif echo "$nodes_result" | grep -q "ERROR"; then
+        echo -e "${yellow}Node names could not be determined.${normal}"
+        echo -e "${yellow}Try: bash $utils_dir/$get_nodes_list_script -nt all${normal}"
+        echo -e "${red}Node names could not be determined - ERROR!${normal}"
+        exit 1
+    else
+        echo "$nodes_result"
+    fi
+}
 
+# Function to check for SSL client key in config and extract SSL parameters
+check_ssl_config() {
+    local config_file
+    local first_ctrl_node
 
-  echo "Сopying $service_name conf from ${NODES[0]}:$conf_dir/$CONF_NAME"
-  ssh -o StrictHostKeyChecking=no $USER@${NODES[0]} "sudo cat $conf_dir/$CONF_NAME" > $script_dir/$test_node_conf_dir/${CONF_NAME}
-#  scp -o StrictHostKeyChecking=no $USER@${NODES[0]}:$conf_dir/$CONF_NAME $script_dir/$test_node_conf_dir
-  [ ! -f $script_dir/$test_node_conf_dir/${CONF_NAME}_backup ] && { cp $script_dir/$test_node_conf_dir/${CONF_NAME} $script_dir/$test_node_conf_dir/${CONF_NAME}_backup; }
-  echo -e "
-To edit the config:
-  vi $script_dir/$test_node_conf_dir/$CONF_NAME
-To apply the config:
+    # Take only the first node for config reading
+    first_ctrl_node=$(echo "$NODES" | awk '{print $1}')
+    echo "first_ctrl_node: $first_ctrl_node"
+    if [ -z "$first_ctrl_node" ]; then
+        echo -e "${red}No nodes provided${normal}" >&2
+        return 1
+    fi
+
+    if ! config_file=$(cat_conf "$first_ctrl_node"); then
+        echo -e "${red}Configuration file not found: $config_file${normal}"
+        return 1
+    fi
+
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG]:
+        config_file:
+        $config_file
+    "
+
+    # Check if client key exists in config
+    if ! echo "$config_file" | grep -q "client_key = .*\.pem"; then
+        echo -e "${yellow}No SSL client key found in configuration${normal}"
+        return 1
+    fi
+
+    # Extract SSL parameters with better parsing
+    local https_ssl_verify client_key client_cert
+
+    # Extract values with proper handling of quotes and spaces
+    https_ssl_verify=$(echo "$config_file" | grep -E "^https_ssl_verify\s*=" | head -1 | awk -F= '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
+    client_key=$(echo "$config_file" | grep -E "^client_key\s*=" | head -1 | awk -F= '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
+    client_cert=$(echo "$config_file" | grep -E "^client_cert\s*=" | head -1 | awk -F= '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
+
+    # Set default values if not found or empty
+    https_ssl_verify="${https_ssl_verify:-/etc/pki/tls/certs/ca-bundle.crt}"
+    client_key="${client_key:-/etc/consul/certs/consul-key.pem}"
+    client_cert="${client_cert:-/etc/consul/certs/consul-cert.pem}"
+
+    # Return formatted string
+    echo "mtls; https_ssl_verify = $https_ssl_verify; client_key = $client_key; client_cert = $client_cert"
+    return 0
+}
+
+# Function to display configuration files - returns config content
+cat_conf() {
+    local nodes_list="$1"
+    for node in $nodes_list; do
+        local node_name="${node%%:*}"
+        local node_ip="${node#*:}"
+        echo -e "${blue}Configuration on $node_name:${normal}"
+        local node_config
+        node_config=$(ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+            "sudo cat $conf_dir/$CONF_NAME 2>/dev/null")
+
+#        echo -e "${cyan}Config from $node_name${normal}"
+        echo -e "$node_config"
+    done
+    return 0
+}
+
+# Function to pull configuration from controller node
+pull_conf() {
+    echo "Pulling $CONF_NAME from controller node..."
+
+    local first_node
+    [ ! -d "$VIRTUAL_ENV/$test_node_conf_dir" ] && mkdir -p "$VIRTUAL_ENV/$test_node_conf_dir"
+
+    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG]: nodes: $NODES"
+
+    first_node=$(echo "$NODES" | awk '{print $1}')
+
+    local node_name="${first_node%%:*}"
+    local node_ip="${first_node#*:}"
+
+    echo "Copying $service_name configuration from $node_name:$conf_dir/$CONF_NAME"
+
+    ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+        "sudo cat $conf_dir/$CONF_NAME" > "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}"
+
+    if [ ! -f "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}" ]; then
+        echo -e "${red}Configuration file is missing${normal}"
+        exit 1
+    fi
+
+    [ ! -f "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}_backup" ] && \
+        cp "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}" "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}_backup"
+
+    echo -e "
+To edit the configuration:
+  vi $VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME
+
+To apply the configuration:
   bash $script_dir/$script_name -push
 "
 }
 
-push_conf () {
-#  [ -z $CONF_NAME ] && { CONF_NAME=region-config_${REGION}.json; }
-#  nova_state_list=$(openstack compute service list)
-#  ctrl_nodes=$(echo "$nova_state_list" | grep -E "nova-scheduler" | awk '{print $6}')
-#  ctrl_nodes=$(cat /etc/hosts | grep -E ${ctrl_pattern} | awk '{print $1}')
-#  [ "$TS_DEBUG" = true ] && { for string in $ctrl_nodes; do debug_echo $string; done; }
-#  if ! bash $utils_dir/$install_package_script host; then
-#    exit 1
-#  fi
+# Function to push configuration to controller nodes
+push_conf() {
+    echo "Pushing $CONF_NAME to controller nodes..."
 
-#  "bind_address": "10.224.132.178",
-  [ "$TS_DEBUG" = true ] && { for string in "${NODES[@]}"; do debug_echo $string; done; }
-
-#  for node in $ctrl_nodes; do
-  for node in "${NODES[@]}"; do
-#    ip=$(host $node|grep -m 1 $node|awk '{print $4}')
-    ip=$(ping $node -c 1|grep -m 1 -ohE "10\.224\.[0-9]{1,3}\.[0-9]{1,3}")
-    check_ip=$(echo $ip|grep -m 1 -ohE "10\.224\.[0-9]{1,3}\.[0-9]{1,3}")
-    if [ -n "$check_ip" ]; then
-      [ "$TS_DEBUG" = true ] && { debug_echo $ip; echo "\"bind_address\": \"$ip\" on $CONF_NAME"; }
-      sed -i --regexp-extended "s/\"bind_address\"(\s+|):\s+\"[0-9]+.[0-9]+.[0-9]+.[0-9]+\"\,/\"bind_address\": \"$ip\",/" \
-        $script_dir/$test_node_conf_dir/$CONF_NAME
-      sed -i --regexp-extended "s/\"bind_address\"(\s+|):\s+\".+\"\,/\"bind_address\": \"$ip\",/" \
-        $script_dir/$test_node_conf_dir/$CONF_NAME
-      sed -i --regexp-extended "s/consul_host(\s+|)=\s+[0-9]+.[0-9]+.[0-9]+.[0-9]+/consul_host = $ip/" \
-        $script_dir/$test_node_conf_dir/$CONF_NAME
-      echo "Push consul conf to $node:$conf_dir/$CONF_NAME"
-#      scp -o StrictHostKeyChecking=no $script_dir/$test_node_conf_dir/$CONF_NAME $USER@$node:$conf_dir/$CONF_NAME
-      scp -o StrictHostKeyChecking=no $script_dir/$test_node_conf_dir/$CONF_NAME $USER@$node:/tmp/$CONF_NAME
-      ssh -o StrictHostKeyChecking=no $USER@$node "sudo mv /tmp/$CONF_NAME $conf_dir/$CONF_NAME"
-    else
-      echo -e "${red}ip could not be define from hostname: $node - ERROR${normal}"
-      exit 1
+    if [ ! -f "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME" ]; then
+        echo -e "${red}Configuration file not found: $VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME${normal}"
+        exit 1
     fi
-  done
+
+    for node in $NODES; do
+        local node_name="${node%%:*}"
+        local node_ip="${node#*:}"
+
+        echo "Pushing configuration to $node_name"
+
+        if [ -n "$node_ip" ]; then
+            local temp_file
+            temp_file=$(mktemp)
+            sed -E "
+                s/\"bind_address\"[[:space:]]*:[[:space:]]*\"[0-9.]+[0-9]+\"/\"bind_address\": \"$node_ip\"/g
+                s/consul_host[[:space:]]*=[[:space:]]*[0-9.]+[0-9]+/consul_host = $node_ip/g
+            " "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME" > "$temp_file"
+
+            scp -o StrictHostKeyChecking=no "$temp_file" "$SSH_USER@$node_ip:/tmp/$CONF_NAME"
+            ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+                "sudo mv /tmp/$CONF_NAME $conf_dir/$CONF_NAME && sudo chown root:root $conf_dir/$CONF_NAME"
+
+            rm -f "$temp_file"
+            echo -e "${green}Configuration pushed to $node_name${normal}"
+        else
+            echo -e "${red}Node IP is empty for $node_name${normal}"
+        fi
+    done
 }
 
-get_nodes_list () {
-  if [ -z "${NODES[*]}" ]; then
-    nodes=$(bash $utils_dir/$get_nodes_list_script -nt $nodes_type)
-  fi
-#  node=$(cat /etc/hosts | grep -m 1 -E ${nodes_pattern} | awk '{print $2}')
-  [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]: \"\$node\": $node\n
-  "
-  for node in $nodes; do NODES+=("$node"); done
-  [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]: \"\$NODES\": ${NODES[*]}
-  "
-  echo -e "
-  NODES: ${NODES[*]}
-  "
-  if [ -z "${NODES[*]}" ]; then
-    echo -e "${red}Failed to determine node list - ERROR${normal}"
-    exit 1
-  fi
+# Function to check BMC suffix
+check_bmc_suffix() {
+    pull_conf
+
+    if [ ! -f "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME" ]; then
+        echo -e "${red}Configuration file not found${normal}"
+        exit 1
+    fi
+
+    local suffix_string_raw
+    suffix_string_raw=$(grep 'suffix' "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME")
+
+    if [ "$LEGACY_CONF" = true ]; then
+        local suffix_string_raw_2="${suffix_string_raw//\"/}"
+        echo "${suffix_string_raw_2%%,*}" | awk '{print $2}'
+    else
+        echo "$suffix_string_raw" | awk '{print $3}'
+    fi
 }
 
-#change_alive_threshold () {
-#  echo "Changing alive threshold..."
-#  pull_conf
-#  sed -i --regexp-extended "s/\"alive_compute_threshold\":\s+\"[0-9]+\"/\"alive_compute_threshold\": \"$1\"/" \
-#   $script_dir/$test_node_conf_dir/region-config_${REGION}.json
-#  push_conf
-#  conf_changed="true"
-#}
-
-#change_dead_threshold () {
-#  echo "Changing dead threshold..."
-#  pull_conf
-#  dead_threshold_string_exist=$(cat $script_dir/$test_node_conf_dir/region-config_${REGION}.json| grep 'dead_compute_threshold')
-#
-#  if [ -z "$dead_threshold_string_exist" ]; then
-#    alive_threshold_string=$(cat $script_dir/$test_node_conf_dir/region-config_${REGION}.json| grep 'alive_compute_threshold')
-#
-#    sed -i --regexp-extended "s/$alive_threshold_string/${alive_threshold_string}\n   \"dead_compute_threshold\": \"$1\",/" \
-#    $script_dir/$test_node_conf_dir/region-config_${REGION}.json
-#  else
-#    sed -i --regexp-extended "s/\"dead_compute_threshold\":\s+\"[0-9]+\",/\"dead_compute_threshold\": \"$1\",/" \
-#      $script_dir/$test_node_conf_dir/region-config_${REGION}.json
-#  fi
-#  push_conf
-##  cat_consul_conf
-#  conf_changed="true"
-#}
-
-#change_ipmi_fencing () {
-#  if [ "$1" = true ]; then
-#    bash $script_dir/command_on_nodes.sh -nt ctrl -c "sed -i 's/\"bmc\": false/\"bmc\": true/' $conf_dir/region-config_${REGION}.json"
-#  elif [ "$1" = false ]; then
-#    bash $script_dir/command_on_nodes.sh -nt ctrl -c "sed -i 's/\"bmc\": true/\"bmc\": false/' $conf_dir/region-config_${REGION}.json"
-#  else
-#    echo "$1 - is not valid ipmi parameter"
-#    return 1
-#  fi
-#  conf_changed="true"
-#}
-
-#change_nova_fencing () {
-#  if [ "$1" = true ]; then
-#    bash $script_dir/command_on_nodes.sh -nt ctrl -c "sed -i 's/\"nova\": false/\"nova\": true/' $conf_dir/region-config_${REGION}.json"
-#  elif [ "$1" = false ]; then
-#    bash $script_dir/command_on_nodes.sh -nt ctrl -c "sed -i 's/\"nova\": true/\"nova\": false/' $conf_dir/region-config_${REGION}.json"
-#  else
-#    echo "$1 - is not valid nova parameter"
-#    return 1
-#  fi
-#  conf_changed="true"
-#}
-
-check_bmc_suffix () {
-  pull_conf
-  [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]
-  script_dir: $script_dir
-  REGION: $REGION
-  ${service_name}_conf_dir: $conf_dir
-  "
-
-  [ ! -f $script_dir/$test_node_conf_dir/$CONF_NAME ] && { echo "Config exists in: $script_dir/$test_node_conf_dir/$CONF_NAME"; pull_conf; }
-  [ "$TS_DEBUG" = true ] && { echo -e "[DEBUG]\n"; ls -la $script_dir; }
-  [ ! -f $script_dir/$test_node_conf_dir/$CONF_NAME ] && { echo "Config not found"; exit 1; }
-  suffix_string_raw=$(cat $script_dir/$test_node_conf_dir/$CONF_NAME|grep 'suffix')
-  if [ "$LEGACY_CONF" = true ]; then
-    suffix_string_raw_2=${suffix_string_raw//\"/}
-    echo "${suffix_string_raw_2%%,*}"|awk '{print $2}'
-  else
-    echo $suffix_string_raw|awk '{print $3}'
-  fi
+# Function to get configuration path
+get_config_path() {
+    echo "$conf_dir/$CONF_NAME"
 }
 
-get_config_path () {
-  echo $conf_dir/$CONF_NAME
+# Function to load external scripts
+load_external_scripts() {
+    for script_path in "${external_scripts[@]}"; do
+        if [ ! -f "$script_path" ]; then
+            echo -e "${red}Error: Required script not found: $script_path${normal}"
+            exit 1
+        fi
+        source "$script_path"
+    done
 }
 
-get_nodes_list
+# Main execution function
+main() {
+    parse_arguments "$@"
+    load_external_scripts
 
-if [ "$LEGACY_CONF" = true ]; then
-  #check_and_source_openrc_file
-  [[ -z "${OS_REGION_NAME}" ]] && { check_and_source_openrc_file; }
-  [[ -z "${OS_REGION_NAME}" ]] && { echo "Region name not found"; exit 1; }
-  conf_name="region-config_${OS_REGION_NAME}.json"
-  CONF_NAME=$conf_name
-fi
+    # Determine SSH user using external function
+    SSH_USER=$(get_and_validate_ssh_user "$SSH_USER" "$default_ssh_user")
+    if [[ $? -ne 0 ]]; then
+        echo -e "${red}Error: Failed to determine valid SSH user!${normal}"
+        exit 1
+    fi
 
-[ "$CHECK_SUFFIX" = true ] && { check_bmc_suffix; exit 0; }
-[ "$GET_CONFIG_PATH" = true ] && { get_config_path; exit 0; }
-[ "$ONLY_CONF_CHECK" = true ] && { cat_conf; exit 0; }
-[ "$PULL" = true ] && { pull_conf; exit 0; }
-[ "$PUSH" = true ] && { push_conf; conf_changed=true; }
-cat_conf
-[ -n "$conf_changed" ] && { echo "Restart consul containers..."; bash $script_dir/command_on_nodes.sh $USER_STR -nt ctrl -c "docker restart consul"; }
-#[ -n "$NOVA_FENCING" ] && change_nova_fencing $NOVA_FENCING
-#[ -n "$IPMI_FENCING" ] && change_ipmi_fencing $IPMI_FENCING
-#[ -n "$DEAD_THRSHOLD" ] && change_dead_threshold $DEAD_THRSHOLD
-#[ -n "$ALIVE_THRSHOLD" ] && change_alive_threshold $ALIVE_THRSHOLD
+    echo -e "Using SSH user: $SSH_USER"
+
+    # Get nodes list
+    if ! NODES=$(get_nodes_list -nt $nodes_type); then
+        exit 1
+    fi
+
+    if [ "$TS_DEBUG" = true ]; then
+        echo -e "
+        [DEBUG] NODES: $NODES
+        "
+    fi
+
+    # Individual mode checks (exit immediately)
+    if [ "$SSL_CHECK" = true ]; then
+        check_ssl_config
+        exit 0
+    fi
+
+    if [ "$CHECK_SUFFIX" = true ]; then
+        check_bmc_suffix
+        exit 0
+    fi
+
+    if [ "$GET_CONFIG_PATH" = true ]; then
+        get_config_path
+        exit 0
+    fi
+
+    if [ "$ONLY_CONF_CHECK" = true ]; then
+        cat_conf "$NODES"
+        exit 0
+    fi
+
+    if [ "$PULL" = true ]; then
+        pull_conf
+        exit 0
+    fi
+
+    local config_changed=false
+
+    # Configuration modification functions
+    if [ "$ADD_DEBUG" = true ]; then
+        add_debug_logging
+        config_changed=true
+    fi
+
+    # Push configuration if requested
+    if [ "$PUSH" = true ]; then
+        push_conf
+        config_changed=true
+    fi
+
+    # Handle configuration changes
+    if [ "$config_changed" = true ]; then
+        # Show configuration after changes
+        cat_conf "$NODES"
+
+        # Restart service only if configuration was changed
+        echo "Restarting consul containers..."
+        bash "$script_dir/command_on_nodes.sh" -u "$SSH_USER" -nt $nodes_type -c "sudo $CONTAINER_ENGINE restart consul"
+    else
+        # Show current configuration if no changes were made
+        echo -e "${yellow}No configuration changes were made${normal}"
+        cat_conf "$NODES"
+    fi
+}
+
+# Run main function
+main "$@"

@@ -1,198 +1,374 @@
-#!/bin/bashq!
+#!/bin/bash
 
-# TO-DO Rename this script to command_on_vm.sh with key check
-# The script checks access to the VM on HV
+# Script to execute commands on VMs via SSH
+# Supports execution on all VMs of a hypervisor or specific VMs by IP/name
 
-#foo
-
-#Colors
+# Color definitions
 green=$(tput setaf 2)
 red=$(tput setaf 1)
-violet=$(tput setaf 5)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
+blue=$(tput setaf 4)
+cyan=$(tput setaf 14)
 
+# Script configuration
 script_name=$(basename "$0")
-script_dir=$(dirname $0)
-utils_dir=$script_dir/utils
-openstack_utils=$utils_dir/openstack
-#check_openrc_script="check_openrc.sh"
+script_dir=$(dirname "$0")
+utils_dir="$script_dir/utils"
+openstack_utils="$utils_dir/openstack"
 default_ssh_timeout=5
-get_active_vms_ips_list_script="get_active_vms_ips_list.sh"
+get_vms_list_script="get_vms_list.sh"
 
+# Default values
 [[ -z $KEY_PATH ]] && KEY_PATH="$script_dir/key_test.pem"
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $HYPERVISOR_NAME ]] && HYPERVISOR_NAME=""
-[[ -z $ONLY_PING ]] && ONLY_PING="false"
-[[ -z $ONLY_CHECK ]] && ONLY_CHECK="false"
+[[ -z $ONLY_PING ]] && ONLY_PING=false
+[[ -z $ONLY_CHECK ]] && ONLY_CHECK=false
 [[ -z $VM_USER ]] && VM_USER="ubuntu"
-#[[ -z $COMMAND_CHECK ]] && COMMAND_CHECK="ls -la"
 [[ -z $COMMAND_STR ]] && COMMAND_STR="ls -la"
-[[ -z $PROJECT ]] && PROJECT="admin"
+[[ -z $PROJECT ]] && PROJECT=""
 [[ -z $DONT_ASK ]] && DONT_ASK="true"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
-[[ -z $VMs_IPs ]] && VMs_IPs=""
-[[ -z $TS_SSH_TIMEOUT ]] && TS_SSH_TIMEOUT=$default_ssh_timeout
+[[ -z $VMS ]] && VMS=""
+[[ -z $TS_SSH_TIMEOUT ]] && TS_SSH_TIMEOUT="$default_ssh_timeout"
 
+# Function to display help information
+show_help() {
+    echo -e "
+    Usage: $0 [OPTIONS]
 
-echo "Start $script_name script..."
+    Execute commands on VMs via SSH. Can target all VMs on a hypervisor or specific VMs by IP.
 
-while [ -n "$1" ]; do
-  case "$1" in
-    --help) echo -E "
-      -hv           <hypervisor_name>
-      -u, -user     <user_name_on_VM_OS>
-      -c, command   <command_on_VM>
-      -k, -key      <key_pair_private_part_file_path>
-      -ping         only ping check
-      -p, project   <project_name>
-      -dont_ask     all actions will be performed automatically (without value)
-      -ips          <ips list> (example: -ips \"<ip_vm_1> <ip_vm_2> ... \")
-      -v, -debug    enabled debug output (without parameter)
-      -check        only check access to OS vm (without parameter)
-      -t, -timeout  check ssh connection timeout
-      "
-      exit 0
-      break ;;
-    -hv) HYPERVISOR_NAME="$2"
-      echo "Found the -hv option, with parameter value $HYPERVISOR_NAME"
-      shift ;;
-    -u|-user) VM_USER="$2"
-      echo "Found the -user option, with parameter value $VM_USER"
-      shift ;;
-    -c|-command) COMMAND_STR="$2"
-      echo "Found the -command option, with parameter value $COMMAND_STR"
-      shift ;;
-    -k|-key) KEY_PATH="$2"
-	    echo "Found the -key option, with parameter value $KEY_PATH"
-      shift ;;
-    -t|-timeout) TS_SSH_TIMEOUT="$2"
-	    echo "Found the -timeout option, with parameter value $TS_SSH_TIMEOUT"
-      shift ;;
-    -p|-project) PROJECT="$2"
-      echo "Found the -project option, with parameter value $PROJECT"
-      shift ;;
-    -ping) ONLY_PING="true"
-	    echo "Found the -ping option, only ping checking";;
-    -check) ONLY_CHECK="true"
-	    echo "Found the -check option, only check access to OS vm";;
-    -dont_ask) DONT_ASK=true
-      echo "Found the -dont_ask. All actions will be performed automatically"
-      ;;
-    -v|-debug) TS_DEBUG="true"
-	    echo "Found the -debug, with parameter value $TS_DEBUG"
-      ;;
-    -ips) VMs_IPs="$2"
-      echo "Found the -ips option, with parameter value $VMs_IPs"
-      shift ;;
-    --) shift
-      break ;;
-    *) echo "$1 is not an option";;
-  esac
-  shift
-done
+    Options:
+      -hv <name>              Hypervisor name
+      -u, -user <username>    VM OS username (default: ubuntu)
+      -c, -command <command>  Command to execute on VMs
+      -k, -key <path>         SSH private key file path
+      -ping                   Only perform ping check
+      -p, -project <name>     OpenStack project name (default: admin)
+      -dont_ask               Perform actions automatically without confirmation
+      -vms                    Space-separated list of IP or name
+      -v, -debug              Enable debug output
+      -check                  Only check SSH access without executing commands
+      -t, -timeout <seconds>  SSH connection timeout (default: 5)
+      --help                  Show this help message
 
-batch_run_command() {
-  [[ -f "$HOME/.ssh/known_hosts" ]] && { rm ~/.ssh/known_hosts; }
-#    host_string=""
-#    [[ -n ${HYPERVISOR_NAME} ]] && { host_string="--host $HYPERVISOR_NAME"; }
-#    echo -E "
-#Start check VMs with parameters:
-#  Hypervisor:   $HYPERVISOR_NAME
-#  Key:          $KEY_PATH
-#  User name:    $VM_USER
-#  Command:      $COMMAND_STR
-#  Only ping:    $ONLY_PING
-#  Project:      $PROJECT
-#"
+    Examples:
+      # Run command on all VMs of a hypervisor
+      $0 -hv compute-01 -c 'df -h'
 
-  [[ ! $DONT_ASK = "true" ]] && { read -p "Press enter to continue"; }
+      # Check connectivity to specific VMs
+      $0 -vms \"192.168.1.10 192.168.1.11\" -check
+      $0 -vms \"vm_name1 vm_name2\" -check
 
-  if [ -z "$VMs_IPs" ]; then
-#      VMs_IPs=$(openstack server list --project $PROJECT $host_string |grep ACTIVE |awk '{print $8}')
-#      [ "$TS_DEBUG" = true ] && echo -e "
-#      command to define vms ip list
-#      VMs_IPs=\$(openstack server list $HV_STRING --project $PROJECT |grep ACTIVE |awk '{print \$8}')
-#      VMs_IPs: $VMs_IPs
-#      "
-#      if [ -z $VMs_IPs ]; then
-#        VMs_IPs=$(openstack server list --project $PROJECT --long |
-#          grep -E "ACTIVE.*$HYPERVISOR_NAME" |awk '{print $12}')
-#        # in openstack cli version 6.2 the --host key gives an empty output
-#        if [ -z $VMs_IPs ]; then
-#          echo -e "No instance found in the $PROJECT project\nProject list:"
-#          openstack project list
-#          exit 1
-#        fi
-#      fi
-    echo -e "${violet}Get IPs VMs from hypervisor: $HYPERVISOR_NAME project $PROJECT...${normal}"
-    export HYPERVISOR_NAME=$HYPERVISOR_NAME
-    export PROJECT=$PROJECT
-#    export TS_DEBUG=$TS_DEBUG
-    VMs_IPs=$(bash $openstack_utils/$get_active_vms_ips_list_script)
-    if echo $VMs_IPs| grep "ERROR"; then
-#      echo -e "${red}$VMs_IPs${normal}"
-      exit 1
-    fi
-  fi
-  at_least_one_vm_is_not_avail="false"
-  "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]:
-    VMs_IPs:
-    $VMs_IPs
-    KEY_PATH: $KEY_PATH
-  "
-  if [ "$TS_DEBUG" = true ]; then
-    echo -e "${yellow}[Warning] in debug mode the script cannot execute commands on the VM${normal}"
-    exit 0
-  fi
-  for IP in $VMs_IPs; do
-#    FIRST_IP=$(echo "${raw_string_ip%%,*}")
-#        FIRST_IP=$(echo $raw_string_ip|awk '{print $1}')
-#    IP="${FIRST_IP##*=}"
-    if ping -c 2 $IP &> /dev/null; then
-      echo -e "${green}There is a connection with $IP - success${normal}"
-      if [ "$ONLY_PING" = "false" ]; then
-        ssh_conn=$(ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=20 -o ServerAliveCountMax=5 -o ConnectTimeout=$TS_SSH_TIMEOUT -q -i $KEY_PATH $VM_USER@$IP echo ok 2>&1)
-        # -o ConnectTimeout=$TS_SSH_TIMEOUT
-        # -o BatchMode=yes
-        if [ "$ssh_conn" = "ok" ]; then
-          echo -e "${green}There is a SSH connection with $IP - success${normal}"
-        else
-          echo "ssh_conn: $ssh_conn"
-          echo -e "${red}No SSH connection with $IP - error!${normal}"
-          at_least_one_vm_is_not_avail="true"
-        fi
-        if [ "$ONLY_CHECK" = "false" ]; then
-          ssh -t -o StrictHostKeyChecking=no -i $KEY_PATH $VM_USER@$IP "$COMMAND_STR"
-        fi
-      fi
-    else
-      echo -e "${red}No connection with $IP - error!${normal}"
-      at_least_one_vm_is_not_avail="true"
-    fi
-    sleep 1
-  done
+      # Only ping check
+      $0 -hv compute-01 -ping
+    "
 }
 
-## Check openrc file
-#check_and_source_openrc_file () {
-#  echo "check openrc"
-#  openrc_file=$(bash $utils_dir/$check_openrc_script)
-#  if [[ -z $openrc_file ]]; then
-##    echo -E "${yellow}openrc file not found in $OPENRC_PATH${normal}"
-##    echo "Try to get 'openrc' from Vault"
-##      printf "%s\n" "${red}openrc file not found in $OPENRC_PATH - ERROR!${normal}"; }
-#    exit 1
-#  else
-#    echo $openrc_file
-#    source $openrc_file
-#  fi
-#}
+# Parse command line arguments
+parse_arguments() {
+    while [ -n "$1" ]; do
+        case "$1" in
+            --help)
+                show_help
+                exit 0
+                ;;
+            -hv)
+                HYPERVISOR_NAME="$2"
+                echo "Targeting hypervisor: $HYPERVISOR_NAME"
+                shift 2
+                ;;
+            -u|-user)
+                VM_USER="$2"
+                echo "Using VM user: $VM_USER"
+                shift 2
+                ;;
+            -c|-command)
+                COMMAND_STR="$2"
+                echo "Command to execute: $COMMAND_STR"
+                shift 2
+                ;;
+            -k|-key)
+                KEY_PATH="$2"
+                echo "Using SSH key: $KEY_PATH"
+                shift 2
+                ;;
+            -t|-timeout)
+                TS_SSH_TIMEOUT="$2"
+                echo "SSH timeout: $TS_SSH_TIMEOUT seconds"
+                shift 2
+                ;;
+            -p|-project)
+                PROJECT="$2"
+                echo "OpenStack project: $PROJECT"
+                shift 2
+                ;;
+            -ping)
+                ONLY_PING="true"
+                echo "Ping check only"
+                shift
+                ;;
+            -check)
+                ONLY_CHECK="true"
+                echo "SSH access check only"
+                shift
+                ;;
+            -dont_ask)
+                DONT_ASK="true"
+                echo "Automatic execution without confirmation"
+                shift
+                ;;
+            -v|-debug)
+                TS_DEBUG="true"
+                echo "Debug mode enabled"
+                shift
+                ;;
+            -vms)
+                VMS="$2"
+                echo "Targeting specific VMS: $VMS"
+                shift 2
+                ;;
+            --)
+                shift
+                break
+                ;;
+            *)
+                echo "Unknown parameter: $1"
+                show_help
+                exit 1
+                ;;
+        esac
+    done
+}
 
-#rm -rf /root/.ssh/known_hosts
-#check_and_source_openrc_file
-batch_run_command
-if [ "$at_least_one_vm_is_not_avail" = true ]; then
-  exit 1
-fi
+# Function to validate SSH key
+validate_ssh_key() {
+    if [ ! -f "$KEY_PATH" ]; then
+        echo -e "${red}SSH key not found: $KEY_PATH${normal}"
+        exit 1
+    fi
+
+    if [ ! -s "$KEY_PATH" ]; then
+        echo -e "${red}SSH key is empty: $KEY_PATH${normal}"
+        exit 1
+    fi
+
+    # Set appropriate permissions
+    chmod 600 "$KEY_PATH" 2>/dev/null || true
+}
+
+# Function to get VMs IPs from hypervisor
+get_vms_ips() {
+    echo -e "${blue}Getting IPs of VMs: ${VMS:-all} from hypervisor: ${HYPERVISOR_NAME:-any} (project: $PROJECT)...${normal}"
+
+    local command_args=""
+
+    command_args=()
+
+    [ -n "$HYPERVISOR_NAME" ] && command_args+=(-hv "$HYPERVISOR_NAME")
+    [ -n "$VMS" ] && command_args+=(-vms "$VMS")
+    [ -n "$PROJECT" ] && command_args+=(-p "$PROJECT")
+
+    VMS=$(bash "$openstack_utils/$get_vms_list_script" "${command_args[@]}")
+
+    echo -e "VMS:
+    $VMS"
+    local exit_code=$?
+    if [ $exit_code -ne 0 ]; then
+        echo -e "${red}Failed to get VMs IPs (exit code: $exit_code)${normal}"
+        echo -e "${red}Error output: $VMS${normal}"
+        return 1
+    fi
+
+    if echo "$VMS" | grep -q "ERROR"; then
+        echo -e "${red}Error in VMs list script: $VMS${normal}"
+        return 1
+    fi
+
+    if [ -z "$VMS" ]; then
+        echo -e "${yellow}No VMs found matching the criteria${normal}"
+        echo -e "${yellow}Hypervisor: ${HYPERVISOR_NAME:-any}, VMs: ${VMS:-any}, Project: $PROJECT${normal}"
+        return 1
+    fi
+
+    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] Retrieved VMS: $VMS"
+    return 0
+}
+
+# Function to check host connectivity
+check_host_connectivity() {
+    local ip="$1"
+
+    if ping -c 2 -W 1 "$ip" &> /dev/null; then
+        echo -e "${green}Ping successful: $ip${normal}"
+        return 0
+    else
+        echo -e "${red}Ping failed: $ip${normal}"
+        return 1
+    fi
+}
+
+# Function to check SSH connectivity
+check_ssh_connectivity() {
+    local ip="$1"
+    local ssh_output
+    local exit_code
+
+    ssh_output=$(ssh -o StrictHostKeyChecking=no \
+        -o ConnectTimeout="$TS_SSH_TIMEOUT" \
+        -o BatchMode=yes \
+        -i "$KEY_PATH" \
+        "$VM_USER@$ip" \
+        "echo 'SSH_OK'" 2>&1)
+    exit_code=$?
+
+    if [ $exit_code -eq 0 ] && echo "$ssh_output" | grep -q '^SSH_OK$'; then
+        echo -e "${green}SSH connection successful: $ip${normal}"
+        return 0
+    else
+        echo -e "${red}SSH connection failed: $ip - exit code: $exit_code, error: $ssh_output${normal}"
+        return 1
+    fi
+}
+
+# Function to execute command on VM
+execute_on_vm() {
+    local ip="$1"
+
+    echo -e "${blue}Executing command on $ip...${normal}"
+    echo -e "${yellow}Command: $COMMAND_STR${normal}"
+
+    ssh -t -o StrictHostKeyChecking=no \
+        -o ConnectTimeout="$TS_SSH_TIMEOUT" \
+        -i "$KEY_PATH" \
+        "$VM_USER@$ip" \
+        "$COMMAND_STR"
+
+    local exit_code=$?
+    if [ $exit_code -eq 0 ]; then
+        echo -e "${green}Command executed successfully on $ip${normal}"
+    else
+        echo -e "${red}Command failed on $ip (exit code: $exit_code)${normal}"
+    fi
+
+    return $exit_code
+}
+
+# Main function to run commands on VMs
+batch_run_commands() {
+    local at_least_one_failure=false
+
+    echo "batch_run_commands..."
+    # Remove known_hosts to avoid conflicts
+    [ -f "$HOME/.ssh/known_hosts" ] && rm -f "$HOME/.ssh/known_hosts"
+
+    # Ask for confirmation if not in auto mode
+    if [ "$DONT_ASK" != "true" ]; then
+        read -p "Press Enter to continue or Ctrl+C to cancel..."
+    fi
+
+    # Get VMs IPs if not provided
+#    if [ -z "$VMS" ] && [ -n "$HYPERVISOR_NAME" ]; then
+    get_vms_ips
+#    elif [ -z "$VMS" ]; then
+#        get_vms_ips
+#        echo -e "${red}No target specified. Use -hv or -ips option.${normal}"
+#        exit 1
+#    fi
+
+    local exit_code=$?
+    [ "$TS_DEBUG" = "true" ] && echo -e "exit_code from get_vms_ips: $exit_code"
+    if [ $exit_code -ne 0 ]; then
+        echo -e "${yellow}Warning: Failed to get the list of IPs${normal}"
+        return 1
+    fi
+
+    [ "$TS_DEBUG" = "true" ] && echo -e "
+    [DEBUG] Configuration:
+      VMS: $VMS
+      KEY_PATH: $KEY_PATH
+      VM_USER: $VM_USER
+      TS_SSH_TIMEOUT: $TS_SSH_TIMEOUT
+    "
+
+#    if [ "$TS_DEBUG" = "true" ]; then
+#        echo -e "${yellow}[Warning] Debug mode enabled - skipping command execution${normal}"
+#        return 0
+#    fi
+
+    # Process each VM
+    for vm_tripl in $VMS; do
+
+        vm_name=$(echo "$vm_tripl" | awk -F':' '{print $1}')
+        vm_status=$(echo "$vm_tripl" | awk -F':' '{print $2}')
+        vm_ip=$(echo "$vm_tripl" | awk -F':' '{print $3}')
+
+        echo -e "${cyan}Processing VM: $vm_name VM status: $vm_status VM ip: $vm_ip${normal}"
+
+        [ "$TS_DEBUG" = "true" ] &&
+        echo -e "
+    [DEBUG] Configuration:
+      VM_USER:    $VM_USER
+      KEY_PATH:   $KEY_PATH
+      vm_name:    $vm_name
+      vm_status:  $vm_status
+      vm_ip:      $vm_ip
+      "
+
+        # Check ping connectivity
+        if ! check_host_connectivity "$vm_ip"; then
+            at_least_one_failure=true
+            #continue
+        fi
+
+        # Skip further checks if only ping is requested
+        if [ "$ONLY_PING" = "true" ]; then
+            continue
+        fi
+
+        # Check SSH connectivity
+        if ! check_ssh_connectivity "$vm_ip"; then
+            at_least_one_failure=true
+            continue
+        fi
+
+        # Execute command if not only checking
+        if [ "$ONLY_CHECK" = "false" ]; then
+            if ! execute_on_vm "$vm_ip"; then
+                at_least_one_failure=true
+            fi
+        fi
+
+        sleep 1
+    done
+
+    # Set global variable for exit status
+    if [ "$at_least_one_failure" = true ]; then
+        return 1
+    else
+        return 0
+    fi
+}
+
+# Main execution
+main() {
+    echo "Starting $script_name script..."
+
+    parse_arguments "$@"
+    validate_ssh_key
+    batch_run_commands
+
+    local exit_code=$?
+    if [ $exit_code -ne 0 ]; then
+        echo -e "${yellow}Warning: Some operations failed${normal}"
+    else
+        echo -e "${green}All operations completed successfully${normal}"
+    fi
+
+    exit $exit_code
+}
+
+# Run main function
+main "$@"

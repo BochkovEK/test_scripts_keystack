@@ -3,21 +3,24 @@
 #  bash baremetal_power_management.sh ebochkov-ks-sber-comp-05 check
 #  bash baremetal_power_management.sh ebochkov-ks-sber-comp-05 on
 
-edit_ha_config_script=edit_ha_config.sh
+
+utils_dir="$script_dir/utils"
+get_nodes_list_script="get_nodes_list.sh"
+edit_ha_config_script="edit_ha_config.sh"
 default_ssh_user="root"
 default_ssh_port=22
 
 #Colors
 green=$(tput setaf 2)
 red=$(tput setaf 1)
-violet=$(tput setaf 5)
+#violet=$(tput setaf 5)
 yellow=$(tput setaf 3)
 normal=$(tput sgr0)
 
 required_modules=(
             #foo
             "sushy"
-            "sys"
+#            "sys"
 )
 
 script_dir=$(dirname $0)
@@ -25,8 +28,8 @@ script_dir=$(dirname $0)
 [[ -z $HOST_NAME ]] && HOST_NAME=""
 [[ -z $IPMI_IP ]] && IPMI_IP=""
 [[ -z $POWER_STATE ]] && POWER_STATE="check"
-[[ -z $USER_NAME ]] && USER_NAME=""
-[[ -z $PASSWORD ]] && PASSWORD=""
+[[ -z $IPMI_USER ]] && IPMI_USER=""
+[[ -z $IPMI_PASSWORD ]] && IPMI_PASSWORD=""
 [[ -z $OPENRC_PATH ]] && OPENRC_PATH="$HOME/openrc"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $EDIT_HA_REGION_CONFIG ]] && EDIT_HA_REGION_CONFIG=$edit_ha_config_script
@@ -41,8 +44,8 @@ script_dir=$(dirname $0)
 define_parameters () {
   [ "$count" = 1 ] && [[ -n $1 ]] && { HOST_NAME=$1; echo "Host name parameter found with value: \"$HOST_NAME\""; }
   [ "$count" = 2 ] && [[ -n $1 ]] && { POWER_STATE=$1; echo "Power state parameter found with value: \"$POWER_STATE\""; }
-  [ "$count" = 3 ] && [[ -n $1 ]] && { USER_NAME=$1; echo "User name parameter found with value: \"$USER_NAME\""; }
-  [ "$count" = 4 ] && [[ -n $1 ]] && { PASSWORD=$1; echo "Password parameter found with value: \"$PASSWORD\""; }
+  [ "$count" = 3 ] && [[ -n $1 ]] && { IPMI_USER=$1; echo "User name parameter found with value: \"$IPMI_USER\""; }
+  [ "$count" = 4 ] && [[ -n $1 ]] && { IPMI_PASSWORD=$1; echo "Password parameter found with value: \"$IPMI_PASSWORD\""; }
 }
 
 count=1
@@ -51,16 +54,16 @@ do
   case "$1" in
   --help) echo -E "
     The power management script
-      -ip         <ipmi_ip>       IPMI IP
-      -hv,        -host_name,   <host_name>     Host name for power management (ipmi)
-      -p,         -power_state  <power_state>   check, on, off, restart, shutdown
-      -v,         -debug        enabled debug output (without parameter)
-      -pswd,      -password     <password_for_idrac> idrac password
-      -u,         -user_name    <user_name_for_idrac> idrac username
-      -b,         -bmc_suffix   <bmc_suffix_for_impi> example cdm-bl-pca04-rmi (bmc_suffix = rmi)
-      -ssh_user                 <ssh_user> for check ssh connection after startup node
-      -t,         -ssh_timeout  <ssh_timeout> timeout for ssh connection to node (sec)
-      -i,         -ssh_interval <ssh_interval> interval for check ssh connection to node (sec)
+      -ip <ipmi_ip>                           IPMI IP
+      -hv, -host_name <host_name>             Host name for power management (ipmi)
+      -p, -power_state <power_state>          Check, on, off, restart, shutdown
+      -v, -debug                              Enabled debug output (without parameter)
+      -ipmi_pswd <password_for_idrac>         idrac password
+      -ipmi_user <user_name_for_idrac>           idrac username
+      -b, -bmc_suffix <bmc_suffix_for_impi>   Example: cdm-bl-pca04-rmi (bmc_suffix = rmi)
+      -u, ssh_user  <ssh_user>                SSH user for get ipmi suffix and check connection after startup node
+      -t, -ssh_timeout <ssh_timeout>          Timeout for ssh connection to node (sec)
+      -i, -ssh_interval <ssh_interval>        Interval for check ssh connection to node (sec)
 
       Example to start script:
            bash baremetal_power_management.sh ebochkov-ks-sber-comp-05 check
@@ -76,11 +79,14 @@ do
   -hv|-host_name) HOST_NAME="$2"
     echo "Found the -host_name <host_name> option, with parameter value $HOST_NAME"
     shift ;;
-  -u|-user_name) HOST_NAME="$2"
-    echo "Found the -user_name <host_name> option, with parameter value $USER_NAME"
+  -ipmi_user) IPMI_USER="$2"
+    echo "Found the -ipmi_user option, with parameter value $IPMI_USER"
     shift ;;
-  -pswd|-password) PASSWORD="$2"
-    echo "Found the -password <host_name> option, with parameter value $PASSWORD"
+  -ipmi_pswd) IPMI_PASSWORD="$2"
+    echo "Found the -ipmi_pswd option, with parameter value $IPMI_PASSWORD"
+    shift ;;
+  -u|ssh_user) SSH_USER="$2"
+    echo "Found the -ssh_user option, with parameter value $SSH_USER"
     shift ;;
   -v|-debug) TS_DEBUG="true"
 	  echo "Found the -debug, with parameter value $TS_DEBUG"
@@ -90,9 +96,6 @@ do
     shift ;;
   -b|-bmc_suffix) BMC_SUFFIX="$2"
     echo "Found the -bmc_suffix, with parameter value $BMC_SUFFIX"
-    shift ;;
-  -ssh_user) SSH_USER="$2"
-    echo "Found the -ssh_user, with parameter value $SSH_USER"
     shift ;;
   -t|ssh_timeout) SSH_TIMEOUT="$2"
     echo "Found the -ssh_timeout, with parameter value $SSH_TIMEOUT"
@@ -107,30 +110,32 @@ do
    shift
 done
 
-## Check openrc file
-#Check_openrc_file () {
-#    echo "Check openrc file here: $OPENRC_PATH"
-#    check_openrc_file=$(ls -f $OPENRC_PATH 2>/dev/null)
-#    #echo $OPENRC_PATH
-#    #echo $check_openrc_file
-#    [[ -z "$check_openrc_file" ]] && { echo "openrc file not found in $OPENRC_PATH"; exit 1; }
-#}
+# Function to get nodes list using external script
+get_nodes_list() {
+#    [ "$TS_DEBUG" = true ] && echo -e "
+#    [DEBUG]:
+#        Count parameters: $#
+#        Parameters: $*
+#    "
 
-define_ssh_user () {
-  if [[ -z "$SSH_USER" ]]; then
-  # 3. Try to determine via whoami (with error handling)
-  SSH_USER=$(whoami 2>/dev/null) || {
-    echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
-    # 4. Use default value
-    SSH_USER="$default_ssh_user"
-  }
-fi
+    local nodes_result=""
 
-# Final value check
-if [[ -z "$SSH_USER" ]]; then
-  echo -e "${red}Error: Failed to determine user!${normal}" >&2
-  exit 1
-fi
+    nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
+
+#    [ "$TS_DEBUG" = true ] && echo -e "
+#    [DEBUG] nodes_result: $nodes_result"
+
+    if [ -z "$nodes_result" ]; then
+        echo -e "${red}Failed to determine node list - ERROR${normal}"
+        exit 1
+    elif echo "$nodes_result" | grep -q "ERROR"; then
+        echo -e "${yellow}Node names could not be determined.${normal}"
+        echo -e "${yellow}Try: bash $utils_dir/$get_nodes_list_script -nt all${normal}"
+        echo -e "${red}Node names could not be determined - ERROR!${normal}"
+        exit 1
+    else
+        echo "$nodes_result"
+    fi
 }
 
 check_connection_to_ipmi () {
@@ -158,16 +163,27 @@ check_module_exist () {
 
 python_script_execute () {
   echo "Send command $1 to $BMC_HOST_NAME"
-  python3 $script_dir/redfish_manager.py $BMC_HOST_NAME $1 $USER_NAME $PASSWORD
+  python3 $script_dir/redfish_manager.py $BMC_HOST_NAME $1 $IPMI_USER $IPMI_PASSWORD
 }
 
 wait_for_ssh_connection () {
   echo "Waiting for SSH availability on $HOST_NAME..."
 
+  local hv_pair
+
+  hv_pair=$(bash "$utils_dir/$get_nodes_list_script" -nn HOST_NAME)
+  if [ -n "$hv_pair" ]; then
+      local node_name="${hv_pair%%:*}"
+      local node_ip="${hv_pair#*:}"
+  else
+      echo -e "${yellow}Failed to define any ctrl node${normal}"
+      return 1
+  fi
+
   # SSH availability check loop
   for (( i=0; i<$SSH_TIMEOUT; i+=$SSH_INTERVAL )); do
     # Check port availability (using nc or ssh)
-    if nc -z -w 2 "$HOST_NAME" "$SSH_PORT" 2>/dev/null; then
+    if nc -z -w 2 "$node_ip" "$SSH_PORT" 2>/dev/null; then
       echo "SSH is available!"
       break
     fi
@@ -211,7 +227,11 @@ start_python_power_management_script () {
     else
       if [ -z $BMC_SUFFIX ]; then
         echo "Check bmc suffix by script $EDIT_HA_REGION_CONFIG..."
-        bmc_suffix=$(bash $script_dir/$EDIT_HA_REGION_CONFIG suffix| tail -n1)
+        [ "$TS_DEBUG" = true ] && echo -e "
+        [DEBUG]
+        command: \"bash $script_dir/$EDIT_HA_REGION_CONFIG -suffix -u $SSH_USER| tail -n1
+        "
+        bmc_suffix=$(bash $script_dir/$EDIT_HA_REGION_CONFIG -suffix -u $SSH_USER| tail -n1)
         [[ -z $bmc_suffix ]] && { printf "%40s\n" "${red}variable bmc_suffix id empty${normal}"; exit 1; }
 #        bmc_suffix=$BMC_SUFFIX
       else
@@ -255,7 +275,29 @@ start_python_power_management_script () {
     esac
 }
 
-define_ssh_user
+# Get ssh user
+get_ssh_user () {
+    # Determine SSH user
+    if [[ -z "$SSH_USER" ]]; then
+        SSH_USER=$(whoami 2>/dev/null) || {
+            echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
+            SSH_USER="$default_ssh_user"
+        }
+    fi
+
+    # Final user validation
+    if [[ -z "$SSH_USER" ]]; then
+        echo -e "${red}Error: Failed to determine SSH user!${normal}" >&2
+        exit 1
+    fi
+}
+
+
+# Main execution
+
+# Determine SSH user
+get_ssh_user
+
 [ -z "$HOST_NAME" ] && [ -z "$IPMI_IP" ] && { echo "Host name or IP needed as env (HOST_NAME or IPMI_IP) or first start script parameter"; exit 1; }
 check_module_exist
 start_python_power_management_script

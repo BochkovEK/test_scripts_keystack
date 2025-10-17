@@ -1,29 +1,96 @@
 #!/bin/bash
 
-# The script provide yes\no answer
+# Yes/No Answer Script
+# Can be used both as module (sourced) and standalone script
 
-[[ -z $TS_DEBUG ]] && TS_DEBUG="sosa"
-[[ -z $TS_YES_NO_QUESTION ]] && TS_YES_NO_QUESTION="<Empty yes/no question>[yes]"
+# Color definitions
+normal=$(tput sgr0)
+green=$(tput setaf 2)
+yellow=$(tput setaf 3)
+dark_blue=$(tput setaf 4)
 
-#echo $TS_DEBUG
-#echo $TS_YES_NO_QUESTION
-yes_no_answer () {
-  while true; do
-    read -p "$TS_YES_NO_QUESTION" yn
-    yn=${yn:-"Yes"}
-#    echo $yn
-    case $yn in
-        [Yy]* ) echo "true"; break;;
-        [Nn]* ) echo "false"; break ;;
-        * ) echo "Please answer yes or no.";;
-    esac
-  done
-#  export TS_YES_NO_QUESTION='<Empty yes/no question>'
+# Default values
+TS_DEBUG=${TS_DEBUG:-"false"}
+TS_YES_NO_QUESTION=${TS_YES_NO_QUESTION:-"Please answer yes or no"}
+
+# Main confirmation function
+confirm_action_external() {
+    local message="${1:-$TS_YES_NO_QUESTION}"
+    local answer=""
+
+    [ "$TS_DEBUG" = "true" ] && echo -e "${dark_blue}[DEBUG] Question: $message${normal}"
+
+    while true; do
+        read -rp "$message [y/N]: " answer
+
+        # Handle empty input (default to No)
+        if [ -z "$answer" ]; then
+            echo -e "${yellow}Skipped${normal}"
+            return 1
+        fi
+
+        case "$answer" in
+            [Yy]|[Yy][Ee][Ss])
+                echo -e "${green}Confirmed${normal}"
+                return 0
+                ;;
+            [Nn]|[Nn][Oo])
+                echo -e "${yellow}Skipped${normal}"
+                return 1
+                ;;
+            *)
+                echo "Please answer yes or no."
+                ;;
+        esac
+    done
 }
 
-#echo $TS_DEBUG
-yes_no_answer
-[ "$TS_DEBUG" = true ] && echo -e "
-  [TS_DEBUG]
-  TS_YES_NO_QUESTION:   $TS_YES_NO_QUESTION
-"
+# If script is executed directly (not sourced), run as standalone
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    # Parse command line arguments for standalone mode
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --debug)
+                TS_DEBUG="true"
+                shift
+                ;;
+            --question)
+                TS_YES_NO_QUESTION="$2"
+                shift 2
+                ;;
+            -q)
+                TS_YES_NO_QUESTION="$2"
+                shift 2
+                ;;
+            --help)
+                echo "Usage: $0 [OPTIONS] [MESSAGE]"
+                echo ""
+                echo "Options:"
+                echo "  --debug          Enable debug output"
+                echo "  --question TEXT  Set default question text"
+                echo "  -q TEXT          Set default question text (short)"
+                echo "  --help           Show this help message"
+                echo ""
+                echo "Examples:"
+                echo "  $0 \"Do you want to continue?\""
+                echo "  $0 --question \"Custom question\""
+                echo "  $0 --debug -q \"Debug question\""
+                exit 0
+                ;;
+            -*)
+                echo "Unknown option: $1"
+                echo "Use --help for usage information"
+                exit 1
+                ;;
+            *)
+                # Use provided message as question
+                confirm_action_external "$1"
+                exit $?
+                ;;
+        esac
+    done
+
+    # If no arguments provided, use default question
+    confirm_action_external
+    exit $?
+fi

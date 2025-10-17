@@ -1,347 +1,258 @@
 #!/bin/bash
 
-#The scrip starts command on nodes
-# !!! ip and name nodes list needed in /etc/hosts
+# Script to execute commands on multiple nodes
+# Requires node IPs and names to be defined in /etc/hosts
 
-# example nodes list define
-# NODES=("<IP_1>" "<IP_2>" "<IP_3>" "...")
+# Color definitions
+normal=$(tput sgr0)
+green=$(tput setaf 2)
+yellow=$(tput setaf 3)
+red=$(tput setaf 1)
+blue=$(tput setaf 6)
 
-script_dir=$(dirname $0)
-utils_dir=$script_dir/utils
+# Script paths
+script_dir=$(dirname "$0")
+utils_dir="$script_dir/utils"
 get_nodes_list_script="get_nodes_list.sh"
+get_ssh_user_script="get_ssh_user.sh"
+check_ssh_connectivity_script="check_ssh_connectivity.sh"
 default_ssh_user="root"
 
-#comp_pattern="\-comp\-.."
-##$"
-#ctrl_pattern="\-ctrl\-.."
-##$"
-#net_pattern="\-net\-.."
-##$"
+# External scripts array
+external_scripts=(
+    "$utils_dir/$get_ssh_user_script"
+    "$utils_dir/$check_ssh_connectivity_script"
+)
 
-#Colors
-green=$(tput setaf 2)
-red=$(tput setaf 1)
-violet=$(tput setaf 5)
-normal=$(tput sgr0)
-yellow=$(tput setaf 3)
-blue=$(tput setaf 4)
-
+# Default values
 [[ -z $COMMAND ]] && COMMAND="ls -la"
-[[ -z $SENDENV ]] && SENDENV=""
-[[ -z $NODES ]] && NODES=()
+[[ -z $NODES ]] && NODES=""
+[[ -z $NODES_NAME ]] && NODES_NAME=""
 [[ -z $NODES_TYPE ]] && NODES_TYPE="all"
-[[ -z $PING ]] && PING="false"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
-[[ -z $DONT_CHECK_CONN ]] && DONT_CHECK_CONN="false"
-#[[ -z $SSH_USER ]] && SSH_USER=$default_ssh_user
-#======================
+[[ -z $DONT_CHECK_CONN ]] && DONT_CHECK_CONN="true"
 
-#node_type_func () {
-#  case "$1" in
-#        ctrl)
-#          NODES_TYPE=ctrl
-#          nodes_to_find=$ctrl_pattern
-#          printf "%s\n" "${yellow}Execute command on ctrl nodes${normal}"
-#          ;;
-#        comp)
-#          NODES_TYPE=comp
-#          nodes_to_find=$comp_pattern
-#          printf "%s\n" "${yellow}Execute command on comp nodes${normal}"
-#          ;;
-#        net)
-#          NODES_TYPE=net
-#          nodes_to_find=$net_pattern
-#          printf "%s\n" "${yellow}Execute command on net nodes${normal}"
-#          ;;
-#        *)
-#          NODES_TYPE=all
-#          nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern"
-#          printf "%s\n" "${yellow}Nodes type is not specified correctly. Execute command on ctr, comp, net nodes${normal}"
-#          ;;
-#        esac
-#}
+# Function to display help information
+show_help() {
+    echo -E "
+    Usage: $0 [OPTIONS]
 
-count=1
-while [ -n "$1" ]; do
-  case "$1" in
-    --help) echo -E "
-      ip and name nodes list needed in /etc/hosts
+    Execute commands on multiple nodes. Node IPs and names must be defined in /etc/hosts.
 
-      -c,   -command        \"<command>\"
-      -nt,  -type_of_nodes  <type_of_nodes> 'ctrl', 'comp', 'net', 'all', 'all_without_network\awn'
-      -nn,  -node_name      <node_name\ip> example: -nn \"ebochkov-keystack-comp-01 ebochkov-keystack-comp-02\"
-      -u,   -user           <ssh_user>
-      -p,   -ping           ping before execution command
-      -debug                debug mode
+    Options:
+      -c, -command <command>          Command to execute on nodes
+      -nt, -type_of_nodes <type>      Node type: 'ctrl', 'comp', 'net', 'all'
+      -nn, -node_name <names>         Specific node names (space-separated)
+      -u, -user <username>            SSH username
+      -check_conn                     Check connection before executing commands
+      -debug                          Enable debug mode
+      --help                          Show this help message
+
+    Examples:
       Remove all containers on all nodes:
         bash command_on_nodes.sh -c 'docker stop \$(docker ps -a -q)'
         bash command_on_nodes.sh -c 'docker system prune -af'
         bash command_on_nodes.sh -c 'docker volume prune -af'
-"
-#      -e,   -send_env       \"<ENV_NAME=env_value>\"
-        exit 0
-        break ;;
-    -c|-command) COMMAND="$2"
-      echo "Found the -command \"<command>\" option, with parameter value $COMMAND"
-      shift ;;
-#    -e|-send_env)
-#      SENDENV_NAME=${2%=*}
-#      $2
-#      SENDENV=$SENDENV"-o \"SendEnv $SENDENV_NAME\""
-#      echo "Found the -send_env \"<ENV_NAME=env_value>\" option, with parameter value $2"
-#      echo "SENDENV: $SENDENV"
-#      shift ;;
-    -nt|-type_of_nodes) NODES_TYPE=$2
-      echo "Found the -type_of_nodes, with parameter value $NODES_TYPE"
-      shift ;;
-    -u|-user) SSH_USER=$2
-      echo "Found the -user  with parameter value $SSH_USER"
-      shift
-      ;;
-    -nn|-node_name)
-      for i in $2; do NODES+=("$i"); done
-      echo "Found the -nn option, with parameter value ${NODES[*]}"
-      shift ;;
-    -p|-ping)
-      PING="true"
-      echo "Found the -ping option"
-      ;;
-    -debug) TS_DEBUG="true"
-      echo "Found the -debug parameter"
-      ;;
-    --) shift
-      break ;;
-    *) { echo "Parameter #$count: $1"; define_parameters "$1"; count=$(( $count + 1 )); };;
-    esac
-    shift
-done
-
-
-error_output () {
-  printf "%s\n" "${yellow}Command not executed on $NODES_TYPE nodes${normal}"
-  printf "%s\n" "${red}$error_message - error${normal}"
-  exit 1
+      Copy file to nodes:
+        export FILE_CONTENT=\$(cat /path/to/file);
+        bash ~/test_scripts_keystack/command_on_nodes.sh -u kolla -nt all -c \"echo '\$FILE_CONTENT' > /path/to/file; cat /path/to/file\"
+    "
 }
 
-# Define parameters
-define_parameters () {
-  [ "$count" = 1 ] && [[ -n $1 ]] && { COMMAND=$1; echo "Command parameter found with value $COMMAND"; }
+# Function to define parameters from positional arguments
+define_parameters() {
+    [ "$count" = 1 ] && [[ -n $1 ]] && {
+        COMMAND="$1"
+        echo "Command parameter found with value: $COMMAND"
+    }
 }
 
-check_connection () {
-  for host in "${NODES[@]}"; do
-    echo "host: $host"
-    sleep 1
-    if ping -c 2 $host &> /dev/null; then
-        printf "%40s\n" "${green}There is a connection with $host - success${normal}"
-    else
-        printf "%40s\n" "${red}No connection with $IP - error!${normal}"
-    fi
-  done
-}
+# Parse command line arguments
+parse_arguments() {
+    local count=1
+    while [ -n "$1" ]; do
+        case "$1" in
+            --help)
+                show_help
+                exit 0
+                ;;
 
-start_commands_on_nodes () {
-  if [ "$TS_DEBUG" = true ]; then
-    echo -e "
-  [DEBUG]
-  NODES:"
-    for host in "${NODES[@]}"; do
-      echo $host
+            -c|-command)
+                COMMAND="$2"
+                echo "Found -command option with value: $COMMAND"
+                shift
+                ;;
+
+            -nt|-type_of_nodes)
+                NODES_TYPE="$2"
+                echo "Found -type_of_nodes option with value: $NODES_TYPE"
+                shift
+                ;;
+
+            -u|-user)
+                SSH_USER="$2"
+                echo "Found -user option with value: $SSH_USER"
+                shift
+                ;;
+
+            -nn|-node_name)
+                NODES_NAME="$2"
+                echo "Found -node_name option with value: $NODES_NAME"
+                shift
+                ;;
+
+            -debug)
+                TS_DEBUG="true"
+                echo "Found -debug option"
+                ;;
+
+            -check_conn)
+                DONT_CHECK_CONN="false"
+                echo "Found -check_conn option"
+                ;;
+
+            --)
+                shift
+                break
+                ;;
+
+            *)
+                echo "Parameter #$count: $1"
+                define_parameters "$1"
+                count=$((count + 1))
+                ;;
+        esac
+        shift
     done
-  fi
-#  if [[ -z ${NODES[0]} ]]; then
-  if [ "${#NODES[@]}" -eq 0 ]; then
-    error_message="Failed to access to $NODES_TYPE"
-    error_output
+}
+
+# Function to display error messages and exit
+error_output() {
+    echo "${yellow}Command not executed on $NODES_TYPE nodes${normal}"
+    echo "${red}$error_message - error${normal}"
     exit 1
-  fi
-  for host in "${NODES[@]}"; do
-    echo -E "${blue}Start command on ${host}${normal}"
-    ssh -o StrictHostKeyChecking=no -t $SENDENV $SSH_USER@$host "sudo ${COMMAND}"
-#    ssh -o StrictHostKeyChecking=no -t $host << EOF
-#$COMMAND
-#EOF
-  done
 }
 
-yes_no_answer () {
-  yes_no_input=""
-  while true; do
-    read -p "$yes_no_question" yn
-    yn=${yn:-"Yes"}
-    echo $yn
-    case $yn in
-        [Yy]* ) yes_no_input="true"; break;;
-        [Nn]* ) yes_no_input="false"; break ;;
-        * ) echo "Please answer yes or no.";;
-    esac
-  done
-  yes_no_question="<Empty yes\no question>"
+# Function to check SSH connectivity to a node
+check_ssh_connectivity() {
+    local node_pair=$1
+    local node_name="${node_pair%%:*}"
+    local node_ip="${node_pair#*:}"
+
+    if test_ssh_connection "$node_name" "$node_ip" "10" "$SSH_USER" "$KEY_PATH" > /dev/null 2>&1; then
+        echo -e "✓ SSH connection successful"
+        return 0
+    else
+        echo -e "${red}✗ SSH connection failed${normal}"
+        return 1
+    fi
 }
 
-##check_openstack_cli
-#check_openstack_cli () {
-#  if ! bash $utils_dir/check_openstack_cli.sh; then
-##    error_message="Failed to check openstack"
-##    error_output
-#    exit 1
-#  fi
-#}
-#
-#check_and_source_openrc_file () {
-#  echo "check openrc"
-#  openrc_file=$(bash $utils_dir/check_openrc.sh)
-#  if [[ -z $openrc_file ]]; then
-#    exit 1
-#  else
-#    echo $openrc_file
-#    source $openrc_file
-#  fi
-#}
+# Function to execute commands on all nodes
+start_commands_on_nodes() {
+    if [ "$TS_DEBUG" = true ]; then
+        echo -e "
+    [DEBUG] Nodes list: $NODES"
+    fi
 
-check_ping () {
-  if ping -c 2 $1 &> /dev/null; then
-    printf "%40s\n" "${green}There is a ping with $1 - success${normal}"
-#    NODES+=("$1")
-    sleep 1
-  else
-    printf "%40s\n" "${red}No ping with $1${normal}"
-    connection_problem="true"
-    delete=$1
-    NODES=( "${NODES[@]/$delete}" )
-#    problems_nodes+=("$1")
-  fi
+    # Validate nodes list
+    if [ -z "$NODES" ]; then
+        error_message="Failed to compile the list of nodes ($NODES_TYPE)"
+        error_output
+    fi
 
+    # Execute command on each node
+    for node_pair in $NODES; do
+        # Split node:ip format
+        node_name="${node_pair%%:*}"
+        node_ip="${node_pair#*:}"
+        [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] node_name: $node_name; node_ip: $node_ip"
+        echo -e "${blue}Executing command on ${node_name}${normal}"
+
+        # Check SSH connectivity using external module (which includes ping check)
+        if ! check_ssh_connectivity "$node_pair"; then
+            echo -e "${red}Cannot execute command on $node_name - SSH connection failed${normal}"
+            continue
+        fi
+
+        [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] Executing command: ssh -o StrictHostKeyChecking=no -t \"$SSH_USER@$node_ip\" \"$COMMAND\""
+        ssh -o StrictHostKeyChecking=no -t "$SSH_USER@$node_ip" "$COMMAND"
+    done
 }
 
-#get_list_from_compute_service () {
-#  check_openstack_cli
-#  check_and_source_openrc_file
-#  nova_state_list=$(openstack compute service list)
-#  if [[ -z $nova_state_list ]];then
-#    error_message="Failed to determine node $NODES_TYPE list"
-#    error_output
-#    exit 1
-#  else
-#    if  [ "$NODES_TYPE" = comp ]; then
-#      #compute
-#      nodes=$(echo "$nova_state_list" | grep -E "(nova-compute)" | awk '{print $6}')
-#    else
-#      #control
-#      nodes=$(echo "$nova_state_list" | grep -E "(nova-scheduler)" | awk '{print $6}')
-#    fi
-#    echo "nodes: $nodes"
-#    if [[ -z $nodes ]];then
-#      error_message="Failed to determine node $NODES_TYPE list"
-#      error_output
-#      exit 1
-#    fi
-#  fi
-#  echo "Check connection to $NODES_TYPE"
-#  for node in $nodes; do
-#    check_ping $node
-#  done
-#
-#}
+# Function to get nodes list using external script
+get_nodes_list() {
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG]:
+        Count parameters: $#
+        Parameters: $*"
 
+    local nodes_result=""
 
-#echo "Parse /etc/hosts to find pattern: $nodes_to_find"
-#[[ -z ${NODES[0]} ]] && {
-#  node_type_func $NODES_TYPE
-#  srv=$(cat /etc/hosts | grep -E ${nodes_to_find} | awk '{print $2}');
-#  for i in $srv; do NODES+=("$i"); done; }
-#if [ "$DEBUG" = true ]; then
-#  echo -e "
-#  [DEBUG]
-#  NODES:
-#  "
-#  for host in "${NODES[@]}"; do
-#    echo $host
-#  done
-#  echo "NODES_TYPE: $NODES_TYPE"
-#fi
-#
-#if [ -z ${NODES[0]} ]; then
-#  if [ "$NODES_TYPE" = comp ] || [ "$NODES_TYPE" = ctrl ]; then
-#    yes_no_question="Do you want to try to compute service list to define $NODES_TYPE list [Yes]: "
-#    yes_no_answer
-#    if [ "$yes_no_input" = "true" ]; then
-#      get_list_from_compute_service
-#    else
-#      error_message="Pattern: $nodes_to_find could not be found in /etc/hosts"
-#      error_output
-#    fi
-#  else
-#    error_message="Pattern: $nodes_to_find could not be found in /etc/hosts"
-#    error_output
-#  fi
-#fi
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG]:
+      nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$*\")"
+    nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] nodes_result: $nodes_result
+    "
 
-get_nodes_list () {
- [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]:
-    function: get_nodes_list
-    \"\$NODES\": ${NODES[*]}
-  "
-  if [ -z "${NODES[*]}" ]; then
-    nodes=$(bash $utils_dir/$get_nodes_list_script -nt $NODES_TYPE)
-  fi
-  if echo $nodes| grep "ERROR"; then
-#    echo -e "$nodes"
-    exit 1
-  fi
-#  node=$(cat /etc/hosts | grep -m 1 -E ${nodes_pattern} | awk '{print $2}')
-#  [ "$TS_DEBUG" = true ] && echo -e "
-#  [DEBUG]: \"\$node\": $node\n
-#  "
-  for node in $nodes; do NODES+=("$node"); done
-  [ "$TS_DEBUG" = true ] && echo -e "
-  [DEBUG]: \"\$NODES\": ${NODES[*]}
-  "
-  echo -e "
-  NODES: ${NODES[*]}
-  "
-  if [ -z "${NODES[*]}" ]; then
-    echo -e "${red}Failed to determine node list - ERROR${normal}"
-    exit 1
-  fi
+    # Check for errors in node list
+    if [ -z "$nodes_result" ]; then
+        echo -e "${red}Failed to determine node list - ERROR${normal}"
+        exit 1
+    elif echo "$nodes_result" | grep -q "ERROR"; then
+        echo -e "${yellow}Node names could not be determined.${normal}"
+        echo -e "${yellow}Try: bash $utils_dir/$get_nodes_list_script -nt all${normal}"
+        echo -e "${red}Node names could not be determined - ERROR!${normal}"
+        exit 1
+    else
+        echo "$nodes_result"
+    fi
 }
 
-if [[ -z "$SSH_USER" ]]; then
-  # 3. Try to determine via whoami (with error handling)
-  SSH_USER=$(whoami 2>/dev/null) || {
-    echo -e "${yellow}Warning: Failed to determine user via whoami${normal}" >&2
-    # 4. Use default value
-    SSH_USER="$default_ssh_user"
-  }
-fi
+# Function to load external scripts
+load_external_scripts() {
+    for script_path in "${external_scripts[@]}"; do
+        if [ ! -f "$script_path" ]; then
+            echo -e "${red}Error: Required script not found: $script_path${normal}"
+            exit 1
+        fi
+        source "$script_path"
+    done
+}
 
-# Final value check
-if [[ -z "$SSH_USER" ]]; then
-  echo -e "${red}Error: Failed to determine user!${normal}" >&2
-  exit 1
-fi
+# Main execution function
+main() {
+    parse_arguments "$@"
+    load_external_scripts
 
-get_nodes_list
+    # Determine SSH user using external function
+    SSH_USER=$(get_and_validate_ssh_user "$SSH_USER" "$default_ssh_user")
+    if [[ $? -ne 0 ]]; then
+        echo -e "${red}Error: Failed to determine valid SSH user!${normal}"
+        exit 1
+    fi
 
-if [ "$DONT_CHECK_CONN" = false ]; then
-  echo "Check: ping to $NODES_TYPE"
-  for node in "${NODES[@]}"; do
-    check_ping $node
-  done
-fi
+    echo -e "Using SSH user: $SSH_USER"
 
-if [ "$connection_problem" = true ]; then
-  yes_no_question="Do you want to run a command on nodes without connection problems? [Yes]: "
-  yes_no_answer
-  if [ "$yes_no_input" = "true" ]; then
+    # Get nodes list
+    if [ -n "$NODES_NAME" ]; then
+        NODES=$(get_nodes_list "-nn" "$NODES_NAME")
+    else
+        NODES=$(get_nodes_list "-nt" "$NODES_TYPE")
+    fi
+
+    if [ "$TS_DEBUG" = true ]; then
+        echo -e "
+    [DEBUG] nodes: $NODES
+    "
+    fi
+
     start_commands_on_nodes
-  else
-    error_message="Command failed. Some nodes have connection problems"
-    error_output
-  fi
-else
-  start_commands_on_nodes
-fi
+}
 
-
+# Run main function
+main "$@"

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script for get DRS logs
+# Script for get logs
 
 # On client OS:
 # scp root@<lcm_ip>:~/test_scripts_keystack/drs-*.gz .

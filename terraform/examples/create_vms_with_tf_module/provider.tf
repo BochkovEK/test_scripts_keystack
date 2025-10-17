@@ -8,7 +8,7 @@ required_version = ">= 0.14.0"
   }
 }
 
-# authentication by clouds.yml file
+# authentication by clouds.yml file or ENVs
 #----------------------------------
 provider "openstack" {
   cloud = "openstack"
@@ -19,11 +19,11 @@ provider "openstack" {
 #provider "openstack" {
 #  user_name        = "admin"
 #  tenant_name      = "admin"
-#  password         = "56OnOHXYLVdsS5a46cdFXct2c9kI2vzYK3uivdFd"
-#  auth_url         = "https://int.ebochkov.test.domain:5000"
+#  password         = "<password>"
+#  auth_url         = "https://<internal_fqdn\external_fqdn>:5000"
 #  user_domain_name = "Default"
 ##  insecure         = "true"
-#  cert              = "/root/client.crt"
-#  key               = "/root/cert.key"
-##  cacert_file      = "/installer/data/ca/root/ca.crt"
+#  cert              = "/path/to/cert.pem"
+#  key               = "/path/to/key.pem"
+##  cacert_file      = "/path/to/ca.crt"
 #}
