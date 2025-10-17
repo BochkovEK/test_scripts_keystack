@@ -695,7 +695,7 @@ check_image () {
             IMAGE=$CIRROS_IMAGE_NAME
         fi
     else
-       echo -e "${green}Image \"$IMAGE\" already exist in project \"$PROJECT\"${normal}"
+       echo -e "${green}Image \"$IMAGE_NAME_EXIST\" already exist in project \"$PROJECT\"${normal}"
         IMAGE=$IMAGE_NAME_EXIST
     fi
 }
