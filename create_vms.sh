@@ -939,7 +939,7 @@ create_vms () {
         local next_batch=$(get_next_batch_number)
 
         # We pass both IDs and names
-        if update_cleanup_state "$next_batch" "$vm_ids" "$vm_names" ""; then
+        if update_cleanup_state "$next_batch" "$vm_ids"; then
 #            echo -e "${green}Cleanup state saved for batch $next_batch${normal}"
             if [ "$TS_DEBUG" = "true" ]; then
                 echo "[DEBUG] VM info pairs: $vm_info"
