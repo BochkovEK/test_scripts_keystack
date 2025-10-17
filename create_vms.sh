@@ -579,7 +579,7 @@ check_project () {
         openstack role add --project $PROJECT --user $TEST_USER $ROLE
         openstack role add --project $PROJECT --user admin admin
     else
-       echo -e "{green}Role: \"$ROLE\" exist in project: \"$PROJECT\"${normal}"
+       echo -e "${green}Role: \"$ROLE\" exist in project: \"$PROJECT\"${normal}"
     fi
     [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] PROJ_ID: $PROJ_ID, PROJECT: $PROJECT"
     unset OS_PROJECT_NAME
@@ -612,7 +612,7 @@ check_and_add_secur_group () {
         openstack security group rule create --ingress --ethertype IPv4 --protocol udp $SECURITY_GR_ID
         openstack security group rule create --ingress --ethertype IPv4 --protocol icmp $SECURITY_GR_ID
     else
-       echo -e "{green}Security group \"$SECURITY_GR\": $SECURITY_GR_ID already exist in project \"$PROJECT\"${normal}"
+       echo -e "${green}Security group \"$SECURITY_GR\": $SECURITY_GR_ID already exist in project \"$PROJECT\"${normal}"
     fi
 }
 
@@ -635,7 +635,7 @@ check_and_add_keypair () {
             chmod 400 $script_dir/$KEY_NAME.pem
             echo "Keypair \"$KEY_NAME\" was created in project \"$PROJECT\""
         else
-           echo -e "{green}Keypair \"$KEY_NAME\" already exist in project \"$PROJECT\"${normal}"
+           echo -e "${green}Keypair \"$KEY_NAME\" already exist in project \"$PROJECT\"${normal}"
         fi
         key_string="--key-name $KEY_NAME"
     fi
@@ -658,7 +658,7 @@ check_network () {
             error_output "Network $NETWORK does not exist"
         fi
     else
-       echo -e "{green}Network \"$NETWORK\" already exist in project \"$PROJECT\"${normal}"
+       echo -e "${green}Network \"$NETWORK\" already exist in project \"$PROJECT\"${normal}"
     fi
 }
 
@@ -695,7 +695,7 @@ check_image () {
             IMAGE=$CIRROS_IMAGE_NAME
         fi
     else
-       echo -e "{green}Image \"$IMAGE\" already exist in project \"$PROJECT\"${normal}"
+       echo -e "${green}Image \"$IMAGE\" already exist in project \"$PROJECT\"${normal}"
         IMAGE=$IMAGE_NAME_EXIST
     fi
 }
@@ -738,7 +738,7 @@ check_and_add_flavor () {
         echo "Creating flavor \"$FLAVOR\" with $CPU_QTY cpus and $RAM_MB Mb...";
         openstack flavor create --public --vcpus $CPU_QTY --ram $RAM_MB --disk 0 ${FLAVOR}_${PROJECT}
     else
-       echo -e "{green}Flavor \"$FLAVOR\" already exist${normal}"
+       echo -e "${green}Flavor \"$FLAVOR\" already exist${normal}"
     fi
 }
 
