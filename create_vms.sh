@@ -901,16 +901,13 @@ create_vms () {
             fi
             echo -e "${green}VM created with ID: $VM_ID${normal}"
 
-            # УБИРАЕМ блок получения ID дисков
-            # Больше не ждём и не получаем VOLUME_ID
-
         else
             echo -e "${red}Failed to extract VM ID for $INSTANCE_NAME${normal}"
             echo "VM creation output:"
             echo "$VM_CREATE_OUTPUT"
         fi
 
-        # Timeout между созданиями ВМ
+        # Timeout between VM creations
         if [ "$BATCH" != "true" ] && [ $i -ne $VM_QTY ]; then
             sleep $TIMEOUT_BEFORE_NEXT_CREATION
         fi
@@ -931,11 +928,7 @@ create_vms () {
 
         # We are waiting only for the VM status (ACTIVE), not disks
         if [ "$WAIT_FOR_CREATED" = true ]; then
-            if wait_vms_created "$vm_ids"; then
-                echo -e "${green}All VMs are ACTIVE!${normal}"
-            else
-                echo -e "${yellow}Some VMs may not be ready, but continuing...${normal}"
-            fi
+            wait_vms_created "$vm_ids"
         fi
     else
         echo -e "${red}No VMs were created successfully${normal}"
