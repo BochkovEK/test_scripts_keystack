@@ -909,11 +909,12 @@ create_vms () {
 
         # Timeout between VM creations
         if [ "$BATCH" != "true" ] && [ $i -ne $VM_QTY ]; then
+            echo "Next VM will start creating after $TIMEOUT_BEFORE_NEXT_CREATION..."
             sleep $TIMEOUT_BEFORE_NEXT_CREATION
         fi
     done
 
-    # Update cleanup state - ТОЛЬКО с VM IDs
+    # Update cleanup state - ONLY with VM IDs
     if [ -n "$vm_ids" ]; then
         local next_batch=$(get_next_batch_number)
 
