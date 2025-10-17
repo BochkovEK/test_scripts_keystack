@@ -40,7 +40,7 @@ external_scripts=(
 )
 
 # Constants
-TIMEOUT_BEFORE_NEXT_CREATION=10
+TIMEOUT_BEFORE_NEXT_CREATION=5
 UBUNTU_IMAGE_NAME="ubuntu-20.04-server-cloudimg-amd64.img"
 CIRROS_IMAGE_NAME="cirros-0.6.3-x86_64-disk.img"
 
@@ -662,41 +662,65 @@ check_network () {
     fi
 }
 
-# Check image
-check_image () {
-    echo "Check for exist image: \"$IMAGE\""
-    IMAGE_NAME_EXIST=$(image_exists_in_openstack $IMAGE)
-    [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] IMAGE: $IMAGE, IMAGE_NAME_EXIST: $IMAGE_NAME_EXIST"
+# Check if image exists in OpenStack and return ID:Name
+image_exists_in_openstack() {
+    openstack image list | awk -v image="$1" '$4 ~ image {print $2 ":" $4; exit}'
+}
 
-    is_cirros_or_ubuntu=$(echo $IMAGE|grep -E "ubuntu|$UBUNTU_IMAGE_NAME|cirros|$CIRROS_IMAGE_NAME")
-    is_cirros=$(echo $IMAGE|grep -E "cirros|$CIRROS_IMAGE_NAME")
-    is_ubuntu=$(echo $IMAGE|grep -E "ubuntu|$UBUNTU_IMAGE_NAME")
+# Check image
+check_image() {
+    echo "Check for exist image: \"$IMAGE\""
+    local image_info=$(image_exists_in_openstack "$IMAGE")
+    local image_id image_name
+
+    if [ -n "$image_info" ]; then
+        image_id=$(awk -F: '{print $1}' <<< "$image_info")
+        image_name=$(awk -F: '{print $2}' <<< "$image_info")
+    fi
+
+    [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] IMAGE: $IMAGE, image_id: $image_id, image_name: $image_name"
+
+    is_cirros_or_ubuntu=$(echo "$IMAGE" | grep -E "ubuntu|$UBUNTU_IMAGE_NAME|cirros|$CIRROS_IMAGE_NAME")
+    is_cirros=$(echo "$IMAGE" | grep -E "cirros|$CIRROS_IMAGE_NAME")
+    is_ubuntu=$(echo "$IMAGE" | grep -E "ubuntu|$UBUNTU_IMAGE_NAME")
 
     [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] is_cirros_or_ubuntu: $is_cirros_or_ubuntu, is_cirros: $is_cirros, is_ubuntu: $is_ubuntu"
 
-    if [ -z "$IMAGE_NAME_EXIST" ] && [ -z "$is_cirros_or_ubuntu" ]; then
+    if [ -z "$image_id" ] && [ -z "$is_cirros_or_ubuntu" ]; then
         error_output "Image \"$IMAGE\" not found in project \"$PROJECT\""
-    elif [ -z "$IMAGE_NAME_EXIST" ] && [ -n "$is_ubuntu" ]; then
-        warning_output "Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
-        if [ -z "$(image_exists_in_openstack $UBUNTU_IMAGE_NAME)" ]; then
-            create_image $UBUNTU_IMAGE_NAME
-        else
-            echo "But image: $UBUNTU_IMAGE_NAME exists in project: $PROJECT"
-            [[ ! $DONT_ASK = "true" ]] && read -p "Press enter to use this image and continue: "
-            IMAGE=$UBUNTU_IMAGE_NAME
+    elif [ -z "$image_id" ] && [ -n "$is_ubuntu" ]; then
+        warning_output "Image \"$IMAGE\" not found in project \"$PROJECT\""
+        local ubuntu_info=$(image_exists_in_openstack "$UBUNTU_IMAGE_NAME")
+        local ubuntu_id ubuntu_name
+        if [ -n "$ubuntu_info" ]; then
+            ubuntu_id=$(awk -F: '{print $1}' <<< "$ubuntu_info")
+            ubuntu_name=$(awk -F: '{print $2}' <<< "$ubuntu_info")
         fi
-    elif [ -z "$IMAGE_NAME_EXIST" ] && [ -n "$is_cirros" ]; then
-        warning_output "Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
-        if [ -z "$(image_exists_in_openstack $CIRROS_IMAGE_NAME)" ]; then
-            create_image $CIRROS_IMAGE_NAME
+        if [ -z "$ubuntu_id" ]; then
+            create_image "$UBUNTU_IMAGE_NAME"
         else
-            echo "But image: $CIRROS_IMAGE_NAME exists in project: $PROJECT"
+            echo "But image: $ubuntu_name exists in project: $PROJECT"
             [[ ! $DONT_ASK = "true" ]] && read -p "Press enter to use this image and continue: "
-            IMAGE=$CIRROS_IMAGE_NAME
+            IMAGE="$ubuntu_name"
+        fi
+    elif [ -z "$image_id" ] && [ -n "$is_cirros" ]; then
+        warning_output "Image \"$IMAGE\" not found in project \"$PROJECT\""
+        local cirros_info=$(image_exists_in_openstack "$CIRROS_IMAGE_NAME")
+        local cirros_id cirros_name
+        if [ -n "$cirros_info" ]; then
+            cirros_id=$(awk -F: '{print $1}' <<< "$cirros_info")
+            cirros_name=$(awk -F: '{print $2}' <<< "$cirros_info")
+        fi
+        if [ -z "$cirros_id" ]; then
+            create_image "$CIRROS_IMAGE_NAME"
+        else
+            echo "But image: $cirros_name exists in project: $PROJECT"
+            [[ ! $DONT_ASK = "true" ]] && read -p "Press enter to use this image and continue: "
+            IMAGE="$cirros_name"
         fi
     else
-       echo -e "${green}Image \"$IMAGE_NAME_EXIST\" already exist in project \"$PROJECT\"${normal}"
-        IMAGE=$IMAGE_NAME_EXIST
+        echo -e "${green}Image \"$image_name\" (ID: $image_id) already exists in project \"$PROJECT\"${normal}"
+        IMAGE="$image_id"
     fi
 }
 
@@ -705,11 +729,6 @@ create_image () {
     if [[ $DONT_ASK = "true" ]] || yes_no_answer "Try to download image: \"$1\" and add to openstack?" "Yes"; then
         bash $utils_dir/$create_image_script_script $1
     fi
-}
-
-# Check if image exists in OpenStack
-image_exists_in_openstack () {
-    openstack image list| grep -m 1 "$1"| awk '{print $2}'
 }
 
 # Check and add flavor
@@ -921,7 +940,7 @@ create_vms () {
 
         # We pass both IDs and names
         if update_cleanup_state "$next_batch" "$vm_ids" "$vm_names" ""; then
-            echo -e "${green}Cleanup state saved for batch $next_batch${normal}"
+#            echo -e "${green}Cleanup state saved for batch $next_batch${normal}"
             if [ "$TS_DEBUG" = "true" ]; then
                 echo "[DEBUG] VM info pairs: $vm_info"
             fi
@@ -931,12 +950,9 @@ create_vms () {
 
         # We are waiting for VM creation, passing both IDs and names
         if [ "$WAIT_FOR_CREATED" = true ]; then
-            if wait_vms_created "$vm_ids" "$vm_names"; then
-                echo -e "${green}All VMs are ACTIVE!${normal}"
-            else
-                echo -e "${yellow}Some VMs may not be ready, but continuing...${normal}"
-            fi
+            wait_vms_created "$vm_ids" "$vm_names"
         fi
+
     else
         echo -e "${red}No VMs were created successfully${normal}"
         return 1
