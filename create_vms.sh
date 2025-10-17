@@ -806,7 +806,7 @@ wait_vms_created () {
             echo -e "${green}All $active_count/$total_count VMs are ACTIVE${normal}"
             break
         else
-            echo "Progress: $active_count/$total_count VMs active"
+            echo "Progress: [ attempt: $attempts ] $active_count/$total_count VMs active"
             ((attempts++))
             sleep 5
         fi
