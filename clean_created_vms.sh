@@ -145,40 +145,77 @@ load_cleanup_state() {
     fi
 }
 
-# Function to collect disk information by VM ID
+# Function to collect disk information by VM ID - FIXED VERSION
 collect_volumes_from_vms() {
     local vm_ids="$1"
     local volume_ids=""
 
     for vm_id in $vm_ids; do
-        echo "Collecting volume info for VM: $vm_id"
+        if [ "$TS_DEBUG" = true ]; then
+            echo "Collecting volume info for VM: $vm_id"
+        fi
 
-        local volume_info=$(openstack server show "$vm_id" -c volumes_attached -f json 2>/dev/null)
+        local volume_info
+        volume_info=$(openstack server show "$vm_id" -c volumes_attached -f json 2>/dev/null)
 
-        if [ -n "$volume_info" ]; then
+        if [ -n "$volume_info" ] && [ "$volume_info" != "null" ]; then
             if command -v jq &> /dev/null; then
-                local volume_id=$(echo "$volume_info" | jq -r '.volumes_attached[0].id' 2>/dev/null)
+                # Extract all volume IDs using jq
+                local volume_ids_from_vm
+                volume_ids_from_vm=$(echo "$volume_info" | jq -r '.volumes_attached[]?.id' 2>/dev/null | grep -v '^null$' | grep -v '^$')
             else
-                # Fallback без jq
-                local volume_id=$(echo "$volume_info" | grep -o '"id": "[^"]*"' | cut -d'"' -f4 | head -1)
+                # Fallback without jq - extract IDs using grep/sed
+                local volume_ids_from_vm
+                volume_ids_from_vm=$(echo "$volume_info" | grep -o '"id": "[^"]*"' | sed 's/"id": "\([^"]*\)"/\1/g' | grep -v '^$')
             fi
 
-            if [ -n "$volume_id" ] && [ "$volume_id" != "null" ]; then
-                if [ -z "$volume_ids" ]; then
-                    volume_ids="$volume_id"
-                else
-                    volume_ids="$volume_ids $volume_id"
-                fi
-                echo "Found volume: $volume_id for VM: $vm_id"
+            # Process each volume ID found
+            if [ -n "$volume_ids_from_vm" ]; then
+                while IFS= read -r volume_id; do
+                    if [ -n "$volume_id" ] && [ "$volume_id" != "null" ]; then
+                        if [ -z "$volume_ids" ]; then
+                            volume_ids="$volume_id"
+                        else
+                            volume_ids="$volume_ids $volume_id"
+                        fi
+                        if [ "$TS_DEBUG" = true ]; then
+                            echo "Found volume: $volume_id for VM: $vm_id"
+                        fi
+                    fi
+                done <<< "$volume_ids_from_vm"
             else
-                echo "No volume found for VM: $vm_id"
+                if [ "$TS_DEBUG" = true ]; then
+                    echo "No volumes found for VM: $vm_id"
+                fi
             fi
         else
-            echo "Could not get volume info for VM: $vm_id"
+            if [ "$TS_DEBUG" = true ]; then
+                echo "Could not get volume info for VM: $vm_id"
+            fi
         fi
     done
 
     echo "$volume_ids"
+}
+
+# Get volume details with name
+get_volume_details() {
+    local volume_id="$1"
+
+    # Get volume name using openstack CLI
+    local volume_name
+    volume_name=$(openstack volume show "$volume_id" -c name -f value 2>/dev/null)
+
+    if [ $? -ne 0 ] || [ -z "$volume_name" ] || [ "$volume_name" = "null" ]; then
+        echo "[no name]"
+    else
+        # Filter out any debug messages or invalid names
+        if [[ "$volume_name" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+            echo "$volume_name"
+        else
+            echo "[no name]"
+        fi
+    fi
 }
 
 # Get security group details
@@ -367,7 +404,7 @@ collect_resources_by_category() {
                 if [ "$vm_id" != "null" ]; then
                     all_vms["$vm_id"]="$batch_num"
 
-                    # COLLECT VOLUMES FROM VM ID (ИСПРАВЛЕНИЕ)
+                    # COLLECT VOLUMES FROM VM ID (FIXED VERSION)
                     local volumes_for_vm=$(collect_volumes_from_vms "$vm_id")
                     for volume_id in $volumes_for_vm; do
                         if [ -n "$volume_id" ] && [ "$volume_id" != "null" ]; then
@@ -395,7 +432,7 @@ collect_resources_by_category() {
     done
 }
 
-# Show resources summary by category
+# Show resources summary by category - FIXED VOLUMES DISPLAY
 show_resources_summary() {
     local batch_info="$1"
 
@@ -420,11 +457,20 @@ show_resources_summary() {
         echo -e "${green}No virtual machines found${normal}"
     fi
 
-    # Volumes summary
+    # Volumes summary - FIXED VERSION
     if [ ${#all_volumes[@]} -gt 0 ]; then
         echo -e "${normal}VOLUMES (${#all_volumes[@]}):${normal}"
         for volume_id in "${!all_volumes[@]}"; do
-            echo "  - $volume_id [Batch ${all_volumes[$volume_id]}]"
+            volume_name=$(get_volume_details "$volume_id")
+            # Additional filtering to ensure we only show valid volume names
+            if [[ "$volume_name" =~ ^[a-zA-Z0-9._-]+$ ]] || [[ "$volume_name" == "[no name]" ]]; then
+                echo "  - $volume_name (ID: $volume_id) [Batch ${all_volumes[$volume_id]}]"
+            else
+                # Skip invalid volume entries that contain debug messages
+                if [ "$TS_DEBUG" = true ]; then
+                    echo "  - [Skipped invalid volume entry: $volume_name]"
+                fi
+            fi
         done
         echo ""
     else
@@ -534,7 +580,7 @@ delete_resources_by_category() {
 
     # 4. Delete all keypairs
     if [ ${#all_keypairs[@]} -gt 0 ]; then
-        echo -e "${normal}=== KEYPAIRS (${#all_keypairs[@]}) ===${normal}"
+        echo -e "${normal}=== KEYPAIRS (${#all_keypairs[@]}):${normal}"
         if confirm_action "Delete all keypairs?"; then
             for keypair_user in "${!all_keypairs[@]}"; do
                 key_name="${keypair_user%:*}"
