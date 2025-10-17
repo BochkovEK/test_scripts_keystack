@@ -23,7 +23,7 @@ external_scripts=(
 )
 
 # Default values
-[[ -z $AUTO_CONFIRM ]] && AUTO_CONFIRM=false
+[[ -z $AUTO_CONFIRM ]] && AUTO_CONFIRM="true"
 [[ -z $CLEANUP_ALL ]] && CLEANUP_ALL=true
 [[ -z $SPECIFIC_BATCH ]] && SPECIFIC_BATCH=""
 [[ -z $TS_DEBUG ]] && TS_DEBUG=false
@@ -339,6 +339,7 @@ collect_resources_by_category() {
     local batch_filter="$1"
     local state_file_path="$VIRTUAL_ENV/$cleanup_file"
 
+    echo "Collect resources by category..."
     # Initialize arrays
     declare -gA all_vms=() all_volumes=() all_security_groups=() all_flavors=() all_keypairs=()
 
