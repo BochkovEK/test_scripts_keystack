@@ -258,11 +258,11 @@ EOF
     fi
 }
 
-# Update cleanup state with new batch
+# Update cleanup state with new batch - адаптируем для пустых volume_ids
 update_cleanup_state () {
     local batch_num="$1"
     local vm_ids="$2"
-    local volume_ids="$3"
+    local volume_ids="$3"  # Может быть пустым
 
     echo "Updating cleanup state for batch $batch_num..."
 
@@ -276,9 +276,15 @@ update_cleanup_state () {
     echo "" >> "$VIRTUAL_ENV/$cleanup_file"
     echo "# Batch $batch_num" >> "$VIRTUAL_ENV/$cleanup_file"
 
-    # Always add VM IDs and Volume IDs (unique per batch)
+    # Всегда добавляем VM IDs
     echo "export CREATED_VM_IDS_BATCH_${batch_num}=\"$vm_ids\"" >> "$VIRTUAL_ENV/$cleanup_file"
-    echo "export CREATED_BOOT_VOLUMES_BATCH_${batch_num}=\"$volume_ids\"" >> "$VIRTUAL_ENV/$cleanup_file"
+
+    # Volume IDs добавляем только если они есть
+    if [ -n "$volume_ids" ]; then
+        echo "export CREATED_BOOT_VOLUMES_BATCH_${batch_num}=\"$volume_ids\"" >> "$VIRTUAL_ENV/$cleanup_file"
+    else
+        echo "# Volume IDs will be collected during cleanup" >> "$VIRTUAL_ENV/$cleanup_file"
+    fi
 
     # Add reusable resources only if they don't exist
 #    if [ -n "$SECURITY_GR_ID" ] && ! grep -q "CREATED_SECURITY_GROUP_ID" "$VIRTUAL_ENV/$cleanup_file"; then
@@ -817,7 +823,7 @@ wait_vms_created () {
 # Create VMs
 create_vms () {
     local vm_ids=""
-    local volume_ids=""
+#    local volume_ids=""
 
     if [ "$BATCH" = "true" ]; then
         echo "Creating $VM_QTY VMs (batch)..."
@@ -870,19 +876,6 @@ create_vms () {
             INSTANCE_NAME=$(printf "$VM_BASE_NAME-%02d" $i)
         fi
 
-        echo "Checking if VM exists: \"$INSTANCE_NAME\""
-        VM_EXIST=$(openstack server list --project $PROJECT | grep $INSTANCE_NAME| awk '{print $4}')
-        if [ -n "$VM_EXIST" ]; then
-            printf "%s\n" "${yellow}VM: \"$INSTANCE_NAME\" already exists in project \"$PROJECT\"${normal}"
-            if [[ ! $DONT_ASK = "true" ]]; then
-                read -p "Create VM: \"$INSTANCE_NAME\" in project \"$PROJECT\" [Yes]: " yn
-                yn=${yn:-"Yes"}
-                if [ "$yn" != Yes ]; then
-                    continue
-                fi
-            fi
-        fi
-
         echo "Creating VM: $INSTANCE_NAME"
 
         # Create VM and capture output
@@ -908,66 +901,38 @@ create_vms () {
             fi
             echo -e "${green}VM created with ID: $VM_ID${normal}"
 
-            # Get volume ID
-            echo "Waiting for volume attachment..."
-            local volume_attempts=0
-            local max_volume_attempts=60
-            VOLUME_ID=""
+            # УБИРАЕМ блок получения ID дисков
+            # Больше не ждём и не получаем VOLUME_ID
 
-            while [ $volume_attempts -lt $max_volume_attempts ] && [ -z "$VOLUME_ID" ]; do
-                sleep 5
-                VOLUME_ID=$(openstack server show $VM_ID -c volumes_attached -f json 2>/dev/null | jq -r '.volumes_attached[0].id' 2>/dev/null)
-
-                if [ "$VOLUME_ID" = "null" ] || [ -z "$VOLUME_ID" ]; then
-                    VOLUME_ID=""
-                    echo "Volume check attempt $volume_attempts: volume not ready yet"
-                else
-                    echo "Volume check attempt $volume_attempts: $VOLUME_ID"
-                fi
-
-                ((volume_attempts++))
-            done
-
-            if [ -n "$VOLUME_ID" ]; then
-                if [ -z "$volume_ids" ]; then
-                    volume_ids="$VOLUME_ID"
-                else
-                    volume_ids="$volume_ids $VOLUME_ID"
-                fi
-                echo -e "${green}Volume created with ID: $VOLUME_ID${normal}"
-            else
-                echo -e "${yellow}Warning: Could not retrieve volume ID for VM $VM_ID${normal}"
-            fi
         else
             echo -e "${red}Failed to extract VM ID for $INSTANCE_NAME${normal}"
             echo "VM creation output:"
             echo "$VM_CREATE_OUTPUT"
         fi
 
-        # Timeout between VM creations (if not batch mode and not last VM)
+        # Timeout между созданиями ВМ
         if [ "$BATCH" != "true" ] && [ $i -ne $VM_QTY ]; then
-#            echo "Waiting $TIMEOUT_BEFORE_NEXT_CREATION seconds before next VM creation..."
             sleep $TIMEOUT_BEFORE_NEXT_CREATION
         fi
     done
 
-    # Update cleanup state with new batch
+    # Update cleanup state - ТОЛЬКО с VM IDs
     if [ -n "$vm_ids" ]; then
         local next_batch=$(get_next_batch_number)
-        if update_cleanup_state "$next_batch" "$vm_ids" "$volume_ids"; then
+
+        # Passing empty volume_ids
+        if update_cleanup_state "$next_batch" "$vm_ids" ""; then
             echo -e "${green}Cleanup state saved for batch $next_batch${normal}"
             echo "VM IDs: $vm_ids"
-            if [ -n "$volume_ids" ]; then
-                echo "Volume IDs: $volume_ids"
-            fi
+            echo "Volume IDs: Will be collected during cleanup"
         else
             echo -e "${yellow}Cleanup state not updated${normal}"
         fi
 
+        # We are waiting only for the VM status (ACTIVE), not disks
         if [ "$WAIT_FOR_CREATED" = true ]; then
-#            echo "Waiting for VMs to become active..."
             if wait_vms_created "$vm_ids"; then
-                echo -e "${green}All VMs are ready!${normal}"
+                echo -e "${green}All VMs are ACTIVE!${normal}"
             else
                 echo -e "${yellow}Some VMs may not be ready, but continuing...${normal}"
             fi
