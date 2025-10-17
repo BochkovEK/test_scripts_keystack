@@ -36,9 +36,7 @@ script_file_path=$(realpath $0)
 script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
 utils_dir=$parent_dir/utils
-check_openstack_cli_script="check_openstack_cli.sh"
 examples_dir=$script_dir/examples
-#create_vms_with_module_dir=$script_dir/examples/create_vms_with_module
 
 [[ -z $DONT_ASK ]] && DONT_ASK="false"
 [[ -z $NETWORK ]] && NETWORK=$pub_net_name
@@ -140,14 +138,12 @@ check_cloud_config () {
   fi
 }
 
-# Сheck openstack cli
+# Check OpenStack CLI
 check_openstack_cli () {
-  if [[ $CHECK_OPENSTACK = "true" ]]; then
-    if ! bash $utils_dir/$check_openstack_cli_script; then
-#      echo -e "${red}Failed to check openstack cli - ERROR${normal}"
-      exit 1
+    if ! command -v openstack &> /dev/null; then
+        echo -e "${red}OpenStack CLI not found${normal}"
+        exit 1
     fi
-  fi
 }
 
 

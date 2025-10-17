@@ -26,7 +26,6 @@ script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
 utils_dir=$parent_dir
 check_openrc_script="check_openrc.sh"
-check_openstack_cli_script="check_openstack_cli.sh"
 yes_no_answer_script="yes_no_answer.sh"
 
 default_api_version="2.74"
@@ -95,12 +94,11 @@ check_and_source_openrc_file() {
     fi
 }
 
-check_openstack_cli() {
-    if [[ $CHECK_OPENSTACK = "true" ]]; then
-        if ! bash $utils_dir/$check_openstack_cli_script &> /dev/null; then
-            echo -e "${red}Failed to check openstack cli - ERROR${normal}"
-            exit 1
-        fi
+# Check OpenStack CLI
+check_openstack_cli () {
+    if ! command -v openstack &> /dev/null; then
+        echo -e "${red}OpenStack CLI not found${normal}"
+        exit 1
     fi
 }
 

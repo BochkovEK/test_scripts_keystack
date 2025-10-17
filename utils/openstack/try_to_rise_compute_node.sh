@@ -19,7 +19,6 @@ parent_dir=$(dirname "$script_dir")
 utils_dir=$parent_dir
 get_nodes_list_script="get_nodes_list.sh"
 check_openrc_script="check_openrc.sh"
-check_openstack_cli_script="check_openstack_cli.sh"
 get_ssh_user_script="get_ssh_user.sh"
 default_docker_engine="docker"
 default_ssh_user="root"
@@ -64,12 +63,11 @@ validate_parameters() {
     fi
 }
 
-# Check openstack cli
-check_openstack_cli() {
-    if [[ $CHECK_OPENSTACK = "true" ]]; then
-        if ! bash $utils_dir/$check_openstack_cli_script; then
-            exit 1
-        fi
+# Check OpenStack CLI
+check_openstack_cli () {
+    if ! command -v openstack &> /dev/null; then
+        echo -e "${red}OpenStack CLI not found${normal}"
+        exit 1
     fi
 }
 

@@ -15,7 +15,6 @@ script_dir=$(dirname $0)
 utils_dir=$script_dir/utils
 openstack_utils=$utils_dir/openstack
 check_openrc_script="check_openrc.sh"
-check_openstack_cli_script="check_openstack_cli.sh"
 
 [[ -z $CHECK_OPENSTACK ]] && CHECK_OPENSTACK="true"
 #[[ -z $TRY_TO_RISE ]] && TRY_TO_RISE="true"
@@ -86,16 +85,12 @@ Check_and_source_openrc_file () {
   fi
 }
 
-# Сheck openstack cli
-Check_openstack_cli () {
-
-  if [[ $CHECK_OPENSTACK = "true" ]]; then
-#    echo -e "${violet}Check openstack cli...${normal}"
-    if ! bash $utils_dir/$check_openstack_cli_script; then
-      echo -e "${red}Failed to check openstack cli - ERROR${normal}"
-      exit 1
+# Check OpenStack CLI
+check_openstack_cli () {
+    if ! command -v openstack &> /dev/null; then
+        echo -e "${red}OpenStack CLI not found${normal}"
+        exit 1
     fi
-  fi
 }
 
 # Check nova srvice list

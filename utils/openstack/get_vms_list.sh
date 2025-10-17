@@ -16,7 +16,6 @@ script_dir=$(dirname "$script_file_path")
 parent_dir=$(dirname "$script_dir")
 utils_dir="$parent_dir"
 check_openrc_script="check_openrc.sh"
-check_openstack_cli_script="check_openstack_cli.sh"
 default_network_mask="10\.224\.[0-9]{1,3}\.[0-9]{1,3}"
 
 # Default values
@@ -84,10 +83,10 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Function to check OpenStack CLI availability
-check_openstack_cli() {
-    if ! bash "$utils_dir/$check_openstack_cli_script" &> /dev/null; then
-        echo -e "${red}OpenStack CLI is not available${normal}" >&2
+# Check OpenStack CLI
+check_openstack_cli () {
+    if ! command -v openstack &> /dev/null; then
+        echo -e "${red}OpenStack CLI not found${normal}"
         exit 1
     fi
 }
