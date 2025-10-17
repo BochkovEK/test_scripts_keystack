@@ -823,16 +823,18 @@ wait_vms_created () {
 # Create VMs
 create_vms () {
     local vm_ids=""
+    local vm_names=""
+    local vm_info=""
 #    local volume_ids=""
 
-    if [ "$BATCH" = "true" ]; then
-        echo "Creating $VM_QTY VMs (batch)..."
-        MAX_KEY="--max $VM_QTY"
-        SEQ=1
-    else
-#        echo "Creating $VM_QTY VMs with timeout: $TIMEOUT_BEFORE_NEXT_CREATION..."
-        SEQ=$VM_QTY
-    fi
+#    if [ "$BATCH" = "true" ]; then
+#        echo "Creating $VM_QTY VMs (batch)..."
+#        MAX_KEY="--max $VM_QTY"
+#        SEQ=1
+#    else
+##        echo "Creating $VM_QTY VMs with timeout: $TIMEOUT_BEFORE_NEXT_CREATION..."
+#        SEQ=$VM_QTY
+#    fi
 
     # Get flavor name
     FLAVOR_NAME=$(openstack flavor list| grep $FLAVOR| head -n 1| awk '{print $4}')
@@ -869,14 +871,14 @@ create_vms () {
         ADD_KEY: $ADD_KEY
     "
 
-    for i in $(seq $SEQ); do
-        if [ "$SEQ" = 1 ]; then
+    for i in $(seq $VM_QTY); do
+        if [ "$VM_QTY" = 1 ]; then
             INSTANCE_NAME="${VM_BASE_NAME}"
         else
             INSTANCE_NAME=$(printf "$VM_BASE_NAME-%02d" $i)
         fi
 
-        echo "Creating VM: $INSTANCE_NAME"
+#        echo "Creating VM: $INSTANCE_NAME"
 
         # Create VM and capture output
         VM_CREATE_OUTPUT=$(openstack server create \
@@ -888,7 +890,7 @@ create_vms () {
             $host \
             --network $NETWORK \
             --boot-from-volume $VOLUME_SIZE \
-            $ADD_KEY $MAX_KEY)
+            $ADD_KEY)
 
         # Extract VM ID
         VM_ID=$(echo "$VM_CREATE_OUTPUT" | grep -E "\|\s+id\s+\|" | awk '{print $4}')
@@ -899,8 +901,19 @@ create_vms () {
             else
                 vm_ids="$vm_ids $VM_ID"
             fi
-            echo -e "${green}VM created with ID: $VM_ID${normal}"
 
+            if [ -z "$vm_names" ]; then
+                vm_names="$INSTANCE_NAME"
+            else
+                vm_names="$vm_names $INSTANCE_NAME"
+            fi
+
+            if [ -z "$vm_info" ]; then
+                vm_info="$VM_ID:$INSTANCE_NAME"
+            else
+                vm_info="$vm_info $VM_ID:$INSTANCE_NAME"
+            fi
+            echo -e "Creating VM: $INSTANCE_NAME with ID: $VM_ID ..."
         else
             echo -e "${red}Failed to extract VM ID for $INSTANCE_NAME${normal}"
             echo "VM creation output:"
@@ -914,30 +927,36 @@ create_vms () {
         fi
     done
 
-    # Update cleanup state - ONLY with VM IDs
+    # Update cleanup state
     if [ -n "$vm_ids" ]; then
         local next_batch=$(get_next_batch_number)
 
-        # Passing empty volume_ids
-        if update_cleanup_state "$next_batch" "$vm_ids" ""; then
+        # Передаём и IDs и names
+        if update_cleanup_state "$next_batch" "$vm_ids" "$vm_names" ""; then
             echo -e "${green}Cleanup state saved for batch $next_batch${normal}"
             echo "VM IDs: $vm_ids"
+            echo "VM Names: $vm_names"
             echo "Volume IDs: Will be collected during cleanup"
+
+            if [ "$TS_DEBUG" = "true" ]; then
+                echo "[DEBUG] VM info pairs: $vm_info"
+            fi
         else
             echo -e "${yellow}Cleanup state not updated${normal}"
         fi
 
-        # We are waiting only for the VM status (ACTIVE), not disks
+        # Ожидаем создания ВМ, передавая и ID и имена
         if [ "$WAIT_FOR_CREATED" = true ]; then
-            wait_vms_created "$vm_ids"
+            if wait_vms_created "$vm_ids" "$vm_names"; then
+                echo -e "${green}All VMs are ACTIVE!${normal}"
+            else
+                echo -e "${yellow}Some VMs may not be ready, but continuing...${normal}"
+            fi
         fi
     else
         echo -e "${red}No VMs were created successfully${normal}"
         return 1
     fi
-
-    # Show final VMs list
-    check_vms_list
 
     return 0
 }
