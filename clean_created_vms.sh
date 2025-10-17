@@ -145,6 +145,42 @@ load_cleanup_state() {
     fi
 }
 
+# Function to collect disk information by VM ID
+collect_volumes_from_vms() {
+    local vm_ids="$1"
+    local volume_ids=""
+
+    for vm_id in $vm_ids; do
+        echo "Collecting volume info for VM: $vm_id"
+
+        local volume_info=$(openstack server show "$vm_id" -c volumes_attached -f json 2>/dev/null)
+
+        if [ -n "$volume_info" ]; then
+            if command -v jq &> /dev/null; then
+                local volume_id=$(echo "$volume_info" | jq -r '.volumes_attached[0].id' 2>/dev/null)
+            else
+                # Fallback без jq
+                local volume_id=$(echo "$volume_info" | grep -o '"id": "[^"]*"' | cut -d'"' -f4 | head -1)
+            fi
+
+            if [ -n "$volume_id" ] && [ "$volume_id" != "null" ]; then
+                if [ -z "$volume_ids" ]; then
+                    volume_ids="$volume_id"
+                else
+                    volume_ids="$volume_ids $volume_id"
+                fi
+                echo "Found volume: $volume_id for VM: $vm_id"
+            else
+                echo "No volume found for VM: $vm_id"
+            fi
+        else
+            echo "Could not get volume info for VM: $vm_id"
+        fi
+    done
+
+    echo "$volume_ids"
+}
+
 # Get security group details
 get_security_group_details() {
     local sg_id="$1"
@@ -169,12 +205,11 @@ get_security_group_details() {
 }
 
 # Check OpenStack CLI
-check_openstack_cli() {
+check_openstack_cli () {
     if ! command -v openstack &> /dev/null; then
         echo -e "${red}OpenStack CLI not found${normal}"
         exit 1
     fi
-#    echo -e "${green}OpenStack CLI is available${normal}"
 }
 
 # Single request for all VMs
@@ -316,31 +351,28 @@ collect_resources_by_category() {
 
     for batch_num in $batches; do
         local vm_ids_var="CREATED_VM_IDS_BATCH_$batch_num"
-        local volumes_var="CREATED_BOOT_VOLUMES_BATCH_$batch_num"
         local sg_var="CREATED_SECURITY_GROUP_ID_BATCH_$batch_num"
         local flavor_var="CREATED_FLAVOR_NAME_BATCH_$batch_num"
         local keypair_var="CREATED_KEYPAIR_NAME_USER_BATCH_$batch_num"
 
         eval "vm_ids=\"\$$vm_ids_var\""
-        eval "volumes=\"\$$volumes_var\""
         eval "sg_id=\"\$$sg_var\""
         eval "flavor_name=\"\$$flavor_var\""
         eval "keypair_user=\"\$$keypair_var\""
 
-        # Collect VMs
+        # Collect VMs AND their volumes
         if [ -n "$vm_ids" ] && [ "$vm_ids" != "null" ]; then
             for vm_id in $vm_ids; do
                 if [ "$vm_id" != "null" ]; then
                     all_vms["$vm_id"]="$batch_num"
-                fi
-            done
-        fi
 
-        # Collect volumes
-        if [ -n "$volumes" ] && [ "$volumes" != "null" ]; then
-            for volume_id in $volumes; do
-                if [ "$volume_id" != "null" ]; then
-                    all_volumes["$volume_id"]="$batch_num"
+                    # COLLECT VOLUMES FROM VM ID (ИСПРАВЛЕНИЕ)
+                    local volumes_for_vm=$(collect_volumes_from_vms "$vm_id")
+                    for volume_id in $volumes_for_vm; do
+                        if [ -n "$volume_id" ] && [ "$volume_id" != "null" ]; then
+                            all_volumes["$volume_id"]="$batch_num"
+                        fi
+                    done
                 fi
             done
         fi

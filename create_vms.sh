@@ -3,10 +3,6 @@
 # Script for creating VMs in OpenStack environment
 # Supports batch creation and maintains state files for cleanup
 
-# TO DO
-# improve BATCH
-# when deleting VMs, take disk information for delete config from the VMs themselves
-
 # Color definitions
 green=$(tput setaf 2)
 red=$(tput setaf 1)
@@ -224,14 +220,25 @@ yes_no_answer() {
     confirm_action_external "$question" "$default_answer"
 }
 
-# Error output function
-error_output () {
-    if [ -n "${warning_message}" ]; then
-        printf "%s\n" "${yellow}$warning_message${normal}"
-        warning_message=""
-    fi
-    printf "%s\n" "${red}$error_message - error${normal}"
+# Function error output
+error_output() {
+    local message="$1"
+    echo -e "${red}ERROR: $message${normal}" >&2
     exit 1
+}
+
+# Function warning output
+warning_output() {
+    local message="$1"
+    echo -e "${yellow}WARNING: $message${normal}" >&2
+}
+
+# Check OpenStack CLI
+check_openstack_cli () {
+    if ! command -v openstack &> /dev/null; then
+        echo -e "${red}OpenStack CLI not found${normal}"
+        exit 1
+    fi
 }
 
 # Check and source config file
@@ -427,13 +434,11 @@ ${green}VM Creation Configuration:${normal}
 
 # Check and source openrc file
 check_and_source_openrc_file () {
-    if bash $utils_dir/$check_openrc_script &> /dev/null; then
-        openrc_file=$(bash $utils_dir/$check_openrc_script)
-        source $openrc_file
-    else
-        bash $utils_dir/$check_openrc_script
-        exit 1
+    if openrc_file=$(bash $utils_dir/$check_openrc_script 2>/dev/null); then
+        source "$openrc_file"
+        return 0
     fi
+    exit 1
 }
 
 # Check command availability
@@ -464,16 +469,13 @@ get_nodes_list() {
 
     # Check for errors in node list
     if [ -z "$nodes_result" ]; then
-        echo -e "${red}Failed to determine node list - ERROR${normal}"
-        exit 1
+        error_output "Failed to determine node list"
     elif echo "$nodes_result" | grep -q "ERROR"; then
-        echo -e "${yellow}Node names could not be determined.${normal}"
-        echo -e "${yellow}Try: bash $utils_dir/$get_nodes_list_script -nt all${normal}"
-        echo -e "${red}Node names could not be determined - ERROR!${normal}"
-        exit 1
-    else
-        echo "$nodes_result"
+        warning_output "Node names could not be determined. Try: bash $utils_dir/$get_nodes_list_script -nt all"
+        error_output "Node names could not be determined"
     fi
+
+    echo "$nodes_result"
 }
 
 # Function to check connection to a node
@@ -506,16 +508,14 @@ check_hv() {
     local hypervisor_pair=$(get_nodes_list -nn "$HYPERVISOR_HOSTNAME")
 
     if [ -z "$hypervisor_pair" ]; then
-        printf "%s\n" "${red}Hypervisor $HYPERVISOR_HOSTNAME not found - error!${normal}"
-        exit 1
+        error_output "Hypervisor $HYPERVISOR_HOSTNAME not found"
     fi
 
     if check_ssh_connectivity "$hypervisor_pair"; then
-        printf "%s\n" "${green}Connection to $HYPERVISOR_HOSTNAME - success${normal}"
+       echo -e "{green}Connection to $HYPERVISOR_HOSTNAME - success${normal}"
     else
-        printf "%s\n" "${red}No connection to $HYPERVISOR_HOSTNAME - error!${normal}"
-        printf "%s\n" "${red}The node $HYPERVISOR_HOSTNAME may be powered off or SSH not accessible.${normal}"
-        exit 1
+        warning_output "No connection to $HYPERVISOR_HOSTNAME"
+        error_output "The node $HYPERVISOR_HOSTNAME may be powered off or SSH not accessible"
     fi
 
     echo "Check nova state on hypervisor: $HYPERVISOR_HOSTNAME..."
@@ -530,10 +530,9 @@ check_hv() {
 
     hv_fail_state=$(echo "$compute_state" | grep -E "($HYPERVISOR_HOSTNAME(.)+(disabled|down))|(Internal Server Error \(HTTP 500\))")
     if [ -n "$hv_fail_state" ]; then
-        printf "%s\n" "${red}Nova state fail on $HYPERVISOR_HOSTNAME${normal}"
-        exit 1
+        error_output "Nova state fail on $HYPERVISOR_HOSTNAME"
     else
-        printf "%s\n" "${green}Nova state on $HYPERVISOR_HOSTNAME - OK!${normal}"
+       echo -e "{green}Nova state on $HYPERVISOR_HOSTNAME - OK!${normal}"
     fi
 }
 
@@ -541,13 +540,12 @@ check_hv() {
 check_project () {
     echo "Check for exist project: \"$PROJECT\""
     ADMIN_PROJECT_ID=$(openstack project list| grep -E -m 1 "\sadmin\s"| awk '{print $2}')
-    if [ -z $ADMIN_PROJECT_ID ]; then
-        echo -e "${red}Impossible to determine the project id admin${normal}"
-        exit 1
+    if [ -z "$ADMIN_PROJECT_ID" ]; then
+        error_output "Impossible to determine the project id admin"
     fi
     PROJ_ID=$(openstack project list| grep -E -m 1 "\s$PROJECT\s"| awk '{print $2}')
     if [ -z "$PROJ_ID" ]; then
-        printf "%s\n" "${yellow}Project \"$PROJECT\" does not exist${normal}"
+        warning_output "Project \"$PROJECT\" does not exist${normal}"
         [[ ! $DONT_ASK = "true" ]] && {
             echo "Create a Project with name: \"$PROJECT\"?";
             read -p "Press enter to continue: ";
@@ -555,24 +553,24 @@ check_project () {
         echo "Creating project: \"$PROJECT\"..."
         openstack project create $PROJECT
     else
-        printf "%s\n" "${green}Project: \"$PROJECT\" exist${normal}"
+       echo -e "{green}Project: \"$PROJECT\" exist${normal}"
     fi
     echo "Check for user: \"$TEST_USER\" exist"
     USER_EXIST=$(openstack user list| grep -E " $TEST_USER "| awk '{print $4}')
     if [ -z $USER_EXIST ]; then
-        printf "%s\n" "${yellow}User: \"$TEST_USER\" does not exist${normal}"
+        warning_output "User: \"$TEST_USER\" does not exist${normal}"
         [[ ! $DONT_ASK = "true" ]] && {
             echo "Create a user with name: \"$TEST_USER\"?";
             read -p "Press enter to continue: ";
             }
         openstack user create --password $OS_PASSWORD $TEST_USER
     else
-        printf "%s\n" "${green}User: \"$TEST_USER\" exist${normal}"
+       echo -e "{green}User: \"$TEST_USER\" exist${normal}"
     fi
     echo "Check for role assignment: \"$ROLE\" for user: \"$TEST_USER\" in project: \"$PROJECT\""
     ROLE_IN_PROJECT=$(openstack role assignment list --user $TEST_USER --project $PROJECT --names|grep -E "$ROLE(.)+$TEST_USER(.)+$PROJECT")
     if [[ -z $ROLE_IN_PROJECT ]]; then
-        printf "%s\n" "${yellow}Role: \"$ROLE\" is not assigned to user: \"$TEST_USER\" in project: \"$PROJECT\"${normal}"
+        warning_output "Role: \"$ROLE\" is not assigned to user: \"$TEST_USER\" in project: \"$PROJECT\"${normal}"
         [[ ! $DONT_ASK = "true" ]] && {
             echo "Assign the role: \"$ROLE\" to user: \"$TEST_USER\" in project: \"$PROJECT\"?";
             read -p "Press enter to continue: ";
@@ -581,7 +579,7 @@ check_project () {
         openstack role add --project $PROJECT --user $TEST_USER $ROLE
         openstack role add --project $PROJECT --user admin admin
     else
-        printf "%s\n" "${green}Role: \"$ROLE\" exist in project: \"$PROJECT\"${normal}"
+       echo -e "{green}Role: \"$ROLE\" exist in project: \"$PROJECT\"${normal}"
     fi
     [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] PROJ_ID: $PROJ_ID, PROJECT: $PROJECT"
     unset OS_PROJECT_NAME
@@ -599,7 +597,7 @@ check_and_add_secur_group () {
     fi
     SECURITY_GR_ID=$(openstack security group list|grep -E "($SECURITY_GR(.)*$PROJ_ID)" | head -1 | awk '{print $2}')
     if [ -z "$SECURITY_GR_ID" ]; then
-        printf "%s\n" "${yellow}Security group \"$SECURITY_GR\" not found in project \"$PROJECT\"${normal}"
+        warning_output "Security group \"$SECURITY_GR\" not found in project \"$PROJECT\"${normal}"
         [[ ! $DONT_ASK = "true" ]] && {
             echo "Create a Security group with a name: \"$SECURITY_GR\"?";
             read -p "Press enter to continue: ";
@@ -614,7 +612,7 @@ check_and_add_secur_group () {
         openstack security group rule create --ingress --ethertype IPv4 --protocol udp $SECURITY_GR_ID
         openstack security group rule create --ingress --ethertype IPv4 --protocol icmp $SECURITY_GR_ID
     else
-        printf "%s\n" "${green}Security group \"$SECURITY_GR\": $SECURITY_GR_ID already exist in project \"$PROJECT\"${normal}"
+       echo -e "{green}Security group \"$SECURITY_GR\": $SECURITY_GR_ID already exist in project \"$PROJECT\"${normal}"
     fi
 }
 
@@ -626,7 +624,7 @@ check_and_add_keypair () {
         echo "Check for exist keypair: \"$KEY_NAME\""
         KEY_NAME_EXIST=$(openstack keypair list | grep -E "\s$KEY_NAME\s"| awk '{print $2}')
         if [ -z "$KEY_NAME_EXIST" ]; then
-            printf "%s\n" "${yellow}Keypair \"$KEY_NAME\" not found in project \"$PROJECT\"${normal}"
+            warning_output "Keypair \"$KEY_NAME\" not found in project \"$PROJECT\"${normal}"
             [[ ! $DONT_ASK = "true" ]] && {
                 echo "Create a key pair with a name: \"$KEY_NAME\"?";
                 read -p "Press enter to continue: ";
@@ -637,7 +635,7 @@ check_and_add_keypair () {
             chmod 400 $script_dir/$KEY_NAME.pem
             echo "Keypair \"$KEY_NAME\" was created in project \"$PROJECT\""
         else
-            printf "%s\n" "${green}Keypair \"$KEY_NAME\" already exist in project \"$PROJECT\"${normal}"
+           echo -e "{green}Keypair \"$KEY_NAME\" already exist in project \"$PROJECT\"${normal}"
         fi
         key_string="--key-name $KEY_NAME"
     fi
@@ -648,34 +646,20 @@ check_network () {
     echo "Check for exist network: \"$NETWORK\""
     NETWORK_NAME_EXIST=$(openstack network list| grep "$NETWORK"| awk '{print $2}')
     if [ -z "$NETWORK_NAME_EXIST" ]; then
-        printf "%s\n" "${yellow}Network \"$NETWORK\" not found in project \"$PROJECT\"${normal}"
+        warning_output "Network \"$NETWORK\" not found in project \"$PROJECT\"${normal}"
         if [ "$NETWORK" = "pub_net" ]; then
             if yes_no_answer "Do you want to try to create ${NETWORK}?" "Yes"; then
                 bash $utils_dir/$create_pub_network_script
             else
-                error_message="Network $NETWORK does not exist"
-                error_output
+                error_output "Network $NETWORK does not exist"
             fi
         else
-            warning_message="The script can only create a 'pub_net' network"
-            error_message="Network $NETWORK does not exist"
-            error_output
+            warning_output "The script can only create a 'pub_net' network"
+            error_output "Network $NETWORK does not exist"
         fi
     else
-        printf "%s\n" "${green}Network \"$NETWORK\" already exist in project \"$PROJECT\"${normal}"
+       echo -e "{green}Network \"$NETWORK\" already exist in project \"$PROJECT\"${normal}"
     fi
-}
-
-# Create image
-create_image () {
-    if [[ $DONT_ASK = "true" ]] || yes_no_answer "Try to download image: \"$1\" and add to openstack?" "Yes"; then
-        bash $utils_dir/$create_image_script_script $1
-    fi
-}
-
-# Check if image exists in OpenStack
-image_exists_in_openstack () {
-    openstack image list| grep -m 1 "$1"| awk '{print $2}'
 }
 
 # Check image
@@ -691,10 +675,9 @@ check_image () {
     [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] is_cirros_or_ubuntu: $is_cirros_or_ubuntu, is_cirros: $is_cirros, is_ubuntu: $is_ubuntu"
 
     if [ -z "$IMAGE_NAME_EXIST" ] && [ -z "$is_cirros_or_ubuntu" ]; then
-        printf "%s\n" "${red}Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
-        exit 1
+        error_output "Image \"$IMAGE\" not found in project \"$PROJECT\""
     elif [ -z "$IMAGE_NAME_EXIST" ] && [ -n "$is_ubuntu" ]; then
-        printf "%s\n" "${yellow}Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
+        warning_output "Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
         if [ -z "$(image_exists_in_openstack $UBUNTU_IMAGE_NAME)" ]; then
             create_image $UBUNTU_IMAGE_NAME
         else
@@ -703,7 +686,7 @@ check_image () {
             IMAGE=$UBUNTU_IMAGE_NAME
         fi
     elif [ -z "$IMAGE_NAME_EXIST" ] && [ -n "$is_cirros" ]; then
-        printf "%s\n" "${yellow}Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
+        warning_output "Image \"$IMAGE\" not found in project \"$PROJECT\"${normal}"
         if [ -z "$(image_exists_in_openstack $CIRROS_IMAGE_NAME)" ]; then
             create_image $CIRROS_IMAGE_NAME
         else
@@ -712,9 +695,21 @@ check_image () {
             IMAGE=$CIRROS_IMAGE_NAME
         fi
     else
-        printf "%s\n" "${green}Image \"$IMAGE\" already exist in project \"$PROJECT\"${normal}"
+       echo -e "{green}Image \"$IMAGE\" already exist in project \"$PROJECT\"${normal}"
         IMAGE=$IMAGE_NAME_EXIST
     fi
+}
+
+# Create image
+create_image () {
+    if [[ $DONT_ASK = "true" ]] || yes_no_answer "Try to download image: \"$1\" and add to openstack?" "Yes"; then
+        bash $utils_dir/$create_image_script_script $1
+    fi
+}
+
+# Check if image exists in OpenStack
+image_exists_in_openstack () {
+    openstack image list| grep -m 1 "$1"| awk '{print $2}'
 }
 
 # Check and add flavor
@@ -722,16 +717,15 @@ check_and_add_flavor () {
     echo "Check for exist flavor: \"$FLAVOR\""
     FLAVOR_EXST=$(openstack flavor list| grep $FLAVOR| head -n 1| awk '{print $4}')
     if [ -z $FLAVOR_EXST ]; then
-        printf "%s\n" "${yellow}Flavor \"$FLAVOR\" not found in project \"$PROJECT\"${normal}"
+        warning_output "Flavor \"$FLAVOR\" not found in project \"$PROJECT\"${normal}"
         CPU_DRAFT=$(echo "${FLAVOR%-*}")
         RAM_DRAFT=$(echo "${FLAVOR##*-}")
         CPU_QTY=$(echo "${CPU_DRAFT%c*}")
         RAM_GB=$(echo "${RAM_DRAFT%r*}")
 
         if [[ -z $CPU_QTY || -z $RAM_GB ]]; then
-            printf "%s\n" "${yellow}The flavor name format should be: <CPUs>c-<RAM GB>r instead: \"$FLAVOR\"${normal}"
-            printf "%s\n" "${red}Can't create a flavor by name: \"$FLAVOR\"\n"
-            exit 1
+            warning_output "The flavor name format should be: <CPUs>c-<RAM GB>r instead: \"$FLAVOR\""
+            error_output "Can't create a flavor by name: \"$FLAVOR\""
         fi
 
         let "RAM_MB = ${RAM_GB} * 1024"
@@ -744,7 +738,7 @@ check_and_add_flavor () {
         echo "Creating flavor \"$FLAVOR\" with $CPU_QTY cpus and $RAM_MB Mb...";
         openstack flavor create --public --vcpus $CPU_QTY --ram $RAM_MB --disk 0 ${FLAVOR}_${PROJECT}
     else
-        printf "%s\n" "${green}Flavor \"$FLAVOR\" already exist${normal}"
+       echo -e "{green}Flavor \"$FLAVOR\" already exist${normal}"
     fi
 }
 
@@ -762,11 +756,10 @@ check_vms_list () {
     else
         openstack server list --all-projects --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks
         echo "Command for check VMs list:"
-        printf "%s\n" "${yellow}openstack server list --all-projects --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
+        warning_output "openstack server list --all-projects --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks${normal}"
     fi
 }
 
-# Wait for specific VMs to be created by their IDs and names
 # Wait for specific VMs to be created by their IDs and names
 wait_vms_created () {
     local vm_ids="$1"
@@ -777,7 +770,6 @@ wait_vms_created () {
 
     echo "Waiting for VMs to become active..."
 
-    # Создаём массивы для удобства
     local id_array=($vm_ids)
     local name_array=($vm_names)
     local total_count=${#id_array[@]}
@@ -837,15 +829,13 @@ create_vms () {
     # Get flavor name
     FLAVOR_NAME=$(openstack flavor list| grep $FLAVOR| head -n 1| awk '{print $4}')
     if [ -z "$FLAVOR_NAME" ]; then
-        echo -e "${red}Flavor $FLAVOR not found${normal}"
-        return 1
+        error_output "Flavor $FLAVOR not found"
     fi
 
     # Get security group ID
     SECURITY_GR_ID=$(get_security_group_id)
     if [ -z "$SECURITY_GR_ID" ]; then
-        echo -e "${red}Security group $SECURITY_GR not found${normal}"
-        return 1
+        error_output "Security group $SECURITY_GR not found"
     fi
 
     # Build key string
@@ -959,8 +949,7 @@ create_vms () {
 load_external_scripts() {
     for script_path in "${external_scripts[@]}"; do
         if [ ! -f "$script_path" ]; then
-            echo -e "${red}Error: Required script not found: $script_path${normal}"
-            exit 1
+            error_output "Error: Required script not found: $script_path"
         fi
         source "$script_path"
     done
@@ -982,10 +971,7 @@ main() {
 
     # Check OpenStack CLI
     if [[ $CHECK_OPENSTACK = "true" ]]; then
-        if ! bash $utils_dir/check_openstack_cli.sh; then
-            echo -e "${red}Failed to check openstack cli - error${normal}"
-            exit 1
-        fi
+        check_openstack_cli
     fi
 
     check_and_source_openrc_file
