@@ -512,7 +512,7 @@ check_hv() {
     fi
 
     if check_ssh_connectivity "$hypervisor_pair"; then
-       echo -e "{green}Connection to $HYPERVISOR_HOSTNAME - success${normal}"
+       echo -e "${green}Connection to $HYPERVISOR_HOSTNAME - success${normal}"
     else
         warning_output "No connection to $HYPERVISOR_HOSTNAME"
         error_output "The node $HYPERVISOR_HOSTNAME may be powered off or SSH not accessible"
@@ -532,7 +532,7 @@ check_hv() {
     if [ -n "$hv_fail_state" ]; then
         error_output "Nova state fail on $HYPERVISOR_HOSTNAME"
     else
-       echo -e "{green}Nova state on $HYPERVISOR_HOSTNAME - OK!${normal}"
+       echo -e "${green}Nova state on $HYPERVISOR_HOSTNAME - OK!${normal}"
     fi
 }
 
@@ -553,7 +553,7 @@ check_project () {
         echo "Creating project: \"$PROJECT\"..."
         openstack project create $PROJECT
     else
-       echo -e "{green}Project: \"$PROJECT\" exist${normal}"
+       echo -e "${green}Project: \"$PROJECT\" exist${normal}"
     fi
     echo "Check for user: \"$TEST_USER\" exist"
     USER_EXIST=$(openstack user list| grep -E " $TEST_USER "| awk '{print $4}')
@@ -565,7 +565,7 @@ check_project () {
             }
         openstack user create --password $OS_PASSWORD $TEST_USER
     else
-       echo -e "{green}User: \"$TEST_USER\" exist${normal}"
+       echo -e "${green}User: \"$TEST_USER\" exist${normal}"
     fi
     echo "Check for role assignment: \"$ROLE\" for user: \"$TEST_USER\" in project: \"$PROJECT\""
     ROLE_IN_PROJECT=$(openstack role assignment list --user $TEST_USER --project $PROJECT --names|grep -E "$ROLE(.)+$TEST_USER(.)+$PROJECT")
