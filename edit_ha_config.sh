@@ -244,19 +244,23 @@ cat_conf() {
 
 # Function to find first available node
 find_available_node() {
-    local node_line node_ip
+    local node_line node_name node_ip
     local found_node=""
 
     while IFS= read -r node_line; do
         [ -z "$node_line" ] && continue
 
+        node_name="${node_line%%:*}"
         node_ip="${node_line#*:}"
 
+        echo -e "${yellow}Trying node: $node_name ($node_ip)...${normal}" >&2
+
         if ssh -n -o StrictHostKeyChecking=no -o ConnectTimeout=5 -o BatchMode=yes "$SSH_USER@$node_ip" "exit" 2>/dev/null; then
+            echo -e "${green}Node $node_name is accessible${normal}" >&2
             found_node="$node_line"
             break
         else
-            echo -e "${yellow}Node ${node_line%%:*} is not accessible${normal}" >&2
+            echo -e "${yellow}Node $node_name ($node_ip) is not accessible${normal}" >&2
         fi
     done <<< "$NODES"
 
@@ -264,7 +268,7 @@ find_available_node() {
         echo "$found_node"
         return 0
     else
-        echo -e "${red}No accessible nodes found${normal}" >&2
+        echo -e "${red}Error: No accessible nodes found${normal}" >&2
         return 1
     fi
 }
@@ -273,19 +277,28 @@ find_available_node() {
 pull_conf() {
     echo "Pulling $CONF_NAME from controller node..."
 
+    # Create directory if needed
     [ ! -d "$VIRTUAL_ENV/$test_node_conf_dir" ] && mkdir -p "$VIRTUAL_ENV/$test_node_conf_dir"
 
     [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG]: nodes: $NODES"
 
+    # Check if NODES variable is set
+    if [ -z "$NODES" ]; then
+        echo -e "${red}Error: NODES variable is not set${normal}" >&2
+        return 1
+    fi
+
     # Find first available node
     local available_node
     if ! available_node=$(find_available_node); then
-        echo -e "${red}No accessible nodes found for configuration pull${normal}"
+        echo -e "${red}Error: No accessible nodes found for configuration pull${normal}" >&2
         return 1
     fi
 
     local node_name="${available_node%%:*}"
     local node_ip="${available_node#*:}"
+
+    echo -e "${green}Using node: $node_name ($node_ip)${normal}"
 
     echo "Copying $service_name configuration from $node_name:$conf_dir/$CONF_NAME"
 
@@ -294,7 +307,11 @@ pull_conf() {
 
     if ! ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 "$SSH_USER@$node_ip" \
         "sudo cat $conf_dir/$CONF_NAME" > "$temp_file" 2>/dev/null; then
-        echo -e "${red}Failed to pull configuration from $node_name${normal}"
+        echo -e "${red}Error: Failed to pull configuration from $node_name${normal}" >&2
+        echo -e "${yellow}Possible reasons:${normal}" >&2
+        echo -e "  - File $conf_dir/$CONF_NAME doesn't exist on $node_name" >&2
+        echo -e "  - Permission denied" >&2
+        echo -e "  - SSH connection failed" >&2
         rm -f "$temp_file"
         return 1
     fi
@@ -302,15 +319,19 @@ pull_conf() {
     # Move temp file to final location
     mv "$temp_file" "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}"
 
+    # Check if file is not empty
     if [ ! -s "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}" ]; then
-        echo -e "${red}Configuration file is empty or missing${normal}"
+        echo -e "${red}Error: Configuration file is empty${normal}" >&2
         return 1
     fi
 
     # Create backup if doesn't exist
     if [ ! -f "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}_backup" ]; then
         cp "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}" "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}_backup"
+        echo -e "${green}Backup created: ${CONF_NAME}_backup${normal}"
     fi
+
+    echo -e "${green}Successfully pulled configuration from $node_name${normal}"
 
     echo -e "
 To edit the configuration:
