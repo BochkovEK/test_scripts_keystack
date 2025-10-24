@@ -193,31 +193,23 @@ main() {
     # Setup logging
     setup_logging
 
-    # Get all interfaces (without removing @ suffixes)
-    mapfile -t ALL_INTERFACES < <(get_all_interfaces)
+    # Get all interfaces directly into array
+    echo "Fetching all system interfaces..."
+    IFS=$'\n' read -r -d '' -a ALL_INTERFACES < <(ip -o link show | awk -F': ' '{print $2}' && printf '\0')
 
-    # Set interface name (still remove @ suffix for the target interface)
+    # Debug output
+    echo "Found ${#ALL_INTERFACES[@]} interfaces:"
+    printf '  %s\n' "${ALL_INTERFACES[@]}"
+
+    # Set interface name
     TS_INTERFACE_NAME=$(set_interface_name "$1")
 
-    # Validate interface exists against full interface names
+    # Validate interface exists
     if ! validate_interface "$TS_INTERFACE_NAME" "${ALL_INTERFACES[@]}"; then
         exit 1
     fi
 
-    # Show initial interface state
-    check_interface_state "$TS_INTERFACE_NAME"
-
-    # Display parameters and wait for confirmation
-    show_parameters
-    wait_confirmation_and_start_logging
-
-    # Run the main flapping test
-    run_flapping_test "$TS_INTERFACE_NAME" "$TS_NUMBER_OF_CYCLES" "$TS_SLEEP_TIME"
-
-    echo "=== Flapping Interface Test Finished ==="
-    echo "Timestamp: $(date)"
-    echo "Log file: $LOG_FILE"
-    echo "Finish"
+    # Rest of the function...
 }
 
 # Run main function with all arguments
