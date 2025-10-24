@@ -84,7 +84,7 @@ get_all_interfaces() {
     mapfile -t interfaces_array < <(
         ip -o link show | awk -F': ' '{print $2}' |
         while IFS= read -r iface; do
-            echo "${iface%%@*}"
+            echo "$iface"  # Return the full interface name
         done
     )
 
@@ -107,7 +107,7 @@ validate_interface() {
     if [ ! "$found" = true ]; then
         echo -e "${red}[ERROR]: Interface $interface_name does not exist!${normal}"
         echo "Available interfaces:"
-        printf '%s\n' "${all_interfaces[@]}"
+        printf '  %s\n' "${all_interfaces[@]}"
         return 1
     fi
     return 0
@@ -195,13 +195,13 @@ main() {
     # Setup logging
     setup_logging
 
-    # Get all interfaces
+    # Get all interfaces (without removing @ suffixes)
     mapfile -t ALL_INTERFACES < <(get_all_interfaces)
 
-    # Set interface name
+    # Set interface name (still remove @ suffix for the target interface)
     TS_INTERFACE_NAME=$(set_interface_name "$1")
 
-    # Validate interface exists
+    # Validate interface exists against full interface names
     if ! validate_interface "$TS_INTERFACE_NAME" "${ALL_INTERFACES[@]}"; then
         exit 1
     fi
