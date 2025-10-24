@@ -244,18 +244,29 @@ cat_conf() {
 
 # Function to find first available node
 find_available_node() {
+    local node_line node_ip
+    local found_node=""
+
     while IFS= read -r node_line; do
         [ -z "$node_line" ] && continue
 
-        local node_ip="${node_line#*:}"
+        node_ip="${node_line#*:}"
 
-        if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -o BatchMode=yes "$SSH_USER@$node_ip" "exit" 2>/dev/null; then
-            echo "$node_line"
-            return 0
+        if ssh -n -o StrictHostKeyChecking=no -o ConnectTimeout=5 -o BatchMode=yes "$SSH_USER@$node_ip" "exit" 2>/dev/null; then
+            found_node="$node_line"
+            break
+        else
+            echo -e "${yellow}Node ${node_line%%:*} is not accessible${normal}" >&2
         fi
     done <<< "$NODES"
 
-    return 1
+    if [ -n "$found_node" ]; then
+        echo "$found_node"
+        return 0
+    else
+        echo -e "${red}No accessible nodes found${normal}" >&2
+        return 1
+    fi
 }
 
 # Function to pull configuration from controller node
@@ -268,11 +279,9 @@ pull_conf() {
 
     # Find first available node
     local available_node
-    available_node=$(find_available_node)
-
-    if [ -z "$available_node" ]; then
+    if ! available_node=$(find_available_node); then
         echo -e "${red}No accessible nodes found for configuration pull${normal}"
-        exit 1
+        return 1
     fi
 
     local node_name="${available_node%%:*}"
@@ -280,19 +289,28 @@ pull_conf() {
 
     echo "Copying $service_name configuration from $node_name:$conf_dir/$CONF_NAME"
 
+    # Use temporary file to avoid partial writes
+    local temp_file="$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}.tmp"
+
     if ! ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 "$SSH_USER@$node_ip" \
-        "sudo cat $conf_dir/$CONF_NAME" > "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}"; then
+        "sudo cat $conf_dir/$CONF_NAME" > "$temp_file" 2>/dev/null; then
         echo -e "${red}Failed to pull configuration from $node_name${normal}"
-        exit 1
+        rm -f "$temp_file"
+        return 1
     fi
+
+    # Move temp file to final location
+    mv "$temp_file" "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}"
 
     if [ ! -s "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}" ]; then
         echo -e "${red}Configuration file is empty or missing${normal}"
-        exit 1
+        return 1
     fi
 
-    [ ! -f "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}_backup" ] && \
+    # Create backup if doesn't exist
+    if [ ! -f "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}_backup" ]; then
         cp "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}" "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}_backup"
+    fi
 
     echo -e "
 To edit the configuration:
@@ -301,6 +319,7 @@ To edit the configuration:
 To apply the configuration:
   bash $script_dir/$script_name -push
 "
+    return 0
 }
 
 # Function to push configuration to controller nodes
