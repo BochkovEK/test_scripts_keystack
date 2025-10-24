@@ -5,7 +5,6 @@ normal=$(tput sgr0)
 yellow=$(tput setaf 3)
 red=$(tput setaf 1)
 green=$(tput setaf 2)
-#blue=$(tput setaf 4)
 
 # Default values
 default_interface_name="eth0"
@@ -17,6 +16,8 @@ default_sleep_time=5
 [[ -z $TS_SLEEP_TIME ]] && TS_SLEEP_TIME=$default_sleep_time
 [[ -z $TS_FLAPPING_INTERFACE_LOG_PATH ]] && TS_FLAPPING_INTERFACE_LOG_PATH=""
 
+# Global variable for log file
+LOG_FILE=""
 
 # Generate log file name with timestamp and initialize logging
 setup_logging() {
@@ -77,38 +78,19 @@ check_all_interfaces() {
     return $error_flag
 }
 
-# Get all system interfaces
-get_all_interfaces() {
-    # Directly read interfaces into array
-    local interfaces_array=()
-
-    while IFS= read -r line; do
-        interfaces_array+=("$line")
-    done < <(ip -o link show | awk -F': ' '{print $2}')
-
-    printf '%s\n' "${interfaces_array[@]}"
-}
-
 # Validate interface exists
 validate_interface() {
     local interface_name="$1"
-    local all_interfaces=("$2")
-    local found=false
 
-    for item in "${all_interfaces[@]}"; do
-        if [[ "$item" == "$interface_name" ]]; then
-            found=true
-            break
-        fi
-    done
-
-    if [ ! "$found" = true ]; then
+    # Check if interface exists using ip command directly
+    if ip -o link show "$interface_name" >/dev/null 2>&1; then
+        return 0
+    else
         echo -e "${red}[ERROR]: Interface $interface_name does not exist!${normal}"
         echo "Available interfaces:"
-        printf '  %s\n' "${all_interfaces[@]}"
+        ip -o link show | awk -F': ' '{print "  " $2}'
         return 1
     fi
-    return 0
 }
 
 # Set interface name from arguments or environment
@@ -192,23 +174,28 @@ main() {
     # Setup logging
     setup_logging
 
-    # Get all interfaces directly into array
-    echo "Fetching all system interfaces..."
-    IFS=$'\n' read -r -d '' -a ALL_INTERFACES < <(ip -o link show | awk -F': ' '{print $2}' && printf '\0')
-
-    # Debug output
-    echo "Found ${#ALL_INTERFACES[@]} interfaces:"
-    printf '  %s\n' "${ALL_INTERFACES[@]}"
-
     # Set interface name
     TS_INTERFACE_NAME=$(set_interface_name "$1")
 
-    # Validate interface exists
-    if ! validate_interface "$TS_INTERFACE_NAME" "${ALL_INTERFACES[@]}"; then
+    # Validate interface exists - direct check
+    if ! validate_interface "$TS_INTERFACE_NAME"; then
         exit 1
     fi
 
-    # Rest of the function...
+    # Show initial interface state
+    check_interface_state "$TS_INTERFACE_NAME"
+
+    # Display parameters and wait for confirmation
+    show_parameters
+    wait_confirmation_and_start_logging
+
+    # Run the main flapping test
+    run_flapping_test "$TS_INTERFACE_NAME" "$TS_NUMBER_OF_CYCLES" "$TS_SLEEP_TIME"
+
+    echo "=== Flapping Interface Test Finished ==="
+    echo "Timestamp: $(date)"
+    echo "Log file: $LOG_FILE"
+    echo "Finish"
 }
 
 # Run main function with all arguments
