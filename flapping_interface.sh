@@ -79,14 +79,12 @@ check_all_interfaces() {
 
 # Get all system interfaces
 get_all_interfaces() {
+    # Directly read interfaces into array
     local interfaces_array=()
 
-    mapfile -t interfaces_array < <(
-        ip -o link show | awk -F': ' '{print $2}' |
-        while IFS= read -r iface; do
-            echo "$iface"  # Return the full interface name
-        done
-    )
+    while IFS= read -r line; do
+        interfaces_array+=("$line")
+    done < <(ip -o link show | awk -F': ' '{print $2}')
 
     printf '%s\n' "${interfaces_array[@]}"
 }
