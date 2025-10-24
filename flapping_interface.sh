@@ -115,22 +115,25 @@ validate_interface() {
 
 # Set interface name from arguments or environment
 set_interface_name() {
+    local interface_name=""
+
     if [ -z "$1" ]; then
         if [ -z "$TS_INTERFACE_NAME" ]; then
-            echo "Interface name can be defined either as argument or environment variable 'TS_INTERFACE_NAME'"
-            TS_INTERFACE_NAME=$default_interface_name
-            echo "Interface name is set by default: '$TS_INTERFACE_NAME'"
+            echo "Interface name can be defined either as argument or environment variable 'TS_INTERFACE_NAME'" >&2
+            echo "Interface name is set by default: '$default_interface_name'" >&2
+            interface_name=$default_interface_name
         else
-            echo "Interface name is: '$TS_INTERFACE_NAME'"
+            echo "Interface name is: '$TS_INTERFACE_NAME'" >&2
+            interface_name=$TS_INTERFACE_NAME
         fi
     else
-        TS_INTERFACE_NAME=$1
-        echo "Interface name is: '$TS_INTERFACE_NAME'"
+        echo "Interface name is: '$1'" >&2
+        interface_name=$1
     fi
 
     # Remove @ suffix from interface name
-    TS_INTERFACE_NAME=${TS_INTERFACE_NAME%%@*}
-    echo "$TS_INTERFACE_NAME"
+    interface_name=${interface_name%%@*}
+    echo "$interface_name"  # Clean output for variable assignment
 }
 
 # Display test parameters
