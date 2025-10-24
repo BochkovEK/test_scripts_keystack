@@ -247,7 +247,8 @@ find_available_node() {
     local node_line node_name node_ip
     local found_node=""
 
-    while IFS= read -r node_line; do
+    # Split string by spaces and process each node
+    for node_line in $NODES; do
         [ -z "$node_line" ] && continue
 
         node_name="${node_line%%:*}"
@@ -255,14 +256,14 @@ find_available_node() {
 
         echo -e "${yellow}Trying node: $node_name ($node_ip)...${normal}" >&2
 
-        if ssh -n -o StrictHostKeyChecking=no -o ConnectTimeout=5 -o BatchMode=yes "$SSH_USER@$node_ip" "exit" 2>/dev/null; then
+        if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -o BatchMode=yes "$SSH_USER@$node_ip" "exit" 2>/dev/null; then
             echo -e "${green}Node $node_name is accessible${normal}" >&2
             found_node="$node_line"
             break
         else
             echo -e "${yellow}Node $node_name ($node_ip) is not accessible${normal}" >&2
         fi
-    done <<< "$NODES"
+    done
 
     if [ -n "$found_node" ]; then
         echo "$found_node"
