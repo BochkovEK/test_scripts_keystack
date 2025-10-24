@@ -5,7 +5,7 @@ normal=$(tput sgr0)
 yellow=$(tput setaf 3)
 red=$(tput setaf 1)
 green=$(tput setaf 2)
-blue=$(tput setaf 4)
+#blue=$(tput setaf 4)
 
 # Default values
 default_interface_name="eth0"
@@ -110,7 +110,7 @@ check_interface_state "$TS_INTERFACE_NAME"
 
 # Display all available interfaces
 echo -e "\nAll available interfaces:"
-check_all_interfaces "${ALL_INTERFACES[@]}"
+#check_all_interfaces "${ALL_INTERFACES[@]}"
 
 # Confirm parameters before starting
 echo -e "\nStart flapping with the following parameters?
