@@ -242,27 +242,52 @@ cat_conf() {
     return 0
 }
 
+# Function to find first available node
+find_available_node() {
+    while IFS= read -r node_line; do
+        [ -z "$node_line" ] && continue
+
+        local node_ip="${node_line#*:}"
+
+        if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -o BatchMode=yes "$SSH_USER@$node_ip" "exit" 2>/dev/null; then
+            echo "$node_line"
+            return 0
+        fi
+    done <<< "$NODES"
+
+    return 1
+}
+
 # Function to pull configuration from controller node
 pull_conf() {
     echo "Pulling $CONF_NAME from controller node..."
 
-    local first_node
     [ ! -d "$VIRTUAL_ENV/$test_node_conf_dir" ] && mkdir -p "$VIRTUAL_ENV/$test_node_conf_dir"
 
     [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG]: nodes: $NODES"
 
-    first_node=$(echo "$NODES" | awk '{print $1}')
+    # Find first available node
+    local available_node
+    available_node=$(find_available_node)
 
-    local node_name="${first_node%%:*}"
-    local node_ip="${first_node#*:}"
+    if [ -z "$available_node" ]; then
+        echo -e "${red}No accessible nodes found for configuration pull${normal}"
+        exit 1
+    fi
+
+    local node_name="${available_node%%:*}"
+    local node_ip="${available_node#*:}"
 
     echo "Copying $service_name configuration from $node_name:$conf_dir/$CONF_NAME"
 
-    ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
-        "sudo cat $conf_dir/$CONF_NAME" > "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}"
+    if ! ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 "$SSH_USER@$node_ip" \
+        "sudo cat $conf_dir/$CONF_NAME" > "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}"; then
+        echo -e "${red}Failed to pull configuration from $node_name${normal}"
+        exit 1
+    fi
 
-    if [ ! -f "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}" ]; then
-        echo -e "${red}Configuration file is missing${normal}"
+    if [ ! -s "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}" ]; then
+        echo -e "${red}Configuration file is empty or missing${normal}"
         exit 1
     fi
 
