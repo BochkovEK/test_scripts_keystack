@@ -115,18 +115,17 @@ validate_interface() {
 set_interface_name() {
     local interface_name=""
 
-    if [ -z "$1" ]; then
-        if [ -z "$TS_INTERFACE_NAME" ]; then
-            echo "Interface name can be defined either as argument or environment variable 'TS_INTERFACE_NAME'" >&2
-            echo "Interface name is set by default: '$default_interface_name'" >&2
-            interface_name=$default_interface_name
-        else
-            echo "Interface name is: '$TS_INTERFACE_NAME'" >&2
-            interface_name=$TS_INTERFACE_NAME
-        fi
+    # Determine interface name
+    if [ -n "$1" ]; then
+        interface_name="$1"
+        echo "Interface name from argument: '$interface_name'" >&2
+    elif [ -n "$TS_INTERFACE_NAME" ]; then
+        interface_name="$TS_INTERFACE_NAME"
+        echo "Interface name from environment: '$interface_name'" >&2
     else
-        echo "Interface name is: '$1'" >&2
-        interface_name=$1
+        interface_name="$default_interface_name"
+        echo "Interface name set to default: '$interface_name'" >&2
+        echo "Note: Interface name can be defined as argument or TS_INTERFACE_NAME variable" >&2
     fi
 
     # Remove @ suffix from interface name
