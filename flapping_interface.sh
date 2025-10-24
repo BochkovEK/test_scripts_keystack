@@ -109,7 +109,7 @@ fi
 check_interface_state "$TS_INTERFACE_NAME"
 
 # Display all available interfaces
-echo -e "\nAll available interfaces:"
+#echo -e "\nAll available interfaces:"
 #check_all_interfaces "${ALL_INTERFACES[@]}"
 
 # Confirm parameters before starting
@@ -124,12 +124,12 @@ read -p "Press enter to continue: "
 for (( c=1; c<=${TS_NUMBER_OF_CYCLES}; c++ )); do
     echo "Cycle $c/$TS_NUMBER_OF_CYCLES"
     echo "Bringing interface $TS_INTERFACE_NAME down"
-    ip link set "$TS_INTERFACE_NAME" down
+    sudo ip link set "$TS_INTERFACE_NAME" down
     check_interface_state "$TS_INTERFACE_NAME"
     sleep "$TS_SLEEP_TIME"
 
     echo "Bringing interface $TS_INTERFACE_NAME up"
-    ip link set "$TS_INTERFACE_NAME" up
+    sudo ip link set "$TS_INTERFACE_NAME" up
     check_interface_state "$TS_INTERFACE_NAME"
     sleep "$TS_SLEEP_TIME"
 
