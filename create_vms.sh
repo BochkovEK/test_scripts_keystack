@@ -737,37 +737,63 @@ create_image () {
     fi
 }
 
+# Determine flavor name for search and creation
+get_flavor_name() {
+    local base_flavor="$1:-$FLAVOR"
+    local project="$2:-$PROJECT"
+
+    if [[ "$base_flavor" =~ ^[0-9]+c-[0-9]+r$ ]]; then
+        echo "${base_flavor}_${project}"
+    else
+        echo "$base_flavor"
+    fi
+}
+
+# Create new flavor
+create_flavor() {
+    local flavor_name="$1"
+    local base_flavor="$2"
+
+    # Parse CPU and RAM from base flavor name
+    CPU_DRAFT=$(echo "${base_flavor%-*}")
+    RAM_DRAFT=$(echo "${base_flavor##*-}")
+    CPU_QTY=$(echo "${CPU_DRAFT%c*}")
+    RAM_GB=$(echo "${RAM_DRAFT%r*}")
+
+    if [[ -z $CPU_QTY || -z $RAM_GB ]]; then
+        warning_output "The flavor name format should be: <CPUs>c-<RAM GB>r instead: \"$base_flavor\""
+        error_output "Can't create a flavor by name: \"$base_flavor\""
+    fi
+
+    let "RAM_MB = ${RAM_GB} * 1024"
+
+    [[ ! $DONT_ASK = "true" ]] && {
+        echo "Create a flavor with cpus: $CPU_QTY and ram: $RAM_MB Mb: \"$flavor_name\"?";
+        read -p "Press enter to continue: ";
+    }
+
+    echo "Creating flavor \"$flavor_name\" with $CPU_QTY cpus and $RAM_MB Mb...";
+    openstack flavor create --public --vcpus $CPU_QTY --ram $RAM_MB --disk 0 "$flavor_name"
+    if [ $? -ne 0 ]; then
+        error_output "Failed to create flavor: $flavor_name"
+    fi
+}
+
 # Check and add flavor
-check_flavor () {
+check_flavor() {
     echo "Check for exist flavor: \"$FLAVOR\""
-    FLAVOR_EXST=$(openstack flavor list| grep $FLAVOR| head -n 1| awk '{print $4}')
-    if [ -z $FLAVOR_EXST ]; then
-        warning_output "Flavor \"$FLAVOR\" not found in project \"$PROJECT\"${normal}"
-        CPU_DRAFT=$(echo "${FLAVOR%-*}")
-        RAM_DRAFT=$(echo "${FLAVOR##*-}")
-        CPU_QTY=$(echo "${CPU_DRAFT%c*}")
-        RAM_GB=$(echo "${RAM_DRAFT%r*}")
 
-        if [[ -z $CPU_QTY || -z $RAM_GB ]]; then
-            warning_output "The flavor name format should be: <CPUs>c-<RAM GB>r instead: \"$FLAVOR\""
-            error_output "Can't create a flavor by name: \"$FLAVOR\""
-        fi
+    # Determine flavor name to search for
+    local flavor_to_search=$(get_flavor_name "$FLAVOR" "$PROJECT")
 
-        let "RAM_MB = ${RAM_GB} * 1024"
+    FLAVOR_EXST=$(openstack flavor list | grep -w "$flavor_to_search" | head -n 1 | awk '{print $4}')
 
-        [[ ! $DONT_ASK = "true" ]] && {
-            echo "Create a flavor with cpus: $CPU_QTY and ram: $RAM_MB Mb: \"$FLAVOR\"?";
-            read -p "Press enter to continue: ";
-            }
-
-        echo "Creating flavor \"$FLAVOR\" with $CPU_QTY cpus and $RAM_MB Mb...";
-        openstack flavor create --public --vcpus $CPU_QTY --ram $RAM_MB --disk 0 ${FLAVOR}_${PROJECT}
-        if [ $? -ne 0 ]; then
-            error_output "Failed to create flavor: ${FLAVOR}_${PROJECT}"
-        fi
+    if [ -z "$FLAVOR_EXST" ]; then
+        warning_output "Flavor \"$flavor_to_search\" not found in project \"$PROJECT\"${normal}"
+        create_flavor "$flavor_to_search" "$FLAVOR"
         NEW_FLAVOR_CREATED="true"
     else
-       echo -e "${green}Flavor \"$FLAVOR\" already exist${normal}"
+       echo -e "${green}Flavor \"$flavor_to_search\" already exist${normal}"
     fi
 }
 
@@ -847,10 +873,10 @@ create_vms () {
 
     echo "Creating VMs..."
 
+    FLAVOR_NAME=$(get_flavor_name)
     # Get flavor name
-    FLAVOR_NAME=$(openstack flavor list| grep $FLAVOR| head -n 1| awk '{print $4}')
     if [ -z "$FLAVOR_NAME" ]; then
-        error_output "Flavor $FLAVOR not found"
+        error_output "Flavor name based on $FLAVOR could not be define"
     fi
 
     # Get security group ID
@@ -1007,6 +1033,7 @@ main() {
         check_flavor
         check_keypair
     }
+
 
     create_vms
 
