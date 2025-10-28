@@ -681,7 +681,7 @@ image_exists_in_openstack() {
 }
 
 # Determine image name based on availability and type
-determine_image_name() {
+get_image_name() {
     local requested_image="$1:$IMAGE"
     local image_info image_id image_name
 
@@ -766,7 +766,7 @@ check_image() {
 
     # Determine the actual image to use
     local final_image
-    final_image=$(determine_image_name "$IMAGE")
+    final_image=$(get_image_name "$IMAGE")
 
     if [ -n "$final_image" ]; then
         IMAGE="$final_image"
