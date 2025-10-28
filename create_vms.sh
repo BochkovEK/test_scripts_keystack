@@ -318,9 +318,15 @@ update_cleanup_state () {
 # Get security group ID if it exists
 get_security_group_id() {
     if [ -z "$PROJ_ID" ]; then
-        check_project
+        # Get project ID quietly
+        PROJ_ID=$(openstack project show "$PROJECT" -c id -f value 2>/dev/null)
+        if [ -z "$PROJ_ID" ]; then
+            echo ""
+            return 1
+        fi
     fi
-    SECURITY_GR_ID=$(openstack security group list|grep -E "($SECURITY_GR(.)*$PROJ_ID)" | head -1 | awk '{print $2}')
+
+    SECURITY_GR_ID=$(openstack security group list | grep -E "($SECURITY_GR(.)*$PROJ_ID)" | head -1 | awk '{print $2}')
     echo "$SECURITY_GR_ID"
 }
 
