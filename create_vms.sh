@@ -819,7 +819,7 @@ check_image() {
 # Determine flavor name for search and creation
 get_flavor_name() {
     local base_flavor="${1:-$FLAVOR}"
-    local project="$2:$PROJECT"
+    local project="${2:-$PROJECT}"
 
     if [[ "$base_flavor" =~ ^[0-9]+c-[0-9]+r$ ]]; then
         echo "${base_flavor}_${project}"
