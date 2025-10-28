@@ -220,7 +220,7 @@ return_type() {
         *ctrl*)
             echo "ctrl"
             ;;
-        *comp*|*cmtp*)
+        *comp*|*cmpt*)
             echo "comp"
             ;;
         *net*)
