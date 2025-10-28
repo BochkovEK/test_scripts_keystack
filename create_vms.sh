@@ -546,11 +546,11 @@ check_hv() {
 get_project() {
     echo "Setting project context: \"$PROJECT\""
 
-    # Always unset first to ensure clean context
-    unset OS_PROJECT_NAME
-    unset OS_PROJECT_ID
-    unset OS_TENANT_NAME
-    unset OS_TENANT_ID
+#    # Always unset first to ensure clean context
+#    unset OS_PROJECT_NAME
+#    unset OS_PROJECT_ID
+#    unset OS_TENANT_NAME
+#    unset OS_TENANT_ID
 
     # Get project ID (without creating)
     PROJ_ID=$(openstack project show "$PROJECT" -c id -f value 2>/dev/null)
