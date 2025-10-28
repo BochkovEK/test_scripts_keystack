@@ -675,97 +675,11 @@ check_network () {
     fi
 }
 
-# Check if image exists in OpenStack and return ID:Name
-image_exists_in_openstack() {
-    openstack image list | awk -v image="$1" '$4 ~ image {print $2 ":" $4; exit}'
-}
-
-# Find image by name or type, return Name
-find_image() {
-    local search_term="$1"
-
-    # 1. Try exact name match first
-    local exact_match
-    exact_match=$(openstack image list -c Name -c ID -f value | awk -v img="$search_term" '$1 == img {print $1; exit}')
-
-    if [ -n "$exact_match" ]; then
-        echo "$exact_match"
-        return 0
-    fi
-
-    # 2. If no exact match, try partial match for generic types
-    case "$search_term" in
-        ubuntu|cirros)
-            local pattern
-            if [ "$search_term" = "ubuntu" ]; then
-                pattern="ubuntu"
-            else
-                pattern="cirros"
-            fi
-
-            local partial_match
-            partial_match=$(openstack image list -c Name -c ID -f value | grep -i "$pattern" | head -1 | awk '{print $1}')
-
-            if [ -n "$partial_match" ]; then
-                echo "$partial_match"
-                return 0
-            fi
-            ;;
-        *)
-            # 3. For other names (alpin, centos, etc) - try partial match
-            local generic_match
-            generic_match=$(openstack image list -c Name -c ID -f value | grep -i "$search_term" | head -1 | awk '{print $1}')
-
-            if [ -n "$generic_match" ]; then
-                echo "$generic_match"
-                return 0
-            fi
-            ;;
-    esac
-
-    return 1  # No image found
-}
-
-# Create image for known types
-create_image_if_supported() {
-    local image_type="$1"
-
-    case "$image_type" in
-        ubuntu)
-            create_image "$UBUNTU_IMAGE_NAME"
-            ;;
-        cirros)
-            create_image "$CIRROS_IMAGE_NAME"
-            ;;
-        *)
-            return 1  # Unsupported type for auto-creation
-            ;;
-    esac
-}
-
 # Get image name - returns name on success, returns 1 on failure
 get_image_name() {
-    local requested_image="${1:-$MAGE}"
+    local requested_image="${1:-$IMAGE}"
 
-    # 1. Try exact name match first
-    local exact_match
-    exact_match=$(openstack image list -c Name -c ID -f value | awk -v img="$requested_image" '$1 == img {print $1; exit}')
-
-    if [ -n "$exact_match" ]; then
-        echo "$exact_match"
-        return 0
-    fi
-
-    # 2. Try partial match
-    local partial_match
-    partial_match=$(openstack image list -c Name -c ID -f value | grep -i "$requested_image" | head -1 | awk '{print $1}')
-
-    if [ -n "$partial_match" ]; then
-        echo "$partial_match"
-        return 0
-    fi
-
-    return 1  # No image found
+    openstack image list -c Name -f value | grep -i "$requested_image" | head -1
 }
 
 # Check and set image
