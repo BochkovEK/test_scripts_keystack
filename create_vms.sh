@@ -423,6 +423,7 @@ ${green}VM Creation Configuration:${normal}
     Addition key:                     $ADD_KEY
     Creating VMs without a timeout:   $BATCH
     Debug:                            $TS_DEBUG
+    Dont check resources exists:      $DONT_CHECK
     Wait for creating:                $WAIT_FOR_CREATED
     Output envs config file:          $VIRTUAL_ENV/$config_file
     Cleanup envs config file:         $VIRTUAL_ENV/$cleanup_file
