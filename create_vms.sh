@@ -688,46 +688,33 @@ check_image() {
 
     [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] IMAGE: $IMAGE"
 
-    # 1. Try to get image name
-    local found_image
-    if found_image=$(get_image_name "$IMAGE"); then
-        IMAGE="$found_image"
-        echo -e "${green}Using image: $IMAGE${normal}"
-        return 0
+    if ! IMAGE_NAME=$(get_image_name "$IMAGE"); then
+        case "$IMAGE" in
+            ubuntu|cirros)
+                warning_output "Image \"$IMAGE\" not found in project \"$PROJECT\""
+                if [[ ! $DONT_ASK = "true" ]] && confirm_action "Create $IMAGE image?"; then
+                    if [ "$IMAGE" = "ubuntu" ]; then
+                        create_image "$UBUNTU_IMAGE_NAME"
+                    else
+                        create_image "$CIRROS_IMAGE_NAME"
+                    fi
+                    if IMAGE_NAME=$(get_image_name "$IMAGE"); then
+                        echo -e "${green}Using image: $IMAGE_NAME${normal}"
+                        return 0
+                    else
+                        error_output "Failed to find created $IMAGE image"
+                    fi
+                else
+                    error_output "Image creation cancelled"
+                fi
+                ;;
+            *)
+                error_output "Image \"$IMAGE\" not found in project \"$PROJECT\""
+                ;;
+        esac
+    else
+        echo -e "${green}Using image: $IMAGE_NAME${normal}"
     fi
-
-    # 2. If get_image_name failed, check if we can create ubuntu/cirros
-    case "$IMAGE" in
-        ubuntu|cirros)
-            warning_output "Image \"$IMAGE\" not found in project \"$PROJECT\""
-
-            # For ubuntu/cirros - offer to create
-            if [[ ! $DONT_ASK = "true" ]] && confirm_action "Create $IMAGE image?"; then
-                if [ "$IMAGE" = "ubuntu" ]; then
-                    create_image "$UBUNTU_IMAGE_NAME"
-                else
-                    create_image "$CIRROS_IMAGE_NAME"
-                fi
-
-                # Try to get the newly created image
-                if found_image=$(get_image_name "$IMAGE"); then
-                    IMAGE="$found_image"
-                    echo -e "${green}Using image: $IMAGE${normal}"
-                    return 0
-                else
-                    error_output "Failed to find created $IMAGE image"
-                fi
-            else
-                error_output "Image creation cancelled"
-            fi
-            ;;
-        *)
-            # For other image types - error
-            error_output "Image \"$IMAGE\" not found in project \"$PROJECT\""
-            ;;
-    esac
-
-    return 1
 }
 
 # Determine flavor name for search and creation
@@ -773,20 +760,18 @@ create_flavor() {
 }
 
 # Check and add flavor
+# Check and add flavor
 check_flavor() {
     echo "Check for exist flavor: \"$FLAVOR\""
 
-    # Determine flavor name to search for
-    local flavor_to_search=$(get_flavor_name "$FLAVOR" "$PROJECT")
+    FLAVOR_NAME=$(get_flavor_name "$FLAVOR" "$PROJECT")
 
-    FLAVOR_EXST=$(openstack flavor list | grep -w "$flavor_to_search" | head -n 1 | awk '{print $4}')
-
-    if [ -z "$FLAVOR_EXST" ]; then
-        warning_output "Flavor \"$flavor_to_search\" not found in project \"$PROJECT\"${normal}"
-        create_flavor "$flavor_to_search" "$FLAVOR"
+    if ! openstack flavor show "$FLAVOR_NAME" >/dev/null 2>&1; then
+        warning_output "Flavor \"$FLAVOR_NAME\" not found in project \"$PROJECT\""
+        create_flavor "$FLAVOR_NAME" "$FLAVOR"
         NEW_FLAVOR_CREATED="true"
     else
-       echo -e "${green}Flavor \"$flavor_to_search\" already exist${normal}"
+        echo -e "${green}Flavor \"$FLAVOR_NAME\" already exists${normal}"
     fi
 }
 
@@ -886,51 +871,12 @@ create_vms () {
 
     echo "Creating VMs..."
 
-    # Get image name
-    echo "Get image name..."
-    IMAGE_NAME=$(get_image_name)
-    if [ -z "$IMAGE_NAME" ]; then
-        error_output "Image name based on $IMAGE could not be define"
-    else
-        echo "Image name is: $IMAGE_NAME"
-    fi
-
-    # Get flavor name
-    echo "Get flavor name..."
-    FLAVOR_NAME=$(get_flavor_name)
-    if [ -z "$FLAVOR_NAME" ]; then
-        error_output "Flavor name based on $FLAVOR could not be define"
-    else
-        echo "Flavor name is: $FLAVOR_NAME"
-    fi
-
-    # Get security group ID
-    SECURITY_GR_ID=$(get_security_group_id)
-    echo "Get security group id..."
-    if [ -z "$SECURITY_GR_ID" ]; then
-        error_output "Security group $SECURITY_GR not found"
-    else
-        echo "Security group id is: $SECURITY_GR_ID"
-    fi
-
-    # Build key string
-    local key_string=""
-    if [ "$NO_KEY" = "false" ] && [ -n "$KEY_NAME" ]; then
-        key_string="--key-name $KEY_NAME"
-    fi
-
-    # Build host string
-    local host=""
-    if [ -n "$HYPERVISOR_HOSTNAME" ]; then
-        host="--hypervisor-hostname $HYPERVISOR_HOSTNAME --os-compute-api-version $API_VERSION"
-    fi
-
     [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG] Creation parameters:
         FLAVOR: $FLAVOR_NAME
         SECURITY_GR_ID: $SECURITY_GR_ID
-        KEY_STRING: $key_string
-        HOST: $host
+        KEY_STRING: $KEY_STRING
+        HOST: $HOST_STRING
         IMAGE: $IMAGE_NAME
         ADD_KEY: $ADD_KEY
     "
@@ -950,8 +896,8 @@ create_vms () {
             --image $IMAGE_NAME \
             --flavor $FLAVOR_NAME \
             --security-group $SECURITY_GR_ID \
-            $key_string \
-            $host \
+            $KEY_STRING \
+            $HOST_STRING \
             --network $NETWORK \
             --boot-from-volume $VOLUME_SIZE \
             $ADD_KEY)
@@ -1053,7 +999,7 @@ main() {
     check_and_source_openrc_file
 
     # Resource checks and creation
-    [[ ! $DONT_CHECK = "true" ]] && {
+    if [[ ! $DONT_CHECK = "true" ]]; then
         check_hv
         check_project
         check_network
@@ -1061,8 +1007,46 @@ main() {
         check_image
         check_flavor
         check_keypair
-    }
+    else
+        # Get image name
+        echo "Get image name..."
+        IMAGE_NAME=$(get_image_name "$IMAGE")
+        if [ -z "$IMAGE_NAME" ]; then
+            error_output "Image name based on $IMAGE could not be defined"
+        else
+            echo "Image name is: $IMAGE_NAME"
+        fi
 
+        # Get flavor name
+        echo "Get flavor name..."
+        FLAVOR_NAME=$(get_flavor_name "$FLAVOR" "$PROJECT")
+        if [ -z "$FLAVOR_NAME" ]; then
+            error_output "Flavor name based on $FLAVOR could not be defined"
+        else
+            echo "Flavor name is: $FLAVOR_NAME"
+        fi
+
+        # Get security group ID
+        SECURITY_GR_ID=$(get_security_group_id)
+        echo "Get security group id..."
+        if [ -z "$SECURITY_GR_ID" ]; then
+            error_output "Security group $SECURITY_GR not found"
+        else
+            echo "Security group id is: $SECURITY_GR_ID"
+        fi
+
+        # Build key string
+        KEY_STRING=""
+        if [ "$NO_KEY" = "false" ] && [ -n "$KEY_NAME" ]; then
+            KEY_STRING="--key-name $KEY_NAME"
+        fi
+
+        # Build host string
+        HOST_STRING=""
+        if [ -n "$HYPERVISOR_HOSTNAME" ]; then
+            HOST_STRING="--hypervisor-hostname $HYPERVISOR_HOSTNAME --os-compute-api-version $API_VERSION"
+        fi
+    fi
 
     create_vms
 
