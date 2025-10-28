@@ -919,22 +919,31 @@ create_vms () {
 
     echo "Creating VMs..."
 
+    # Get image name
+    echo "Get image name..."
     IMAGE_NAME=$(get_image_name)
-    # Get flavor name
     if [ -z "$IMAGE_NAME" ]; then
         error_output "Image name based on $IMAGE could not be define"
+    else
+        echo "Image name is: $IMAGE_NAME"
     fi
 
-    FLAVOR_NAME=$(get_flavor_name)
     # Get flavor name
+    echo "Get flavor name..."
+    FLAVOR_NAME=$(get_flavor_name)
     if [ -z "$FLAVOR_NAME" ]; then
         error_output "Flavor name based on $FLAVOR could not be define"
+    else
+        echo "Flavor name is: $FLAVOR_NAME"
     fi
 
     # Get security group ID
     SECURITY_GR_ID=$(get_security_group_id)
+    echo "Get security group id..."
     if [ -z "$SECURITY_GR_ID" ]; then
         error_output "Security group $SECURITY_GR not found"
+    else
+        echo "Security group id is: $SECURITY_GR_ID"
     fi
 
     # Build key string
@@ -955,7 +964,7 @@ create_vms () {
         SECURITY_GR_ID: $SECURITY_GR_ID
         KEY_STRING: $key_string
         HOST: $host
-        IMAGE: $IMAGE
+        IMAGE: $IMAGE_NAME
         ADD_KEY: $ADD_KEY
     "
 
