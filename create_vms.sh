@@ -873,6 +873,7 @@ create_vms () {
 
     [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG] Creation parameters:
+        PROJECT: $PROJECT
         FLAVOR: $FLAVOR_NAME
         SECURITY_GR_ID: $SECURITY_GR_ID
         KEY_STRING: $KEY_STRING
