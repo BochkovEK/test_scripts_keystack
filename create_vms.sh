@@ -890,6 +890,20 @@ create_vms () {
 
 #        echo "Creating VM: $INSTANCE_NAME"
 
+        [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] Creation command:
+        openstack server create \
+            $INSTANCE_NAME \
+            --image $IMAGE_NAME \
+            --flavor $FLAVOR_NAME \
+            --security-group $SECURITY_GR_ID \
+            $KEY_STRING \
+            $HOST_STRING \
+            --network $NETWORK \
+            --boot-from-volume $VOLUME_SIZE \
+            $ADD_KEY
+    "
+
         # Create VM and capture output
         VM_CREATE_OUTPUT=$(openstack server create \
             $INSTANCE_NAME \
