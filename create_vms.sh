@@ -179,7 +179,7 @@ parse_arguments() {
             -dont_check_osc) check_openstack="false"
                 echo "Found the -dont_check_osc. Openstack cli check disabled"
                 ;;
-            -dont_check) dont_check="true"
+            -dont_check) DONT_CHECK="true"
                 echo "Found the -dont_check. Resource availability checks are disabled"
                 ;;
             -da|-dont_ask) dont_ask="true"
