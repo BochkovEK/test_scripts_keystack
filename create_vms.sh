@@ -744,7 +744,7 @@ create_image_if_supported() {
 }
 
 # Determine which image to use (always return name)
-get_image_image_name() {
+get_image_name() {
     local requested_image="$1"
 
     # 1. Try to find existing image
