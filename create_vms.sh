@@ -543,25 +543,33 @@ check_hv() {
     fi
 }
 
-# Get project context and set environment variables
 get_project() {
-    echo "Finalizing project context: \"$PROJECT\""
+    echo "Setting project context: \"$PROJECT\""
 
-    if [ -z "$PROJ_ID" ]; then
-        PROJ_ID=$(openstack project show "$PROJECT" -c id -f value 2>/dev/null)
-        if [ -z "$PROJ_ID" ]; then
-            error_output "Project '$PROJECT' does not exist"
-        fi
-    fi
-
-    # Set OS environment variables
+    # Always unset first to ensure clean context
     unset OS_PROJECT_NAME
     unset OS_PROJECT_ID
+    unset OS_TENANT_NAME
+    unset OS_TENANT_ID
+
+    # Get project ID (without creating)
+    PROJ_ID=$(openstack project show "$PROJECT" -c id -f value 2>/dev/null)
+    if [ -z "$PROJ_ID" ]; then
+        error_output "Project '$PROJECT' does not exist"
+    fi
+
+    # Force set new context
     export OS_PROJECT_NAME="$PROJECT"
     export OS_PROJECT_ID="$PROJ_ID"
     export OS_USERNAME="$TEST_USER"
 
-    [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] Final project context: $PROJECT ($PROJ_ID), User: $TEST_USER"
+    # Verify new context
+    CURRENT_PROJECT=$(openstack token issue -c project_name -f value 2>/dev/null || echo "unknown")
+    if [ "$CURRENT_PROJECT" != "$PROJECT" ]; then
+        error_output "Failed to switch to project '$PROJECT'. Current: '$CURRENT_PROJECT'"
+    fi
+
+    [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] Project context set: $PROJECT ($PROJ_ID), User: $TEST_USER"
 }
 
 # Check and create project resources if needed
