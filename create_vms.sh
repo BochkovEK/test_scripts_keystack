@@ -919,6 +919,12 @@ create_vms () {
 
     echo "Creating VMs..."
 
+    IMAGE_NAME=$(get_image_name)
+    # Get flavor name
+    if [ -z "$IMAGE_NAME" ]; then
+        error_output "Image name based on $IMAGE could not be define"
+    fi
+
     FLAVOR_NAME=$(get_flavor_name)
     # Get flavor name
     if [ -z "$FLAVOR_NAME" ]; then
@@ -965,7 +971,7 @@ create_vms () {
         # Create VM and capture output
         VM_CREATE_OUTPUT=$(openstack server create \
             $INSTANCE_NAME \
-            --image $IMAGE \
+            --image $IMAGE_NAME \
             --flavor $FLAVOR_NAME \
             --security-group $SECURITY_GR_ID \
             $key_string \
