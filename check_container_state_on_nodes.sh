@@ -225,7 +225,17 @@ get_nodes_list() {
     [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG]:
       nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$*\")" >&2
-    nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
+
+#    nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
+
+    # Execute external script and capture output/exit code
+    if ! nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@" 2>&1); then
+#        exit_code=$?
+        echo -e "${red}ERROR: Node list script failed (code: $?)${normal}" >&2
+        echo -e "${red}Output: $nodes_result${normal}" >&2
+        return 1
+    fi
+
     [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG] nodes_result: $nodes_result
     " >&2
