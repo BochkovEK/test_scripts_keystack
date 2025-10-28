@@ -543,13 +543,38 @@ check_hv() {
     fi
 }
 
-# Check project
-check_project () {
+# Get project context and set environment variables
+get_project() {
+    echo "Finalizing project context: \"$PROJECT\""
+
+    if [ -z "$PROJ_ID" ]; then
+        PROJ_ID=$(openstack project show "$PROJECT" -c id -f value 2>/dev/null)
+        if [ -z "$PROJ_ID" ]; then
+            error_output "Project '$PROJECT' does not exist"
+        fi
+    fi
+
+    # Set OS environment variables
+    unset OS_PROJECT_NAME
+    unset OS_PROJECT_ID
+    export OS_PROJECT_NAME="$PROJECT"
+    export OS_PROJECT_ID="$PROJ_ID"
+    export OS_USERNAME="$TEST_USER"
+
+    [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] Final project context: $PROJECT ($PROJ_ID), User: $TEST_USER"
+}
+
+# Check and create project resources if needed
+check_project() {
     echo "Check for exist project: \"$PROJECT\""
+
+    # Get admin project ID
     ADMIN_PROJECT_ID=$(openstack project list| grep -E -m 1 "\sadmin\s"| awk '{print $2}')
     if [ -z "$ADMIN_PROJECT_ID" ]; then
         error_output "Impossible to determine the project id admin"
     fi
+
+    # Check/create project
     PROJ_ID=$(openstack project list| grep -E -m 1 "\s$PROJECT\s"| awk '{print $2}')
     if [ -z "$PROJ_ID" ]; then
         warning_output "Project \"$PROJECT\" does not exist${normal}"
@@ -559,12 +584,16 @@ check_project () {
             }
         echo "Creating project: \"$PROJECT\"..."
         openstack project create $PROJECT
+        # После создания получаем новый PROJ_ID
+        PROJ_ID=$(openstack project show "$PROJECT" -c id -f value)
     else
        echo -e "${green}Project: \"$PROJECT\" exist${normal}"
     fi
+
+    # Check/create user
     echo "Check for user: \"$TEST_USER\" exist"
     USER_EXIST=$(openstack user list| grep -E " $TEST_USER "| awk '{print $4}')
-    if [ -z $USER_EXIST ]; then
+    if [ -z "$USER_EXIST" ]; then
         warning_output "User: \"$TEST_USER\" does not exist${normal}"
         [[ ! $DONT_ASK = "true" ]] && {
             echo "Create a user with name: \"$TEST_USER\"?";
@@ -574,6 +603,8 @@ check_project () {
     else
        echo -e "${green}User: \"$TEST_USER\" exist${normal}"
     fi
+
+    # Check/assign role
     echo "Check for role assignment: \"$ROLE\" for user: \"$TEST_USER\" in project: \"$PROJECT\""
     ROLE_IN_PROJECT=$(openstack role assignment list --user $TEST_USER --project $PROJECT --names|grep -E "$ROLE(.)+$TEST_USER(.)+$PROJECT")
     if [[ -z $ROLE_IN_PROJECT ]]; then
@@ -588,12 +619,8 @@ check_project () {
     else
        echo -e "${green}Role: \"$ROLE\" exist in project: \"$PROJECT\"${normal}"
     fi
-    [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] PROJ_ID: $PROJ_ID, PROJECT: $PROJECT"
-    unset OS_PROJECT_NAME
-    unset OS_PROJECT_ID
-    export OS_PROJECT_NAME=$PROJECT
-    export OS_PROJECT_ID=$PROJ_ID
-    export OS_USERNAME=$TEST_USER
+
+    get_project
 }
 
 # Check and add security group
