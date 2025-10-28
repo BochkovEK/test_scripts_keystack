@@ -546,12 +546,6 @@ check_hv() {
 get_project() {
     echo "Setting project context: \"$PROJECT\""
 
-#    # Always unset first to ensure clean context
-#    unset OS_PROJECT_NAME
-#    unset OS_PROJECT_ID
-#    unset OS_TENANT_NAME
-#    unset OS_TENANT_ID
-
     # Get project ID (without creating)
     PROJ_ID=$(openstack project show "$PROJECT" -c id -f value 2>/dev/null)
     if [ -z "$PROJ_ID" ]; then
@@ -559,15 +553,11 @@ get_project() {
     fi
 
     # Force set new context
+    unset OS_PROJECT_NAME
+    unset OS_PROJECT_ID
     export OS_PROJECT_NAME="$PROJECT"
     export OS_PROJECT_ID="$PROJ_ID"
     export OS_USERNAME="$TEST_USER"
-
-    # Verify new context
-    CURRENT_PROJECT=$(openstack token issue -c project_name -f value 2>/dev/null || echo "unknown")
-    if [ "$CURRENT_PROJECT" != "$PROJECT" ]; then
-        error_output "Failed to switch to project '$PROJECT'. Current: '$CURRENT_PROJECT'"
-    fi
 
     [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] Project context set: $PROJECT ($PROJ_ID), User: $TEST_USER"
 }
