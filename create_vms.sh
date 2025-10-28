@@ -680,82 +680,101 @@ image_exists_in_openstack() {
     openstack image list | awk -v image="$1" '$4 ~ image {print $2 ":" $4; exit}'
 }
 
-# Determine image name based on availability and type
-get_image_name() {
-    local requested_image="$1:$IMAGE"
-    local image_info image_id image_name
+# Find image by name or type, return Name
+find_image() {
+    local search_term="$1"
 
-    image_info=$(image_exists_in_openstack "$requested_image")
-    if [ -n "$image_info" ]; then
-        image_id=$(awk -F: '{print $1}' <<< "$image_info")
-        image_name=$(awk -F: '{print $2}' <<< "$image_info")
-        echo "$image_id"  # Return ID for existing image
+    # 1. Try exact name match first
+    local exact_match
+    exact_match=$(openstack image list -c Name -c ID -f value | awk -v img="$search_term" '$1 == img {print $1; exit}')
+
+    if [ -n "$exact_match" ]; then
+        echo "$exact_match"
         return 0
     fi
 
-    # Check if image is ubuntu or cirros type
-    local is_ubuntu=$(echo "$requested_image" | grep -E "ubuntu|$UBUNTU_IMAGE_NAME")
-    local is_cirros=$(echo "$requested_image" | grep -E "cirros|$CIRROS_IMAGE_NAME")
+    # 2. If no exact match, try partial match for generic types
+    case "$search_term" in
+        ubuntu|cirros)
+            local pattern
+            if [ "$search_term" = "ubuntu" ]; then
+                pattern="ubuntu"
+            else
+                pattern="cirros"
+            fi
 
-    if [ -z "$is_ubuntu" ] && [ -z "$is_cirros" ]; then
-        error_output "Image \"$requested_image\" not found in project \"$PROJECT\""
-    fi
+            local partial_match
+            partial_match=$(openstack image list -c Name -c ID -f value | grep -i "$pattern" | head -1 | awk '{print $1}')
 
-    # Handle ubuntu image
-    if [ -n "$is_ubuntu" ]; then
-        get_or_create_ubuntu_image
-    fi
+            if [ -n "$partial_match" ]; then
+                echo "$partial_match"
+                return 0
+            fi
+            ;;
+        *)
+            # 3. For other names (alpin, centos, etc) - try partial match
+            local generic_match
+            generic_match=$(openstack image list -c Name -c ID -f value | grep -i "$search_term" | head -1 | awk '{print $1}')
 
-    # Handle cirros image
-    if [ -n "$is_cirros" ]; then
-        get_or_create_cirros_image
-    fi
+            if [ -n "$generic_match" ]; then
+                echo "$generic_match"
+                return 0
+            fi
+            ;;
+    esac
+
+    return 1  # No image found
 }
 
-# Get existing ubuntu image or create new one
-get_or_create_ubuntu_image() {
-    local ubuntu_info ubuntu_id ubuntu_name
+# Create image for known types
+create_image_if_supported() {
+    local image_type="$1"
 
-    ubuntu_info=$(image_exists_in_openstack "$UBUNTU_IMAGE_NAME")
-    if [ -n "$ubuntu_info" ]; then
-        ubuntu_id=$(awk -F: '{print $1}' <<< "$ubuntu_info")
-        ubuntu_name=$(awk -F: '{print $2}' <<< "$ubuntu_info")
-    fi
-
-    if [ -z "$ubuntu_id" ]; then
-        create_image "$UBUNTU_IMAGE_NAME"
-        # After creation, get the new image ID
-        ubuntu_info=$(image_exists_in_openstack "$UBUNTU_IMAGE_NAME")
-        ubuntu_id=$(awk -F: '{print $1}' <<< "$ubuntu_info")
-        echo "$ubuntu_id"
-    else
-        echo "But image: $ubuntu_name exists in project: $PROJECT"
-        [[ ! $DONT_ASK = "true" ]] && read -p "Press enter to use this image and continue: "
-        echo "$ubuntu_name"  # Return name for existing image
-    fi
+    case "$image_type" in
+        ubuntu)
+            create_image "$UBUNTU_IMAGE_NAME"
+            ;;
+        cirros)
+            create_image "$CIRROS_IMAGE_NAME"
+            ;;
+        *)
+            return 1  # Unsupported type for auto-creation
+            ;;
+    esac
 }
 
-# Get existing cirros image or create new one
-get_or_create_cirros_image() {
-    local cirros_info cirros_id cirros_name
+# Determine which image to use (always return name)
+get_image_image_name() {
+    local requested_image="$1"
 
-    cirros_info=$(image_exists_in_openstack "$CIRROS_IMAGE_NAME")
-    if [ -n "$cirros_info" ]; then
-        cirros_id=$(awk -F: '{print $1}' <<< "$cirros_info")
-        cirros_name=$(awk -F: '{print $2}' <<< "$cirros_info")
+    # 1. Try to find existing image
+    local found_image
+    if found_image=$(find_image "$requested_image"); then
+        echo "$found_image"
+        return 0
     fi
 
-    if [ -z "$cirros_id" ]; then
-        create_image "$CIRROS_IMAGE_NAME"
-        # After creation, get the new image ID
-        cirros_info=$(image_exists_in_openstack "$CIRROS_IMAGE_NAME")
-        cirros_id=$(awk -F: '{print $1}' <<< "$cirros_info")
-        echo "$cirros_id"
-    else
-        echo "But image: $cirros_name exists in project: $PROJECT"
-        [[ ! $DONT_ASK = "true" ]] && read -p "Press enter to use this image and continue: "
-        echo "$cirros_name"  # Return name for existing image
-    fi
+    # 2. Image not found - check if we can create it
+    case "$requested_image" in
+        ubuntu|cirros)
+            # Known type - offer to create
+            warning_output "Image \"$requested_image\" not found"
+            if [[ ! $DONT_ASK = "true" ]] && confirm_action "Create $requested_image image?"; then
+                create_image_if_supported "$requested_image"
+                # Get the newly created image
+                if found_image=$(find_image "$requested_image"); then
+                    echo "$found_image"
+                    return 0
+                fi
+            fi
+            ;;
+        *)
+            # Unknown type - error
+            error_output "Image \"$requested_image\" not found and cannot be auto-created"
+            ;;
+    esac
+
+    return 1
 }
 
 # Check and set image
@@ -764,22 +783,12 @@ check_image() {
 
     [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] IMAGE: $IMAGE"
 
-    # Determine the actual image to use
     local final_image
-    final_image=$(get_image_name "$IMAGE")
-
-    if [ -n "$final_image" ]; then
+    if final_image=$(get_image_name "$IMAGE"); then
         IMAGE="$final_image"
         echo -e "${green}Using image: $IMAGE${normal}"
     else
-        error_output "Failed to determine suitable image"
-    fi
-}
-
-# Create image
-create_image () {
-    if [[ $DONT_ASK = "true" ]] || yes_no_answer "Try to download image: \"$1\" and add to openstack?" "Yes"; then
-        bash $utils_dir/$create_image_script_script $1
+        error_output "Failed to determine suitable image for: $IMAGE"
     fi
 }
 
