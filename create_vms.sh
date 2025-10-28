@@ -629,7 +629,7 @@ check_security_group () {
 # Check and add keypair
 check_keypair () {
     if [ ! $NO_KEY = "false" ]; then
-        key_string=""
+        KEY_STRING=""
     else
         echo "Check for exist keypair: \"$KEY_NAME\""
         KEY_NAME_EXIST=$(openstack keypair list | grep -E "\s$KEY_NAME\s"| awk '{print $2}')
@@ -650,7 +650,7 @@ check_keypair () {
         else
            echo -e "${green}Keypair \"$KEY_NAME\" already exist in project \"$PROJECT\"${normal}"
         fi
-        key_string="--key-name $KEY_NAME"
+        KEY_STRING="--key-name $KEY_NAME"
     fi
 }
 
@@ -1039,6 +1039,7 @@ main() {
         KEY_STRING=""
         if [ "$NO_KEY" = "false" ] && [ -n "$KEY_NAME" ]; then
             KEY_STRING="--key-name $KEY_NAME"
+            echo "key status is: $KEY_STRING"
         fi
 
         # Build host string
