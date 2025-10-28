@@ -799,10 +799,11 @@ check_vms_list () {
 }
 
 # Wait for specific VMs to be created by their IDs and names
-wait_vms_created () {
+wait_vms_created() {
     local vm_ids="$1"
     local vm_names="$2"
     local all_active=false
+    local has_errors=false
     local attempts=0
     local max_attempts=60
 
@@ -812,50 +813,69 @@ wait_vms_created () {
     local name_array=($vm_names)
     local total_count=${#id_array[@]}
 
-    while [ $attempts -lt $max_attempts ] && [ "$all_active" = false ]; do
+    while [ $attempts -lt $max_attempts ] && [ "$all_active" = false ] && [ "$has_errors" = false ]; do
         all_active=true
         active_count=0
+        error_count=0
 
         for i in "${!id_array[@]}"; do
             local vm_id="${id_array[i]}"
             local vm_name="${name_array[i]}"
 
-            status=$(openstack server show $vm_id -c status -f value 2>/dev/null)
+            status=$(openstack server show "$vm_id" -c status -f value 2>/dev/null)
 
-            if [ "$status" = "ACTIVE" ]; then
-                ((active_count++))
-                echo -e "${green}✓ $vm_name ($vm_id) is ACTIVE${normal}"
-            elif [ "$status" = "ERROR" ]; then
-                echo -e "${red}✗ $vm_name ($vm_id) is in ERROR state${normal}"
-                all_active=false
-            elif [ "$status" = "BUILD" ]; then
-                echo -e "${yellow}⏳ $vm_name ($vm_id) is BUILDING${normal}"
-                all_active=false
-            elif [ -z "$status" ]; then
-                echo -e "${yellow}? $vm_name ($vm_id) not found yet${normal}"
-                all_active=false
-            else
-                echo -e "${yellow}? $vm_name ($vm_id) status: $status${normal}"
-                all_active=false
-            fi
+            case "$status" in
+                "ACTIVE")
+                    ((active_count++))
+                    echo -e "${green}✓ $vm_name ($vm_id) is ACTIVE${normal}"
+                    ;;
+                "ERROR")
+                    echo -e "${red}✗ $vm_name ($vm_id) is in ERROR state${normal}"
+                    # Get error details
+                    local error_reason=$(openstack server show "$vm_id" -c fault -f value 2>/dev/null | head -1)
+                    [ -n "$error_reason" ] && echo -e "${red}  Reason: $error_reason${normal}"
+                    has_errors=true
+                    all_active=false
+                    ;;
+                "BUILD")
+                    echo -e "${yellow}⏳ $vm_name ($vm_id) is BUILDING${normal}"
+                    all_active=false
+                    ;;
+                "")
+                    echo -e "${yellow}? $vm_name ($vm_id) not found yet${normal}"
+                    all_active=false
+                    ;;
+                *)
+                    echo -e "${yellow}? $vm_name ($vm_id) status: $status${normal}"
+                    all_active=false
+                    ;;
+            esac
         done
 
         if [ "$all_active" = true ]; then
             echo -e "${green}All $active_count/$total_count VMs are ACTIVE${normal}"
             break
+        elif [ "$has_errors" = true ]; then
+            echo -e "${red}Some VMs are in ERROR state - stopping wait${normal}"
+            break
         else
-            echo "Progress: [ attempt: $attempts ] $active_count/$total_count VMs active"
+            echo "Progress: [ attempt: $((attempts + 1))/$max_attempts ] $active_count/$total_count VMs active"
             ((attempts++))
             sleep 5
         fi
     done
 
-    if [ "$all_active" = false ]; then
+    # Final status
+    if [ "$all_active" = true ]; then
+        echo -e "${green}All VMs created successfully${normal}"
+        return 0
+    elif [ "$has_errors" = true ]; then
+        echo -e "${red}Some VMs failed with ERROR state${normal}"
+        return 1
+    else
         echo -e "${red}Timeout reached. Not all VMs became active.${normal}"
         return 1
     fi
-
-    return 0
 }
 
 # Create VMs
