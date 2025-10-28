@@ -845,6 +845,8 @@ create_vms () {
     local vm_names=""
     local vm_info=""
 
+    echo "Creating VMs..."
+
     # Get flavor name
     FLAVOR_NAME=$(openstack flavor list| grep $FLAVOR| head -n 1| awk '{print $4}')
     if [ -z "$FLAVOR_NAME" ]; then
