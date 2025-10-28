@@ -908,7 +908,7 @@ create_vms () {
 
     [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG] Creation parameters:
-        PROJECT: $PROJECT
+        PROJECT: $OS_PROJECT_NAME
         FLAVOR: $FLAVOR_NAME
         SECURITY_GR_ID: $SECURITY_GR_ID
         KEY_STRING: $KEY_STRING
@@ -1058,6 +1058,9 @@ main() {
         check_flavor
         check_keypair
     else
+        #Get project envs
+        get_project
+
         # Get image name
         echo "Get image name..."
         IMAGE_NAME=$(get_image_name "$IMAGE")
