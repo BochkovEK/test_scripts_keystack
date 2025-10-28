@@ -743,38 +743,29 @@ create_image_if_supported() {
     esac
 }
 
-# Determine which image to use (always return name)
+# Get image name - returns name on success, returns 1 on failure
 get_image_name() {
-    local requested_image="${1:-$IMAGE}"
+    local requested_image="${1:-$MAGE}"
 
-    # 1. Try to find existing image
-    local found_image
-    if found_image=$(find_image "$requested_image"); then
-        echo "$found_image"
+    # 1. Try exact name match first
+    local exact_match
+    exact_match=$(openstack image list -c Name -c ID -f value | awk -v img="$requested_image" '$1 == img {print $1; exit}')
+
+    if [ -n "$exact_match" ]; then
+        echo "$exact_match"
         return 0
     fi
 
-    # 2. Image not found - check if we can create it
-    case "$requested_image" in
-        ubuntu|cirros)
-            # Known type - offer to create
-            warning_output "Image \"$requested_image\" not found"
-            if [[ ! $DONT_ASK = "true" ]] && confirm_action "Create $requested_image image?"; then
-                create_image_if_supported "$requested_image"
-                # Get the newly created image
-                if found_image=$(find_image "$requested_image"); then
-                    echo "$found_image"
-                    return 0
-                fi
-            fi
-            ;;
-        *)
-            # Unknown type - error
-            error_output "Image \"$requested_image\" not found and cannot be auto-created"
-            ;;
-    esac
+    # 2. Try partial match
+    local partial_match
+    partial_match=$(openstack image list -c Name -c ID -f value | grep -i "$requested_image" | head -1 | awk '{print $1}')
 
-    return 1
+    if [ -n "$partial_match" ]; then
+        echo "$partial_match"
+        return 0
+    fi
+
+    return 1  # No image found
 }
 
 # Check and set image
@@ -783,13 +774,46 @@ check_image() {
 
     [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] IMAGE: $IMAGE"
 
-    local final_image
-    if final_image=$(get_image_name "$IMAGE"); then
-        IMAGE="$final_image"
+    # 1. Try to get image name
+    local found_image
+    if found_image=$(get_image_name "$IMAGE"); then
+        IMAGE="$found_image"
         echo -e "${green}Using image: $IMAGE${normal}"
-    else
-        error_output "Failed to determine suitable image for: $IMAGE"
+        return 0
     fi
+
+    # 2. If get_image_name failed, check if we can create ubuntu/cirros
+    case "$IMAGE" in
+        ubuntu|cirros)
+            warning_output "Image \"$IMAGE\" not found in project \"$PROJECT\""
+
+            # For ubuntu/cirros - offer to create
+            if [[ ! $DONT_ASK = "true" ]] && confirm_action "Create $IMAGE image?"; then
+                if [ "$IMAGE" = "ubuntu" ]; then
+                    create_image "$UBUNTU_IMAGE_NAME"
+                else
+                    create_image "$CIRROS_IMAGE_NAME"
+                fi
+
+                # Try to get the newly created image
+                if found_image=$(get_image_name "$IMAGE"); then
+                    IMAGE="$found_image"
+                    echo -e "${green}Using image: $IMAGE${normal}"
+                    return 0
+                else
+                    error_output "Failed to find created $IMAGE image"
+                fi
+            else
+                error_output "Image creation cancelled"
+            fi
+            ;;
+        *)
+            # For other image types - error
+            error_output "Image \"$IMAGE\" not found in project \"$PROJECT\""
+            ;;
+    esac
+
+    return 1
 }
 
 # Determine flavor name for search and creation
