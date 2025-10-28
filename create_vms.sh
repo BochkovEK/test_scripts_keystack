@@ -745,7 +745,7 @@ create_image_if_supported() {
 
 # Determine which image to use (always return name)
 get_image_name() {
-    local requested_image="$1"
+    local requested_image="${1:-$IMAGE}"
 
     # 1. Try to find existing image
     local found_image
@@ -794,7 +794,7 @@ check_image() {
 
 # Determine flavor name for search and creation
 get_flavor_name() {
-    local base_flavor="$1:$FLAVOR"
+    local base_flavor="${1:-$FLAVOR}"
     local project="$2:$PROJECT"
 
     if [[ "$base_flavor" =~ ^[0-9]+c-[0-9]+r$ ]]; then
