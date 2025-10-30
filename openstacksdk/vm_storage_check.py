@@ -20,16 +20,26 @@ def main():
             print(f"📦 {server.name}")
             print(f"   Status: {server.status} | Hypervisor: {server.hypervisor_hostname}")
 
-            # Детальная диагностика
-            print(f"   Image: {getattr(server_details, 'image', 'None')}")
-            print(f"   Volumes attached: {getattr(server_details, 'volumes_attached', 'None')}")
-            print(f"   OS-EXT-STS:vm_state: {getattr(server_details, 'vm_state', 'None')}")
-            print(f"   OS-EXT-SRV-ATTR:root_device_name: {getattr(server_details, 'root_device_name', 'None')}")
+            # Детальная информация об image
+            image_info = getattr(server_details, 'image', {})
+            if image_info:
+                print(f"   Image ID: {image_info.get('id', 'Unknown')}")
+                print(
+                    f"   Image Name: {conn.image.get_image(image_info['id']).name if image_info.get('id') else 'Unknown'}")
+            else:
+                print(f"   Image: No image (boot from volume)")
 
-            # Проверяем блок устройства
-            if hasattr(server_details, 'attached_volumes'):
-                print(f"   Attached volumes: {server_details.attached_volumes}")
+            # Актуальная информация о volumes
+            print(
+                f"   Attached volumes: {len(server_details.attached_volumes) if hasattr(server_details, 'attached_volumes') else 0}")
+            if hasattr(server_details, 'attached_volumes') and server_details.attached_volumes:
+                for vol_attach in server_details.attached_volumes:
+                    print(
+                        f"     - Volume ID: {vol_attach.id}, Delete on termination: {vol_attach.delete_on_termination}")
 
+            # Проверка миграции
+            migratable = hasattr(server_details, 'attached_volumes') and server_details.attached_volumes
+            print(f"   Live migration: {'✅ Possible' if migratable else '❌ Not possible'}")
             print("-" * 40)
 
     except Exception as e:
