@@ -1,1 +1,32 @@
 pip install openstacksdk
+
+migration_tester.py
+├── 📁 Импорты и конфигурация
+│   ├── Импорт библиотек
+│   ├── Константы
+│   └── Логирование
+│
+├── 📁 Классы данных
+│   └── MigrationStats (dataclass)
+│
+├── 📁 Основной класс MigrationTester
+│   ├── __init__() - инициализация
+│   ├── parse_arguments() - парсинг аргументов
+│   ├── setup_logging() - настройка логирования
+│   ├── validate_environment() - проверка окружения
+│   ├── discover_initial_vms() - поиск ВМ
+│   ├── live_migrate_vm() - миграция одной ВМ
+│   ├── monitor_migration() - мониторинг статуса
+│   ├── run_single_cycle() - один цикл миграций
+│   ├── run_test() - основной цикл теста
+│   ├── calculate_statistics() - сбор статистики
+│   ├── generate_report() - генерация отчета
+│   └── cleanup() - очистка ресурсов
+│
+├── 📁 Вспомогательные функции
+│   ├── format_duration() - форматирование времени
+│   ├── save_results() - сохранение результатов
+│   └── load_config() - загрузка конфигурации
+│
+└── 📁 Точка входа
+    └── main() - основной поток выполнения

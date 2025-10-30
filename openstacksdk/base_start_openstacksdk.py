@@ -2,7 +2,6 @@
 
 import openstack
 import sys
-import os
 
 
 def main():
