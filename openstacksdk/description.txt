@@ -33,6 +33,14 @@ migration_tester.py
 
 Запуск:
 
+VMs = {
+    migration_test = {
+        vm_qty       = 4
+        config_drive = true
+        az_hint      = "nova:cdm-bl-pca10"
+    }
+}
+
 bash
 # Короткий тест (5 минут) с 2 гипервизорами
 python migration_tester.py \
