@@ -18,49 +18,47 @@ resource "openstack_compute_servergroup_v2" "vm_group" {
   policies = [each.value.policy]
 }
 
+resource "openstack_blockstorage_volume_v3" "root_volume" {
+  for_each = { for k, v in local.instances : v.name => v }
+
+  name        = "${each.value.name}-root"
+  size        = each.value.boot_volume_size
+  volume_type = "huawei_storage"
+  image_id    = data.openstack_images_image_v2.image_id[each.key].id
+}
+
+resource "openstack_blockstorage_volume_v3" "data_volumes" {
+  for_each = { for vol in local.all_data_volumes : "${vol.vm_name}-${vol.name}" => vol }
+
+  name        = each.value.name
+  size        = each.value.size
+  volume_type = "huawei_storage"
+}
+
 resource "openstack_compute_instance_v2" "vm" {
-  for_each     = { for k, v in local.instances : v.name => v }
+  for_each = { for k, v in local.instances : v.name => v }
 
-  name                        = each.value.name
-  image_name                  = each.value.image_name
-  flavor_name                 = each.value.flavor_name == "" ? "${each.value.base_name}-flavor" : each.value.flavor_name
-  key_pair                    = each.value.keypair_name == null ? openstack_compute_keypair_v2.keypair.name : each.value.keypair_name
-  security_groups             = each.value.security_groups == null ? [openstack_compute_secgroup_v2.secgroup.name] : each.value.security_groups
-  availability_zone_hints     = each.value.az_hint
-  metadata                    = each.value.metadata
-  user_data                   = each.value.user_data
-  config_drive                = each.value.config_drive
-
-  dynamic "scheduler_hints" {
-    for_each = each.value.server_group_type != null ? [1] : []
-
-    content {
-      group = each.value.server_group_type == "new" ? openstack_compute_servergroup_v2.vm_group[each.value.base_name].id : each.value.server_group_uuid
-    }
-  }
+  name            = each.value.name
+  flavor_name     = each.value.flavor_name == "" ? "${each.value.base_name}-flavor" : each.value.flavor_name
+  key_pair        = each.value.keypair_name == null ? openstack_compute_keypair_v2.keypair.name : each.value.keypair_name
+  security_groups = each.value.security_groups == null ? [openstack_compute_secgroup_v2.secgroup.name] : each.value.security_groups
 
   block_device {
-    uuid                  = data.openstack_images_image_v2.image_id[each.key].id
-    volume_size           = each.value.boot_volume_size
-    source_type           = "image"
+    uuid                  = openstack_blockstorage_volume_v3.root_volume[each.key].id
+    source_type           = "volume"
     boot_index            = 0
     destination_type      = "volume"
     delete_on_termination = each.value.boot_volume_delete_on_termination
-    volume_type           = var.default_volume_type
   }
 
-  dynamic block_device {
-    for_each = [for volume in each.value.disks: {
-        boot_index = try(volume.boot_index, -1)
-        size = try(volume.size, var.default_volume_size)
-        delete_on_termination = try(volume.delete_on_termination, var.default_delete_on_termination)
-    }]
+  dynamic "block_device" {
+    for_each = { for vol in local.all_data_volumes : vol.name => vol if vol.vm_name == each.value.name }
     content {
-        source_type           = "blank"
-        volume_size           = block_device.value.size
-        boot_index            = block_device.value.boot_index
-        destination_type      = "volume"
-        delete_on_termination = block_device.value.delete_on_termination
+      uuid                  = openstack_blockstorage_volume_v3.data_volumes["${each.value.name}-${block_device.value.name}"].id
+      source_type           = "volume"
+      boot_index            = block_device.value.boot_index
+      destination_type      = "volume"
+      delete_on_termination = block_device.value.delete_on_termination
     }
   }
 
@@ -69,9 +67,8 @@ resource "openstack_compute_instance_v2" "vm" {
   }
 
   depends_on = [
-    openstack_compute_flavor_v2.flavor,
-    openstack_compute_aggregate_v2.aggr,
-    openstack_compute_servergroup_v2.vm_group
+    openstack_blockstorage_volume_v3.root_volume,
+    openstack_blockstorage_volume_v3.data_volumes
   ]
 }
 
