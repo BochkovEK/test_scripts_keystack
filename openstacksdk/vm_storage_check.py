@@ -15,29 +15,21 @@ def main():
         print("\n" + "=" * 80)
 
         for server in servers:
-            # Получаем детальную информацию о ВМ
             server_details = conn.compute.get_server(server.id)
 
             print(f"📦 {server.name}")
             print(f"   Status: {server.status} | Hypervisor: {server.hypervisor_hostname}")
 
-            # Проверяем тип загрузки
-            if hasattr(server_details, 'image') and server_details.image:
-                print(f"   Boot: from Image (local disk)")
-            else:
-                print(f"   Boot: from Volume")
+            # Детальная диагностика
+            print(f"   Image: {getattr(server_details, 'image', 'None')}")
+            print(f"   Volumes attached: {getattr(server_details, 'volumes_attached', 'None')}")
+            print(f"   OS-EXT-STS:vm_state: {getattr(server_details, 'vm_state', 'None')}")
+            print(f"   OS-EXT-SRV-ATTR:root_device_name: {getattr(server_details, 'root_device_name', 'None')}")
 
-            # Проверяем прикрепленные volumes
-            if hasattr(server_details, 'volumes_attached') and server_details.volumes_attached:
-                print(f"   Volumes attached: {len(server_details.volumes_attached)}")
-                for vol in server_details.volumes_attached:
-                    print(f"     - Volume ID: {vol['id']}")
-            else:
-                print(f"   Volumes attached: None")
+            # Проверяем блок устройства
+            if hasattr(server_details, 'attached_volumes'):
+                print(f"   Attached volumes: {server_details.attached_volumes}")
 
-            # Проверяем возможность миграции
-            migratable = hasattr(server_details, 'volumes_attached') and server_details.volumes_attached
-            print(f"   Live migration: {'✅ Possible' if migratable else '❌ Not possible'}")
             print("-" * 40)
 
     except Exception as e:
