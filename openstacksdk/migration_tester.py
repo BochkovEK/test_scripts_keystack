@@ -188,9 +188,9 @@ class MigrationTester:
         """
         try:
             logging.debug("🔄 Attempting OpenStack connection...")
-            logging.debug(f"Cloud name: {self.config['cloud_name']}")
+            logging.debug(f"Cloud name: {self.config['openstack']}")
             logging.debug(f"Interface: {self.config['interface']}")
-            logging.debug(f"Region: {self.config.get('region_name')}")
+            # logging.debug(f"Region: {self.config.get('region_name')}")
 
             self.conn = openstack.connect(
                 cloud=self.config['cloud_name'],
