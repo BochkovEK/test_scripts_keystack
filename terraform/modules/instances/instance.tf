@@ -23,7 +23,7 @@ resource "openstack_blockstorage_volume_v3" "root_volume" {
 
   name        = "${each.value.name}-root"
   size        = each.value.boot_volume_size
-  volume_type = "huawei_storage"
+  volume_type = var.default_volume_type
   image_id    = data.openstack_images_image_v2.image_id[each.key].id
 }
 
@@ -32,7 +32,7 @@ resource "openstack_blockstorage_volume_v3" "data_volumes" {
 
   name        = each.value.name
   size        = each.value.size
-  volume_type = "huawei_storage"
+  volume_type = var.default_volume_type
 }
 
 resource "openstack_compute_instance_v2" "vm" {
@@ -43,10 +43,10 @@ resource "openstack_compute_instance_v2" "vm" {
   flavor_name                 = each.value.flavor_name == "" ? "${each.value.base_name}-flavor" : each.value.flavor_name
   key_pair                    = each.value.keypair_name == null ? openstack_compute_keypair_v2.keypair.name : each.value.keypair_name
   security_groups             = each.value.security_groups == null ? [openstack_compute_secgroup_v2.secgroup.name] : each.value.security_groups
-  availability_zone_hints     = each.value.az_hint
-  metadata                    = each.value.metadata
-  user_data                   = each.value.user_data
-  config_drive                = each.value.config_drive
+#  availability_zone_hints     = each.value.az_hint
+#  metadata                    = each.value.metadata
+#  user_data                   = each.value.user_data
+#  config_drive                = each.value.config_drive
 
   block_device {
     uuid                  = openstack_blockstorage_volume_v3.root_volume[each.key].id
