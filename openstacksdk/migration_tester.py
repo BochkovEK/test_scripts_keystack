@@ -193,9 +193,9 @@ class MigrationTester:
             # logging.debug(f"Region: {self.config.get('region_name')}")
 
             self.conn = openstack.connect(
-                cloud=self.config['cloud_name'],
+                cloud=self.config['openstack'],
                 interface=self.config['interface'],
-                region_name=self.config.get('region_name')
+                # region_name=self.config.get('region_name')
             )
 
             logging.debug("✅ Connection object created, testing auth...")
