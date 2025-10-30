@@ -30,3 +30,41 @@ migration_tester.py
 │
 └── 📁 Точка входа
     └── main() - основной поток выполнения
+
+Запуск:
+
+bash
+# Короткий тест (5 минут) с 2 гипервизорами
+python migration_tester.py \
+    --hypervisors "compute01,compute02" \
+    --duration 300 \
+    --migration-timeout 120 \
+    --max-parallel 1 \
+    --log-level INFO \
+    --output-format table
+
+# Или через переменные окружения
+export MIGRATION_TEST_HYPERVISORS="compute01,compute02"
+export MIGRATION_TEST_DURATION=300
+export MIGRATION_TEST_LOG_LEVEL=DEBUG
+
+python migration_tester.py --output-format json
+Для отладки без реальных миграций:
+
+bash
+# Тест только валидации окружения
+python migration_tester.py \
+    --hypervisors "compute01,compute02" \
+    --duration 60 \
+    --log-level DEBUG
+Стресс-тест:
+
+bash
+# Максимальная нагрузка (если поддерживается)
+python migration_tester.py \
+    --hypervisors "compute01,compute02,compute03" \
+    --duration 1800 \
+    --max-parallel -1 \
+    --migration-timeout 600 \
+    --output-format json \
+    --results-file stress_test.json

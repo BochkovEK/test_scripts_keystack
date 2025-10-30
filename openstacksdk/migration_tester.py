@@ -10,6 +10,7 @@ import os
 import sys
 import time
 from dataclasses import dataclass, field
+from tabulate import tabulate
 from typing import List, Optional
 
 
@@ -146,6 +147,19 @@ class MigrationStats:
     cycle_times: List[float] = field(default_factory=list)
     migration_times: List[float] = field(default_factory=list)
     total_duration: float = 0.0
+    start_time: Optional[float] = None
+    end_time: Optional[float] = None
+
+    # Calculated metrics
+    success_rate: float = 0.0
+    avg_migration_time: float = 0.0
+    min_migration_time: float = 0.0
+    max_migration_time: float = 0.0
+    avg_cycle_time: float = 0.0
+    min_cycle_time: float = 0.0
+    max_cycle_time: float = 0.0
+    migrations_per_hour: float = 0.0
+    cycles_per_hour: float = 0.0
 
 
 # === Main Class ===
@@ -192,36 +206,497 @@ class MigrationTester:
             raise
 
     def validate_environment(self):
-        """Validate OpenStack environment"""
-        # TODO: Implement environment validation
+        """
+        Validate OpenStack environment prerequisites for migration testing.
+
+        Checks:
+        - Hypervisor availability and status
+        - Compute service health
+        - Live migration support
+
+        Raises:
+            Exception: If environment validation fails
+        """
+        try:
+            logging.info("🔍 Validating OpenStack environment...")
+
+            # Check hypervisor availability
+            hypervisors = list(self.conn.compute.hypervisors())
+            available_hypervisors = {hyp.hypervisor_hostname for hyp in hypervisors
+                                     if hyp.state == 'up' and hyp.status == 'enabled'}
+
+            # Validate all target hypervisors are available
+            missing_hypervisors = set(self.config['hypervisors']) - available_hypervisors
+            if missing_hypervisors:
+                raise Exception(f"Target hypervisors not found or not enabled: {missing_hypervisors}")
+
+            logging.info(f"✅ All target hypervisors available: {self.config['hypervisors']}")
+
+            # Check compute service status
+            services = list(self.conn.compute.services())
+            compute_services = {f"{s.host}:{s.binary}" for s in services
+                                if s.state == 'up' and s.status == 'enabled'}
+
+            if not compute_services:
+                raise Exception("No active compute services found")
+
+            logging.info(f"✅ Compute services active: {len(compute_services)} nodes")
+
+            # Verify we have at least 2 hypervisors for migration
+            if len(self.config['hypervisors']) < 2:
+                raise Exception("At least 2 hypervisors required for migration testing")
+
+            logging.info("✅ Environment validation completed successfully")
+
+        except Exception as e:
+            logging.error(f"❌ Environment validation failed: {e}")
+            raise
 
     def discover_initial_vms(self):
-        """Discover VMs for migration testing"""
-        # TODO: Implement VM discovery
+        """
+        Discover suitable VMs for migration testing on first hypervisor.
 
-    def live_migrate_vm(self, vm, target_host):
-        """Perform live migration of single VM"""
-        # TODO: Implement single VM migration
+        Selection criteria:
+        - VM must be in ACTIVE state
+        - VM must be located on first hypervisor from target list
+        - VM must support live migration
 
-    def monitor_migration(self, vm, timeout):
-        """Monitor migration status"""
-        # TODO: Implement migration monitoring
+        Returns:
+            list: List of server objects suitable for migration testing
+
+        Raises:
+            Exception: If no suitable VMs found
+        """
+        try:
+            first_hypervisor = self.config['hypervisors'][0]
+            logging.info(f"🔍 Discovering VMs on initial hypervisor: {first_hypervisor}")
+
+            # Find all servers on the first hypervisor
+            all_servers = list(self.conn.compute.servers(all_projects=True))
+            suitable_servers = []
+
+            for server in all_servers:
+                # Check if server is on target hypervisor and active
+                if (hasattr(server, 'hypervisor_hostname') and
+                        server.hypervisor_hostname == first_hypervisor and
+                        server.status == 'ACTIVE'):
+
+                    # Additional checks for migration capability
+                    if not server.locked and MigrationTester._is_vm_migratable(server):
+                        suitable_servers.append(server)
+                        logging.debug(f"Found suitable VM: {server.name} (ID: {server.id})")
+
+            if not suitable_servers:
+                raise Exception(f"No suitable ACTIVE VMs found on hypervisor {first_hypervisor}")
+
+            logging.info(f"✅ Found {len(suitable_servers)} VMs for migration testing")
+            for server in suitable_servers:
+                logging.info(f"   📦 {server.name} - {server.id}")
+
+            return suitable_servers
+
+        except Exception as e:
+            logging.error(f"❌ VM discovery failed: {e}")
+            raise
+
+    @staticmethod
+    def _is_vm_migratable(server):
+        """
+        Check if VM is suitable for live migration.
+
+        Args:
+            server: Server object to check
+
+        Returns:
+            bool: True if VM can be live migrated
+        """
+        # Check for known migration blockers
+        if hasattr(server, 'vm_state') and server.vm_state != 'active':
+            return False
+
+        # Check if VM has PCI devices or other non-migratable resources
+        if hasattr(server, 'pci_devices') and server.pci_devices:
+            logging.debug(f"VM {server.name} has PCI devices, may not be migratable")
+            return False
+
+        return True
+
+    def live_migrate_vm(self, server, target_host):
+        """
+        Perform live migration of a single VM to target hypervisor.
+
+        Args:
+            server: Server object to migrate
+            target_host: Target hypervisor hostname
+
+        Returns:
+            tuple: (success: bool, migration_time: float, error_message: str)
+        """
+        start_time = time.time()
+
+        try:
+            logging.info(f"🔄 Starting live migration: {server.name} → {target_host}")
+
+            # Initiate live migration
+            migration = self.conn.compute.live_migrate_server(
+                server=server.id,
+                host=target_host,
+                block_migration=False,  # Let OpenStack decide about block migration
+                disk_over_commit=False
+            )
+
+            # Monitor migration progress
+            success, error_msg = self.monitor_migration(server, self.config['migration_timeout'])
+            migration_time = time.time() - start_time
+
+            if success:
+                logging.info(f"✅ Migration completed: {server.name} → {target_host} "
+                             f"({migration_time:.2f}s)")
+                return True, migration_time, None
+            else:
+                logging.error(f"❌ Migration failed: {server.name} → {target_host} - {error_msg}")
+                return False, migration_time, error_msg
+
+        except openstack.exceptions.ConflictException as e:
+            migration_time = time.time() - start_time
+            error_msg = f"Migration conflict: {e}"
+            logging.error(f"❌ {error_msg}")
+            return False, migration_time, error_msg
+
+        except openstack.exceptions.SDKException as e:
+            migration_time = time.time() - start_time
+            error_msg = f"SDK error: {e}"
+            logging.error(f"❌ {error_msg}")
+            return False, migration_time, error_msg
+
+        except Exception as e:
+            migration_time = time.time() - start_time
+            error_msg = f"Unexpected error: {e}"
+            logging.error(f"❌ {error_msg}")
+            return False, migration_time, error_msg
+
+    def monitor_migration(self, server, timeout):
+        """
+        Monitor migration status until completion or timeout.
+
+        Args:
+            server: Server object to monitor
+            timeout: Maximum monitoring time in seconds
+
+        Returns:
+            tuple: (success: bool, error_message: str)
+        """
+        start_time = time.time()
+
+        try:
+            logging.debug(f"👀 Monitoring migration status for: {server.name}")
+
+            while time.time() - start_time < timeout:
+                # Refresh server data to get current status
+                server = self.conn.compute.get_server(server.id)
+
+                # Check if migration is still in progress
+                if hasattr(server, 'migration') and server.migration:
+                    migration_status = server.migration.status
+                    logging.debug(f"Migration status: {migration_status}")
+
+                    if migration_status in ['completed', 'confirmed']:
+                        return True, None
+                    elif migration_status in ['error', 'failed']:
+                        return False, f"Migration failed with status: {migration_status}"
+                    # Continue monitoring for 'migrating', 'pre-migrating' etc.
+
+                # Check server status as fallback
+                if server.status == 'ACTIVE':
+                    # Verify VM actually moved to new host
+                    current_host = getattr(server, 'hypervisor_hostname', None)
+                    if current_host and current_host != getattr(server, '_original_host', None):
+                        return True, None
+                    else:
+                        return False, "VM did not change hypervisor after migration"
+
+                elif server.status == 'ERROR':
+                    return False, f"VM entered ERROR state during migration"
+
+                # Wait before next check
+                time.sleep(2)
+
+            # Timeout reached
+            return False, f"Migration timeout after {timeout} seconds"
+
+        except Exception as e:
+            error_msg = f"Monitoring error: {e}"
+            logging.error(f"❌ {error_msg}")
+            return False, error_msg
 
     def run_test_cycle(self):
-        """Execute one migration cycle"""
-        # TODO: Implement test cycle
+        """
+        Execute one complete migration cycle for all VMs.
+
+        Returns:
+            bool: True if all migrations in cycle completed successfully
+        """
+        cycle_start = time.time()
+        cycle_success = True
+
+        try:
+            logging.info(f"🚀 Starting migration cycle {self.stats.total_cycles + 1}")
+
+            # Determine next hypervisor for each VM using round-robin
+            for i, vm in enumerate(self.vms):
+                current_host = getattr(vm, 'hypervisor_hostname', 'unknown')
+                next_host = self._get_next_hypervisor(current_host)
+
+                logging.info(f"🔄 Cycle {self.stats.total_cycles + 1}, VM {i + 1}/{len(self.vms)}: "
+                             f"{vm.name} {current_host} → {next_host}")
+
+                # Perform migration
+                success, migration_time, error_msg = self.live_migrate_vm(vm, next_host)
+
+                # Update statistics
+                if success:
+                    self.stats.successful_migrations += 1
+                    self.stats.migration_times.append(migration_time)
+                    logging.info(f"✅ Migration completed in {migration_time:.2f}s")
+                else:
+                    self.stats.failed_migrations += 1
+                    cycle_success = False
+                    logging.error(f"❌ Migration failed: {error_msg}")
+
+                # Refresh VM data after migration
+                self.vms[i] = self.conn.compute.get_server(vm.id)
+
+            # Update cycle statistics
+            cycle_duration = time.time() - cycle_start
+            self.stats.cycle_times.append(cycle_duration)
+            self.stats.total_cycles += 1
+
+            logging.info(f"🏁 Cycle {self.stats.total_cycles} completed in {cycle_duration:.2f}s - "
+                         f"Success: {cycle_success}")
+
+            return cycle_success
+
+        except Exception as e:
+            logging.error(f"❌ Cycle execution failed: {e}")
+            self.stats.failed_migrations += len(self.vms)
+            return False
+
+    def _get_next_hypervisor(self, current_host):
+        """
+        Get next hypervisor in round-robin sequence.
+
+        Args:
+            current_host: Current hypervisor hostname
+
+        Returns:
+            str: Next hypervisor hostname
+        """
+        hypervisors = self.config['hypervisors']
+
+        try:
+            current_index = hypervisors.index(current_host)
+            next_index = (current_index + 1) % len(hypervisors)
+            return hypervisors[next_index]
+        except ValueError:
+            # Current host not in target list, start from first
+            return hypervisors[0]
 
     def run_test(self):
-        """Main test execution loop"""
-        # TODO: Implement main test logic
+        """
+        Main test execution loop - runs migration cycles for specified duration.
 
-    def calculate_statistics(self):
-        """Calculate test statistics"""
-        # TODO: Implement statistics calculation
+        Coordinates the entire migration test process from start to finish.
+        """
+        try:
+            logging.info("🎬 Starting OpenStack Live Migration Test")
+            logging.info(f"⏱️  Test duration: {self.config['duration']} seconds")
+            logging.info(f"🎯 Target hypervisors: {', '.join(self.config['hypervisors'])}")
+            logging.info(f"📊 Max parallel migrations: {self.config['max_parallel']}")
+
+            # Setup phase
+            self.connect_openstack()
+            self.validate_environment()
+            self.vms = self.discover_initial_vms()
+
+            # Record test start time
+            test_start_time = time.time()
+            self.stats.start_time = test_start_time
+
+            logging.info(f"🔁 Starting migration cycles for {len(self.vms)} VMs")
+
+            # Main test loop
+            while time.time() - test_start_time < self.config['duration']:
+                cycle_success = self.run_test_cycle()
+
+                # Check if we should continue
+                if not cycle_success and self.config['retry_attempts'] == 0:
+                    logging.warning("⚠️  Cycle failed and no retries configured - stopping test")
+                    break
+
+                # Brief pause between cycles to avoid system overload
+                time.sleep(5)
+
+            # Record test end time
+            self.stats.end_time = time.time()
+            self.stats.total_duration = self.stats.end_time - self.stats.start_time
+
+            # Generate final report
+            self.calculate_statistics()
+            self.generate_report()
+
+            logging.info("🏁 Migration test completed successfully")
+
+        except KeyboardInterrupt:
+            logging.info("⏹️  Test interrupted by user")
+            self.stats.end_time = time.time()
+            self.stats.total_duration = self.stats.end_time - self.stats.start_time
+            self.generate_report()
+            raise
+
+        except Exception as e:
+            logging.error(f"💥 Test execution failed: {e}")
+            self.stats.end_time = time.time()
+            if self.stats.start_time:
+                self.stats.total_duration = self.stats.end_time - self.stats.start_time
+            self.generate_report()
+            raise
 
     def generate_report(self):
-        """Generate test report"""
-        # TODO: Implement report generation
+        """
+        Generate comprehensive test report in configured output format.
+
+        Creates detailed report with statistics, performance metrics,
+        and test summary for analysis.
+        """
+        try:
+            logging.info("📈 Generating test report...")
+
+            report_data = {
+                'test_summary': {
+                    'total_duration_seconds': round(self.stats.total_duration, 2),
+                    'total_cycles': self.stats.total_cycles,
+                    'total_migrations': self.stats.successful_migrations + self.stats.failed_migrations,
+                    'successful_migrations': self.stats.successful_migrations,
+                    'failed_migrations': self.stats.failed_migrations,
+                    'success_rate_percent': round(self.stats.success_rate, 2)
+                },
+                'performance_metrics': {
+                    'migrations_per_hour': round(self.stats.migrations_per_hour, 2),
+                    'cycles_per_hour': round(self.stats.cycles_per_hour, 2),
+                    'avg_migration_time_seconds': round(self.stats.avg_migration_time, 2),
+                    'min_migration_time_seconds': round(self.stats.min_migration_time, 2),
+                    'max_migration_time_seconds': round(self.stats.max_migration_time, 2),
+                    'avg_cycle_time_seconds': round(self.stats.avg_cycle_time, 2),
+                    'min_cycle_time_seconds': round(self.stats.min_cycle_time, 2),
+                    'max_cycle_time_seconds': round(self.stats.max_cycle_time, 2)
+                },
+                'test_configuration': {
+                    'hypervisors': self.config['hypervisors'],
+                    'cloud_name': self.config['cloud_name'],
+                    'duration_seconds': self.config['duration'],
+                    'max_parallel_migrations': self.config['max_parallel'],
+                    'migration_timeout_seconds': self.config['migration_timeout']
+                },
+                'timing_data': {
+                    'migration_times': [round(t, 2) for t in self.stats.migration_times],
+                    'cycle_times': [round(t, 2) for t in self.stats.cycle_times],
+                    'start_time': self.stats.start_time,
+                    'end_time': self.stats.end_time
+                }
+            }
+
+            # Output based on configured format
+            if self.config['output_format'] == 'json':
+                self._generate_json_report(report_data)
+            elif self.config['output_format'] == 'table':
+                self._generate_table_report(report_data)
+            else:  # text
+                self._generate_text_report(report_data)
+
+            # Save to file if specified
+            if self.config['results_file']:
+                self._save_report_to_file(report_data)
+
+            logging.info("✅ Test report generated successfully")
+
+        except Exception as e:
+            logging.error(f"❌ Report generation failed: {e}")
+            raise
+
+    @staticmethod
+    def _generate_text_report(report_data):
+        """Generate report in simple text format."""
+        print("\n" + "=" * 60)
+        print("OPENSTACK LIVE MIGRATION TEST REPORT")
+        print("=" * 60)
+
+        summary = report_data['test_summary']
+        perf = report_data['performance_metrics']
+
+        print(f"\nTEST SUMMARY:")
+        print(f"  Total Duration: {summary['total_duration_seconds']}s")
+        print(f"  Total Cycles: {summary['total_cycles']}")
+        print(f"  Total Migrations: {summary['total_migrations']}")
+        print(f"  Successful: {summary['successful_migrations']}")
+        print(f"  Failed: {summary['failed_migrations']}")
+        print(f"  Success Rate: {summary['success_rate_percent']}%")
+
+        print(f"\nPERFORMANCE METRICS:")
+        print(f"  Migrations/Hour: {perf['migrations_per_hour']}")
+        print(f"  Cycles/Hour: {perf['cycles_per_hour']}")
+        print(f"  Avg Migration Time: {perf['avg_migration_time_seconds']}s")
+        print(f"  Min-Max Migration Time: {perf['min_migration_time_seconds']}s-{perf['max_migration_time_seconds']}s")
+        print(f"  Avg Cycle Time: {perf['avg_cycle_time_seconds']}s")
+
+    @staticmethod
+    def _generate_json_report(report_data):
+        """Generate report in JSON format."""
+        import json
+        print(json.dumps(report_data, indent=2))
+
+    def _save_report_to_file(self, report_data):
+        """Save report to JSON file."""
+        try:
+            import json
+            with open(self.config['results_file'], 'w') as f:
+                json.dump(report_data, f, indent=2)
+            logging.info(f"💾 Report saved to: {self.config['results_file']}")
+        except Exception as e:
+            logging.error(f"❌ Failed to save report: {e}")
+
+    def _generate_table_report(self, report_data):
+        """Generate report in table format."""
+        try:
+            print("\n" + "=" * 60)
+            print("📊 OPENSTACK LIVE MIGRATION TEST REPORT")
+            print("=" * 60)
+
+            # Test Summary Table
+            summary_table = [
+                ["Total Duration", f"{report_data['test_summary']['total_duration_seconds']}s"],
+                ["Total Cycles", report_data['test_summary']['total_cycles']],
+                ["Total Migrations", report_data['test_summary']['total_migrations']],
+                ["Successful", report_data['test_summary']['successful_migrations']],
+                ["Failed", report_data['test_summary']['failed_migrations']],
+                ["Success Rate", f"{report_data['test_summary']['success_rate_percent']}%"]
+            ]
+            print("\n📈 TEST SUMMARY:")
+            print(tabulate(summary_table, tablefmt="grid"))
+
+            # Performance Metrics Table
+            perf_table = [
+                ["Migrations/Hour", report_data['performance_metrics']['migrations_per_hour']],
+                ["Cycles/Hour", report_data['performance_metrics']['cycles_per_hour']],
+                ["Avg Migration Time", f"{report_data['performance_metrics']['avg_migration_time_seconds']}s"],
+                ["Min Migration Time", f"{report_data['performance_metrics']['min_migration_time_seconds']}s"],
+                ["Max Migration Time", f"{report_data['performance_metrics']['max_migration_time_seconds']}s"],
+                ["Avg Cycle Time", f"{report_data['performance_metrics']['avg_cycle_time_seconds']}s"]
+            ]
+            print("\n⚡ PERFORMANCE METRICS:")
+            print(tabulate(perf_table, tablefmt="grid"))
+
+        except ImportError:
+            self._generate_text_report(report_data)
 
 
 # === Main Execution ===
