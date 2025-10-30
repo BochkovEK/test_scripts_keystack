@@ -35,7 +35,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         '--cloud',
         default='openstack',
-        help='OpenStack cloud name from clouds.yaml (default: openstack)'
+        help='OpenStack cloud name from clouds.yaml (optional - uses env vars if not specified)'
     )
 
     # Test execution parameters
@@ -91,9 +91,9 @@ def parse_arguments() -> argparse.Namespace:
 
     args = parser.parse_args()
 
-    # Validate that hypervisors are provided (either CLI or environment)
+    # Validate required parameters
     if not args.hypervisors and not os.getenv('MIGRATION_TEST_HYPERVISORS'):
-        parser.error("Either --hypervisors argument or MIGRATION_TEST_HYPERVISORS environment variable is required")
+        parser.error("Either --hypervisors or MIGRATION_TEST_HYPERVISORS required")
 
     return args
 
@@ -103,17 +103,13 @@ def get_config(args: argparse.Namespace) -> dict:
     Build final configuration dictionary with priority:
     Command Line > Environment Variables > Default Values
 
-    Args:
-        args: Parsed command line arguments
-
-    Returns:
-        dict: Complete configuration for migration test
+    Cloud name is optional - None means use only environment variables
     """
     config = {
-        # OpenStack connection settings
-        'cloud_name': args.cloud,
+        # OpenStack connection settings (cloud_name can be None)
+        'cloud_name': args.cloud or os.getenv('MIGRATION_TEST_CLOUD_NAME'),
         'region_name': os.getenv('OS_REGION_NAME'),
-        'interface': args.interface or os.getenv('MIGRATION_TEST_INTERFACE', 'public'),
+        'interface': args.interface or os.getenv('MIGRATION_TEST_INTERFACE', 'internal'),
 
         # Core test parameters
         'hypervisors': (args.hypervisors or os.getenv('MIGRATION_TEST_HYPERVISORS')).split(','),
@@ -181,63 +177,33 @@ class MigrationTester:
 
     def connect_openstack(self):
         """
-        Establish connection to OpenStack cloud using SDK.
-
-        Raises:
-            Exception: If connection or authentication fails
+        Establish connection to OpenStack using clouds.yaml or env vars.
+        If cloud_name is None - use only environment variables.
         """
         try:
-            logging.debug("🔄 Attempting OpenStack connection...")
-            # logging.debug(f"Cloud name: {self.config['openstack']}")
-            logging.debug(f"Interface: {self.config['interface']}")
-            # logging.debug(f"Region: {self.config.get('region_name')}")
+            if self.config['cloud_name']:
+                # Use clouds.yaml with specific cloud name
+                self.conn = openstack.connect(
+                    cloud=self.config['cloud_name'],
+                    interface=self.config['interface'],
+                    region_name=self.config.get('region_name')
+                )
+                logging.info(f"✅ Connecting via clouds.yaml: {self.config['cloud_name']}")
+            else:
+                # Use only environment variables
+                self.conn = openstack.connect(
+                    interface=self.config['interface'],
+                    region_name=self.config.get('region_name')
+                )
+                logging.info("✅ Connecting via environment variables")
 
-            self.conn = openstack.connect(
-                # cloud=self.config['openstack'],
-                interface=self.config['interface'],
-                # region_name=self.config.get('region_name')
-            )
-
-            logging.debug("✅ Connection object created, testing auth...")
-
-            # Test authentication
+            # Test connection
             token = self.conn.authorize()
-            logging.debug(f"🔑 Token received: {token[:20]}...")
-
-            logging.info(f"✅ Successfully connected to: {self.config['cloud_name']}")
+            logging.info(f"🔑 Authentication successful, project: {self.conn.current_project_id}")
 
         except Exception as e:
             logging.error(f"❌ Connection failed: {e}")
-            # Добавим больше деталей об ошибке
-            logging.debug(f"Exception type: {type(e)}")
-            logging.debug(f"Exception args: {e.args}")
             raise
-
-        # try:
-        #     # Initialize OpenStack connection
-        #     self.conn = openstack.connect(cloud=self.config['cloud_name'])
-        #
-        #     # Test connection by fetching authentication token
-        #     token = self.conn.authorize()
-        #     if not token:
-        #         raise Exception("Authentication failed - no token received")
-        #
-        #     logging.info(f"✅ Successfully connected to OpenStack cloud: {self.config['cloud_name']}")
-        #     logging.info(f"🔑 Project ID: {self.conn.current_project_id}")
-        #
-        #     # Log available services
-        #     services = list(self.conn.identity.services())
-        #     logging.debug(f"Available services: {[s.name for s in services]}")
-        #
-        # except openstack.exceptions.HttpException as e:
-        #     logging.error(f"❌ HTTP error during OpenStack connection: {e}")
-        #     raise
-        # except openstack.exceptions.SDKException as e:
-        #     logging.error(f"❌ SDK error during OpenStack connection: {e}")
-        #     raise
-        # except Exception as e:
-        #     logging.error(f"❌ Unexpected error during OpenStack connection: {e}")
-        #     raise
 
     def validate_environment(self):
         """
