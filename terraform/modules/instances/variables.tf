@@ -11,6 +11,13 @@ variable "default_image_name" {
   default = "cirros-0.6.3-x86_64-disk"
 }
 
+# VM
+variable "default_volume_type" {
+  description = "Default volume type"
+  type        = string
+  default = "huawei_storage"
+}
+
 variable "default_flavor_name" {
   description = "Default flavor name"
   type        = string

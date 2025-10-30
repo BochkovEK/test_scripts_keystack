@@ -46,6 +46,7 @@ resource "openstack_compute_instance_v2" "vm" {
     boot_index            = 0
     destination_type      = "volume"
     delete_on_termination = each.value.boot_volume_delete_on_termination
+    volume_type           = var.default_volume_type
   }
 
   dynamic block_device {

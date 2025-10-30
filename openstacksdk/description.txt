@@ -33,6 +33,9 @@ migration_tester.py
 
 Запуск:
 
+openstack volume create   --image cirros-0.6.3-x86_64-disk   --size 1   --type huawei_storage   boot_volume_from_image
+openstack server create   --volume boot_volume_from_image   --flavor m1.tiny   --network pub_net   migration_test_bfv
+
 VMs = {
     migration_test = {
         vm_qty       = 4
