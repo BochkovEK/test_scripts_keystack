@@ -245,25 +245,10 @@ class MigrationTester:
             raise
 
     def discover_initial_vms(self):
-        """
-        Discover suitable VMs for migration testing on first hypervisor.
-
-        Selection criteria:
-        - VM must be in ACTIVE state
-        - VM must be located on first hypervisor from target list
-        - VM must support live migration
-
-        Returns:
-            list: List of server objects suitable for migration testing
-
-        Raises:
-            Exception: If no suitable VMs found
-        """
         try:
             first_hypervisor = self.config['hypervisors'][0]
             logging.info(f"🔍 Discovering VMs on initial hypervisor: {first_hypervisor}")
 
-            # Find all servers on the first hypervisor
             all_servers = list(self.conn.compute.servers(all_projects=True))
             suitable_servers = []
 
@@ -273,8 +258,9 @@ class MigrationTester:
                         server.hypervisor_hostname == first_hypervisor and
                         server.status == 'ACTIVE'):
 
-                    # Additional checks for migration capability
-                    if not server.locked and MigrationTester._is_vm_migratable(server):
+                    # Check if VM is not locked (safe default if attribute doesn't exist)
+                    is_locked = getattr(server, 'locked', False)
+                    if not is_locked and MigrationTester._is_vm_migratable(server):
                         suitable_servers.append(server)
                         logging.debug(f"Found suitable VM: {server.name} (ID: {server.id})")
 
