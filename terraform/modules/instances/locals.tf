@@ -44,7 +44,20 @@ locals {
     for vm_key, vm in var.VMs : vm_key => vm.server_group
     if try(vm.server_group, null) != null
   }
+
+  all_data_volumes = flatten([
+    for instance in local.instances : [
+      for disk_index, disk in try(instance.disks, []) : {
+        vm_name               = instance.name
+        name                  = format("%s-disk-%02d", instance.name, disk_index + 1)
+        size                  = disk.size
+        boot_index            = try(disk.boot_index, -1)
+        delete_on_termination = try(disk.delete_on_termination, var.default_delete_on_termination)
+      }
+    ]
+  ])
 }
+
 
 
 
