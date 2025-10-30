@@ -177,23 +177,19 @@ class MigrationTester:
 
     def connect_openstack(self):
         """
-        Establish connection to OpenStack using clouds.yaml or env vars.
-        If cloud_name is None - use only environment variables.
+        Establish connection to OpenStack using clouds.yaml if available,
+        otherwise use environment variables only.
         """
         try:
-            if self.config['cloud_name']:
-                # Use clouds.yaml with specific cloud name
-                self.conn = openstack.connect(
-                    cloud=self.config['cloud_name'],
-                    interface=self.config['interface'],
-                )
-                logging.info(f"✅ Connecting via clouds.yaml: {self.config['cloud_name']}")
+            if self._clouds_yaml_exists():
+                cloud_name = self.config['cloud_name'] or 'openstack'
+                self.conn = openstack.connect(cloud=cloud_name)
+                logging.info(f"✅ Connected via clouds.yaml, cloud: {cloud_name}")
             else:
-                # Use only environment variables
                 self.conn = openstack.connect()
-                logging.info("✅ Connecting via environment variables")
+                logging.info("✅ Connected via environment variables")
 
-            # Test connection
+            # Test authentication
             token = self.conn.authorize()
             logging.info(f"🔑 Authentication successful, project: {self.conn.current_project_id}")
 
@@ -294,6 +290,31 @@ class MigrationTester:
         except Exception as e:
             logging.error(f"❌ VM discovery failed: {e}")
             raise
+
+    @staticmethod
+    def _clouds_yaml_exists() -> bool:
+        """
+        Check if clouds.yaml configuration file exists in standard locations.
+
+        Returns:
+            bool: True if clouds.yaml found, False otherwise
+        """
+        standard_paths = [
+            # User-specific config
+            os.path.expanduser('~/.config/openstack/clouds.yaml'),
+            # System-wide config
+            '/etc/openstack/clouds.yaml',
+            # Current directory
+            './clouds.yaml'
+        ]
+
+        for path in standard_paths:
+            if os.path.exists(path):
+                logging.debug(f"📁 Found clouds.yaml at: {path}")
+                return True
+
+        logging.debug("📁 clouds.yaml not found in standard locations")
+        return False
 
     @staticmethod
     def _is_vm_migratable(server):
