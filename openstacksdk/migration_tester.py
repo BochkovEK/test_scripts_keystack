@@ -187,30 +187,57 @@ class MigrationTester:
             Exception: If connection or authentication fails
         """
         try:
-            # Initialize OpenStack connection
-            self.conn = openstack.connect(cloud=self.config['cloud_name'])
+            logging.debug("🔄 Attempting OpenStack connection...")
+            logging.debug(f"Cloud name: {self.config['cloud_name']}")
+            logging.debug(f"Interface: {self.config['interface']}")
+            logging.debug(f"Region: {self.config.get('region_name')}")
 
-            # Test connection by fetching authentication token
+            self.conn = openstack.connect(
+                cloud=self.config['cloud_name'],
+                interface=self.config['interface'],
+                region_name=self.config.get('region_name')
+            )
+
+            logging.debug("✅ Connection object created, testing auth...")
+
+            # Test authentication
             token = self.conn.authorize()
-            if not token:
-                raise Exception("Authentication failed - no token received")
+            logging.debug(f"🔑 Token received: {token[:20]}...")
 
-            logging.info(f"✅ Successfully connected to OpenStack cloud: {self.config['cloud_name']}")
-            logging.info(f"🔑 Project ID: {self.conn.current_project_id}")
+            logging.info(f"✅ Successfully connected to: {self.config['cloud_name']}")
 
-            # Log available services
-            services = list(self.conn.identity.services())
-            logging.debug(f"Available services: {[s.name for s in services]}")
-
-        except openstack.exceptions.HttpException as e:
-            logging.error(f"❌ HTTP error during OpenStack connection: {e}")
-            raise
-        except openstack.exceptions.SDKException as e:
-            logging.error(f"❌ SDK error during OpenStack connection: {e}")
-            raise
         except Exception as e:
-            logging.error(f"❌ Unexpected error during OpenStack connection: {e}")
+            logging.error(f"❌ Connection failed: {e}")
+            # Добавим больше деталей об ошибке
+            logging.debug(f"Exception type: {type(e)}")
+            logging.debug(f"Exception args: {e.args}")
             raise
+
+        # try:
+        #     # Initialize OpenStack connection
+        #     self.conn = openstack.connect(cloud=self.config['cloud_name'])
+        #
+        #     # Test connection by fetching authentication token
+        #     token = self.conn.authorize()
+        #     if not token:
+        #         raise Exception("Authentication failed - no token received")
+        #
+        #     logging.info(f"✅ Successfully connected to OpenStack cloud: {self.config['cloud_name']}")
+        #     logging.info(f"🔑 Project ID: {self.conn.current_project_id}")
+        #
+        #     # Log available services
+        #     services = list(self.conn.identity.services())
+        #     logging.debug(f"Available services: {[s.name for s in services]}")
+        #
+        # except openstack.exceptions.HttpException as e:
+        #     logging.error(f"❌ HTTP error during OpenStack connection: {e}")
+        #     raise
+        # except openstack.exceptions.SDKException as e:
+        #     logging.error(f"❌ SDK error during OpenStack connection: {e}")
+        #     raise
+        # except Exception as e:
+        #     logging.error(f"❌ Unexpected error during OpenStack connection: {e}")
+        #     raise
 
     def validate_environment(self):
         """
