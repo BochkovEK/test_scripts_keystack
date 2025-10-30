@@ -313,7 +313,7 @@ class MigrationTester:
         Returns:
             bool: True if VM can be live migrated
         """
-        # Check for known migration blockers
+        # Check VM is active
         if hasattr(server, 'vm_state') and server.vm_state != 'active':
             return False
 
@@ -322,7 +322,17 @@ class MigrationTester:
             logging.debug(f"VM {server.name} has PCI devices, may not be migratable")
             return False
 
-        return True
+        # Check if VM has volume attachments (boot-from-volume)
+        if hasattr(server, 'attached_volumes') and server.attached_volumes:
+            return True
+
+        # If no volume attachments, check old attribute
+        if hasattr(server, 'volumes_attached') and server.volumes_attached:
+            return True
+
+        # No volumes found - VM likely has local disks
+        logging.debug(f"VM {server.name} has no volume attachments, may not be migratable")
+        return False
 
     def live_migrate_vm(self, server, target_host):
         """
