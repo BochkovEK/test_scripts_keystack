@@ -186,15 +186,11 @@ class MigrationTester:
                 self.conn = openstack.connect(
                     cloud=self.config['cloud_name'],
                     interface=self.config['interface'],
-                    region_name=self.config.get('region_name')
                 )
                 logging.info(f"✅ Connecting via clouds.yaml: {self.config['cloud_name']}")
             else:
                 # Use only environment variables
-                self.conn = openstack.connect(
-                    interface=self.config['interface'],
-                    region_name=self.config.get('region_name')
-                )
+                self.conn = openstack.connect()
                 logging.info("✅ Connecting via environment variables")
 
             # Test connection
