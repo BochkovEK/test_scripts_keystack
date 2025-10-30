@@ -214,7 +214,7 @@ class MigrationTester:
 
             # Check hypervisor availability
             hypervisors = list(self.conn.compute.hypervisors())
-            available_hypervisors = {hyp.hypervisor_hostname for hyp in hypervisors
+            available_hypervisors = {hyp.name for hyp in hypervisors
                                      if hyp.state == 'up' and hyp.status == 'enabled'}
 
             # Validate all target hypervisors are available
