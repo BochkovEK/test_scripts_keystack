@@ -83,6 +83,12 @@ def parse_arguments() -> argparse.Namespace:
         help='Path to save results JSON file (default: migration_results.json)'
     )
 
+    parser.add_argument(
+        '--interface',
+        choices=['public', 'internal', 'admin'],
+        help='OpenStack endpoint interface (default: public)'
+    )
+
     args = parser.parse_args()
 
     # Validate that hypervisors are provided (either CLI or environment)
@@ -105,8 +111,9 @@ def get_config(args: argparse.Namespace) -> dict:
     """
     config = {
         # OpenStack connection settings
-        'cloud_name': args.cloud,  # Always has default value
-        'region_name': os.getenv('OS_REGION_NAME'),  # Optional region override
+        'cloud_name': args.cloud,
+        'region_name': os.getenv('OS_REGION_NAME'),
+        'interface': args.interface or os.getenv('MIGRATION_TEST_INTERFACE', 'public'),
 
         # Core test parameters
         'hypervisors': (args.hypervisors or os.getenv('MIGRATION_TEST_HYPERVISORS')).split(','),
