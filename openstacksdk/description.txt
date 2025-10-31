@@ -36,10 +36,20 @@ migration_tester.py
 openstack volume create   --image cirros-0.6.3-x86_64-disk   --size 1   --type huawei_storage   boot_volume_from_image
 openstack server create   --volume boot_volume_from_image   --flavor m1.tiny   --network pub_net   migration_test_bfv
 
+!!! config_drive = true приводит к
+00:31:37 - ERROR - ❌ SDK error: BadRequestException: 400: Client Error for url: https://fqdn:8774/v2.1/servers/3ff79277-1fb4-4f07-90d3-94f8046bcd20/action, cmpt-01 is not on shared storage: Shared storage live-migration requires either shared storage or boot-from-volume with no local disks.
+
+config drive:
+Временный диск для передачи metadata/user-data ВМ
+Создается как local disk на гипервизоре
+Ломает shared storage migration
+
+Ломает shared storage migration
+
 VMs = {
     migration_test = {
         vm_qty       = 4
-        config_drive = true
+#        config_drive = true
         az_hint      = "nova:cdm-bl-pca10"
     }
 }
@@ -79,3 +89,7 @@ python migration_tester.py \
     --migration-timeout 600 \
     --output-format json \
     --results-file stress_test.json
+
+Вопросы:
+Параллельная миграция должна определяться после определения колличества ВМ или задана как параметр
+02:06:25 - ERROR - 💥 Test execution failed: 'MigrationTester' object has no attribute 'calculate_statistics'

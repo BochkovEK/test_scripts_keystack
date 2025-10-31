@@ -574,6 +574,57 @@ class MigrationTester:
             self.generate_report()
             raise
 
+    def calculate_statistics(self):
+        """
+        Calculate comprehensive statistics from migration test results.
+        """
+        try:
+            logging.info("📊 Calculating test statistics...")
+
+            # Basic counts
+            total_migrations = self.stats.successful_migrations + self.stats.failed_migrations
+            total_cycle_time = sum(self.stats.cycle_times) if self.stats.cycle_times else 0
+
+            # Success rates
+            if total_migrations > 0:
+                self.stats.success_rate = (self.stats.successful_migrations / total_migrations) * 100
+            else:
+                self.stats.success_rate = 0.0
+
+            # Migration time statistics
+            if self.stats.migration_times:
+                self.stats.avg_migration_time = sum(self.stats.migration_times) / len(self.stats.migration_times)
+                self.stats.min_migration_time = min(self.stats.migration_times)
+                self.stats.max_migration_time = max(self.stats.migration_times)
+            else:
+                self.stats.avg_migration_time = 0.0
+                self.stats.min_migration_time = 0.0
+                self.stats.max_migration_time = 0.0
+
+            # Cycle time statistics
+            if self.stats.cycle_times:
+                self.stats.avg_cycle_time = sum(self.stats.cycle_times) / len(self.stats.cycle_times)
+                self.stats.min_cycle_time = min(self.stats.cycle_times)
+                self.stats.max_cycle_time = max(self.stats.cycle_times)
+            else:
+                self.stats.avg_cycle_time = 0.0
+                self.stats.min_cycle_time = 0.0
+                self.stats.max_cycle_time = 0.0
+
+            # Performance metrics
+            if self.stats.total_duration > 0:
+                self.stats.migrations_per_hour = (total_migrations / self.stats.total_duration) * 3600
+                self.stats.cycles_per_hour = (self.stats.total_cycles / self.stats.total_duration) * 3600
+            else:
+                self.stats.migrations_per_hour = 0.0
+                self.stats.cycles_per_hour = 0.0
+
+            logging.info("✅ Statistics calculation completed")
+
+        except Exception as e:
+            logging.error(f"❌ Statistics calculation failed: {e}")
+            raise
+
     def generate_report(self):
         """
         Generate comprehensive test report in configured output format.
