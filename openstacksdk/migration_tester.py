@@ -12,6 +12,7 @@ import time
 from dataclasses import dataclass, field
 from tabulate import tabulate
 from typing import List, Optional
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -116,8 +117,8 @@ def get_config(args: argparse.Namespace) -> dict:
         'duration': args.duration or int(os.getenv('MIGRATION_TEST_DURATION', 3600)),
         'migration_timeout': args.migration_timeout or int(os.getenv('MIGRATION_TEST_MIGRATION_TIMEOUT', 300)),
 
-        # Parallel execution settings
-        'max_parallel': args.max_parallel or int(os.getenv('MIGRATION_TEST_MAX_PARALLEL_MIGRATIONS', 1)),
+        # Parallel execution settings (define by vms qty)
+        'max_parallel': args.max_parallel or int(os.getenv('MIGRATION_TEST_MAX_PARALLEL_MIGRATIONS', -1)),
 
         # Retry configuration
         'retry_attempts': args.retry_attempts or int(os.getenv('MIGRATION_TEST_RETRY_ATTEMPTS', 3)),
@@ -130,6 +131,7 @@ def get_config(args: argparse.Namespace) -> dict:
     }
 
     return config
+
 
 def setup_logging(log_level: str):
     """Configure logging"""
@@ -444,10 +446,7 @@ class MigrationTester:
 
     def run_test_cycle(self):
         """
-        Execute one complete migration cycle for all VMs.
-
-        Returns:
-            bool: True if all migrations in cycle completed successfully
+        Execute one complete migration cycle for all VMs in parallel.
         """
         cycle_start = time.time()
         cycle_success = True
@@ -455,44 +454,67 @@ class MigrationTester:
         try:
             logging.info(f"🚀 Starting migration cycle {self.stats.total_cycles + 1}")
 
-            # Determine next hypervisor for each VM using round-robin
-            for i, vm in enumerate(self.vms):
-                current_host = getattr(vm, 'hypervisor_hostname', 'unknown')
-                next_host = self._get_next_hypervisor(current_host)
+            # Calculate number of parallel workers
+            if self.config['max_parallel'] == -1:
+                workers = len(self.vms)  # Unlimited - all VMs in parallel
+            else:
+                workers = min(self.config['max_parallel'], len(self.vms))  # Limited
 
-                logging.info(f"🔄 Cycle {self.stats.total_cycles + 1}, VM {i + 1}/{len(self.vms)}: "
-                             f"{vm.name} {current_host} → {next_host}")
+            logging.info(f"🔀 Executing {len(self.vms)} migrations with {workers} parallel workers")
 
-                # Perform migration
-                success, migration_time, error_msg = self.live_migrate_vm(vm, next_host)
+            # Execute migrations in parallel
+            with ThreadPoolExecutor(max_workers=workers) as executor:
+                # Submit all migration tasks
+                future_to_vm = {
+                    executor.submit(self._migrate_single_vm, vm): vm
+                    for vm in self.vms
+                }
 
-                # Update statistics
-                if success:
-                    self.stats.successful_migrations += 1
-                    self.stats.migration_times.append(migration_time)
-                    logging.info(f"✅ Migration completed in {migration_time:.2f}s")
-                else:
-                    self.stats.failed_migrations += 1
-                    cycle_success = False
-                    logging.error(f"❌ Migration failed: {error_msg}")
+                # Collect results
+                for future in as_completed(future_to_vm):
+                    vm = future_to_vm[future]
+                    try:
+                        success, migration_time, error_msg = future.result()
+                        if success:
+                            self.stats.successful_migrations += 1
+                            self.stats.migration_times.append(migration_time)
+                            logging.info(f"✅ {vm.name} migrated in {migration_time:.2f}s")
+                        else:
+                            self.stats.failed_migrations += 1
+                            cycle_success = False
+                            logging.error(f"❌ {vm.name} failed: {error_msg}")
+                    except Exception as e:
+                        self.stats.failed_migrations += 1
+                        cycle_success = False
+                        logging.error(f"❌ {vm.name} failed with exception: {e}")
 
-                # Refresh VM data after migration
-                self.vms[i] = self.conn.compute.get_server(vm.id)
+            # Refresh all VMs data after migrations
+            self.vms = [self.conn.compute.get_server(vm.id) for vm in self.vms]
 
             # Update cycle statistics
             cycle_duration = time.time() - cycle_start
             self.stats.cycle_times.append(cycle_duration)
             self.stats.total_cycles += 1
 
-            logging.info(f"🏁 Cycle {self.stats.total_cycles} completed in {cycle_duration:.2f}s - "
-                         f"Success: {cycle_success}")
-
+            logging.info(
+                f"🏁 Cycle {self.stats.total_cycles} completed in {cycle_duration:.2f}s - Success: {cycle_success}")
             return cycle_success
 
         except Exception as e:
             logging.error(f"❌ Cycle execution failed: {e}")
             self.stats.failed_migrations += len(self.vms)
             return False
+
+    def _migrate_single_vm(self, vm):
+        """
+        Migrate single VM and return result.
+        Helper method for parallel execution.
+        """
+        current_host = getattr(vm, 'hypervisor_hostname', 'unknown')
+        next_host = self._get_next_hypervisor(current_host)
+
+        logging.info(f"🔄 Migrating {vm.name} {current_host} → {next_host}")
+        return self.live_migrate_vm(vm, next_host)
 
     def _get_next_hypervisor(self, current_host):
         """
