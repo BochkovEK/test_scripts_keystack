@@ -350,7 +350,7 @@ class MigrationTester:
         start_time = time.time()
 
         try:
-            logging.info(f"▶️Starting live migration: {server.name} → {target_host}")
+            logging.info(f"⏩ Starting live migration: {server.name} → {target_host}")
 
             # Initiate live migration
             migration = self.conn.compute.live_migrate_server(
