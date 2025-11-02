@@ -26,7 +26,7 @@ class Config:
         self.base_dir = Path(__file__).parent.parent
         self._config = self._load_configuration(config_path)
         self._setup_paths()
-        self._ensure_directories()
+        # self._ensure_directories()
 
     def _load_configuration(self, config_path: Optional[str]) -> Dict[str, Any]:
         """
