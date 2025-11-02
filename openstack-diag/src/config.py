@@ -78,7 +78,7 @@ class Config:
 
         # Ansible paths
         self.ansible_dir = self.base_dir / "ansible"
-        self.ansible_inventory = self.config_dir / "inventory.yml"
+        self.ansible_inventory = self.config_dir / "inventory"
         self.playbooks_dir = self.ansible_dir / "playbooks"
 
     def get_log_path(self, component: str) -> Path:
