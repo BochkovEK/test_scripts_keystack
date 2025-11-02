@@ -82,8 +82,8 @@ def test_environment_overrides():
     from config import Config
     test_config = Config()
 
-    print(f"✓ Custom log dir: {test_config.log_dir}")
-    print(f"✓ Custom log level: {test_config.log_level}")
+    print(f"✓ Custom log dir: OPENSTACK_DIAG_LOG_DIR={os.environ['OPENSTACK_DIAG_LOG_DIR']} {test_config.log_dir}")
+    print(f"✓ Custom log level: OPENSTACK_DIAG_LOG_LEVEL={os.environ['OPENSTACK_DIAG_LOG_LEVEL']} {test_config.log_level}")
 
     # Cleanup
     del os.environ['OPENSTACK_DIAG_LOG_DIR']
