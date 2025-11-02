@@ -1,0 +1,14 @@
+openstack-diag/
+├── src/
+│   ├── __init__.py
+│   ├── main.py              # Точка входа
+│   ├── config.py            # Конфигурация и пути
+│   ├── logger.py            # Настройка логгера
+│   └── ansible_runner.py    # Базовый Ansible runner
+├── ansible/
+│   ├── playbooks/
+│   │   └── containers.yml   # Первый плейбук
+├── config/
+│   ├── default_config.yaml
+│   └── inventory
+└── README.md
