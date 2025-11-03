@@ -3,6 +3,12 @@ paths:
   reports_dir: "./reports"        # отчёты в директории проекта
   log_dir: "/tmp"                 # логи в системном /tmp
 
+logging:
+  level: "INFO"           # общий уровень
+  console_output: true    # вывод в консоль
+  file_output: true       # вывод в файл
+  color_output: true      # цветной вывод
+
 nodes:
   controllers: ["controller01"]
   computes: ["compute01", "compute02"]
