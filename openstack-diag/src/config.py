@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 import yaml
 
-from .default_config import DEFAULT_CONFIG
+from default_config import DEFAULT_CONFIG
 
 
 class Config:
