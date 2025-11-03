@@ -115,7 +115,7 @@ def test_singleton_pattern():
 
 def main():
     """Run all tests"""
-    print("Testing OpenStack Diagnostics Config Module\n")
+    print("Testing OpenStack Diagnostics Config script\n")
 
     try:
         test_basic_config()
@@ -135,3 +135,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
