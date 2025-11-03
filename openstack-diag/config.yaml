@@ -1,0 +1,17 @@
+paths:
+  inventory: "./inventory.ini"    # inventory в корне проекта (рядом с config.yaml)
+  reports_dir: "./reports"        # отчёты в директории проекта
+  log_dir: "/tmp"                 # логи в системном /tmp
+
+nodes:
+  controllers: ["controller01"]
+  computes: ["compute01", "compute02"]
+
+services:
+  containers: {enabled: true, timeout: 60}
+  keystone: {enabled: true, timeout: 30}
+  # ...
+
+thresholds:
+  container_restarts: 10
+  # ...

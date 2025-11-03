@@ -1,14 +1,21 @@
 openstack-diag/
+├── ansible/
+│   ├── ansible.cfg             # настройки Ansible: timeout, forks, gather_facts
+│   └── playbooks/
+│       └── containers.yml      # плейбуки диагностики
 ├── src/
 │   ├── __init__.py
-│   ├── main.py              # Точка входа
-│   ├── config.py            # Конфигурация и пути
-│   ├── logger.py            # Настройка логгера
-│   └── ansible_runner.py    # Базовый Ansible runner
-├── ansible/
-│   ├── playbooks/
-│   │   └── containers.yml   # Первый плейбук
-├── config/
-│   ├── default_config.yaml
-│   └── inventory
-└── README.md
+│   ├── config.py               # загрузка и управление конфигурацией
+│   ├── default_config.py       # системные настройки (архитектура проекта)
+│   ├── logger.py               # настройка логирования
+│   └── ansible_runner.py       # запуск Ansible плейбуков
+├── reports/                    # генерируемые отчёты (создаётся автоматически)
+│
+├── inventory.ini.template      # шаблон инвентори
+├── inventory.ini               # пользовательский инвентори (в .gitignore)
+├── config.yaml                 # пользовательский конфиг: paths, nodes, services, thresholds
+├── diagnose.py                 # основная точка входа
+├── test_config.py              # тесты конфигурации
+├── README.md                   # документация
+├── .gitignore                  # inventory.ini, reports/, логи
+└── requirements.txt            # зависимости Python

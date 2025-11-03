@@ -1,6 +1,6 @@
 """
 Configuration management for OpenStack Diagnostics
-Handles paths, settings, and environment variables
+Centralized configuration loader and path manager
 """
 
 import os
@@ -9,100 +9,107 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 import yaml
 
+from .default_config import DEFAULT_CONFIG
+
 
 class Config:
     """
-    Central configuration management for OpenStack diagnostics
-    Loads settings from default config, user config, environment variables
+    Main configuration class for OpenStack diagnostics
+    Handles configuration loading and path resolution
     """
 
-    def __init__(self, config_path: Optional[str] = None):
+    def __init__(self,
+                 config_path: Optional[str] = None,
+                 inventory_path: Optional[str] = None,
+                 log_dir: Optional[str] = None,
+                 reports_dir: Optional[str] = None):
         """
-        Initialize configuration
+        Initialize configuration with optional path overrides
 
         Args:
-            config_path: Optional path to user configuration file
+            config_path: Optional path to main configuration file
+            inventory_path: Optional path to inventory file
+            log_dir: Optional path to log directory
+            reports_dir: Optional path to reports directory
         """
         self.base_dir = Path(__file__).parent.parent
-        self._config = self._load_configuration(config_path)
+
+        # Store path overrides
+        self._config_path = config_path
+        self._inventory_path = inventory_path
+        self._log_dir = log_dir
+        self._reports_dir = reports_dir
+
+        # Load configuration
+        self._config = self._load_single_config()
         self._setup_paths()
-        # self._ensure_directories()
 
-    def _load_configuration(self, config_path: Optional[str]) -> Dict[str, Any]:
+    def _load_single_config(self) -> Dict[str, Any]:
         """
-        Load configuration with environment overrides
+        Load and merge configurations: default_config.py + user config.yaml
+        User config overrides default config
+
+        Returns:
+            Merged configuration dictionary
         """
-        # Load default configuration
-        default_config_path = self.base_dir / "config" / "default_config.yaml"
-        with open(default_config_path, 'r') as f:
-            config = yaml.safe_load(f)
+        # Start with default configuration as base
+        config = DEFAULT_CONFIG.copy()
 
-        # COMPLETELY REPLACE with user config if provided
-        if config_path and Path(config_path).exists():
-            with open(config_path, 'r') as f:
-                config = yaml.safe_load(f)  # Полная замена
+        # Determine which user config file to use
+        if self._config_path:
+            user_config_file = Path(self._config_path)
+        else:
+            user_config_file = self.base_dir / "config.yaml"
 
-        # Apply environment overrides to the final config
-        self._apply_environment_overrides(config)
+        # If user config exists - load and override default config
+        if user_config_file.exists():
+            with open(user_config_file, 'r') as f:
+                user_config = yaml.safe_load(f)
+                # Simple top-level update - user config overrides default
+                config.update(user_config)
 
         return config
 
-    @staticmethod
-    def _apply_environment_overrides(config: Dict[str, Any]) -> None:
-        """
-        Apply environment variable overrides to configuration
-
-        Args:
-            config: Configuration dictionary to update
-        """
-        # Log directory from environment
-        if os.getenv('OPENSTACK_DIAG_LOG_DIR'):
-            config['paths']['log_dir'] = os.getenv('OPENSTACK_DIAG_LOG_DIR')
-
-        # Log level from environment
-        if os.getenv('OPENSTACK_DIAG_LOG_LEVEL'):
-            config['logging']['level'] = os.getenv('OPENSTACK_DIAG_LOG_LEVEL')
-
     def _setup_paths(self) -> None:
         """
-        Setup and validate all path configurations
+        Setup all path configurations as instance attributes
+        Resolves path priorities: direct arguments -> config file -> defaults
         """
-        paths = self._config['paths']
+        # Get paths from configuration
+        config_paths = self._config.get('paths', {})
+        project_paths = self._config.get('project_paths', {})
 
-        # Absolute paths (can be outside project)
-        self.log_dir = Path(paths['log_dir'])
+        if self._inventory_path:
+            self.inventory_path = Path(self._inventory_path)
+        else:
+            inventory_path = config_paths.get('inventory', 'inventory.ini')
+            self.inventory_path = self.base_dir / inventory_path
 
-        # Relative to project base directory
-        self.reports_dir = self.base_dir / paths['reports_dir']
-        self.config_dir = self.base_dir / "config"
+        if self._log_dir:
+            self.log_dir = Path(self._log_dir)
+        else:
+            log_dir = config_paths.get('log_dir', '/tmp')
+            self.log_dir = Path(log_dir)
 
-        # Ansible paths
-        self.ansible_dir = self.base_dir / "ansible"
-        self.ansible_inventory = self.config_dir / "inventory"
-        self.playbooks_dir = self.ansible_dir / "playbooks"
+        if self._reports_dir:
+            self.reports_dir = Path(self._reports_dir)
+        else:
+            reports_dir = config_paths.get('reports_dir', 'reports')
+            self.reports_dir = self.base_dir / reports_dir
 
-    def get_log_path(self, component: str) -> Path:
-        """
-        Generate log file path for a component
-
-        Args:
-            component: Component name (e.g., 'ansible', 'keystone')
-
-        Returns:
-            Path to log file with timestamp
-        """
-        from datetime import datetime
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{component}_{timestamp}.log"
-        return self.log_dir / filename
+        # Project structure paths (from default config - not overridable)
+        ansible_dir = project_paths.get('ansible_dir', 'ansible')
+        self.ansible_dir = self.base_dir / ansible_dir
+        playbooks_dir = project_paths.get('playbooks_dir', 'playbooks')
+        self.playbooks_dir = self.ansible_dir / playbooks_dir
 
     def get(self, key: str, default: Any = None) -> Any:
         """
         Get configuration value using dot notation
 
         Args:
-            key: Configuration key (e.g., 'logging.level')
-            default: Default value if key not found
+            key: Configuration key in dot notation (e.g., 'services.keystone.timeout')
+            default: Default value if key is not found
 
         Returns:
             Configuration value or default
@@ -117,21 +124,32 @@ class Config:
         except (KeyError, TypeError):
             return default
 
-    @property
-    def log_level(self) -> int:
+    def get_log_path(self, component: str) -> Path:
         """
-        Get log level as logging constant
+        Generate log file path for a component with timestamp
+
+        Args:
+            component: Component name (e.g., 'ansible', 'keystone')
 
         Returns:
-            logging constant (DEBUG, INFO, etc.)
+            Path to log file
         """
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"openstack-diag_{component}_{timestamp}.log"
+        return self.log_dir / filename
+
+    @property
+    def log_level(self) -> int:
+        """Get log level as logging constant"""
         level_map = {
             'DEBUG': logging.DEBUG,
             'INFO': logging.INFO,
             'WARNING': logging.WARNING,
             'ERROR': logging.ERROR
         }
-        return level_map.get(self.get('logging.level'), logging.INFO)
+        level_str = self.get('logging.level', 'INFO')
+        return level_map.get(level_str, logging.INFO)
 
     @property
     def nodes(self) -> Dict[str, list]:
@@ -153,41 +171,29 @@ class Config:
         """Get Ansible execution timeout"""
         return self.get('ansible.timeout', 300)
 
-    def validate(self) -> bool:
-        """
-        Validate configuration
-
-        Returns:
-            True if configuration is valid
-        """
-        # Check if inventory file exists
-        if not self.ansible_inventory.exists():
-            logging.warning(f"Inventory file not found: {self.ansible_inventory}")
-            return False
-
-        # Check if playbooks directory exists
-        if not self.playbooks_dir.exists():
-            logging.warning(f"Playbooks directory not found: {self.playbooks_dir}")
-            return False
-
-        return True
-
 
 # Global configuration instance
 _config_instance: Optional[Config] = None
 
 
-def get_config(config_path: Optional[str] = None) -> Config:
+def get_config(config_path: Optional[str] = None,
+               inventory_path: Optional[str] = None,
+               log_dir: Optional[str] = None,
+               reports_dir: Optional[str] = None) -> Config:
     """
     Get or create global configuration instance
 
     Args:
         config_path: Optional path to configuration file
+        inventory_path: Optional path to inventory file
+        log_dir: Optional path to log directory
+        reports_dir: Optional path to reports directory
 
     Returns:
         Config instance
     """
     global _config_instance
     if _config_instance is None:
-        _config_instance = Config(config_path)
+        _config_instance = Config(config_path, inventory_path, log_dir, reports_dir)
     return _config_instance
+
