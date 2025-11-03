@@ -60,6 +60,7 @@ class DiagnosticsLogger:
             # Initialize configuration and logger
             self.config = Config()
             self.logger = None
+            self.file_handlers = {}  # Cache for file handlers by component
             self._setup_logger()
             self._initialized = True
 
@@ -112,11 +113,11 @@ class DiagnosticsLogger:
 
         return handlers
 
-    def _create_file_handler(self, fmt: str, date_fmt: str) -> logging.Handler:
-        """Create and configure file handler for log files."""
+    def _create_file_handler(self, component: str, fmt: str, date_fmt: str) -> logging.Handler:
+        """Create and configure file handler for specific component."""
 
-        # Get full log file path from config
-        log_file = self.config.get_log_path()
+        # Get component-specific log file path
+        log_file = self.config.get_log_path(component)
 
         # Create file handler
         handler = logging.FileHandler(
@@ -156,7 +157,7 @@ class DiagnosticsLogger:
 
     def get_logger(self, name: Optional[str] = None) -> logging.Logger:
         """
-        Get logger instance for module.
+        Get logger instance for components.
 
         Args:
             name: Module name (usually __name__)
