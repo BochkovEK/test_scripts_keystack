@@ -29,8 +29,7 @@ def test_config_and_logger_integration():
         temp_path = Path(temp_dir)
 
         try:
-        # Test 1: Create config with custom temp directory
-
+            # Test 1: Create config with custom temp directory
             print(f"\n1. Creating config with temp directory: {temp_path}")
             config = Config(log_dir=str(temp_path))
 
@@ -61,13 +60,6 @@ def test_config_and_logger_integration():
             ansible_logger.debug("Ansible DEBUG message - should be in console and file")
             ansible_logger.info("Ansible INFO message - should be in console and file")
 
-            # Force flush all log handlers
-            print("\n   Flushing log handlers...")
-            for handler in diag_logger.handlers:
-                handler.flush()
-            for handler in ansible_logger.handlers:
-                handler.flush()
-
             # Test 3: Verify log files were created
             print("\n3. Verifying log files creation:")
             diag_exists = diag_log_path.exists()
@@ -82,6 +74,13 @@ def test_config_and_logger_integration():
             if not ansible_exists:
                 errors.append("ansible.log was not created")
                 test_passed = False
+
+            # Force flush all log handlers
+            print("\n   Flushing log handlers...")
+            for handler in diag_logger.handlers:
+                handler.flush()
+            for handler in ansible_logger.handlers:
+                handler.flush()
 
             # Test 4: Verify log content
             print("\n4. Verifying log content:")
