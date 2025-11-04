@@ -28,6 +28,21 @@ def test_config_and_logger_integration():
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
 
+        print(f"\n1. Creating config with temp directory: {temp_path}")
+
+        # ДИАГНОСТИКА: что передаем и что получаем
+        print(f"   - Requested log_dir: {temp_path}")
+        config = Config(log_dir=str(temp_path))
+        print(f"   - Config actual log_dir: {config.log_dir}")
+        print(f"   - get_log_path('diagnostics'): {config.get_log_path('diagnostics')}")
+
+        # Проверим пути ДО создания логгеров
+        diag_log_path = config.get_log_path('diagnostics')
+        ansible_log_path = config.get_log_path('ansible')
+        print(f"   - diagnostics log path: {diag_log_path}")
+        print(f"   - ansible log path: {ansible_log_path}")
+        print(f"   - Path exists before logging: {diag_log_path.exists()}")
+
         try:
             # Test 1: Create config with custom temp directory
             print(f"\n1. Creating config with temp directory: {temp_path}")
