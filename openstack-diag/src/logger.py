@@ -35,17 +35,17 @@ class ColorFormatter(logging.Formatter):
 # Global caches
 _file_handlers = {}
 _console_handler = None
-_config = Config()
+_config = None
 
 
-def _get_file_handler(component: str, level: str) -> logging.Handler:
+def _get_file_handler(component: str, level: str, config: Optional[Config] = None) -> logging.Handler:
     """Get or create file handler for component."""
-    print(f"DEBUG: Creating file handler for {component} at level {level}")
+    if config is None:
+        config = Config()
+
     if component not in _file_handlers:
-        log_file = _config.get_log_path(component)
-        print(f"DEBUG: Log file path: {log_file}")
+        log_file = config.get_log_path(component)
         handler = logging.FileHandler(filename=log_file, encoding='utf-8')
-        print(f"DEBUG: FileHandler created: {handler}")
         handler.setLevel(getattr(logging, level))
 
         formatter = logging.Formatter(
@@ -58,50 +58,47 @@ def _get_file_handler(component: str, level: str) -> logging.Handler:
     return _file_handlers[component]
 
 
-def _get_console_handler(level: str) -> Optional[logging.Handler]:
+def _get_console_handler(level: str, config: Optional[Config] = None) -> Optional[logging.Handler]:
     """Get or create console handler."""
-    global _console_handler
+    if config is None:
+        config = Config()
 
-    console_enabled = _config.get('logging.console_output', True)
+    console_enabled = config.get('logging.console_output', True)
     if not console_enabled:
         return None
 
-    if _console_handler is None or _console_handler.level != getattr(logging, level):
-        handler = logging.StreamHandler(sys.stdout)
-        handler.setLevel(getattr(logging, level))
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(getattr(logging, level))
 
-        color_enabled = _config.get('logging.color_output', True)
-        if sys.stdout.isatty() and color_enabled:
-            formatter = ColorFormatter(
-                '%(asctime)s | %(levelname)-8s | %(message)s',
-                '%Y-%m-%d %H:%M:%S'
-            )
-        else:
-            formatter = logging.Formatter(
-                '%(asctime)s | %(levelname)-8s | %(message)s',
-                '%Y-%m-%d %H:%M:%S'
-            )
+    color_enabled = config.get('logging.color_output', True)
+    if sys.stdout.isatty() and color_enabled:
+        formatter = ColorFormatter(
+            '%(asctime)s | %(levelname)-8s | %(message)s',
+            '%Y-%m-%d %H:%M:%S'
+        )
+    else:
+        formatter = logging.Formatter(
+            '%(asctime)s | %(levelname)-8s | %(message)s',
+            '%Y-%m-%d %H:%M:%S'
+        )
 
-        handler.setFormatter(formatter)
-        _console_handler = handler
-
-    return _console_handler
+    handler.setFormatter(formatter)
+    return handler
 
 
-def get_diagnostics_logger(name: str) -> logging.Logger:
+def get_diagnostics_logger(name: str, config: Optional[Config] = None) -> logging.Logger:
     """Get logger for diagnostics (console=INFO, file=DEBUG)."""
-    print(f"DEBUG: Creating diagnostics logger: {name}")
+    if config is None:
+        config = Config()
+
     logger = logging.getLogger(f"openstack_diag.diagnostics.{name}")
 
-    # Clear existing handlers
     for handler in logger.handlers[:]:
         logger.removeHandler(handler)
 
-    # Add handlers
-    logger.addHandler(_get_file_handler('diagnostics', 'DEBUG'))
-    print(f"DEBUG: Logger handlers: {logger.handlers}")
+    logger.addHandler(_get_file_handler('diagnostics', 'DEBUG', config))
 
-    console_handler = _get_console_handler('INFO')
+    console_handler = _get_console_handler('INFO', config)
     if console_handler:
         logger.addHandler(console_handler)
 
@@ -110,23 +107,23 @@ def get_diagnostics_logger(name: str) -> logging.Logger:
     return logger
 
 
-def get_ansible_logger(name: str) -> logging.Logger:
+def get_ansible_logger(name: str, config: Optional[Config] = None) -> logging.Logger:
     """Get logger for ansible (console=DEBUG, file=DEBUG)."""
+    if config is None:
+        config = Config()
+
     logger = logging.getLogger(f"openstack_diag.ansible.{name}")
 
-    # Clear existing handlers
     for handler in logger.handlers[:]:
         logger.removeHandler(handler)
 
-    # Add handlers
-    logger.addHandler(_get_file_handler('ansible', 'DEBUG'))
+    logger.addHandler(_get_file_handler('ansible', 'DEBUG', config))
 
-    console_handler = _get_console_handler('DEBUG')
+    console_handler = _get_console_handler('DEBUG', config)
     if console_handler:
         logger.addHandler(console_handler)
 
     logger.setLevel(logging.DEBUG)
     logger.propagate = False
     return logger
-
 
