@@ -126,17 +126,15 @@ class Config:
 
     def get_log_path(self, component: str) -> Path:
         """
-        Generate log file path for a component with timestamp
+        Generate log file path for a component
 
         Args:
-            component: Component name (e.g., 'ansible', 'keystone')
+            component: Component name (e.g., 'diagnostics', 'ansible')
 
         Returns:
-            Path to log file
+            Path to log file with fixed name
         """
-        from datetime import datetime
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"openstack-diag_{component}_{timestamp}.log"
+        filename = f"{component}.log"  # diagnostics.log, ansible.log
         return self.log_dir / filename
 
     @property
