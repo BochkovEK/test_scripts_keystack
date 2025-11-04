@@ -40,9 +40,12 @@ _config = Config()
 
 def _get_file_handler(component: str, level: str) -> logging.Handler:
     """Get or create file handler for component."""
+    print(f"DEBUG: Creating file handler for {component} at level {level}")
     if component not in _file_handlers:
         log_file = _config.get_log_path(component)
+        print(f"DEBUG: Log file path: {log_file}")
         handler = logging.FileHandler(filename=log_file, encoding='utf-8')
+        print(f"DEBUG: FileHandler created: {handler}")
         handler.setLevel(getattr(logging, level))
 
         formatter = logging.Formatter(
@@ -87,6 +90,7 @@ def _get_console_handler(level: str) -> Optional[logging.Handler]:
 
 def get_diagnostics_logger(name: str) -> logging.Logger:
     """Get logger for diagnostics (console=INFO, file=DEBUG)."""
+    print(f"DEBUG: Creating diagnostics logger: {name}")
     logger = logging.getLogger(f"openstack_diag.diagnostics.{name}")
 
     # Clear existing handlers
@@ -95,6 +99,7 @@ def get_diagnostics_logger(name: str) -> logging.Logger:
 
     # Add handlers
     logger.addHandler(_get_file_handler('diagnostics', 'DEBUG'))
+    print(f"DEBUG: Logger handlers: {logger.handlers}")
 
     console_handler = _get_console_handler('INFO')
     if console_handler:
