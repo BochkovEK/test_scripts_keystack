@@ -25,10 +25,11 @@ def test_config_and_logger_integration():
     test_passed = True
     errors = []
 
-    try:
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_path = Path(temp_dir)
+
+        try:
         # Test 1: Create config with custom temp directory
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_path = Path(temp_dir)
 
             print(f"\n1. Creating config with temp directory: {temp_path}")
             config = Config(log_dir=str(temp_path))
@@ -130,9 +131,9 @@ def test_config_and_logger_integration():
             # Final flush
             logging.shutdown()
 
-    except Exception as e:
-        test_passed = False
-        errors.append(f"Test crashed with exception: {e}")
+        except Exception as e:
+            test_passed = False
+            errors.append(f"Test crashed: {e}")
 
     print("\n" + "=" * 60)
 
