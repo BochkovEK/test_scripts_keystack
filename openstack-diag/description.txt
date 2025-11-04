@@ -19,3 +19,16 @@ openstack-diag/
 ├── README.md                   # документация
 ├── .gitignore                  # inventory.ini, reports/, логи
 └── requirements.txt            # зависимости Python
+
+logger.py
+
+Основной логгер - для diagnose.py, config.py
+- Консоль: INFO
+- Файл: DEBUG (diagnostics.log)
+
+Ansible логгер - для ansible_runner.py
+- Консоль: DEBUG
+- Файл: DEBUG (ansible.log)
+
+Report логгер - для отчетов
+- Файл: INFO (reports.log)

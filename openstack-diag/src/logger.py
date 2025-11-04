@@ -1,211 +1,127 @@
+"""
+Logging module for OpenStack Diagnostics.
+Provides simple logging interface for different components.
+"""
+
 import logging
 import sys
-import os
-from typing import Optional, Dict, Any
-from pathlib import Path
+from typing import Optional
 
-# Import configuration
 from config import Config
 
 
 class ColorFormatter(logging.Formatter):
     """Custom formatter for colored console output."""
 
-    # ANSI color codes
     COLORS = {
-        'DEBUG': '\033[36m',  # Cyan
-        'INFO': '\033[32m',  # Green
-        'WARNING': '\033[33m',  # Yellow
-        'ERROR': '\033[31m',  # Red
-        'CRITICAL': '\033[41m',  # Red background
-        'RESET': '\033[0m'  # Reset
+        'DEBUG': '\033[36m',      # Cyan
+        'INFO': '\033[32m',       # Green
+        'WARNING': '\033[33m',    # Yellow
+        'ERROR': '\033[31m',      # Red
+        'CRITICAL': '\033[41m',   # Red background
+        'RESET': '\033[0m'        # Reset
     }
 
     def format(self, record):
         """Format log record with colors for terminal output."""
-        # Add colors only for terminal output
         if sys.stdout.isatty():
-            level_name = record.level_name
-            if level_name in self.COLORS:
-                record.level_name = (f"{self.COLORS[level_name]}{level_name}"
-                                     f"{self.COLORS['RESET']}")
-                record.msg = (f"{self.COLORS[level_name]}{record.msg}"
-                              f"{self.COLORS['RESET']}")
-
-        # Use parent class formatting logic
+            levelname = record.levelname
+            if levelname in self.COLORS:
+                record.levelname = f"{self.COLORS[levelname]}{levelname}{self.COLORS['RESET']}"
+                record.msg = f"{self.COLORS[levelname]}{record.msg}{self.COLORS['RESET']}"
         return super().format(record)
 
 
-class DiagnosticsLogger:
-    """
-    Main logging class for OpenStack Diagnostics.
+# Global caches
+_file_handlers = {}
+_console_handler = None
+_config = Config()
 
-    Implements Singleton pattern to ensure single logging configuration
-    across the entire application.
-    """
 
-    # Class variables for Singleton pattern
-    _instance = None
-    _initialized = False
+def _get_file_handler(component: str, level: str) -> logging.Handler:
+    """Get or create file handler for component."""
+    if component not in _file_handlers:
+        log_file = _config.get_log_path(component)
+        handler = logging.FileHandler(filename=log_file, encoding='utf-8')
+        handler.setLevel(getattr(logging, level))
 
-    def __new__(cls):
-        """Singleton pattern implementation - control instance creation."""
-        if cls._instance is None:
-            cls._instance = super(DiagnosticsLogger, cls).__new__(cls)
-        return cls._instance
-
-    def __init__(self):
-        """Initialize logger instance only once."""
-        if not self._initialized:
-            # Initialize configuration and logger
-            self.config = Config()
-            self.logger = None
-            self.file_handlers = {}  # Cache for file handlers by component
-            self._setup_logger()
-            self._initialized = True
-
-    def _setup_logger(self) -> None:
-        """Configure the root logger for the application."""
-
-        # Create root logger with maximum level
-        self.logger = logging.getLogger('openstack_diag')
-        self.logger.setLevel(logging.DEBUG)
-
-        # Prevent log propagation to avoid duplicate records
-        self.logger.propagate = False
-
-        # Clear any existing handlers
-        for handler in self.logger.handlers[:]:
-            self.logger.removeHandler(handler)
-
-        # Create and add new handlers
-        handlers = self._create_handlers()
-        for handler in handlers:
-            self.logger.addHandler(handler)
-
-    def _create_handlers(self) -> list:
-        """Create and configure log handlers based on configuration."""
-        handlers = []
-
-        # Define log formats
-        detailed_format = (
-            '%(asctime)s | %(name)s | %(levelname)-8s | '
-            '%(filename)s:%(lineno)d | %(message)s'
+        formatter = logging.Formatter(
+            '%(asctime)s | %(name)s | %(levelname)-8s | %(filename)s:%(lineno)d | %(message)s',
+            '%Y-%m-%d %H:%M:%S'
         )
-        simple_format = '%(asctime)s | %(levelname)-8s | %(message)s'
-        date_format = '%Y-%m-%d %H:%M:%S'
-
-        # Create file handler if enabled
-        file_enabled = self.config.get('logging.file_output', True)
-        if file_enabled:
-            file_handler = self._create_file_handler(
-                detailed_format, date_format
-            )
-            handlers.append(file_handler)
-
-        # Create console handler if enabled
-        console_enabled = self.config.get('logging.console_output', True)
-        if console_enabled:
-            console_handler = self._create_console_handler(
-                simple_format, date_format
-            )
-            handlers.append(console_handler)
-
-        return handlers
-
-    def _create_file_handler(self, component: str, fmt: str, date_fmt: str) -> logging.Handler:
-        """Create and configure file handler for specific component."""
-
-        # Get component-specific log file path
-        log_file = self.config.get_log_path(component)
-
-        # Create file handler
-        handler = logging.FileHandler(
-            filename=log_file,
-            encoding='utf-8'
-        )
-
-        # Set log level from config
-        log_level = self.config.get('logging.level', 'INFO')
-        handler.setLevel(getattr(logging, log_level))
-
-        # Create and set formatter
-        formatter = logging.Formatter(fmt, date_fmt)
         handler.setFormatter(formatter)
+        _file_handlers[component] = handler
 
-        return handler
+    return _file_handlers[component]
 
-    def _create_console_handler(self, fmt: str, date_fmt: str) -> logging.Handler:
-        """Create and configure console handler for terminal output."""
 
-        # Create console handler (stdout)
+def _get_console_handler(level: str) -> Optional[logging.Handler]:
+    """Get or create console handler."""
+    global _console_handler
+
+    console_enabled = _config.get('logging.console_output', True)
+    if not console_enabled:
+        return None
+
+    if _console_handler is None or _console_handler.level != getattr(logging, level):
         handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(getattr(logging, level))
 
-        # Set log level from config
-        log_level = self.config.get('logging.level', 'INFO')
-        handler.setLevel(getattr(logging, log_level))
-
-        # Use color formatter for terminals if enabled in config
-        color_enabled = self.config.get('logging.color_output', True)
+        color_enabled = _config.get('logging.color_output', True)
         if sys.stdout.isatty() and color_enabled:
-            formatter = ColorFormatter(fmt, date_fmt)
+            formatter = ColorFormatter(
+                '%(asctime)s | %(levelname)-8s | %(message)s',
+                '%Y-%m-%d %H:%M:%S'
+            )
         else:
-            formatter = logging.Formatter(fmt, date_fmt)
+            formatter = logging.Formatter(
+                '%(asctime)s | %(levelname)-8s | %(message)s',
+                '%Y-%m-%d %H:%M:%S'
+            )
 
         handler.setFormatter(formatter)
-        return handler
+        _console_handler = handler
 
-    def get_logger(self, name: Optional[str] = None) -> logging.Logger:
-        """
-        Get logger instance for components.
-
-        Args:
-            name: Module name (usually __name__)
-
-        Returns:
-            Configured logger instance
-        """
-        if name:
-            return self.logger.getChild(name)
-        return self.logger
+    return _console_handler
 
 
-# Global logger instance for application-wide use
-diag_logger = DiagnosticsLogger()
+def get_diagnostics_logger(name: str) -> logging.Logger:
+    """Get logger for diagnostics (console=INFO, file=DEBUG)."""
+    logger = logging.getLogger(f"openstack_diag.diagnostics.{name}")
+
+    # Clear existing handlers
+    for handler in logger.handlers[:]:
+        logger.removeHandler(handler)
+
+    # Add handlers
+    logger.addHandler(_get_file_handler('diagnostics', 'DEBUG'))
+
+    console_handler = _get_console_handler('INFO')
+    if console_handler:
+        logger.addHandler(console_handler)
+
+    logger.setLevel(logging.DEBUG)
+    logger.propagate = False
+    return logger
 
 
-def get_logger(name: Optional[str] = None) -> logging.Logger:
-    """
-    Factory function to get logger instance.
+def get_ansible_logger(name: str) -> logging.Logger:
+    """Get logger for ansible (console=DEBUG, file=DEBUG)."""
+    logger = logging.getLogger(f"openstack_diag.ansible.{name}")
 
-    Simplified interface for getting configured logger.
+    # Clear existing handlers
+    for handler in logger.handlers[:]:
+        logger.removeHandler(handler)
 
-    Args:
-        name: Module name (usually __name__)
+    # Add handlers
+    logger.addHandler(_get_file_handler('ansible', 'DEBUG'))
 
-    Returns:
-        Configured logger instance
-    """
-    return diag_logger.get_logger(name)
+    console_handler = _get_console_handler('DEBUG')
+    if console_handler:
+        logger.addHandler(console_handler)
 
-
-# Example usage and testing
-if __name__ == "__main__":
-    logger = get_logger(__name__)
-
-    # Test different log levels
-    logger.debug("Debug message - detailed information")
-    logger.info("Info message - general information")
-    logger.warning("Warning message - something unexpected")
-    logger.error("Error message - operation failed")
-    logger.critical("Critical message - severe error")
-
-    # Test logging with exception
-    try:
-        result = 1 / 0
-    except Exception as e:
-        logger.error("Error during operation: %s", e, exc_info=True)
-
-
+    logger.setLevel(logging.DEBUG)
+    logger.propagate = False
+    return logger
 
 
