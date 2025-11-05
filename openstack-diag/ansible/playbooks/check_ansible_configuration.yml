@@ -3,13 +3,12 @@
   hosts: localhost
   gather_facts: false
   tasks:
-    - name: Show Ansible configuration variables
+    - name: Show actual Ansible configuration vars
       debug:
         msg: |
-          ansible_forks: {{ ansible_forks }}
-          ansible_timeout: {{ ansible_timeout }}
-          ansible_gather_facts: {{ ansible_gather_facts }}
-          ansible_host_key_checking: {{ ansible_host_key_checking }}
-          ansible_become: {{ ansible_become }}
-          ansible_become_method: {{ ansible_become_method }}
+          forks: {{ ansible_connection }}
+          timeout: {{ ansible_timeout }}
+          become: {{ ansible_become }}
+          become_method: {{ ansible_become_method }}
+          become_user: {{ ansible_become_user }}
 #  hosts: control[0]
