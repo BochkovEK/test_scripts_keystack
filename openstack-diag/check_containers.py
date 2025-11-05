@@ -65,25 +65,72 @@ class ContainerAnalyzer:
         """Parse Ansible task output with node information"""
         results = []
 
-        # Split by node results
-        node_blocks = re.split(r'(ok|failed):\s*\[(.*?)\]\s*=>', output)
+        # Ищем все блоки с выводом контейнеров по узлам
+        lines = output.split('\n')
+        i = 0
 
-        for i in range(1, len(node_blocks), 3):
-            status = node_blocks[i]  # 'ok' or 'failed'
-            node = node_blocks[i + 1]  # node name
-            content = node_blocks[i + 2]  # JSON content
+        while i < len(lines):
+            line = lines[i]
 
-            if status == 'ok' and 'containers_json.stdout' in content:
-                # Extract JSON array from the content
-                json_match = re.search(r'"containers_json\.stdout":\s*(\[.*?\])', content, re.DOTALL)
-                if json_match:
-                    try:
-                        containers_data = json.loads(json_match.group(1))
+            # Ищем начало блока с контейнерами для узла
+            if line.strip().startswith('ok: [') and 'containers_json.stdout' in line:
+                node = line.split('[', 1)[1].split(']', 1)[0]  # Извлекаем имя узла
+
+                # Ищем начало JSON массива
+                json_start = i
+                bracket_count = 0
+                json_found = False
+
+                for j in range(i, min(i + 10, len(lines))):  # Ищем в следующих 10 строках
+                    if '[' in lines[j]:
+                        json_start = j
+                        json_found = True
+                        break
+
+                if not json_found:
+                    i += 1
+                    continue
+
+                # Собираем полный JSON до закрывающей скобки
+                json_lines = []
+                bracket_count = 0
+                in_json = False
+
+                for j in range(json_start, len(lines)):
+                    current_line = lines[j]
+
+                    for char in current_line:
+                        if char == '[':
+                            bracket_count += 1
+                            in_json = True
+                        elif char == ']':
+                            bracket_count -= 1
+
+                    json_lines.append(current_line)
+
+                    if bracket_count == 0 and in_json:
+                        break
+
+                json_content = '\n'.join(json_lines)
+
+                # Пытаемся найти и распарсить JSON
+                try:
+                    # Ищем JSON массив в собранных строках
+                    json_match = re.search(r'\[\s*\{.*\}\s*\]', json_content, re.DOTALL)
+                    if json_match:
+                        json_str = json_match.group(0)
+                        containers_data = json.loads(json_str)
+
                         for container in containers_data:
                             container_status = self._analyze_container(node, container)
                             results.append(container_status)
-                    except json.JSONDecodeError as e:
-                        self.logger.error(f"Failed to parse JSON for node {node}: {e}")
+
+                except (json.JSONDecodeError, AttributeError) as e:
+                    self.logger.error(f"Failed to parse JSON for node {node}: {e}")
+                    # Логируем начало проблемного JSON для отладки
+                    self.logger.debug(f"Problematic JSON start: {json_content[:500]}")
+
+            i += 1
 
         return results
 
