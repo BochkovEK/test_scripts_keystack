@@ -91,8 +91,8 @@ class OpenStackDiagnostics:
             print("=" * 80)
 
             # Then try to parse
-            container_checks = self._parse_container_status(ansible_result['stdout'])
-            results.extend(container_checks)
+            # container_checks = self._parse_container_status(ansible_result['stdout'])
+            # results.extend(container_checks)
 
         except Exception as e:
             self.logger.error(f"Container check failed: {e}")
