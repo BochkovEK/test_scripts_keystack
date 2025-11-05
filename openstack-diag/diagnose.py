@@ -35,45 +35,6 @@ class CheckResult:
     duration: float = 0.0
 
 
-def _extract_json_from_output(ansible_output: str) -> Optional[Any]:
-    """
-    Extract JSON data from Ansible command output using json module
-
-    Returns:
-        JSON data or None if not found
-    """
-
-    try:
-        # Method 1: Try to parse entire output as JSON
-        try:
-            return json.loads(ansible_output)
-        except json.JSONDecodeError:
-            pass
-
-        # Method 2: Look for JSON in containers_json.stdout lines
-        lines = ansible_output.split('\n')
-        for i, line in enumerate(lines):
-            if 'containers_json.stdout' in line and i + 1 < len(lines):
-                # Try to parse the next line as JSON
-                json_line = lines[i + 1].strip()
-                try:
-                    return json.loads(json_line)
-                except json.JSONDecodeError:
-                    continue
-
-        # Method 3: Find any line that contains valid JSON
-        for line in lines:
-            line = line.strip()
-            if line.startswith('[') or line.startswith('{'):
-                try:
-                    return json.loads(line)
-                except json.JSONDecodeError:
-                    continue
-
-    except Exception as e:
-        print(f"JSON extraction error: {e}")
-
-    return None
 
 
 class OpenStackDiagnostics:
@@ -155,6 +116,49 @@ class OpenStackDiagnostics:
             ))
 
         return results
+
+    def _extract_json_from_output(self, ansible_output: str) -> Optional[Any]:
+        """
+        Extract JSON from raw Ansible output with debug info
+        """
+        import json
+
+        print(f"🔍 DEBUG: Raw output preview:")
+        print(ansible_output[:1000] + "..." if len(ansible_output) > 1000 else ansible_output)
+        print("=" * 60)
+
+        try:
+            # Method 1: Look for JSON array pattern in the raw text
+            lines = ansible_output.split('\n')
+            for line in lines:
+                line = line.strip()
+                # Look for lines that start with [ and contain container data
+                if line.startswith('[') and 'Names' in line and 'Status' in line:
+                    print(f"🔍 DEBUG: Found JSON line: {line[:200]}...")
+                    try:
+                        return json.loads(line)
+                    except json.JSONDecodeError as e:
+                        print(f"❌ DEBUG: JSON decode error: {e}")
+                        continue
+
+            # Method 2: Try to find any valid JSON in the output
+            for line in lines:
+                line = line.strip()
+                if line.startswith('[') and line.endswith(']'):
+                    try:
+                        data = json.loads(line)
+                        if isinstance(data, list) and len(data) > 0 and 'Names' in data[0]:
+                            print("✅ DEBUG: Found valid containers JSON")
+                            return data
+                    except:
+                        continue
+
+            print("❌ DEBUG: No valid containers JSON found")
+
+        except Exception as e:
+            print(f"❌ DEBUG: Extraction error: {e}")
+
+        return None
 
     def _parse_container_status(self, ansible_output: str) -> List[CheckResult]:
         """
