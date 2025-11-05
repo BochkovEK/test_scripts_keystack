@@ -55,5 +55,6 @@
   become: yes
   tasks:
     - name: Get containers JSON
-      command: podman ps -a --format json
+      command: podman ps -a
+#        --format json
 #      register: containers_json
