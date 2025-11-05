@@ -5,7 +5,7 @@
   become: yes
   tasks:
     - name: List running containers
-      command: podman ps
+      command: podman ps --format json
       register: containers_json
 
     - name: Show container list
