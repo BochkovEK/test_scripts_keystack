@@ -81,29 +81,16 @@ class OpenStackDiagnostics:
             # Run container check playbook
             ansible_result = self.runner.run_playbook("check_containers.yml")
 
-            # DEBUG: Print raw Ansible output
-            print(f"🔍 RAW ANSIBLE OUTPUT:")
-            print("=" * 60)
-            print(f"Success: {ansible_result['success']}")
-            print(f"Return code: {ansible_result['return_code']}")
-            print(f"Status: {ansible_result.get('status', 'N/A')}")
-            print(f"Stdout length: {len(ansible_result['stdout'])}")
-            print(f"Stderr length: {len(ansible_result['stderr'])}")
-            print("\nSTDOUT PREVIEW:")
-            print(ansible_result['stdout'][:1000] if ansible_result['stdout'] else "EMPTY")
-            print("\nSTDERR PREVIEW:")
-            print(ansible_result['stderr'][:500] if ansible_result['stderr'] else "EMPTY")
-            print("=" * 60)
+            # DEBUG: Show COMPLETE output like the working script
+            print(f"🔍 COMPLETE ANSIBLE OUTPUT:")
+            print("=" * 80)
+            print("STDOUT:")
+            print(ansible_result['stdout'])
+            print("\nSTDERR:")
+            print(ansible_result['stderr'])
+            print("=" * 80)
 
-            if not ansible_result['success']:
-                results.append(CheckResult(
-                    name="container_status",
-                    status="error",
-                    message=f"Failed to check containers: {ansible_result['error']}"
-                ))
-                return results
-
-            # Parse container status from Ansible output
+            # Then try to parse
             container_checks = self._parse_container_status(ansible_result['stdout'])
             results.extend(container_checks)
 
@@ -117,7 +104,8 @@ class OpenStackDiagnostics:
 
         return results
 
-    def _extract_json_from_output(self, ansible_output: str) -> Optional[Any]:
+    @staticmethod
+    def _extract_json_from_output(ansible_output: str) -> Optional[Any]:
         """
         Extract JSON from raw Ansible output with debug info
         """
