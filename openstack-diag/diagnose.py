@@ -112,7 +112,7 @@ class OpenStackDiagnostics:
         import json
 
         print(f"🔍 DEBUG: Raw output preview:")
-        print(ansible_output[:1000] + "..." if len(ansible_output) > 1000 else ansible_output)
+        print(ansible_output[:50] + "..." if len(ansible_output) > 1000 else ansible_output)
         print("=" * 60)
 
         try:
