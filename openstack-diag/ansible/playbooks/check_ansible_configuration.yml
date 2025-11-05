@@ -1,14 +1,12 @@
 ---
-- name: Check Ansible configuration variables
+- name: Check Ansible configuration using ansible-config
   hosts: localhost
   gather_facts: false
   tasks:
-    - name: Show actual Ansible configuration vars
+    - name: Run ansible-config dump
+      shell: ansible-config dump --only-changed
+      register: config_dump
+
+    - name: Show effective Ansible configuration
       debug:
-        msg: |
-          forks: {{ ansible_connection }}
-          timeout: {{ ansible_timeout }}
-          become: {{ ansible_become }}
-          become_method: {{ ansible_become_method }}
-          become_user: {{ ansible_become_user }}
-#  hosts: control[0]
+        var: config_dump.stdout
