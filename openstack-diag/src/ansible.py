@@ -83,7 +83,7 @@ class Ansible:
     def get_available_playbooks(self) -> Dict[str, Path]:
         """Get dictionary of available playbooks from configured playbooks directory"""
         playbooks = {}
-        playbooks_dir = Path(self.config.playbooks_dir)  # ✅ Из конфига
+        playbooks_dir = Path(self.config.playbooks_dir)
 
         if playbooks_dir.exists():
             for pattern in ['*.yml', '*.yaml']:
