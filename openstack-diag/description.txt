@@ -26,6 +26,8 @@ openstack-diag/
 ├── .gitignore                  # inventory.ini, reports/, логи
 └── requirements.txt            # зависимости Python
 
+pip install ansible-runner
+
 logger.py
 
 Основной логгер - для diagnose.py, config.py
