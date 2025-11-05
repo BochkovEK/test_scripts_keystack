@@ -21,3 +21,10 @@ services:
 thresholds:
   container_restarts: 10
   # ...
+
+ansible:
+  forks: 20
+  gather_facts: false
+  strategy: free
+  timeout: 30
+  ssh_args: "-o ControlMaster=auto -o ControlPersist=300s"
