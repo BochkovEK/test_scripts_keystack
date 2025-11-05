@@ -7,9 +7,9 @@ from typing import Dict, List, Any
 from dataclasses import dataclass
 from pathlib import Path
 
-from config import get_config
-from logger import get_logger
-from ansible_executor import get_ansible_runner
+from .config import get_config
+from .logger import get_logger
+from .ansible_executor import get_ansible_runner
 
 logger = get_logger(__name__)
 
