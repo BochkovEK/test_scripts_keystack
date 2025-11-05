@@ -10,7 +10,7 @@
 
     - name: Show container list
       debug:
-        var: container_list.stdout
+        var: containers_json.stdout
 
 #---
 #- name: Get container information using Docker API
