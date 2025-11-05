@@ -1,3 +1,9 @@
+Создать скрипт диагностики базовых сервисов Openstack
+1) состояние контейнеров на узлах
+2) keystone
+3) mariadb (galera)
+4) rabbitmq
+
 openstack-diag/
 ├── ansible/
 │   ├── ansible.cfg             # настройки Ansible: timeout, forks, gather_facts
