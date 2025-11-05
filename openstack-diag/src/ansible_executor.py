@@ -21,6 +21,18 @@ class AnsibleExecutor:
         self.playbooks_path = self.ansible_path / 'playbooks'
         self.inventory_path = Path(__file__).parent.parent / 'inventory.ini'
 
+        # Debug: log Ansible configuration
+        logger.info("Ansible Executor configuration:")
+        logger.info(f"  - Inventory: {self.inventory_path}")
+        logger.info(f"  - Ansible path: {self.ansible_path}")
+        logger.info(f"  - Playbooks path: {self.playbooks_path}")
+
+        # Log settings from config
+        ansible_config = self.config.get('ansible', {})
+        logger.info("Ansible settings from config:")
+        for key, value in ansible_config.items():
+            logger.info(f"  - {key}: {value}")
+
         logger.info(f"Ansible Executor initialized with ansible-runner")
 
     def run_playbook(self, playbook_name: str) -> Dict[str, Any]:
