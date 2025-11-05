@@ -18,6 +18,9 @@ from config import get_config
 from logger import get_logger
 from ansible import get_ansible_runner
 
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
 
 @dataclass
 class ContainerStatus:
@@ -65,54 +68,34 @@ class ContainerAnalyzer:
         """Parse Ansible task output with node information"""
         results = []
 
-        # Разделяем вывод по строкам и ищем блоки
-        lines = output.split('\n')
-        i = 0
+        # Сначала сохраним вывод для отладки
+        self.logger.debug(f"Full output length: {len(output)} chars")
 
-        while i < len(lines):
-            line = lines[i].strip()
+        # Найдем все строки с 'ok: [' чтобы понять структуру вывода
+        ok_lines = [line for line in output.split('\n') if 'ok: [' in line]
+        self.logger.debug(f"Found {len(ok_lines)} 'ok: [' lines")
+        for line in ok_lines[:3]:  # Покажем первые 3 для примера
+            self.logger.debug(f"Sample ok line: {line[:100]}...")
 
-            # Ищем строку начала блока с контейнерами
-            if line.startswith('ok: [') and '=>' in line:
-                node = line.split('[', 1)[1].split(']', 1)[0]
+        # Ищем паттерн более гибко
+        pattern = r'ok:\s*\[([^\]]+)\].*?containers_json\.stdout.*?(\[.*?\])'
+        matches = re.findall(pattern, output, re.DOTALL)
 
-                # Ищем следующие строки до закрывающей фигурной скобки
-                json_lines = []
-                brace_count = 0
-                json_started = False
+        self.logger.debug(f"Regex found {len(matches)} matches")
 
-                for j in range(i, len(lines)):
-                    current_line = lines[j]
+        for node, json_str in matches:
+            self.logger.debug(f"Processing node: {node}, JSON length: {len(json_str)}")
+            try:
+                containers_data = json.loads(json_str)
+                self.logger.info(f"Found {len(containers_data)} containers on node {node}")
 
-                    if '"containers_json.stdout":' in current_line:
-                        json_started = True
+                for container in containers_data:
+                    container_status = self._analyze_container(node, container)
+                    results.append(container_status)
 
-                    if json_started:
-                        json_lines.append(current_line)
-
-                        # Подсчитываем фигурные скобки для нахождения конца JSON объекта
-                        brace_count += current_line.count('{') - current_line.count('}')
-
-                        if brace_count <= 0 and current_line.strip() == '}':
-                            break
-
-                # Объединяем строки и ищем JSON массив
-                block_content = '\n'.join(json_lines)
-                json_match = re.search(r'"containers_json\.stdout":\s*(\[.*?\])', block_content, re.DOTALL)
-
-                if json_match:
-                    try:
-                        json_str = json_match.group(1)
-                        containers_data = json.loads(json_str)
-
-                        for container in containers_data:
-                            container_status = self._analyze_container(node, container)
-                            results.append(container_status)
-
-                    except json.JSONDecodeError as e:
-                        self.logger.error(f"JSON parse error for node {node}: {e}")
-
-            i += 1
+            except json.JSONDecodeError as e:
+                self.logger.error(f"Failed to parse JSON for node {node}: {e}")
+                self.logger.debug(f"Problematic JSON: {json_str[:500]}...")
 
         return results
 
