@@ -58,7 +58,6 @@
 #      community.general.podman_container_info:
 #        name: all
 #      register: container_info
-    - name: Try to list containers
-      containers.podman.podman_container:
-        list: yes
-      register: containers_list
+    - name: Get containers JSON
+      command: podman ps -a --format json
+      register: containers_json
