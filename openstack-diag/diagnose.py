@@ -249,9 +249,14 @@ class OpenStackDiagnostics:
 
 
 if __name__ == "__main__":
-    # Direct execution
     diag = OpenStackDiagnostics()
     print("🚀 Starting OpenStack Diagnostics...")
-    result = diag.run_full_diagnosis()
-    print("📊 Diagnostics completed!")
+
+    container_results = diag.check_containers()
+
+    print("\n📊 CONTAINER RESULTS:")
+    for result in container_results:
+        print(f"  {result.status.upper():8} {result.name}: {result.message}")
+
+    print(f"\n📈 Total: {len(container_results)} containers checked")
 
