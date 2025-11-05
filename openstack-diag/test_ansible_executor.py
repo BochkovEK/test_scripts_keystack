@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Test script for Ansible Executor
-Test connectivity using ping module
+Test connectivity using predefined playbooks
 """
 
 import sys
@@ -14,10 +14,52 @@ sys.path.append(str(src_path))
 from config import get_config
 from ansible_executor import get_ansible_runner
 
+# Playbooks to test
+TEST_PLAYBOOKS = [
+    "ping.yml",  # Basic connectivity test
+    "check_containers.yml",  # Container status check
+    # "check_services.yml",    # Service status check
+]
 
-def test_ansible_ping():
-    """Test Ansible connectivity using ping module"""
-    print("=== Testing Ansible Executor with Ping ===")
+
+def test_playbook(playbook_name: str, runner) -> bool:
+    """Test single playbook execution"""
+    print(f"\n🔍 Testing playbook: {playbook_name}")
+
+    result = runner.run_playbook(playbook_name)
+
+    print(f"   Success: {result['success']}")
+    print(f"   Return code: {result['return_code']}")
+    print(f"   Status: {result.get('status', 'N/A')}")
+
+    if result['success']:
+        print(f"✅ {playbook_name} - PASSED")
+        if result['stdout']:
+            print(f"   Output preview: {result['stdout'][:100]}...")
+        return True
+    else:
+        print(f"❌ {playbook_name} - FAILED")
+        print(f"   Error: {result.get('error', 'Unknown error')}")
+
+        # Full error output
+        if result['stdout']:
+            print(f"\n   STDOUT:")
+            print("   " + "=" * 50)
+            print(result['stdout'])
+            print("   " + "=" * 50)
+
+        if result['stderr']:
+            print(f"\n   STDERR:")
+            print("   " + "=" * 50)
+            print(result['stderr'])
+            print("   " + "=" * 50)
+
+        return False
+
+
+def test_ansible_executor():
+    """Test Ansible executor with multiple playbooks"""
+    print("=== Testing Ansible Executor ===")
 
     # Load configuration
     config = get_config()
@@ -30,52 +72,36 @@ def test_ansible_ping():
     print("✓ Ansible executor initialized")
 
     # Test available playbooks
-    playbooks = runner.get_available_playbooks()
-    print(f"✓ Available playbooks: {playbooks}")
+    available_playbooks = runner.get_available_playbooks()
+    print(f"✓ Available playbooks: {available_playbooks}")
 
-    # Run ping test
-    print("\n🔍 Running ping test...")
-    result = runner.run_playbook("ping.yml")
+    # Run tests for each playbook
+    results = []
+    for playbook in TEST_PLAYBOOKS:
+        if playbook in available_playbooks:
+            success = test_playbook(playbook, runner)
+            results.append((playbook, success))
+        else:
+            print(f"⚠️  Playbook not found: {playbook}")
+            results.append((playbook, False))
 
-    # Run ping test
-    print("\n🔍 Running ping test...")
-    result = runner.run_playbook("check_containers.yml")
+    # Summary
+    print(f"\n📊 Test Summary:")
+    passed = sum(1 for _, success in results if success)
+    total = len(results)
 
-    print(f"✓ Playbook execution completed")
-    print(f"  Success: {result['success']}")
-    print(f"  Return code: {result['return_code']}")
-    print(f"  Status: {result.get('status', 'N/A')}")
+    for playbook, success in results:
+        status = "✅ PASS" if success else "❌ FAIL"
+        print(f"   {status} - {playbook}")
 
-    if result['success']:
-        print("✅ Ping test PASSED - all nodes are reachable")
-        if result['stdout']:
-            print(f"   Output: {result['stdout']}")
-    else:
-        print("❌ Ping test FAILED")
-        print(f"   Error: {result.get('error', 'Unknown error')}")
-
-        # Полный вывод stdout
-        if result['stdout']:
-            print(f"\n   STDOUT:")
-            print("   " + "=" * 50)
-            print(result['stdout'])
-            print("   " + "=" * 50)
-
-        # Полный вывод stderr
-        if result['stderr']:
-            print(f"\n   STDERR:")
-            print("   " + "=" * 50)
-            print(result['stderr'])
-            print("   " + "=" * 50)
-
-    return result['success']
+    return passed == total
 
 
 if __name__ == "__main__":
-    success = test_ansible_ping()
+    success = test_ansible_executor()
     if success:
         print("\n🎉 All tests passed! Ansible executor is working.")
         sys.exit(0)
     else:
-        print("\n💥 Tests failed!")
+        print("\n💥 Some tests failed!")
         sys.exit(1)
