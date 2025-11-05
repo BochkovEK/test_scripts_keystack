@@ -57,12 +57,13 @@ class Ansible:
         logger.info(f"Running playbook: {playbook_name}")
 
         try:
+            # result = ansible_runner.run(invento=foo)
             result = ansible_runner.run(
                 playbook=str(playbook_path),
                 inventory=str(self.inventory_path),
                 private_data_dir=str(self.ansible_path),
                 quiet=True,
-                ansible_cfg=str(self.ansible_cfg_path)
+                # ansible_cfg=str(self.ansible_cfg_path)
             )
 
             return {
