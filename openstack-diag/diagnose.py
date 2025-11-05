@@ -158,11 +158,11 @@ class OpenStackDiagnostics:
 
     def _parse_container_status(self, ansible_output: str) -> List[CheckResult]:
         """
-        Parse container status from Podman JSON output - SIMPLE VERSION
-        Just extract name, created, status without analysis
+        Parse container status from Podman JSON output
+        Extract name, created, status fields
 
         Returns:
-            List of CheckResult objects with basic container info
+            List of CheckResult objects with container info
         """
         results = []
 
@@ -179,36 +179,37 @@ class OpenStackDiagnostics:
             # Parse containers from JSON array
             containers = json.loads(json_data) if isinstance(json_data, str) else json_data
 
-            print(f"🔍 DEBUG: Found {len(containers)} containers")
+            print(f"🔍 Found {len(containers)} containers:")
+            print("=" * 80)
 
             for container in containers:
-                # Extract basic fields
+                # Extract fields from JSON
                 name = container.get('Names', ['unknown'])[0] if container.get('Names') else 'unknown'
                 created = container.get('CreatedAt', 'unknown')
                 status = container.get('Status', 'unknown')
-                state = container.get('State', 'unknown')
 
-                # Debug print for each container
-                print(f"   📦 {name}:")
-                print(f"      CREATED: {created}")
-                print(f"      STATUS: {status}")
-                print(f"      STATE: {state}")
+                # Print formatted output
+                print(f"📦 {name}:")
+                print(f"   CREATED: {created}")
+                print(f"   STATUS:  {status}")
+                print()
 
-                # Create simple result without analysis
+                # Store in results
                 results.append(CheckResult(
                     name=f"container_{name}",
-                    status="info",  # Informational only
-                    message=f"Container {name} - {status}",
+                    status="info",
+                    message=f"{name} - {status}",
                     details={
                         "name": name,
                         "created": created,
-                        "status": status,
-                        "state": state
+                        "status": status
                     }
                 ))
 
+            print("=" * 80)
+
         except Exception as e:
-            print(f"❌ DEBUG: Parsing error: {e}")
+            print(f"❌ Parsing error: {e}")
             return [CheckResult(
                 name="container_parsing",
                 status="error",
