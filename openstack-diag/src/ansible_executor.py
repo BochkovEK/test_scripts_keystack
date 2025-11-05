@@ -1,38 +1,34 @@
 """
-Ansible Runner Module for OpenStack Diagnostics
-Provides running Ansible playbooks and processing results
+Ansible Executor for OpenStack Diagnostics
+Uses ansible-runner library for playbook execution
 """
 
-import os
-import subprocess
-import tempfile
-import json
-from typing import Dict, List, Optional, Any, Tuple
 from pathlib import Path
+from typing import Dict, Any
+import ansible_runner
 
-from logger import get_logger
-from config import Config
+from .logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class AnsibleRunner:
-    def __init__(self, config: Config):
+class AnsibleExecutor:
+    """Ansible playbook executor using ansible-runner"""
+
+    def __init__(self, config):
         self.config = config
         self.ansible_path = Path(__file__).parent.parent / 'ansible'
         self.playbooks_path = self.ansible_path / 'playbooks'
         self.inventory_path = Path(__file__).parent.parent / 'inventory.ini'
 
-        self.playbooks_path.mkdir(parents=True, exist_ok=True)
-
-        logger.info(f"Ansible Runner initialized. Playbooks path: {self.playbooks_path}")
+        logger.info(f"Ansible Executor initialized with ansible-runner")
 
     def run_playbook(self, playbook_name: str) -> Dict[str, Any]:
         """
-        Run Ansible playbook for OpenStack diagnostics
+        Run Ansible playbook using ansible-runner
 
         Args:
-            playbook_name: Playbook name to execute
+            playbook_name: Name of playbook to run
 
         Returns:
             Dict with execution results
@@ -40,113 +36,61 @@ class AnsibleRunner:
         playbook_path = self.playbooks_path / playbook_name
 
         if not playbook_path.exists():
-            error_msg = f"Playbook not found: {playbook_path}"
-            logger.error(error_msg)
             return {
                 'success': False,
-                'error': error_msg,
-                'return_code': -1,
-                'output': ''
+                'error': f"Playbook not found: {playbook_path}",
+                'return_code': -1
             }
 
-        # Build Ansible command
-        cmd = self._build_ansible_command(playbook_path)
-
-        logger.info(f"Running Ansible playbook: {' '.join(cmd)}")
+        logger.info(f"Running playbook: {playbook_name}")
 
         try:
-            # Execute command
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                cwd=self.ansible_path
+            # Use ansible-runner
+            result = ansible_runner.run(
+                playbook=str(playbook_path),
+                inventory=str(self.inventory_path),
+                private_data_dir=str(self.ansible_path),
+                quiet=True
             )
 
-            # Parse result
-            return self._parse_ansible_result(result, playbook_name)
-
-        except Exception as e:
-            error_msg = f"Error executing playbook {playbook_name}: {str(e)}"
-            logger.error(error_msg)
             return {
-                'success': False,
-                'error': error_msg,
-                'return_code': -1,
-                'output': ''
+                'success': result.status == 'successful',
+                'return_code': result.rc,
+                'stdout': result.stdout.read() if result.stdout else '',
+                'stderr': result.stderr.read() if result.stderr else '',
+                'status': result.status
             }
 
-    def _build_ansible_command(self,
-                               playbook_path: Path,
-                               extra_vars: Optional[Dict[str, Any]],
-                               tags: Optional[List[str]],
-                               limit: Optional[str]) -> List[str]:
-        """
-        Build Ansible command
+        except Exception as e:
+            logger.error(f"Playbook execution failed: {e}")
+            return {
+                'success': False,
+                'error': str(e),
+                'return_code': -1
+            }
 
-        Returns:
-            List[str]: Command to execute
-        """
-        cmd = [
-            'ansible-playbook',
-            '-i', str(self.inventory_path),
-            str(playbook_path)
-        ]
+    def get_available_playbooks(self):
+        """Get list of available playbooks"""
+        playbooks = []
+        if self.playbooks_path.exists():
+            for file in self.playbooks_path.glob('*.yml'):
+                playbooks.append(file.name)
+            for file in self.playbooks_path.glob('*.yaml'):
+                playbooks.append(file.name)
+        return playbooks
 
-        # Add extra variables
-        if extra_vars:
-            vars_str = ' '.join([f"{k}={v}" for k, v in extra_vars.items()])
-            cmd.extend(['--extra-vars', vars_str])
 
-        # Add tags
-        if tags:
-            cmd.extend(['--tags', ','.join(tags)])
+# Global instance
+_ansible_executor = None
 
-        # Add limit
-        if limit:
-            cmd.extend(['--limit', limit])
 
-        # Add configuration parameters
-        if self.config.ansible.get('verbose', False):
-            cmd.append('-v')
+def get_ansible_runner(config=None):
+    """Get Ansible executor instance"""
+    global _ansible_executor
+    if _ansible_executor is None:
+        if config is None:
+            from .config import get_config
+            config = get_config()
+        _ansible_executor = AnsibleExecutor(config)
+    return _ansible_executor
 
-        if self.config.ansible.get('check_mode', False):
-            cmd.append('--check')
-
-        if self.config.ansible.get('diff_mode', False):
-            cmd.append('--diff')
-
-        return cmd
-
-    def _parse_ansible_result(self, result: subprocess.CompletedProcess, playbook_name: str) -> Dict[str, Any]:
-        """
-        Parse Ansible execution result
-
-        Returns:
-            Dict with structured results
-        """
-        success = result.returncode == 0
-
-        # Base result
-        ansible_result = {
-            'success': success,
-            'return_code': result.returncode,
-            'stdout': result.stdout,
-            'stderr': result.stderr,
-            'playbook': playbook_name
-        }
-
-        if success:
-            logger.info(f"Playbook {playbook_name} executed successfully")
-            ansible_result['message'] = f"Playbook {playbook_name} executed successfully"
-        else:
-            logger.error(f"Playbook {playbook_name} failed. Code: {result.returncode}")
-            ansible_result['error'] = f"Playbook failed. Code: {result.returncode}"
-            ansible_result['message'] = result.stderr or result.stdout
-
-        # Try to extract JSON output if present
-        json_output = self._extract_json_output(result.stdout)
-        if json_output:
-            ansible_result['json_output'] = json_output
-
-        return ansible_result
