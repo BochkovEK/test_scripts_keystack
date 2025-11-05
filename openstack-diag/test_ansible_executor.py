@@ -12,7 +12,7 @@ src_path = Path(__file__).parent / 'src'
 sys.path.append(str(src_path))
 
 from config import get_config
-from ansible_runner import get_ansible_runner
+from ansible_executor import get_ansible_runner
 
 
 def test_ansible_runner():
