@@ -32,29 +32,19 @@ def test_playbook(playbook_name: str, runner) -> bool:
     print(f"   Return code: {result['return_code']}")
     print(f"   Status: {result.get('status', 'N/A')}")
 
-    if result['success']:
-        print(f"✅ {playbook_name} - PASSED")
-        if result['stdout']:
-            print(f"   Output preview: {result['stdout'][:100]}...")
-        return True
-    else:
-        print(f"❌ {playbook_name} - FAILED")
-        print(f"   Error: {result.get('error', 'Unknown error')}")
+    print(f"\n   📋 FULL RAW OUTPUT:")
+    print("   " + "=" * 60)
+    if result['stdout']:
+        print("   STDOUT:")
+        print(result['stdout'])
+        print("   " + "-" * 40)
+    if result['stderr']:
+        print("   STDERR:")
+        print(result['stderr'])
+        print("   " + "-" * 40)
+    print("   " + "=" * 60)
 
-        # Full error output
-        if result['stdout']:
-            print(f"\n   STDOUT:")
-            print("   " + "=" * 50)
-            print(result['stdout'])
-            print("   " + "=" * 50)
-
-        if result['stderr']:
-            print(f"\n   STDERR:")
-            print("   " + "=" * 50)
-            print(result['stderr'])
-            print("   " + "=" * 50)
-
-        return False
+    return result['success']
 
 
 def test_ansible_executor():
