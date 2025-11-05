@@ -11,18 +11,34 @@ import json
 
 # Fix imports for direct script execution
 if __name__ == "__main__":
-    # Add src to path when running directly
-    src_path = Path(__file__).parent / 'src'
-    sys.path.insert(0, str(src_path))
+    import argparse
 
-    from config import get_config
-    from logger import get_logger
-    from ansible import get_ansible_runner
-else:
-    # Normal relative imports when used as module
-    from .config import get_config
-    from .logger import get_logger
-    from .ansible import get_ansible_runner
+    parser = argparse.ArgumentParser(description='OpenStack Diagnostics')
+    parser.add_argument('--playbook', '-p', type=str,
+                        help='Run specific playbook only',
+                        default=None)
+
+    args = parser.parse_args()
+
+    diag = OpenStackDiagnostics()
+
+    if args.playbook:
+        # Run specific playbook
+        print(f"🚀 Running specific playbook: {args.playbook}")
+        if args.playbook == "check_containers":
+            results = diag.check_containers()
+        elif args.playbook == "check_keystone":
+            results = diag.check_keystone()
+        # ... add other playbooks
+        else:
+            print(f"❌ Unknown playbook: {args.playbook}")
+            sys.exit(1)
+    else:
+        # Run full diagnosis
+        print("🚀 Starting full OpenStack Diagnostics...")
+        result = diag.run_full_diagnosis()
+
+    print("📊 Diagnostics completed!")
 
 
 @dataclass
@@ -33,8 +49,6 @@ class CheckResult:
     message: str
     details: Dict[str, Any] = None
     duration: float = 0.0
-
-
 
 
 class OpenStackDiagnostics:
