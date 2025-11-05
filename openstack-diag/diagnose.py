@@ -5,7 +5,7 @@ Coordinates all diagnostic checks and provides unified reporting
 
 import sys
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
 
 # Fix imports for direct script execution
@@ -102,126 +102,222 @@ class OpenStackDiagnostics:
 
     def _parse_container_status(self, ansible_output: str) -> List[CheckResult]:
         """
-        Parse Podman container status from Ansible output
+        Parse Podman container status from Ansible JSON output
 
         Returns:
             List of CheckResult objects with container health analysis
         """
         results = []
 
-        # Find container_list.stdout block in Ansible output
-        if "container_list.stdout" not in ansible_output:
+        try:
+            # Extract JSON data from Ansible output
+            json_data = self._extract_json_from_output(ansible_output)
+            if not json_data:
+                return [CheckResult(
+                    name="container_parsing",
+                    status="error",
+                    message="No JSON container data found in output"
+                )]
+
+            # Parse containers from JSON
+            containers = json_data.get('containers', [])
+            for container in containers:
+                name = container.get('Names', ['unknown'])[0]
+                status = container.get('Status', '')
+                state = container.get('State', '')
+                created = container.get('Created', '')
+
+                container_result = self._analyze_container_state(name, created, status, state)
+                if container_result:
+                    results.append(container_result)
+
+        except Exception as e:
             return [CheckResult(
                 name="container_parsing",
                 status="error",
-                message="No container data found in output"
+                message=f"Error parsing container JSON: {str(e)}"
             )]
-
-        # Extract container data lines
-        lines = ansible_output.split('\n')
-        container_lines = []
-
-        # Skip header and collect container data lines
-        for line in lines:
-            if "CONTAINER ID" in line:
-                continue  # Skip header line
-            if line.strip() and len(line.split()) >= 6:  # Minimum 6 columns
-                container_lines.append(line)
-
-        # Parse each container line
-        for line in container_lines:
-            parts = line.split()
-            if len(parts) < 6:
-                continue
-
-            # Extract CREATED (4th from end), STATUS (3rd from end), NAME (last)
-            created = parts[-4] + " " + parts[-3]  # "5 weeks ago"
-            status = parts[-2] + " " + parts[-1]  # "Up 7 days"
-            name = parts[-1]  # Container name
-
-            # Analyze container state
-            container_result = self._analyze_container_state(name, created, status)
-            results.append(container_result)
 
         return results
 
-    @staticmethod
-    def _analyze_container_state(name: str, created: str, status: str) -> CheckResult:
+    def _analyze_container_state(self, name: str, created: str, status: str, health: str) -> CheckResult:
         """
-        Analyze individual container state based on status and uptime
+        Analyze container state with uptime checking
 
         Returns:
             CheckResult with container health assessment
         """
-        # Analyze STATUS field
-        if status.startswith("Up"):
-            # Extract uptime from status
-            if "days" in status:
-                days = int(status.split()[1])
-                if days > 1:
-                    return CheckResult(
-                        name=f"container_{name}",
-                        status="success",
-                        message=f"Container {name} running stable ({status})",
-                        details={"status": status, "created": created, "uptime_days": days}
-                    )
-                else:
-                    return CheckResult(
-                        name=f"container_{name}",
-                        status="warning",
-                        message=f"Container {name} recently restarted ({status})",
-                        details={"status": status, "created": created, "uptime_days": days}
-                    )
+        # Analyze container status
+        if status == "running":
+            # Parse uptime from status (format: "Up 2 days", "Up 5 minutes", etc.)
+            uptime_info = self._parse_uptime_from_status(status)
 
-            elif "hours" in status:
-                hours = int(status.split()[1])
-                if hours > 1:
-                    return CheckResult(
-                        name=f"container_{name}",
-                        status="success",
-                        message=f"Container {name} running normally ({status})",
-                        details={"status": status, "created": created, "uptime_hours": hours}
-                    )
-                else:
-                    return CheckResult(
-                        name=f"container_{name}",
-                        status="warning",
-                        message=f"Container {name} very recently started ({status})",
-                        details={"status": status, "created": created, "uptime_hours": hours}
-                    )
+            if health == "unhealthy":
+                return CheckResult(
+                    name=f"container_{name}",
+                    status="error",
+                    message=f"Container {name} is running but unhealthy",
+                    details={"status": status, "health": health, "created": created, "uptime": uptime_info}
+                )
 
-            elif "minutes" in status:
-                minutes = int(status.split()[1])
-                if minutes < 2:
-                    return CheckResult(
-                        name=f"container_{name}",
-                        status="warning",
-                        message=f"Container {name} just started ({status})",
-                        details={"status": status, "created": created, "uptime_minutes": minutes}
-                    )
-                else:
-                    return CheckResult(
-                        name=f"container_{name}",
-                        status="warning",
-                        message=f"Container {name} recently started ({status})",
-                        details={"status": status, "created": created, "uptime_minutes": minutes}
-                    )
+            # Check uptime for recently started containers
+            if uptime_info and uptime_info.get('minutes', 0) < 1:
+                return CheckResult(
+                    name=f"container_{name}",
+                    status="warning",
+                    message=f"Container {name} recently started ({status})",
+                    details={"status": status, "health": health, "created": created, "uptime": uptime_info}
+                )
 
-        # Handle non-running states
-        elif status in ["Exited", "Restarting", "Unhealthy"]:
+            # Healthy and running for more than 1 minute
+            return CheckResult(
+                name=f"container_{name}",
+                status="success",
+                message=f"Container {name} is running normally ({status})",
+                details={"status": status, "health": health, "created": created, "uptime": uptime_info}
+            )
+
+        elif status == "exited":
             return CheckResult(
                 name=f"container_{name}",
                 status="error",
-                message=f"Container {name} has issues: {status}",
-                details={"status": status, "created": created, "issue": "container_failed"}
+                message=f"Container {name} is exited",
+                details={"status": status, "health": health, "created": created}
             )
 
-        # Unknown state
+        elif status == "restarting":
+            return CheckResult(
+                name=f"container_{name}",
+                status="warning",
+                message=f"Container {name} is restarting",
+                details={"status": status, "health": health, "created": created}
+            )
+
+        else:
+            return CheckResult(
+                name=f"container_{name}",
+                status="warning",
+                message=f"Container {name} in unexpected state: {status}",
+                details={"status": status, "health": health, "created": created}
+            )
+
+    @staticmethod
+    def _parse_uptime_from_status(status: str) -> Dict[str, int]:
+        """
+        Parse uptime from container status string
+
+        Returns:
+            Dict with uptime in minutes, hours, days
+        """
+        try:
+            if "Up" in status:
+                # Examples: "Up 2 days", "Up 5 minutes", "Up 1 hour"
+                parts = status.split()
+                if len(parts) >= 3:
+                    value = int(parts[1])
+                    unit = parts[2].lower()
+
+                    # Convert to minutes for easy comparison
+                    if "minute" in unit:
+                        return {"minutes": value, "hours": 0, "days": 0}
+                    elif "hour" in unit:
+                        return {"minutes": value * 60, "hours": value, "days": 0}
+                    elif "day" in unit:
+                        return {"minutes": value * 1440, "hours": value * 24, "days": value}
+
+            return {"minutes": 0, "hours": 0, "days": 0}
+        except:
+            return {"minutes": 0, "hours": 0, "days": 0}
+
+    @staticmethod
+    def _extract_json_from_output(ansible_output: str) -> Optional[Dict]:
+        """
+        Extract JSON data from Ansible output
+
+        Returns:
+            JSON dictionary or None if not found
+        """
+        import json
+        import re
+
+        # Try to find JSON in the output
+        try:
+            # Look for JSON pattern
+            json_match = re.search(r'\{.*\}', ansible_output, re.DOTALL)
+            if json_match:
+                return json.loads(json_match.group())
+        except:
+            pass
+
+        return None
+
+    def _analyze_container_state(self, name: str, created: str, status: str, health: str) -> CheckResult:
+        """
+        Analyze container state for ALL containers with uptime and health checks
+
+        Args:
+            name: Container name
+            created: Creation timestamp
+            status: Container status string (e.g., "Up 2 days", "Exited")
+            health: Health status (healthy, unhealthy, or empty)
+
+        Returns:
+            CheckResult with container health assessment
+        """
+        # Analyze container status - check ALL containers
+        if status.startswith("Up"):
+            # Parse uptime from status (format: "Up 2 days", "Up 5 minutes", etc.)
+            uptime_info = self._parse_uptime_from_status(status)
+
+            # Check health status if available
+            if health == "unhealthy":
+                return CheckResult(
+                    name=f"container_{name}",
+                    status="error",
+                    message=f"Container {name} is running but unhealthy",
+                    details={"status": status, "health": health, "created": created, "uptime": uptime_info}
+                )
+
+            # Check for recently started containers (less than 1 minute)
+            if uptime_info and uptime_info.get('minutes', 0) < 1:
+                return CheckResult(
+                    name=f"container_{name}",
+                    status="warning",
+                    message=f"Container {name} recently started ({status})",
+                    details={"status": status, "health": health, "created": created, "uptime": uptime_info}
+                )
+
+            # Container is running, healthy (or no health check), and uptime > 1 minute
+            health_message = "and healthy" if health == "healthy" else ""
+            return CheckResult(
+                name=f"container_{name}",
+                status="success",
+                message=f"Container {name} is running normally {health_message}({status})".strip(),
+                details={"status": status, "health": health, "created": created, "uptime": uptime_info}
+            )
+
+        elif status == "exited":
+            return CheckResult(
+                name=f"container_{name}",
+                status="error",
+                message=f"Container {name} is exited",
+                details={"status": status, "health": health, "created": created}
+            )
+
+        elif status == "restarting":
+            return CheckResult(
+                name=f"container_{name}",
+                status="warning",
+                message=f"Container {name} is restarting",
+                details={"status": status, "health": health, "created": created}
+            )
+
+        # Unknown or other states
         return CheckResult(
             name=f"container_{name}",
             status="warning",
-            message=f"Container {name} in unknown state: {status}",
-            details={"status": status, "created": created}
+            message=f"Container {name} in unexpected state: {status}",
+            details={"status": status, "health": health, "created": created}
         )
 
     def check_keystone(self) -> List[CheckResult]:
@@ -259,4 +355,3 @@ if __name__ == "__main__":
         print(f"  {result.status.upper():8} {result.name}: {result.message}")
 
     print(f"\n📈 Total: {len(container_results)} containers checked")
-
