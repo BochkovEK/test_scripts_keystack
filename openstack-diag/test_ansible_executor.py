@@ -29,7 +29,7 @@ def main():
     print("Available playbooks:", playbooks)
 
     # Запускаем плейбук (предполагаем, что он называется 'podman_info.yml')
-    playbook_name = "podman_info.yml"  # или другое имя вашего плейбука
+    playbook_name = "check_containers.yml"  # или другое имя вашего плейбука
 
     if playbook_name not in playbooks:
         print(f"Playbook {playbook_name} not found. Available playbooks: {playbooks}")
