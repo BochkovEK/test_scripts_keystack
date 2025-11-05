@@ -44,11 +44,25 @@ def test_ansible_ping():
 
     if result['success']:
         print("✅ Ping test PASSED - all nodes are reachable")
+        if result['stdout']:
+            print(f"   Output: {result['stdout']}")
     else:
         print("❌ Ping test FAILED")
         print(f"   Error: {result.get('error', 'Unknown error')}")
+
+        # Полный вывод stdout
         if result['stdout']:
-            print(f"   Output: {result['stdout'][:200]}...")
+            print(f"\n   STDOUT:")
+            print("   " + "=" * 50)
+            print(result['stdout'])
+            print("   " + "=" * 50)
+
+        # Полный вывод stderr
+        if result['stderr']:
+            print(f"\n   STDERR:")
+            print("   " + "=" * 50)
+            print(result['stderr'])
+            print("   " + "=" * 50)
 
     return result['success']
 

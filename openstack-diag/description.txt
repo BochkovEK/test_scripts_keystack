@@ -27,6 +27,7 @@ openstack-diag/
 └── requirements.txt            # зависимости Python
 
 pip install ansible-runner
+pip install ansible
 
 logger.py
 
