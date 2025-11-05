@@ -35,7 +35,11 @@ def test_ansible_ping():
 
     # Run ping test
     print("\n🔍 Running ping test...")
-    result = runner.run_playbook("test_ping.yml")
+    result = runner.run_playbook("ping.yml")
+
+    # Run ping test
+    print("\n🔍 Running ping test...")
+    result = runner.run_playbook("check_containers.yml")
 
     print(f"✓ Playbook execution completed")
     print(f"  Success: {result['success']}")
