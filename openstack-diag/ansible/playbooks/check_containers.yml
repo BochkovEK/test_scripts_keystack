@@ -27,25 +27,34 @@
 #        var: container_info.containers
 
 ---
-- name: Get Podman container information using containers.podman collection
+#- name: Get Podman container information using containers.podman collection
+#  hosts: all
+#  become: yes
+#  tasks:
+#    - name: Get list of all containers
+#      containers.podman.podman_container:
+#        state: present
+#        list: yes
+#      register: containers_list
+#
+#    - name: Inspect each container
+#      containers.podman.podman_container:
+#        name: "{{ item.Name }}"
+#        state: inspected
+#      loop: "{{ containers_list.containers }}"
+#      loop_control:
+#        label: "{{ item.Name }}"
+#      register: containers_inspected
+#
+#    - name: Display container information
+#      debug:
+#        var: containers_inspected.results
+
+- name: Get Podman container information
   hosts: all
   become: yes
   tasks:
-    - name: Get list of all containers
-      containers.podman.podman_container:
-        state: present
-        list: yes
-      register: containers_list
-
-    - name: Inspect each container
-      containers.podman.podman_container:
-        name: "{{ item.Name }}"
-        state: inspected
-      loop: "{{ containers_list.containers }}"
-      loop_control:
-        label: "{{ item.Name }}"
-      register: containers_inspected
-
-    - name: Display container information
-      debug:
-        var: containers_inspected.results
+  - name: Get container information
+    community.general.podman_container_info:
+      name: all
+    register: container_info
