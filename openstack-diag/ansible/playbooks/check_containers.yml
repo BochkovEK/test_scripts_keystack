@@ -2,6 +2,7 @@
 ---
 - name: Check Podman containers
   hosts: all
+  become: yes
   tasks:
     - name: List running containers
       command: podman ps
