@@ -54,10 +54,6 @@
   hosts: all
   become: yes
   tasks:
-#    - name: Get container information
-#      community.general.podman_container_info:
-#        name: all
-#      register: container_info
     - name: Get containers JSON
       command: podman ps -a --format json
 #      register: containers_json
