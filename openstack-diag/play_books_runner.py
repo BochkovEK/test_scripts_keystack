@@ -102,24 +102,27 @@ class PlaybookRunner:
         return self.runner.get_available_playbooks()
 
 
+def output_playbook_result(playbook_name: str, results: List[CheckResult]):
+    """Print results for a single playbook immediately after execution"""
+    print(f"\n📊 Results for {playbook_name}:")
+    for result in results:
+        status_icon = "✅" if result.status == 'success' else "❌"
+        print(f"  {status_icon} {result.name}: {result.message}")
+
+        if result.details and 'output_preview' in result.details:
+            print(f"  Output preview:")
+            print("  " + "=" * 50)
+            print(result.details['output_preview'])
+            print("  " + "=" * 50)
+
+
 def main():
     """Main function"""
     parser = argparse.ArgumentParser(description='Run Ansible playbooks for OpenStack diagnostics')
     parser.add_argument('--playbook', '-p', help='Full path to specific playbook to run')
-    parser.add_argument('--list', '-l', action='store_true', help='List available playbooks')
 
     args = parser.parse_args()
-
     runner = PlaybookRunner()
-
-    if args.list:
-        playbooks = runner.get_available_playbooks()
-        print("Available playbooks:")
-        for name, path in playbooks.items():
-            print(f"  - {name}")
-            print(f"    path: {path}")
-        return
-
     results = []
 
     if args.playbook:
@@ -131,6 +134,7 @@ def main():
 
         print(f"🚀 Running specific playbook: {playbook_path}")
         results = runner.run_playbook(str(playbook_path))
+        output_playbook_result(playbook_path.name, results)
 
     else:
         # Scenario 2: Run all available playbooks
@@ -144,6 +148,7 @@ def main():
         for playbook_name, playbook_path in playbooks.items():
             print(f"\n📋 Running: {playbook_name}")
             playbook_results = runner.run_playbook(str(playbook_path))
+            output_playbook_result(playbook_name, playbook_results)
             results.extend(playbook_results)
 
     # Print results summary
@@ -151,20 +156,12 @@ def main():
     success_count = sum(1 for r in results if r.status == 'success')
     error_count = sum(1 for r in results if r.status == 'error')
 
-    print(f"  ✅ Success: {success_count}")
-    print(f"  ❌ Errors: {error_count}")
-
-    # Detailed results
-    for result in results:
-        status_icon = "✅" if result.status == 'success' else "❌"
-        print(f"  {status_icon} {result.name}: {result.message}")
-
-        if result.details and 'output_preview' in result.details:
-            print(f"\n  Output preview:")
-            print("  " + "=" * 50)
-            print(result.details['output_preview'])
-            print("  " + "=" * 50)
+    print(f"\n🎯 Final Summary:")
+    print(f"  Total playbooks run: {len(results) if not args.playbook else 1}")
+    print(f"  ✅ Successful: {success_count}")
+    print(f"  ❌ Failed: {error_count}")
 
 
 if __name__ == "__main__":
     main()
+
