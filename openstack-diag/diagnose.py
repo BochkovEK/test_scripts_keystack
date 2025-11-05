@@ -3,15 +3,25 @@ Main diagnostics module for OpenStack
 Coordinates all diagnostic checks and provides unified reporting
 """
 
+import sys
+from pathlib import Path
 from typing import Dict, List, Any
 from dataclasses import dataclass
-from pathlib import Path
 
-from .config import get_config
-from .logger import get_logger
-from .ansible_executor import get_ansible_runner
+# Fix imports for direct script execution
+if __name__ == "__main__":
+    # Add src to path when running directly
+    src_path = Path(__file__).parent / 'src'
+    sys.path.insert(0, str(src_path))
 
-logger = get_logger(__name__)
+    from config import get_config
+    from logger import get_logger
+    from ansible_executor import get_ansible_runner
+else:
+    # Normal relative imports when used as module
+    from .config import get_config
+    from .logger import get_logger
+    from .ansible_executor import get_ansible_runner
 
 
 @dataclass
@@ -235,3 +245,12 @@ class OpenStackDiagnostics:
         """Compile final diagnostics report"""
         # TODO: Implement report compilation
         return {}
+
+
+if __name__ == "__main__":
+    # Direct execution
+    diag = OpenStackDiagnostics()
+    print("🚀 Starting OpenStack Diagnostics...")
+    result = diag.run_full_diagnosis()
+    print("📊 Diagnostics completed!")
+
