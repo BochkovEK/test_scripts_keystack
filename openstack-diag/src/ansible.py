@@ -17,7 +17,7 @@ class Ansible:
 
     def __init__(self, config):
         self.config = config
-        self.ansible_path = Path(self.config.ansible_path)
+        self.ansible_dir = Path(self.config.ansible_dir)
         self.inventory_path = Path(self.config.inventory_path)
         self.ansible_cfg_path = self.config.ansible_cfg_path
 
@@ -29,7 +29,7 @@ class Ansible:
 
         logger.info("Ansible configuration:")
         logger.info(f"  - Inventory: {self.inventory_path}")
-        logger.info(f"  - Ansible path: {self.ansible_path}")
+        logger.info(f"  - Ansible path: {self.ansible_dir}")
         logger.info(f"  - Ansible config: {self.ansible_cfg_path}")
 
     def run_playbook(self, playbook_path: str) -> Dict[str, Any]:
@@ -57,7 +57,7 @@ class Ansible:
             result = ansible_runner.run(
                 playbook=str(playbook_path),
                 inventory=str(self.inventory_path),
-                private_data_dir=str(self.ansible_path),
+                private_data_dir=str(self.ansible_dir),
                 quiet=True,
                 envvars={
                     'ANSIBLE_CONFIG': str(self.ansible_cfg_path)
