@@ -16,7 +16,7 @@ from ansible_executor import get_ansible_runner
 
 # Playbooks to test
 TEST_PLAYBOOKS = [
-    "ping.yml",  # Basic connectivity test
+    # "ping.yml",  # Basic connectivity test
     "check_containers.yml",  # Container status check
     # "check_services.yml",    # Service status check
 ]

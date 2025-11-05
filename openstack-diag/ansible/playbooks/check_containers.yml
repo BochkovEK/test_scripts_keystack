@@ -54,7 +54,11 @@
   hosts: all
   become: yes
   tasks:
-    - name: Get container information
-      community.general.podman_container_info:
-        name: all
-      register: container_info
+#    - name: Get container information
+#      community.general.podman_container_info:
+#        name: all
+#      register: container_info
+    - name: Try to list containers
+      containers.podman.podman_container:
+        list: yes
+      register: containers_list
