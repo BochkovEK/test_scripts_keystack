@@ -79,7 +79,7 @@ class OpenStackDiagnostics:
 
         try:
             # Run container check playbook
-            ansible_result = self.runner.run_playbook("check_ansible_configuration.yml")
+            ansible_result = self.runner.run_playbook("check_containers.yml")
 
             # DEBUG: Show COMPLETE output like the working script
             print(f"🔍 COMPLETE ANSIBLE OUTPUT:")
@@ -91,8 +91,8 @@ class OpenStackDiagnostics:
             print("=" * 80)
 
             # Then try to parse
-            # container_checks = self._parse_container_status(ansible_result['stdout'])
-            # results.extend(container_checks)
+            container_checks = self._parse_container_status(ansible_result['stdout'])
+            results.extend(container_checks)
 
         except Exception as e:
             self.logger.error(f"Container check failed: {e}")
@@ -107,44 +107,28 @@ class OpenStackDiagnostics:
     @staticmethod
     def _extract_json_from_output(ansible_output: str) -> Optional[Any]:
         """
-        Extract JSON from raw Ansible output with debug info
+        Extract JSON from Ansible output, stopping at PLAY RECAP
         """
         import json
 
-        print(f"🔍 DEBUG: Raw output preview:")
-        print(ansible_output[:50] + "..." if len(ansible_output) > 1000 else ansible_output)
-        print("=" * 60)
-
         try:
-            # Method 1: Look for JSON array pattern in the raw text
+            # Split output and find JSON before PLAY RECAP
             lines = ansible_output.split('\n')
-            for line in lines:
-                line = line.strip()
-                # Look for lines that start with [ and contain container data
-                if line.startswith('[') and 'Names' in line and 'Status' in line:
-                    print(f"🔍 DEBUG: Found JSON line: {line[:200]}...")
-                    try:
-                        return json.loads(line)
-                    except json.JSONDecodeError as e:
-                        print(f"❌ DEBUG: JSON decode error: {e}")
-                        continue
+            json_lines = []
 
-            # Method 2: Try to find any valid JSON in the output
             for line in lines:
-                line = line.strip()
-                if line.startswith('[') and line.endswith(']'):
-                    try:
-                        data = json.loads(line)
-                        if isinstance(data, list) and len(data) > 0 and 'Names' in data[0]:
-                            print("✅ DEBUG: Found valid containers JSON")
-                            return data
-                    except:
-                        continue
+                if 'PLAY RECAP' in line:
+                    break  # ✅ Stop at PLAY RECAP
+                if line.strip() and (line.strip().startswith('[') or line.strip().startswith('{')):
+                    json_lines.append(line.strip())
 
-            print("❌ DEBUG: No valid containers JSON found")
+            if json_lines:
+                # Join JSON lines and parse
+                json_str = ''.join(json_lines)
+                return json.loads(json_str)
 
         except Exception as e:
-            print(f"❌ DEBUG: Extraction error: {e}")
+            print(f"JSON extraction error: {e}")
 
         return None
 
