@@ -17,12 +17,12 @@ if __name__ == "__main__":
 
     from config import get_config
     from logger import get_logger
-    from ansible_runner import get_ansible_runner
+    from ansible import get_ansible_runner
 else:
     # Normal relative imports when used as module
     from .config import get_config
     from .logger import get_logger
-    from .ansible_executor import get_ansible_runner
+    from .ansible import get_ansible_runner
 
 
 @dataclass
