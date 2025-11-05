@@ -61,6 +61,7 @@ class Ansible:
                 playbook=str(playbook_path),
                 inventory=str(self.inventory_path),
                 private_data_dir=str(self.ansible_path),
+                quiet=True,  # hides output under the hood
                 envvars={
                     'ANSIBLE_CONFIG': str(self.ansible_cfg_path)
                 }
