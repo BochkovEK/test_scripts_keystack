@@ -62,9 +62,7 @@ class Ansible:
                 inventory=str(self.inventory_path),
                 private_data_dir=str(self.ansible_path),
                 quiet=True,
-                settings={
-                    'ansible.cfg': str(self.ansible_cfg_path)
-                }
+                ansible_cfg=str(self.ansible_cfg_path)
             )
 
             return {
