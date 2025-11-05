@@ -35,6 +35,47 @@ class CheckResult:
     duration: float = 0.0
 
 
+def _extract_json_from_output(ansible_output: str) -> Optional[Any]:
+    """
+    Extract JSON data from Ansible command output using json module
+
+    Returns:
+        JSON data or None if not found
+    """
+
+    try:
+        # Method 1: Try to parse entire output as JSON
+        try:
+            return json.loads(ansible_output)
+        except json.JSONDecodeError:
+            pass
+
+        # Method 2: Look for JSON in containers_json.stdout lines
+        lines = ansible_output.split('\n')
+        for i, line in enumerate(lines):
+            if 'containers_json.stdout' in line and i + 1 < len(lines):
+                # Try to parse the next line as JSON
+                json_line = lines[i + 1].strip()
+                try:
+                    return json.loads(json_line)
+                except json.JSONDecodeError:
+                    continue
+
+        # Method 3: Find any line that contains valid JSON
+        for line in lines:
+            line = line.strip()
+            if line.startswith('[') or line.startswith('{'):
+                try:
+                    return json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+
+    except Exception as e:
+        print(f"JSON extraction error: {e}")
+
+    return None
+
+
 class OpenStackDiagnostics:
     """
     Main diagnostics class for OpenStack environment
@@ -112,7 +153,7 @@ class OpenStackDiagnostics:
 
         try:
             # Extract JSON data from Ansible output
-            json_data = self._extract_json_from_output(ansible_output)
+            json_data = _extract_json_from_output(ansible_output)
             if not json_data:
                 return [CheckResult(
                     name="container_parsing",
@@ -141,46 +182,6 @@ class OpenStackDiagnostics:
             )]
 
         return results
-
-    def _extract_json_from_output(self, ansible_output: str) -> Optional[Any]:
-        """
-        Extract JSON data from Ansible command output using json module
-
-        Returns:
-            JSON data or None if not found
-        """
-
-        try:
-            # Method 1: Try to parse entire output as JSON
-            try:
-                return json.loads(ansible_output)
-            except json.JSONDecodeError:
-                pass
-
-            # Method 2: Look for JSON in containers_json.stdout lines
-            lines = ansible_output.split('\n')
-            for i, line in enumerate(lines):
-                if 'containers_json.stdout' in line and i + 1 < len(lines):
-                    # Try to parse the next line as JSON
-                    json_line = lines[i + 1].strip()
-                    try:
-                        return json.loads(json_line)
-                    except json.JSONDecodeError:
-                        continue
-
-            # Method 3: Find any line that contains valid JSON
-            for line in lines:
-                line = line.strip()
-                if line.startswith('[') or line.startswith('{'):
-                    try:
-                        return json.loads(line)
-                    except json.JSONDecodeError:
-                        continue
-
-        except Exception as e:
-            print(f"JSON extraction error: {e}")
-
-        return None
 
     @staticmethod
     def _parse_uptime_from_status(status: str) -> Dict[str, int]:
@@ -211,24 +212,44 @@ class OpenStackDiagnostics:
             return {"minutes": 0, "hours": 0, "days": 0}
 
     @staticmethod
-    def _extract_json_from_output(ansible_output: str) -> Optional[Dict]:
+    def _extract_json_from_output(ansible_output: str) -> Optional[Any]:
         """
-        Extract JSON data from Ansible output
+        Extract JSON data from Ansible command output using json module
 
         Returns:
-            JSON dictionary or None if not found
+            JSON data or None if not found
         """
         import json
-        import re
 
-        # Try to find JSON in the output
         try:
-            # Look for JSON pattern
-            json_match = re.search(r'\{.*\}', ansible_output, re.DOTALL)
-            if json_match:
-                return json.loads(json_match.group())
-        except:
-            pass
+            # Method 1: Try to parse entire output as JSON
+            try:
+                return json.loads(ansible_output)
+            except json.JSONDecodeError:
+                pass
+
+            # Method 2: Look for JSON in containers_json.stdout lines
+            lines = ansible_output.split('\n')
+            for i, line in enumerate(lines):
+                if 'containers_json.stdout' in line and i + 1 < len(lines):
+                    # Try to parse the next line as JSON
+                    json_line = lines[i + 1].strip()
+                    try:
+                        return json.loads(json_line)
+                    except json.JSONDecodeError:
+                        continue
+
+            # Method 3: Find any line that contains valid JSON
+            for line in lines:
+                line = line.strip()
+                if line.startswith('[') or line.startswith('{'):
+                    try:
+                        return json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+
+        except Exception as e:
+            print(f"JSON extraction error: {e}")
 
         return None
 
