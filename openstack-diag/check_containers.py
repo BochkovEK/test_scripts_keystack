@@ -39,13 +39,7 @@ class PlaybookRunner:
 
     def run_playbook(self, playbook_name: str) -> List[CheckResult]:
         """
-        Run specific playbook and return results
-
-        Args:
-            playbook_name: Name of playbook to run
-
-        Returns:
-            List of CheckResult objects
+        Run specific playbook and return results with output preview
         """
         self.logger.info(f"Running playbook: {playbook_name}")
         results = []
@@ -53,27 +47,46 @@ class PlaybookRunner:
         try:
             ansible_result = self.runner.run_playbook(playbook_name)
 
+            # Create output preview
+            stdout = ansible_result['stdout'] or ""
+            stderr = ansible_result['stderr'] or ""
+
+            # Get first and last 50 lines
+            stdout_lines = stdout.split('\n')
+            output_preview = ""
+
+            if stdout_lines:
+                first_50 = '\n'.join(stdout_lines[:50])
+                last_50 = '\n'.join(stdout_lines[-50:]) if len(stdout_lines) > 50 else ""
+
+                output_preview = f"First 50 lines:\n{first_50}"
+                if last_50:
+                    output_preview += f"\n\nLast 50 lines:\n{last_50}"
+
             if not ansible_result['success']:
                 results.append(CheckResult(
                     name=playbook_name,
                     status="error",
                     message=f"Playbook failed: {ansible_result['error']}",
-                    details=ansible_result
+                    details={
+                        "return_code": ansible_result['return_code'],
+                        "output_preview": output_preview,
+                        "stderr": stderr
+                    }
                 ))
                 return results
 
-            # Parse output based on playbook type
-            if playbook_name == "check_containers.yml":
-                container_results = self._parse_containers_output(ansible_result['stdout'])
-                results.extend(container_results)
-            else:
-                # Generic success for other playbooks
-                results.append(CheckResult(
-                    name=playbook_name,
-                    status="success",
-                    message=f"Playbook completed successfully",
-                    details={"output": ansible_result['stdout']}
-                ))
+            # Success case
+            results.append(CheckResult(
+                name=playbook_name,
+                status="success",
+                message=f"Playbook completed successfully",
+                details={
+                    "return_code": ansible_result['return_code'],
+                    "output_preview": output_preview,
+                    "stderr": stderr
+                }
+            ))
 
         except Exception as e:
             results.append(CheckResult(
@@ -142,6 +155,12 @@ def main():
     print(f"\n📊 Results ({len(results)}):")
     for result in results:
         print(f"  {result.status.upper():8} {result.name}: {result.message}")
+
+        if result.details and 'output_preview' in result.details:
+            print(f"\n  Output preview:")
+            print("  " + "=" * 50)
+            print(result.details['output_preview'])
+            print("  " + "=" * 50)
 
 
 if __name__ == "__main__":
