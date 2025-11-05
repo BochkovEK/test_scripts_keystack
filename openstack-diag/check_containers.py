@@ -62,37 +62,96 @@ class ContainerAnalyzer:
         return self._parse_ansible_output(ansible_result['stdout'])
 
     def _parse_ansible_output(self, output: str) -> List[ContainerStatus]:
-        """Parse Ansible output and extract container information"""
+        """Parse Ansible task output with node information"""
         results = []
 
-        # Extract JSON data from Ansible output
-        json_pattern = r'"containers_json\.stdout":\s*(\[.*?\])'
-        matches = re.findall(json_pattern, output, re.DOTALL)
+        # Split by node results
+        node_blocks = re.split(r'(ok|failed):\s*\[(.*?)\]\s*=>', output)
 
-        for match in matches:
-            try:
-                containers_data = json.loads(match)
-                # TODO: Extract node name and analyze each container
-                for container in containers_data:
-                    status = self._analyze_container(container)
-                    if status:
-                        results.append(status)
-            except json.JSONDecodeError as e:
-                self.logger.error(f"Failed to parse JSON: {e}")
+        for i in range(1, len(node_blocks), 3):
+            status = node_blocks[i]  # 'ok' or 'failed'
+            node = node_blocks[i + 1]  # node name
+            content = node_blocks[i + 2]  # JSON content
+
+            if status == 'ok' and 'containers_json.stdout' in content:
+                # Extract JSON array from the content
+                json_match = re.search(r'"containers_json\.stdout":\s*(\[.*?\])', content, re.DOTALL)
+                if json_match:
+                    try:
+                        containers_data = json.loads(json_match.group(1))
+                        for container in containers_data:
+                            container_status = self._analyze_container(node, container)
+                            results.append(container_status)
+                    except json.JSONDecodeError as e:
+                        self.logger.error(f"Failed to parse JSON for node {node}: {e}")
 
         return results
 
-    def _analyze_container(self, container: Dict[str, Any]) -> ContainerStatus:
+    def _analyze_container(self, node: str, container: Dict[str, Any]) -> ContainerStatus:
         """Analyze single container status based on criteria"""
-        # TODO: Implement container analysis logic
-        # Extract: State, Status, Names, calculate uptime, determine health
-        # Apply criteria: running+healthy+uptime>1min = success, etc.
-        pass
+
+        # Extract container data
+        name = container.get('Names', 'unknown')
+        state = container.get('State', 'unknown')
+        status_str = container.get('Status', '')
+
+        # Parse health and uptime
+        health = "healthy" if "(healthy)" in status_str else "unhealthy" if "(unhealthy)" in status_str else "unknown"
+        uptime_seconds = self._parse_uptime(status_str)
+
+        # Apply criteria
+        check_status, message = self._evaluate_container_status(state, health, uptime_seconds)
+
+        return ContainerStatus(
+            node=node,
+            container_name=name,
+            state=state,
+            status=status_str,
+            health=health,
+            uptime_seconds=uptime_seconds,
+            check_status=check_status,
+            message=message
+        )
+
+    def _evaluate_container_status(self, state: str, health: str, uptime_seconds: int) -> tuple:
+        """Evaluate container status based on criteria"""
+
+        if state == "running" and health == "healthy":
+            if uptime_seconds > 60:  # > 1 minute
+                return "success", "Container is running and healthy"
+            else:
+                return "warning", "Container recently restarted (< 1 min)"
+
+        elif state in ["exited", "unhealthy", "restarting"]:
+            return "error", f"Container state: {state}"
+
+        else:
+            return "error", f"Unexpected state: {state}, health: {health}"
 
     def _parse_uptime(self, status_str: str) -> int:
-        """Parse uptime from status string to seconds"""
-        # TODO: Convert "Up 7 days", "Up 30 seconds" to seconds
-        pass
+        """Convert status string like 'Up 7 days (healthy)' to seconds"""
+        if not status_str or 'Up' not in status_str:
+            return 0
+
+        # Patterns: "Up 7 days", "Up 2 minutes", "Up 30 seconds"
+        time_pattern = r'Up\s+(\d+)\s+(second|minute|hour|day|week)s?'
+        match = re.search(time_pattern, status_str)
+
+        if match:
+            value = int(match.group(1))
+            unit = match.group(2)
+
+            multipliers = {
+                'second': 1,
+                'minute': 60,
+                'hour': 3600,
+                'day': 86400,
+                'week': 604800
+            }
+
+            return value * multipliers.get(unit, 1)
+
+        return 0
 
 
 def main():
