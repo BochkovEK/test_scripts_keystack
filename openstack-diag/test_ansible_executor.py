@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Test script for Ansible Runner
-Basic connectivity test using ping module
+Test script for Ansible Executor
+Test connectivity using ping module
 """
 
 import sys
@@ -15,33 +15,49 @@ from config import get_config
 from ansible_executor import get_ansible_runner
 
 
-def test_ansible_runner():
-    """Test basic Ansible functionality"""
-    print("=== Testing Ansible Runner ===")
+def test_ansible_ping():
+    """Test Ansible connectivity using ping module"""
+    print("=== Testing Ansible Executor with Ping ===")
 
     # Load configuration
     config = get_config()
-    print(f"✓ Config loaded: {config.inventory_path}")
+    print(f"✓ Config loaded")
+    print(f"  Inventory: {config.inventory_path}")
+    print(f"  Ansible dir: {config.ansible_dir}")
 
-    # Get Ansible runner
+    # Get Ansible executor
     runner = get_ansible_runner(config)
-    print("✓ Ansible runner initialized")
+    print("✓ Ansible executor initialized")
 
-    # Test basic connectivity
-    print("Testing node connectivity...")
+    # Test available playbooks
+    playbooks = runner.get_available_playbooks()
+    print(f"✓ Available playbooks: {playbooks}")
 
-    # This would use a simple playbook with ping module
-    # For now, just test initialization
-    print("✓ Ansible runner ready for playbooks")
+    # Run ping test
+    print("\n🔍 Running ping test...")
+    result = runner.run_playbook("test_ping.yml")
 
-    return True
+    print(f"✓ Playbook execution completed")
+    print(f"  Success: {result['success']}")
+    print(f"  Return code: {result['return_code']}")
+    print(f"  Status: {result.get('status', 'N/A')}")
+
+    if result['success']:
+        print("✅ Ping test PASSED - all nodes are reachable")
+    else:
+        print("❌ Ping test FAILED")
+        print(f"   Error: {result.get('error', 'Unknown error')}")
+        if result['stdout']:
+            print(f"   Output: {result['stdout'][:200]}...")
+
+    return result['success']
 
 
 if __name__ == "__main__":
-    success = test_ansible_runner()
+    success = test_ansible_ping()
     if success:
-        print("\n✅ All tests passed!")
+        print("\n🎉 All tests passed! Ansible executor is working.")
         sys.exit(0)
     else:
-        print("\n❌ Tests failed!")
+        print("\n💥 Tests failed!")
         sys.exit(1)

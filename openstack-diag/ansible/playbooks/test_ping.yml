@@ -1,0 +1,8 @@
+---
+- name: Test connectivity to OpenStack nodes
+  hosts: all
+  gather_facts: false
+
+  tasks:
+    - name: Test node connectivity
+      ping:
