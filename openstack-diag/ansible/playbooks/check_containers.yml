@@ -26,7 +26,7 @@
 #      debug:
 #        var: container_info.containers
 
----
+#---
 #- name: Get Podman container information using containers.podman collection
 #  hosts: all
 #  become: yes
