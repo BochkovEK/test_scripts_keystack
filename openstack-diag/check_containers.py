@@ -41,7 +41,8 @@ class ContainerAnalyzer:
         self.config = get_config()
         self.runner = get_ansible_runner(self.config)
         self.logger = get_logger(__name__)
-        self.playbook_path = Path('./ansible/playbooks/check_containers.yml')  # Hardcoded path
+        self.base_dir = Path(__file__).parent
+        self.playbook_path = Path(self.base_dir / 'ansible/playbooks/check_containers.yml')  # Hardcoded path
 
     def run_analysis(self) -> List[ContainerStatus]:
         """Run playbook and analyze container status"""
