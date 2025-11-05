@@ -14,11 +14,8 @@ sys.path.append(str(src_path))
 from config import get_config
 from ansible_executor import get_ansible_runner
 
-# Playbooks to test
 TEST_PLAYBOOKS = [
-    # "ping.yml",  # Basic connectivity test
     "check_containers.yml",  # Container status check
-    # "check_services.yml",    # Service status check
 ]
 
 
@@ -32,16 +29,32 @@ def test_playbook(playbook_name: str, runner) -> bool:
     print(f"   Return code: {result['return_code']}")
     print(f"   Status: {result.get('status', 'N/A')}")
 
-    print(f"\n   📋 FULL RAW OUTPUT:")
+    # Более детальный вывод
+    print(f"\n   📋 DETAILED OUTPUT ANALYSIS:")
     print("   " + "=" * 60)
+
+    print(f"   stdout is None: {result['stdout'] is None}")
+    print(f"   stdout type: {type(result['stdout'])}")
+    print(f"   stdout length: {len(result['stdout']) if result['stdout'] else 0}")
+
+    print(f"   stderr is None: {result['stderr'] is None}")
+    print(f"   stderr type: {type(result['stderr'])}")
+    print(f"   stderr length: {len(result['stderr']) if result['stderr'] else 0}")
+
+    print(f"\n   🖨️  FULL STDOUT CONTENT:")
+    print("   " + "-" * 40)
     if result['stdout']:
-        print("   STDOUT:")
         print(result['stdout'])
-        print("   " + "-" * 40)
+    else:
+        print("   EMPTY")
+
+    print(f"\n   🖨️  FULL STDERR CONTENT:")
+    print("   " + "-" * 40)
     if result['stderr']:
-        print("   STDERR:")
         print(result['stderr'])
-        print("   " + "-" * 40)
+    else:
+        print("   EMPTY")
+
     print("   " + "=" * 60)
 
     return result['success']
