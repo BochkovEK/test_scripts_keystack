@@ -158,16 +158,17 @@ class OpenStackDiagnostics:
 
     def _parse_container_status(self, ansible_output: str) -> List[CheckResult]:
         """
-        Parse container status from Podman JSON output
+        Parse container status from Podman JSON output - SIMPLE VERSION
+        Just extract name, created, status without analysis
 
         Returns:
-            List of CheckResult objects with container health analysis
+            List of CheckResult objects with basic container info
         """
         results = []
 
         try:
             # Extract JSON data from Ansible output
-            json_data = _extract_json_from_output(ansible_output)
+            json_data = self._extract_json_from_output(ansible_output)
             if not json_data:
                 return [CheckResult(
                     name="container_parsing",
@@ -178,17 +179,36 @@ class OpenStackDiagnostics:
             # Parse containers from JSON array
             containers = json.loads(json_data) if isinstance(json_data, str) else json_data
 
-            for container in containers:
-                name = container.get('Names', ['unknown'])[0] if container.get('Names') else 'unknown'
-                status = container.get('Status', '')
-                state = container.get('State', '')
-                created = container.get('CreatedAt', '')
+            print(f"🔍 DEBUG: Found {len(containers)} containers")
 
-                # Analyze container state
-                container_result = self._analyze_container_state(name, created, status, state)
-                results.append(container_result)
+            for container in containers:
+                # Extract basic fields
+                name = container.get('Names', ['unknown'])[0] if container.get('Names') else 'unknown'
+                created = container.get('CreatedAt', 'unknown')
+                status = container.get('Status', 'unknown')
+                state = container.get('State', 'unknown')
+
+                # Debug print for each container
+                print(f"   📦 {name}:")
+                print(f"      CREATED: {created}")
+                print(f"      STATUS: {status}")
+                print(f"      STATE: {state}")
+
+                # Create simple result without analysis
+                results.append(CheckResult(
+                    name=f"container_{name}",
+                    status="info",  # Informational only
+                    message=f"Container {name} - {status}",
+                    details={
+                        "name": name,
+                        "created": created,
+                        "status": status,
+                        "state": state
+                    }
+                ))
 
         except Exception as e:
+            print(f"❌ DEBUG: Parsing error: {e}")
             return [CheckResult(
                 name="container_parsing",
                 status="error",

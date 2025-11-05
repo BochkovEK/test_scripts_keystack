@@ -8,9 +8,9 @@
       command: podman ps --format json
       register: containers_json
 
-#    - name: Show container list
-#      debug:
-#        var: container_list.stdout
+    - name: Show container list
+      debug:
+        var: container_list.stdout
 
 #---
 #- name: Get container information using Docker API
