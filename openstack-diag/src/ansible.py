@@ -1,6 +1,6 @@
 """
-Ansible Executor for OpenStack Diagnostics
-Uses ansible-runner library for playbook execution
+Ansible for OpenStack Diagnostics
+Uses ansible-runner library for playbook run
 """
 
 from pathlib import Path
@@ -12,8 +12,8 @@ from logger import get_logger
 logger = get_logger(__name__)
 
 
-class AnsibleExecutor:
-    """Ansible playbook executor using ansible-runner"""
+class Ansible:
+    """Ansible playbook runner using ansible-runner"""
 
     def __init__(self, config):
         self.config = config
@@ -22,7 +22,7 @@ class AnsibleExecutor:
         self.inventory_path = Path(__file__).parent.parent / 'inventory.ini'
 
         # Debug: log Ansible configuration
-        logger.info("Ansible Executor configuration:")
+        logger.info("Ansible configuration:")
         logger.info(f"  - Inventory: {self.inventory_path}")
         logger.info(f"  - Ansible path: {self.ansible_path}")
         logger.info(f"  - Playbooks path: {self.playbooks_path}")
@@ -33,7 +33,7 @@ class AnsibleExecutor:
         for key, value in ansible_config.items():
             logger.info(f"  - {key}: {value}")
 
-        logger.info(f"Ansible Executor initialized with ansible-runner")
+        logger.info(f"Ansible initialized with ansible-runner")
 
     def run_playbook(self, playbook_name: str) -> Dict[str, Any]:
         """
@@ -97,12 +97,12 @@ _ansible_executor = None
 
 
 def get_ansible_runner(config=None):
-    """Get Ansible executor instance"""
+    """Get Ansible instance"""
     global _ansible_executor
     if _ansible_executor is None:
         if config is None:
             from .config import get_config
             config = get_config()
-        _ansible_executor = AnsibleExecutor(config)
+        _ansible_executor = Ansible(config)
     return _ansible_executor
 
