@@ -28,3 +28,4 @@ ansible:
   strategy: free
   timeout: 30
   ssh_args: "-o ControlMaster=auto -o ControlPersist=300s"
+  display_skipped_hosts: false
