@@ -42,7 +42,8 @@ class OpenStackDiagnostics:
 
     def __init__(self):
         self.config = get_config()
-        self.ansible_runner = get_ansible_runner()
+        self.runner = get_ansible_runner(self.config)
+        self.logger = get_logger(__name__)
         self.results: List[CheckResult] = []
 
     def run_full_diagnosis(self) -> Dict[str, Any]:
@@ -52,7 +53,7 @@ class OpenStackDiagnostics:
         Returns:
             Dict with overall status and detailed results
         """
-        logger.info("Starting comprehensive OpenStack diagnostics")
+        self.logger.info("Starting comprehensive OpenStack diagnostics")
 
         # 1. Container status on nodes
         container_results = self.check_containers()
@@ -70,12 +71,12 @@ class OpenStackDiagnostics:
 
     def check_containers(self) -> List[CheckResult]:
         """Check Podman container status on all nodes"""
-        logger.info("Checking Podman containers status")
+        self.logger.info("Checking Podman containers status")
         results = []
 
         try:
             # Run container check playbook
-            ansible_result = self.ansible_runner.run_playbook("check_containers.yml")
+            ansible_result = self.runner.run_playbook("check_containers.yml")
 
             if not ansible_result['success']:
                 results.append(CheckResult(
@@ -90,7 +91,7 @@ class OpenStackDiagnostics:
             results.extend(container_checks)
 
         except Exception as e:
-            logger.error(f"Container check failed: {e}")
+            self.logger.error(f"Container check failed: {e}")
             results.append(CheckResult(
                 name="container_status",
                 status="error",
@@ -225,19 +226,19 @@ class OpenStackDiagnostics:
 
     def check_keystone(self) -> List[CheckResult]:
         """Check Keystone identity service"""
-        logger.info("Checking Keystone service")
+        self.logger.info("Checking Keystone service")
         # TODO: Implement Keystone checks
         return []
 
     def check_database(self) -> List[CheckResult]:
         """Check MariaDB/Galera database cluster"""
-        logger.info("Checking database cluster")
+        self.logger.info("Checking database cluster")
         # TODO: Implement database checks
         return []
 
     def check_rabbitmq(self) -> List[CheckResult]:
         """Check RabbitMQ message queue"""
-        logger.info("Checking RabbitMQ")
+        self.logger.info("Checking RabbitMQ")
         # TODO: Implement RabbitMQ checks
         return []
 
