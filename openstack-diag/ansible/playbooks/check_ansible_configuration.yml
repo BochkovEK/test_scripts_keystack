@@ -1,0 +1,16 @@
+---
+- name: Check Ansible configuration
+  hosts: all
+  tasks:
+    - name: Display Ansible facts
+      debug:
+        var: ansible_facts
+      when: ansible_facts is defined
+
+    - name: Show effective settings
+      debug:
+        msg: |
+          forks: {{ ansible_forks }}
+          timeout: {{ ansible_timeout }}
+          gather_facts: {{ ansible_gather_facts }}
+          host_key_checking: {{ ansible_host_key_checking }}

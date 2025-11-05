@@ -79,7 +79,7 @@ class OpenStackDiagnostics:
 
         try:
             # Run container check playbook
-            ansible_result = self.runner.run_playbook("ping.yml")
+            ansible_result = self.runner.run_playbook("check_ansible_configuration.yml")
 
             # DEBUG: Show COMPLETE output like the working script
             print(f"🔍 COMPLETE ANSIBLE OUTPUT:")
