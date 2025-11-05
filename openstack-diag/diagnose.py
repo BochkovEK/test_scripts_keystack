@@ -7,9 +7,9 @@ from typing import Dict, List, Any
 from dataclasses import dataclass
 from pathlib import Path
 
-from .config import get_config
-from .logger import get_logger
-from .ansible_runner import get_ansible_runner
+from config import get_config
+from logger import get_logger
+from ansible_executor import get_ansible_runner
 
 logger = get_logger(__name__)
 
@@ -91,32 +91,127 @@ class OpenStackDiagnostics:
 
     def _parse_container_status(self, ansible_output: str) -> List[CheckResult]:
         """
-        Parse container status from Ansible output
+        Parse Podman container status from Ansible output
 
         Returns:
-            List of CheckResult objects for containers
+            List of CheckResult objects with container health analysis
         """
         results = []
 
-        # TODO: Implement parsing logic based on actual Ansible output format
-        # This will depend on what our check_containers.yml playbook returns
+        # Find container_list.stdout block in Ansible output
+        if "container_list.stdout" not in ansible_output:
+            return [CheckResult(
+                name="container_parsing",
+                status="error",
+                message="No container data found in output"
+            )]
 
-        # Example checks:
-        results.append(CheckResult(
-            name="nova_containers",
-            status="success",  # or "warning", "error"
-            message="All Nova containers running",
-            details={"running": 5, "total": 5}
-        ))
+        # Extract container data lines
+        lines = ansible_output.split('\n')
+        container_lines = []
 
-        results.append(CheckResult(
-            name="neutron_containers",
-            status="warning",
-            message="1 Neutron container stopped",
-            details={"running": 3, "total": 4, "stopped": ["neutron_dhcp"]}
-        ))
+        # Skip header and collect container data lines
+        for line in lines:
+            if "CONTAINER ID" in line:
+                continue  # Skip header line
+            if line.strip() and len(line.split()) >= 6:  # Minimum 6 columns
+                container_lines.append(line)
+
+        # Parse each container line
+        for line in container_lines:
+            parts = line.split()
+            if len(parts) < 6:
+                continue
+
+            # Extract CREATED (4th from end), STATUS (3rd from end), NAME (last)
+            created = parts[-4] + " " + parts[-3]  # "5 weeks ago"
+            status = parts[-2] + " " + parts[-1]  # "Up 7 days"
+            name = parts[-1]  # Container name
+
+            # Analyze container state
+            container_result = self._analyze_container_state(name, created, status)
+            results.append(container_result)
 
         return results
+
+    @staticmethod
+    def _analyze_container_state(name: str, created: str, status: str) -> CheckResult:
+        """
+        Analyze individual container state based on status and uptime
+
+        Returns:
+            CheckResult with container health assessment
+        """
+        # Analyze STATUS field
+        if status.startswith("Up"):
+            # Extract uptime from status
+            if "days" in status:
+                days = int(status.split()[1])
+                if days > 1:
+                    return CheckResult(
+                        name=f"container_{name}",
+                        status="success",
+                        message=f"Container {name} running stable ({status})",
+                        details={"status": status, "created": created, "uptime_days": days}
+                    )
+                else:
+                    return CheckResult(
+                        name=f"container_{name}",
+                        status="warning",
+                        message=f"Container {name} recently restarted ({status})",
+                        details={"status": status, "created": created, "uptime_days": days}
+                    )
+
+            elif "hours" in status:
+                hours = int(status.split()[1])
+                if hours > 1:
+                    return CheckResult(
+                        name=f"container_{name}",
+                        status="success",
+                        message=f"Container {name} running normally ({status})",
+                        details={"status": status, "created": created, "uptime_hours": hours}
+                    )
+                else:
+                    return CheckResult(
+                        name=f"container_{name}",
+                        status="warning",
+                        message=f"Container {name} very recently started ({status})",
+                        details={"status": status, "created": created, "uptime_hours": hours}
+                    )
+
+            elif "minutes" in status:
+                minutes = int(status.split()[1])
+                if minutes < 2:
+                    return CheckResult(
+                        name=f"container_{name}",
+                        status="warning",
+                        message=f"Container {name} just started ({status})",
+                        details={"status": status, "created": created, "uptime_minutes": minutes}
+                    )
+                else:
+                    return CheckResult(
+                        name=f"container_{name}",
+                        status="warning",
+                        message=f"Container {name} recently started ({status})",
+                        details={"status": status, "created": created, "uptime_minutes": minutes}
+                    )
+
+        # Handle non-running states
+        elif status in ["Exited", "Restarting", "Unhealthy"]:
+            return CheckResult(
+                name=f"container_{name}",
+                status="error",
+                message=f"Container {name} has issues: {status}",
+                details={"status": status, "created": created, "issue": "container_failed"}
+            )
+
+        # Unknown state
+        return CheckResult(
+            name=f"container_{name}",
+            status="warning",
+            message=f"Container {name} in unknown state: {status}",
+            details={"status": status, "created": created}
+        )
 
     def check_keystone(self) -> List[CheckResult]:
         """Check Keystone identity service"""
