@@ -10,8 +10,8 @@ import json
 from typing import Dict, List, Optional, Any, Tuple
 from pathlib import Path
 
-from .logger import get_logger
-from .config import Config
+from logger import get_logger
+from config import Config
 
 logger = get_logger(__name__)
 
