@@ -20,6 +20,12 @@ class Ansible:
         self.ansible_path = Path(__file__).parent.parent / 'ansible'
         self.playbooks_path = self.ansible_path / 'playbooks'
         self.inventory_path = Path(__file__).parent.parent / 'inventory.ini'
+        self.ansible_cfg_path = self.config.ansible_cfg_path  # ✅ Берем из config.py
+
+        if not self.ansible_cfg_path.exists():
+            logger.warning(f"ansible.cfg not found: {self.ansible_cfg_path}")
+        else:
+            logger.info(f"Using ansible.cfg: {self.ansible_cfg_path}")
 
         # Debug: log Ansible configuration
         logger.info("Ansible configuration:")

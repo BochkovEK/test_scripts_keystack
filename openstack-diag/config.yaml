@@ -1,7 +1,10 @@
 paths:
-  inventory: "./inventory.ini"    # inventory в корне проекта (рядом с config.yaml)
   reports_dir: "./reports"        # отчёты в директории проекта
   log_dir: "/tmp"                 # логи в системном /tmp
+  #  ansible_dir: "./ansible"
+  #  inventory: "./inventory.ini"
+  #  ansible_cfg: "./ansible/ansible.cfg"
+  #  playbooks_dir: "./ansible/playbooks
 
 logging:
   level: "INFO"           # общий уровень
@@ -22,10 +25,13 @@ thresholds:
   container_restarts: 10
   # ...
 
-ansible:
-  forks: 20
-  gather_facts: false
-  strategy: free
-  timeout: 30
-  ssh_args: "-o ControlMaster=auto -o ControlPersist=300s"
-  display_skipped_hosts: false
+#ansible:
+#
+#
+#
+#  forks: 20
+#  gather_facts: false
+#  strategy: free
+#  timeout: 30
+#  ssh_args: "-o ControlMaster=auto -o ControlPersist=300s"
+#  display_skipped_hosts: false

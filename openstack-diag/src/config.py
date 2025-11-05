@@ -3,13 +3,10 @@ Configuration management for OpenStack Diagnostics
 Centralized configuration loader and path manager
 """
 
-import os
 import logging
 from pathlib import Path
 from typing import Dict, Any, Optional
 import yaml
-
-from default_config import DEFAULT_CONFIG
 
 
 class Config:
@@ -46,14 +43,13 @@ class Config:
 
     def _load_single_config(self) -> Dict[str, Any]:
         """
-        Load and merge configurations: default_config.py + user config.yaml
-        User config overrides default config
+        Load user configuration - no defaults, only user provided config
 
         Returns:
-            Merged configuration dictionary
+            Configuration dictionary
         """
-        # Start with default configuration as base
-        config = DEFAULT_CONFIG.copy()
+        # Start with empty config
+        config = {}
 
         # Determine which user config file to use
         if self._config_path:
@@ -61,12 +57,11 @@ class Config:
         else:
             user_config_file = self.base_dir / "config.yaml"
 
-        # If user config exists - load and override default config
+        # If user config exists - load it
         if user_config_file.exists():
             with open(user_config_file, 'r') as f:
                 user_config = yaml.safe_load(f)
-                # Simple top-level update - user config overrides default
-                config.update(user_config)
+                config.update(user_config or {})
 
         return config
 
@@ -77,7 +72,6 @@ class Config:
         """
         # Get paths from configuration
         config_paths = self._config.get('paths', {})
-        project_paths = self._config.get('project_paths', {})
 
         if self._inventory_path:
             self.inventory_path = Path(self._inventory_path)
@@ -97,11 +91,10 @@ class Config:
             reports_dir = config_paths.get('reports_dir', 'reports')
             self.reports_dir = self.base_dir / reports_dir
 
-        # Project structure paths (from default config - not overridable)
-        ansible_dir = project_paths.get('ansible_dir', 'ansible')
-        self.ansible_dir = self.base_dir / ansible_dir
-        playbooks_dir = project_paths.get('playbooks_dir', 'playbooks')
-        self.playbooks_dir = self.ansible_dir / playbooks_dir
+        # Project structure paths
+        self.ansible_dir = config_paths.get('ansible_dir', self.base_dir / 'ansible')
+        self.playbooks_dir = config_paths.get('playbooks_dir', self.ansible_dir / 'playbooks')
+        self.ansible_cfg_path = config_paths.get('ansible_cfg_path', self.ansible_dir / 'ansible.cfg')
 
     def get(self, key: str, default: Any = None) -> Any:
         """
@@ -134,7 +127,7 @@ class Config:
         Returns:
             Path to log file with fixed name
         """
-        filename = f"{component}.log"  # diagnostics.log, ansible.log
+        filename = f"{component}.log"
         return self.log_dir / filename
 
     @property
