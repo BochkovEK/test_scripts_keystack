@@ -117,7 +117,7 @@ class PlaybookRunner:
 def main():
     """Main function"""
     parser = argparse.ArgumentParser(description='Run Ansible playbooks for OpenStack diagnostics')
-    parser.add_argument('playbook', help='Name of playbook to run')
+    parser.add_argument('--playbook', '-p', help='Name of playbook to run')
     parser.add_argument('--list', '-l', action='store_true', help='List available playbooks')
 
     args = parser.parse_args()
