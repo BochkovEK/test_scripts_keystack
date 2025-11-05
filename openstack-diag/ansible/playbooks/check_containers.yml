@@ -12,16 +12,40 @@
 #      debug:
 #        var: container_list.stdout
 
+#---
+#- name: Get container information using Docker API
+#  hosts: all
+#  become: yes
+#  tasks:
+#    - name: Collect container facts
+#      community.general.docker_container_info:
+#        name: all
+#      register: container_info
+#
+#    - name: Display container status
+#      debug:
+#        var: container_info.containers
+
 ---
-- name: Get container information using Docker API
+- name: Get Podman container information using containers.podman collection
   hosts: all
   become: yes
   tasks:
-    - name: Collect container facts
-      community.general.docker_container_info:
-        name: all
-      register: container_info
+    - name: Get list of all containers
+      containers.podman.podman_container:
+        state: present
+        list: yes
+      register: containers_list
 
-    - name: Display container status
+    - name: Inspect each container
+      containers.podman.podman_container:
+        name: "{{ item.Name }}"
+        state: inspected
+      loop: "{{ containers_list.containers }}"
+      loop_control:
+        label: "{{ item.Name }}"
+      register: containers_inspected
+
+    - name: Display container information
       debug:
-        var: container_info.containers
+        var: containers_inspected.results
