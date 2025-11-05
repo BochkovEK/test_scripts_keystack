@@ -1,16 +1,16 @@
 # ansible/playbooks/check_containers.yml
-#---
-#- name: Check Podman containers
-#  hosts: all
-#  become: yes
-#  tasks:
-#    - name: List running containers
-#      command: podman ps
-#      register: container_list
-#
-#    - name: Show container list
-#      debug:
-#        var: container_list.stdout
+---
+- name: Check Podman containers
+  hosts: all
+  become: yes
+  tasks:
+    - name: List running containers
+      command: podman ps
+      register: container_list
+
+    - name: Show container list
+      debug:
+        var: container_list.stdout
 
 #---
 #- name: Get container information using Docker API
@@ -50,11 +50,11 @@
 #      debug:
 #        var: containers_inspected.results
 
-- name: Get Podman container information
-  hosts: all
-  become: yes
-  tasks:
-    - name: Get containers JSON
-      command: podman ps -a
-#        --format json
-#      register: containers_json
+#- name: Get Podman container information
+#  hosts: all
+#  become: yes
+#  tasks:
+#    - name: Get containers JSON
+#      command: podman ps -a
+##        --format json
+##      register: containers_json
