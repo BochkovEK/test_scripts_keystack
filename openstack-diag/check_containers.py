@@ -37,15 +37,15 @@ class PlaybookRunner:
         self.runner = get_ansible_runner(self.config)
         self.logger = get_logger(__name__)
 
-    def run_playbook(self, playbook_name: str) -> List[CheckResult]:
+    def run_playbook(self, playbook_path: str) -> List[CheckResult]:
         """
         Run specific playbook and return results with output preview
         """
-        self.logger.info(f"Running playbook: {playbook_name}")
+        self.logger.info(f"Running playbook: {playbook_path}")
         results = []
 
         try:
-            ansible_result = self.runner.run_playbook(playbook_name)
+            ansible_result = self.runner.run_playbook(playbook_path)
 
             # Create output preview
             stdout = ansible_result['stdout'] or ""
@@ -65,9 +65,9 @@ class PlaybookRunner:
 
             if not ansible_result['success']:
                 results.append(CheckResult(
-                    name=playbook_name,
+                    name=playbook_path,
                     status="error",
-                    message=f"Playbook failed: {ansible_result['error']}",
+                    message=f"Playbook failed: {ansible_result.get('error', 'Unknown error')}",
                     details={
                         "return_code": ansible_result['return_code'],
                         "output_preview": output_preview,
@@ -78,7 +78,7 @@ class PlaybookRunner:
 
             # Success case
             results.append(CheckResult(
-                name=playbook_name,
+                name=playbook_path,
                 status="success",
                 message=f"Playbook completed successfully",
                 details={
@@ -90,71 +90,65 @@ class PlaybookRunner:
 
         except Exception as e:
             results.append(CheckResult(
-                name=playbook_name,
+                name=playbook_path,
                 status="error",
                 message=f"Execution error: {str(e)}"
             ))
 
         return results
 
-    def _parse_containers_output(self, ansible_output: str) -> List[CheckResult]:
-        """
-        Simple container output parser - just extract basic info
-        """
-        results = []
-
-        # Simple extraction - look for container lines
-        lines = ansible_output.split('\n')
-        for line in lines:
-            if 'CONTAINER ID' in line:
-                continue  # Skip header
-            if line.strip() and len(line.split()) >= 6:
-                parts = line.split()
-                name = parts[-1]  # Last column is name
-                status = ' '.join(parts[-4:-2])  # Status columns
-
-                results.append(CheckResult(
-                    name=f"container_{name}",
-                    status="info",
-                    message=f"{name}: {status}",
-                    details={"name": name, "status": status}
-                ))
-
-        return results
-
-    def get_available_playbooks(self) -> List[str]:
-        """Get list of available playbooks"""
+    def get_available_playbooks(self) -> Dict[str, Path]:
+        """Get all available playbooks"""
         return self.runner.get_available_playbooks()
 
 
 def main():
     """Main function"""
     parser = argparse.ArgumentParser(description='Run Ansible playbooks for OpenStack diagnostics')
-    parser.add_argument('--playbook', '-p', help='Name of playbook to run')
-    parser.add_argument('--list', '-l', action='store_true', help='List available playbooks')
+    parser.add_argument('--playbook', '-p', help='Full path to specific playbook to run')
 
     args = parser.parse_args()
 
     runner = PlaybookRunner()
 
-    if args.list:
+    results = []
+
+    if args.playbook:
+        # Scenario 1: Run specific playbook by full path
+        playbook_path = Path(args.playbook)
+        if not playbook_path.exists():
+            print(f"Error: Playbook not found: {playbook_path}")
+            sys.exit(1)
+
+        print(f"🚀 Running specific playbook: {playbook_path}")
+        results = runner.run_playbook(str(playbook_path))
+
+    else:
+        # Scenario 2: Run all available playbooks
         playbooks = runner.get_available_playbooks()
-        print("Available playbooks:")
-        for pb in playbooks:
-            print(f"  - {pb}")
-        return
+        if not playbooks:
+            print("No playbooks found")
+            return
 
-    if args.playbook not in runner.get_available_playbooks():
-        print(f"Error: Playbook '{args.playbook}' not found")
-        print("Use --list to see available playbooks")
-        sys.exit(1)
+        print(f"🚀 Running all playbooks ({len(playbooks)} total)")
 
-    print(f"🚀 Running playbook: {args.playbook}")
-    results = runner.run_playbook(args.playbook)
+        for playbook_name, playbook_path in playbooks.items():
+            print(f"\n📋 Running: {playbook_name}")
+            playbook_results = runner.run_playbook(str(playbook_path))
+            results.extend(playbook_results)
 
-    print(f"\n📊 Results ({len(results)}):")
+    # Print results summary
+    print(f"\n📊 Final Results ({len(results)} checks):")
+    success_count = sum(1 for r in results if r.status == 'success')
+    error_count = sum(1 for r in results if r.status == 'error')
+
+    print(f"  ✅ Success: {success_count}")
+    print(f"  ❌ Errors: {error_count}")
+
+    # Detailed results
     for result in results:
-        print(f"  {result.status.upper():8} {result.name}: {result.message}")
+        status_icon = "✅" if result.status == 'success' else "❌"
+        print(f"  {status_icon} {result.name}: {result.message}")
 
         if result.details and 'output_preview' in result.details:
             print(f"\n  Output preview:")
@@ -165,3 +159,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
