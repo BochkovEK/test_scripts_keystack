@@ -65,70 +65,52 @@ class ContainerAnalyzer:
         """Parse Ansible task output with node information"""
         results = []
 
-        # Ищем все блоки с выводом контейнеров по узлам
+        # Разделяем вывод по строкам и ищем блоки
         lines = output.split('\n')
         i = 0
 
         while i < len(lines):
-            line = lines[i]
+            line = lines[i].strip()
 
-            # Ищем начало блока с контейнерами для узла
-            if line.strip().startswith('ok: [') and 'containers_json.stdout' in line:
-                node = line.split('[', 1)[1].split(']', 1)[0]  # Извлекаем имя узла
+            # Ищем строку начала блока с контейнерами
+            if line.startswith('ok: [') and '=>' in line:
+                node = line.split('[', 1)[1].split(']', 1)[0]
 
-                # Ищем начало JSON массива
-                json_start = i
-                bracket_count = 0
-                json_found = False
-
-                for j in range(i, min(i + 10, len(lines))):  # Ищем в следующих 10 строках
-                    if '[' in lines[j]:
-                        json_start = j
-                        json_found = True
-                        break
-
-                if not json_found:
-                    i += 1
-                    continue
-
-                # Собираем полный JSON до закрывающей скобки
+                # Ищем следующие строки до закрывающей фигурной скобки
                 json_lines = []
-                bracket_count = 0
-                in_json = False
+                brace_count = 0
+                json_started = False
 
-                for j in range(json_start, len(lines)):
+                for j in range(i, len(lines)):
                     current_line = lines[j]
 
-                    for char in current_line:
-                        if char == '[':
-                            bracket_count += 1
-                            in_json = True
-                        elif char == ']':
-                            bracket_count -= 1
+                    if '"containers_json.stdout":' in current_line:
+                        json_started = True
 
-                    json_lines.append(current_line)
+                    if json_started:
+                        json_lines.append(current_line)
 
-                    if bracket_count == 0 and in_json:
-                        break
+                        # Подсчитываем фигурные скобки для нахождения конца JSON объекта
+                        brace_count += current_line.count('{') - current_line.count('}')
 
-                json_content = '\n'.join(json_lines)
+                        if brace_count <= 0 and current_line.strip() == '}':
+                            break
 
-                # Пытаемся найти и распарсить JSON
-                try:
-                    # Ищем JSON массив в собранных строках
-                    json_match = re.search(r'\[\s*\{.*\}\s*\]', json_content, re.DOTALL)
-                    if json_match:
-                        json_str = json_match.group(0)
+                # Объединяем строки и ищем JSON массив
+                block_content = '\n'.join(json_lines)
+                json_match = re.search(r'"containers_json\.stdout":\s*(\[.*?\])', block_content, re.DOTALL)
+
+                if json_match:
+                    try:
+                        json_str = json_match.group(1)
                         containers_data = json.loads(json_str)
 
                         for container in containers_data:
                             container_status = self._analyze_container(node, container)
                             results.append(container_status)
 
-                except (json.JSONDecodeError, AttributeError) as e:
-                    self.logger.error(f"Failed to parse JSON for node {node}: {e}")
-                    # Логируем начало проблемного JSON для отладки
-                    self.logger.debug(f"Problematic JSON start: {json_content[:500]}")
+                    except json.JSONDecodeError as e:
+                        self.logger.error(f"JSON parse error for node {node}: {e}")
 
             i += 1
 
