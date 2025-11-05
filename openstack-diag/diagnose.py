@@ -120,6 +120,20 @@ class OpenStackDiagnostics:
             # Run container check playbook
             ansible_result = self.runner.run_playbook("check_containers.yml")
 
+            # DEBUG: Print raw Ansible output
+            print(f"🔍 RAW ANSIBLE OUTPUT:")
+            print("=" * 60)
+            print(f"Success: {ansible_result['success']}")
+            print(f"Return code: {ansible_result['return_code']}")
+            print(f"Status: {ansible_result.get('status', 'N/A')}")
+            print(f"Stdout length: {len(ansible_result['stdout'])}")
+            print(f"Stderr length: {len(ansible_result['stderr'])}")
+            print("\nSTDOUT PREVIEW:")
+            print(ansible_result['stdout'][:1000] if ansible_result['stdout'] else "EMPTY")
+            print("\nSTDERR PREVIEW:")
+            print(ansible_result['stderr'][:500] if ansible_result['stderr'] else "EMPTY")
+            print("=" * 60)
+
             if not ansible_result['success']:
                 results.append(CheckResult(
                     name="container_status",
