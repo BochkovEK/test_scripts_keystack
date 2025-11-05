@@ -3,6 +3,7 @@
 - name: Check Podman containers
   hosts: all
   become: yes
+  gather_facts: false
   tasks:
     - name: List running containers
       command: podman ps --format json
