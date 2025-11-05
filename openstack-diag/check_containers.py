@@ -106,10 +106,19 @@ def main():
     """Main function"""
     parser = argparse.ArgumentParser(description='Run Ansible playbooks for OpenStack diagnostics')
     parser.add_argument('--playbook', '-p', help='Full path to specific playbook to run')
+    parser.add_argument('--list', '-l', action='store_true', help='List available playbooks')
 
     args = parser.parse_args()
 
     runner = PlaybookRunner()
+
+    if args.list:
+        playbooks = runner.get_available_playbooks()
+        print("Available playbooks:")
+        for name, path in playbooks.items():
+            print(f"  - {name}")
+            print(f"    path: {path}")
+        return
 
     results = []
 
@@ -159,4 +168,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
