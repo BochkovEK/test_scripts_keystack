@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
+import json
 
 # Fix imports for direct script execution
 if __name__ == "__main__":
@@ -102,7 +103,7 @@ class OpenStackDiagnostics:
 
     def _parse_container_status(self, ansible_output: str) -> List[CheckResult]:
         """
-        Parse Podman container status from Ansible JSON output
+        Parse container status from Podman JSON output
 
         Returns:
             List of CheckResult objects with container health analysis
@@ -119,17 +120,18 @@ class OpenStackDiagnostics:
                     message="No JSON container data found in output"
                 )]
 
-            # Parse containers from JSON
-            containers = json_data.get('containers', [])
+            # Parse containers from JSON array
+            containers = json.loads(json_data) if isinstance(json_data, str) else json_data
+
             for container in containers:
-                name = container.get('Names', ['unknown'])[0]
+                name = container.get('Names', ['unknown'])[0] if container.get('Names') else 'unknown'
                 status = container.get('Status', '')
                 state = container.get('State', '')
-                created = container.get('Created', '')
+                created = container.get('CreatedAt', '')
 
+                # Analyze container state
                 container_result = self._analyze_container_state(name, created, status, state)
-                if container_result:
-                    results.append(container_result)
+                results.append(container_result)
 
         except Exception as e:
             return [CheckResult(
@@ -140,66 +142,45 @@ class OpenStackDiagnostics:
 
         return results
 
-    def _analyze_container_state(self, name: str, created: str, status: str, health: str) -> CheckResult:
+    def _extract_json_from_output(self, ansible_output: str) -> Optional[Any]:
         """
-        Analyze container state with uptime checking
+        Extract JSON data from Ansible command output using json module
 
         Returns:
-            CheckResult with container health assessment
+            JSON data or None if not found
         """
-        # Analyze container status
-        if status == "running":
-            # Parse uptime from status (format: "Up 2 days", "Up 5 minutes", etc.)
-            uptime_info = self._parse_uptime_from_status(status)
 
-            if health == "unhealthy":
-                return CheckResult(
-                    name=f"container_{name}",
-                    status="error",
-                    message=f"Container {name} is running but unhealthy",
-                    details={"status": status, "health": health, "created": created, "uptime": uptime_info}
-                )
+        try:
+            # Method 1: Try to parse entire output as JSON
+            try:
+                return json.loads(ansible_output)
+            except json.JSONDecodeError:
+                pass
 
-            # Check uptime for recently started containers
-            if uptime_info and uptime_info.get('minutes', 0) < 1:
-                return CheckResult(
-                    name=f"container_{name}",
-                    status="warning",
-                    message=f"Container {name} recently started ({status})",
-                    details={"status": status, "health": health, "created": created, "uptime": uptime_info}
-                )
+            # Method 2: Look for JSON in containers_json.stdout lines
+            lines = ansible_output.split('\n')
+            for i, line in enumerate(lines):
+                if 'containers_json.stdout' in line and i + 1 < len(lines):
+                    # Try to parse the next line as JSON
+                    json_line = lines[i + 1].strip()
+                    try:
+                        return json.loads(json_line)
+                    except json.JSONDecodeError:
+                        continue
 
-            # Healthy and running for more than 1 minute
-            return CheckResult(
-                name=f"container_{name}",
-                status="success",
-                message=f"Container {name} is running normally ({status})",
-                details={"status": status, "health": health, "created": created, "uptime": uptime_info}
-            )
+            # Method 3: Find any line that contains valid JSON
+            for line in lines:
+                line = line.strip()
+                if line.startswith('[') or line.startswith('{'):
+                    try:
+                        return json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
 
-        elif status == "exited":
-            return CheckResult(
-                name=f"container_{name}",
-                status="error",
-                message=f"Container {name} is exited",
-                details={"status": status, "health": health, "created": created}
-            )
+        except Exception as e:
+            print(f"JSON extraction error: {e}")
 
-        elif status == "restarting":
-            return CheckResult(
-                name=f"container_{name}",
-                status="warning",
-                message=f"Container {name} is restarting",
-                details={"status": status, "health": health, "created": created}
-            )
-
-        else:
-            return CheckResult(
-                name=f"container_{name}",
-                status="warning",
-                message=f"Container {name} in unexpected state: {status}",
-                details={"status": status, "health": health, "created": created}
-            )
+        return None
 
     @staticmethod
     def _parse_uptime_from_status(status: str) -> Dict[str, int]:
