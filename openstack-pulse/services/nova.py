@@ -1,4 +1,5 @@
 from novaclient import client as nova_client
+from typing import Dict, Any
 import time
 
 
@@ -49,10 +50,10 @@ class NovaCheck:
             print(f"  status: {service.status} (type: {type(service.status)})")
             print("  ---")
 
-        stats = {
+        stats: Dict[str, Any] = {
             'total': len(services),
             'by_state': {'up': 0, 'down': 0},
-            'critical_services': {}
+            'critical_services': {}  # Теперь линтер понимает, что это Any
         }
 
         critical_services = ['nova-conductor', 'nova-scheduler', 'nova-compute']
@@ -71,12 +72,6 @@ class NovaCheck:
                     'state': service.state,
                     'status': service.status
                 }
-
-        # ТЕСТОВЫЙ ВЫВОД - посмотрим что получилось
-        print("=== DEBUG Stats ===")
-        print(f"Total services: {stats['total']}")
-        print(f"Critical services found: {list(stats['critical_services'].keys())}")
-        print("===================")
 
         return stats
 

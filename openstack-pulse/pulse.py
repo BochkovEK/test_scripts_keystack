@@ -100,7 +100,7 @@ class Pulse:
         print(f"  Hypervisors: {hypervisors['up']}/{hypervisors['total']} up")
         print("  Instances per hypervisor:")
         for hv in hypervisors['details']:
-            status_icon = "🔵" if hv['state'] == 'up' else "⚠"
+            status_icon = "✅" if hv['state'] == 'up' else "⚠"
             instances_info = f"({hv['instances_count']} instances)" if hv['instances_count'] > 0 else "(no instances)"
             print(f"    {status_icon} {hv['name']}: {hv['state']} {instances_info}")
 
