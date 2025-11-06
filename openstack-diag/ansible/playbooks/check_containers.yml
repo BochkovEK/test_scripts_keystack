@@ -5,7 +5,7 @@
   gather_facts: false
   tasks:
     - name: List running containers
-      command: podman ps -a --format 'table \{\{.ID\}\}'
+      command: podman ps --format "table {{'{{'}}.Names{{'}}'}}\t{{'{{'}}.Status{{'}}'}}\t{{'{{'}}.RunningFor{{'}}'}}"
       register: containers_json
     - name: Show container list
       debug:
