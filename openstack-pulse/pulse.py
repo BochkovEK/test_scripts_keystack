@@ -77,12 +77,9 @@ class Pulse:
         status_icon = "✅" if service_data['status'] == 'OK' else "❌"
         print(f"{status_icon} {service_name.upper()}: {service_data['status']} ({service_data['response_time']}s)")
 
-        # ДЛЯ ОТЛАДКИ - вывести всю структуру данных
-        print(f"   DEBUG {service_name} keys: {list(service_data.keys())}")
-        if service_data['status'] == 'OK':
-            print(f"   DEBUG {service_name} data: {service_data}")
-        elif service_data['status'] == 'ERROR':
-            print(f"   Error: {service_data['error']}")
+        # Service-specific display logic
+        if service_name == 'nova' and service_data['status'] == 'OK':
+            self._display_nova_details(service_data)
         # Add other services here: keystone, neutron, rabbitmq, galera
         # elif service_name == 'keystone' and service_data['status'] == 'OK':
         #     self._display_keystone_details(service_data)
