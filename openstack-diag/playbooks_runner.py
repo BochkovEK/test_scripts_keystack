@@ -102,28 +102,50 @@ class PlaybookRunner:
         return self.runner.get_available_playbooks()
 
 
+# def extract_task_output(stdout: str) -> str:
+#     """
+#     Extract only the useful task output from Ansible stdout
+#     Removes PLAY, TASK headers and keeps only [host] => {data} patterns
+#     """
+#     lines = stdout.split('\n')
+#     useful_lines = []
+#
+#     for line in lines:
+#         line = line.strip()
+#         # Keep only lines with actual task results
+#         if '=>' in line and ('ok:' in line or 'changed:' in line):
+#             useful_lines.append(line)
+#         # Keep debug output with variable values
+#         elif line.startswith('"') and ':' in line and line.endswith(','):
+#             useful_lines.append(line)
+#         # Keep JSON-like structures
+#         elif line.startswith('{') or line.startswith('[') or line.endswith('}') or line.endswith(']'):
+#             useful_lines.append(line)
+#
+#     return '\n'.join(useful_lines) if useful_lines else "No structured output found"
+
+
 def extract_task_output(stdout: str) -> str:
     """
-    Extract only the useful task output from Ansible stdout
-    Removes PLAY, TASK headers and keeps only [host] => {data} patterns
+    Extract only the content inside { } from lines like [host] => { ... }
     """
+    import re
+
     lines = stdout.split('\n')
-    useful_lines = []
+    extracted_data = []
+
+    # Pattern to match [host] => { ... }
+    pattern = r'\[.*\] => (\{.*\})'
 
     for line in lines:
         line = line.strip()
-        # Keep only lines with actual task results
-        if '=>' in line and ('ok:' in line or 'changed:' in line):
-            useful_lines.append(line)
-        # Keep debug output with variable values
-        elif line.startswith('"') and ':' in line and line.endswith(','):
-            useful_lines.append(line)
-        # Keep JSON-like structures
-        elif line.startswith('{') or line.startswith('[') or line.endswith('}') or line.endswith(']'):
-            useful_lines.append(line)
+        # Find lines with [host] => { ... } pattern
+        match = re.search(pattern, line)
+        if match:
+            json_like_content = match.group(1)
+            extracted_data.append(json_like_content)
 
-    return '\n'.join(useful_lines) if useful_lines else "No structured output found"
-
+    return '\n'.join(extracted_data) if extracted_data else "No structured data found"
 
 def output_playbook_result(playbook_name: str, results: List[CheckResult]):
     """Print results for a single playbook immediately after execution"""
