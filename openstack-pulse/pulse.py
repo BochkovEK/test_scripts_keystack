@@ -92,19 +92,13 @@ class Pulse:
         hypervisors = nova_data['hypervisors']
 
         # Critical services status
-        services_by_type = {}
-        for service_key, info in critical.items():
-            binary = info['binary']
-            if binary not in services_by_type:
-                services_by_type[binary] = []
-            services_by_type[binary].append(info)
-
         # Выводим все сервисы по типам
         print("  Critical Services:")
-        for binary, instances in services_by_type.items():
-            for instance in instances:
-                status_icon = "✅" if instance['state'] == 'up' else "❌"
-                print(f"    {status_icon} {binary}: {instance['state']} on {instance['host']}")
+        for service_key, info in critical.items():
+            # Извлекаем binary из ключа (новый формат) или из данных (старый формат)
+            binary = info.get('binary', service_key)  # Пробуем оба варианта
+            status_icon = "✅" if info['state'] == 'up' else "❌"
+            print(f"    {status_icon} {binary}: {info['state']} on {info['host']}")
 
         # Hypervisors with instances
         print(f"  Hypervisors: {hypervisors['up']}/{hypervisors['total']} up")
