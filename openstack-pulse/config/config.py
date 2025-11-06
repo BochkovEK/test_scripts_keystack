@@ -16,7 +16,7 @@ class Config:
         # Load base config with absolute path
         config_path = os.path.join(self.project_root, 'config', 'config.yml')
         with open(config_path) as f:
-            self.settings = yaml.safe_load(f)
+            self.config = yaml.safe_load(f)
 
         # Create Keystone session
         self.session = self._create_session()
@@ -33,4 +33,4 @@ class Config:
 
     @property
     def check_interval(self):
-        return self.settings['intervals']['check_interval']
+        return self.config['settings']['intervals']['check_interval']
