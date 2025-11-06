@@ -91,6 +91,15 @@ class Pulse:
         critical = services['critical_services']
         hypervisors = nova_data['hypervisors']
 
+        # ВРЕМЕННЫЙ ВЫВОД - посмотрим структуру
+        print("  === DEBUG Critical Services ===")
+        for i, (service_key, info) in enumerate(critical.items()):
+            print(f"  Service {i}: key='{service_key}'")
+            print(f"    info keys: {list(info.keys())}")
+            print(f"    info values: {info}")
+            print("  ---")
+        print("  ===============================")
+
         # Critical services status
         # Выводим все сервисы по типам
         print("  Critical Services:")
