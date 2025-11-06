@@ -266,22 +266,21 @@ def extract_task_output(stdout: str) -> str:
     return '\n'.join(extracted_data) if extracted_data else "No structured data found"
 
 
-def get_output_preview(stdout: str) -> str:
+def get_clean_output_preview(clean_output: str) -> str:
     """
-    Get first and last 50 lines of output for preview
+    Get first and last 50 lines of CLEAN output for preview if it's large
     """
-    stdout_lines = stdout.split('\n')
-    output_preview = ""
+    clean_lines = clean_output.split('\n')
 
-    if stdout_lines:
-        first_50 = '\n'.join(stdout_lines[:50])
-        last_50 = '\n'.join(stdout_lines[-50:]) if len(stdout_lines) > 50 else ""
+    # If clean output is small, show it entirely
+    if len(clean_lines) <= 100:
+        return clean_output
 
-        output_preview = f"First 50 lines:\n{first_50}"
-        if last_50:
-            output_preview += f"\n\nLast 50 lines:\n{last_50}"
+    # If large, show first and last 50 lines
+    first_50 = '\n'.join(clean_lines[:50])
+    last_50 = '\n'.join(clean_lines[-50:])
 
-    return output_preview
+    return f"First 50 lines:\n{first_50}\n\n...\n\nLast 50 lines:\n{last_50}"
 
 
 def output_playbook_result(playbook_name: str, results: List[CheckResult]):
@@ -292,20 +291,23 @@ def output_playbook_result(playbook_name: str, results: List[CheckResult]):
         print(f"  {status_icon} {result.name}: {result.message}")
 
         if result.details and 'stdout' in result.details:
-            # Create preview from full stdout
-            output_preview = get_output_preview(result.details['stdout'])
             # Extract clean output
-            # clean_output = extract_task_output(result.details['stdout'])
+            clean_output = extract_task_output(result.details['stdout'])
 
-            # print(f"\n  Clean output:")
-            # print("  " + "=" * 50)
-            # print(clean_output)
-            # print("  " + "=" * 50)
+            # Get preview for clean output (50/50 if large)
+            clean_preview = get_clean_output_preview(clean_output)
 
-            print(f"\n  Full preview (first/last 50 lines):")
+            print(f"\n  Clean output:")
             print("  " + "=" * 50)
-            print(output_preview)
+            print(clean_preview)
             print("  " + "=" * 50)
+
+            # Full preview (optional - можно убрать если не нужен)
+            # output_preview = get_output_preview(result.details['stdout'])
+            # print(f"\n  Full preview (first/last 50 lines):")
+            # print("  " + "=" * 50)
+            # print(output_preview)
+            # print("  " + "=" * 50)
 
 
 def main():
