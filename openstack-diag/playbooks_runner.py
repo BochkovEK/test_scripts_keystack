@@ -97,10 +97,10 @@ def main():
     args = parser.parse_args()
 
     # from ansible import get_ansible_runner
-    runner = get_ansible_runner()
+    runner = PlaybookRunner()
 
     playbook_path = Path(args.playbook)
-    result = runner.run_playbook(playbook_path)
+    result = runner.run_playbook(str(playbook_path))
 
     print(f"Success: {result['success']}")
     print(f"Return code: {result['return_code']}")
