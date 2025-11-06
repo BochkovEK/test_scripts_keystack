@@ -40,40 +40,37 @@ class Pulse:
         print(f"Enabled checks: {', '.join(self.config.settings.check_services)}")
 
         # Calculate number of iterations based on collection window and interval
-        total_iterations = self.config.settings.collection_window // self.config.settings.check_interval
+        total_iterations = (self.config.settings.intervals.collection_window //
+                            self.config.settings.intervals.check_interval)
         print(
-            f"Collection: {total_iterations} cycles ({self.config.settings.collection_window}s window, "
+            f"Collection: {total_iterations} cycles ({self.config.settings.intervals.collection_window}s window, "
             f"{self.config.settings.check_interval}s interval)")
 
         try:
             for cycle in range(total_iterations):
+                # Собираем метрики
                 snapshot = self.collect_metrics()
-                self.snapshots.append(snapshot)
 
-                # Keep only last N snapshots based on retention setting
-                if len(self.snapshots) > self.config.settings.snapshot_retention:
-                    self.snapshots.pop(0)
+                # Сразу выводим на экран
+                self._display_snapshot(snapshot, cycle + 1, total_iterations)
 
-                # General console output for all services
-                print(f"\n[{time.ctime(snapshot['timestamp'])}] Cycle {cycle + 1}/{total_iterations}")
-
-                # Display results for each enabled service
-                for service_name in self.config.settings.enabled_checks:
-                    if service_name in snapshot:
-                        service_data = snapshot[service_name]
-                        self._display_service_status(service_name, service_data)
-
-                # Wait for next cycle (except after last iteration)
+                # Ждем следующий цикл (кроме последнего)
                 if cycle < total_iterations - 1:
-                    time.sleep(self.config.settings.check_interval)
+                    time.sleep(self.config.settings.intervals.check_interval)
 
-            print(f"\nCollection completed. Total snapshots: {len(self.snapshots)}")
+            print(f"\nCollection completed. Total cycles: {total_iterations}")
 
         except KeyboardInterrupt:
             print("\nMonitoring stopped by user")
-        except Exception as e:
-            print(f"Fatal error: {e}")
-            sys.exit(1)
+
+    def _display_snapshot(self, snapshot, current_cycle, total_cycles):
+        """Display current snapshot to console"""
+        print(f"\n[{time.ctime(snapshot['timestamp'])}] Cycle {current_cycle}/{total_cycles}")
+
+        for service_name in self.config.settings.check_services:
+            if service_name in snapshot:
+                service_data = snapshot[service_name]
+                self._display_service_status(service_name, service_data)
 
     def _display_service_status(self, service_name, service_data):
         """Display status for specific service"""
@@ -111,4 +108,3 @@ class Pulse:
 if __name__ == "__main__":
     pulse = Pulse()
     pulse.run()
-
