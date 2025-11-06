@@ -11,7 +11,7 @@ class Config:
         load_dotenv()
 
         # Load base config
-        with open('config/config.yml') as f:
+        with open('config.yml') as f:
             self.settings = yaml.safe_load(f)
 
         # Create Keystone session
