@@ -5,13 +5,18 @@
   become: yes
   gather_facts: false
   tasks:
-    - name: List running containers
-      command: podman ps --format json
-      register: containers_json
+    - name: Get container information
+      community.general.podman_container_info:
+        name: all
+      register: container_info
 
-    - name: Show container list
-      debug:
-        var: containers_json.stdout
+#    - name: List running containers
+#      command: podman ps --format json
+#      register: containers_json
+#
+#    - name: Show container list
+#      debug:
+#        var: containers_json.stdout
 
 #---
 #- name: Get container information using Docker API
