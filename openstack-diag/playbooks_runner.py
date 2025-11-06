@@ -135,7 +135,7 @@ def extract_task_output(stdout: str) -> str:
     extracted_data = []
 
     # Pattern to match [host] => { ... }
-    pattern = r'\[.*\] => (\{.*\})'
+    pattern = r'\[.*\]\s+=>\s+\{.*\}'
 
     for line in lines:
         line = line.strip()
