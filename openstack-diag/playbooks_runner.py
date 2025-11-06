@@ -147,39 +147,76 @@ class PlaybookRunner:
 #
 #     return '\n'.join(extracted_data) if extracted_data else "No structured data found"
 
+# def extract_task_output(stdout: str) -> str:
+#     """
+#     Extract only the content inside { } from lines like [host] => { ... }
+#     """
+#     import re
+#
+#     print(f"🔍 DEBUG: Input length: {len(stdout)}")  # Отладка
+#
+#     lines = stdout.split('\n')
+#     extracted_data = []
+#
+#     # Multiple patterns to catch different formats
+#     patterns = [
+#         r'\[.*\] => (\{.*\})',  # [host] => { ... }
+#         r'ok: \[.*\] => (\{.*\})',  # ok: [host] => { ... }
+#         r'changed: \[.*\] => (\{.*\})',  # changed: [host] => { ... }
+#     ]
+#
+#     for i, line in enumerate(lines):
+#         line = line.strip()
+#         print(f"🔍 DEBUG Line {i}: {line[:100]}...")  # Отладка
+#
+#         for pattern in patterns:
+#             match = re.search(pattern, line)
+#             if match:
+#                 json_like_content = match.group(1)
+#                 print(f"✅ DEBUG: Found match: {json_like_content[:100]}...")  # Отладка
+#                 extracted_data.append(json_like_content)
+#                 break
+#
+#     result = '\n'.join(extracted_data) if extracted_data else "No structured data found"
+#     print(f"🔍 DEBUG: Final result: {result}")  # Отладка
+#     return result
+
 def extract_task_output(stdout: str) -> str:
     """
-    Extract only the content inside { } from lines like [host] => { ... }
+    Extract only the content inside { } from multi-line [host] => { ... } blocks
     """
     import re
-
-    print(f"🔍 DEBUG: Input length: {len(stdout)}")  # Отладка
 
     lines = stdout.split('\n')
     extracted_data = []
 
-    # Multiple patterns to catch different formats
-    patterns = [
-        r'\[.*\] => (\{.*\})',  # [host] => { ... }
-        r'ok: \[.*\] => (\{.*\})',  # ok: [host] => { ... }
-        r'changed: \[.*\] => (\{.*\})',  # changed: [host] => { ... }
-    ]
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
 
-    for i, line in enumerate(lines):
-        line = line.strip()
-        print(f"🔍 DEBUG Line {i}: {line[:100]}...")  # Отладка
+        # Look for lines starting with [host] => {
+        if re.match(r'^(ok|changed): \[.*\] => \{', line):
+            # Start collecting multi-line JSON
+            json_lines = []
+            json_lines.append('{')  # Start with the opening brace
 
-        for pattern in patterns:
-            match = re.search(pattern, line)
-            if match:
-                json_like_content = match.group(1)
-                print(f"✅ DEBUG: Found match: {json_like_content[:100]}...")  # Отладка
-                extracted_data.append(json_like_content)
-                break
+            # Collect all lines until we find the closing brace
+            j = i + 1
+            while j < len(lines):
+                next_line = lines[j].strip()
+                json_lines.append(next_line)
+                if next_line == '}':
+                    break
+                j += 1
 
-    result = '\n'.join(extracted_data) if extracted_data else "No structured data found"
-    print(f"🔍 DEBUG: Final result: {result}")  # Отладка
-    return result
+            # Join and try to parse as JSON-like structure
+            json_block = '\n'.join(json_lines)
+            extracted_data.append(json_block)
+            i = j  # Skip the lines we've processed
+
+        i += 1
+
+    return '\n'.join(extracted_data) if extracted_data else "No structured data found"
 
 def output_playbook_result(playbook_name: str, results: List[CheckResult]):
     """Print results for a single playbook immediately after execution"""
