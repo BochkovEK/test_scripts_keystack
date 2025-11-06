@@ -102,6 +102,29 @@ class PlaybookRunner:
         return self.runner.get_available_playbooks()
 
 
+def extract_task_output(stdout: str) -> str:
+    """
+    Extract only the useful task output from Ansible stdout
+    Removes PLAY, TASK headers and keeps only [host] => {data} patterns
+    """
+    lines = stdout.split('\n')
+    useful_lines = []
+
+    for line in lines:
+        line = line.strip()
+        # Keep only lines with actual task results
+        if '=>' in line and ('ok:' in line or 'changed:' in line):
+            useful_lines.append(line)
+        # Keep debug output with variable values
+        elif line.startswith('"') and ':' in line and line.endswith(','):
+            useful_lines.append(line)
+        # Keep JSON-like structures
+        elif line.startswith('{') or line.startswith('[') or line.endswith('}') or line.endswith(']'):
+            useful_lines.append(line)
+
+    return '\n'.join(useful_lines) if useful_lines else "No structured output found"
+
+
 def output_playbook_result(playbook_name: str, results: List[CheckResult]):
     """Print results for a single playbook immediately after execution"""
     print(f"\n📊 Results for {playbook_name}:")
@@ -110,9 +133,11 @@ def output_playbook_result(playbook_name: str, results: List[CheckResult]):
         print(f"  {status_icon} {result.name}: {result.message}")
 
         if result.details and 'output_preview' in result.details:
-            print(f"  Output preview:")
+            # Extract clean output from the full preview
+            clean_output = extract_task_output(result.details['output_preview'])
+            print(f"\n  Clean output:")
             print("  " + "=" * 50)
-            print(result.details['output_preview'])
+            print(clean_output)
             print("  " + "=" * 50)
 
 
