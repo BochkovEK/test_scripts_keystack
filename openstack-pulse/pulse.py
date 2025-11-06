@@ -91,23 +91,13 @@ class Pulse:
         critical = services['critical_services']
         hypervisors = nova_data['hypervisors']
 
-        # ВРЕМЕННЫЙ ВЫВОД - посмотрим структуру
-        print("  === DEBUG Critical Services ===")
-        for i, (service_key, info) in enumerate(critical.items()):
-            print(f"  Service {i}: key='{service_key}'")
-            print(f"    info keys: {list(info.keys())}")
-            print(f"    info values: {info}")
-            print("  ---")
-        print("  ===============================")
-
-        # Critical services status
-        # Выводим все сервисы по типам
         print("  Critical Services:")
-        for service_key, info in critical.items():
-            # Извлекаем binary из ключа (новый формат) или из данных (старый формат)
-            binary = info.get('binary', service_key)  # Пробуем оба варианта
-            status_icon = "✅" if info['state'] == 'up' else "❌"
-            print(f"    {status_icon} {binary}: {info['state']} on {info['host']}")
+
+        # Теперь critical - это Dict[str, List[Dict]]
+        for service_type, instances in critical.items():
+            for instance in instances:
+                status_icon = "✅" if instance['state'] == 'up' else "❌"
+                print(f"    {status_icon} {service_type}: {instance['state']} on {instance['host']}")
 
         # Hypervisors with instances
         print(f"  Hypervisors: {hypervisors['up']}/{hypervisors['total']} up")
