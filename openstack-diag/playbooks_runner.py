@@ -46,22 +46,8 @@ class PlaybookRunner:
 
         try:
             ansible_result = self.runner.run_playbook(playbook_path)
-
-            # Create output preview
             stdout = ansible_result['stdout'] or ""
             stderr = ansible_result['stderr'] or ""
-
-            # Get first and last 50 lines
-            stdout_lines = stdout.split('\n')
-            output_preview = ""
-
-            if stdout_lines:
-                first_50 = '\n'.join(stdout_lines[:50])
-                last_50 = '\n'.join(stdout_lines[-50:]) if len(stdout_lines) > 50 else ""
-
-                output_preview = f"First 50 lines:\n{first_50}"
-                if last_50:
-                    output_preview += f"\n\nLast 50 lines:\n{last_50}"
 
             if not ansible_result['success']:
                 results.append(CheckResult(
@@ -70,23 +56,34 @@ class PlaybookRunner:
                     message=f"Playbook failed: {ansible_result.get('error', 'Unknown error')}",
                     details={
                         "return_code": ansible_result['return_code'],
-                        "output_preview": output_preview,
+                        "stdout": stdout,  # ✅ Передаем полный stdout
+                        "stderr": stderr
+                    }
+                ))
+            else:
+                results.append(CheckResult(
+                    name=playbook_path,
+                    status="success",
+                    message=f"Playbook completed successfully",
+                    details={
+                        "return_code": ansible_result['return_code'],
+                        "stdout": stdout,  # ✅ Передаем полный stdout
                         "stderr": stderr
                     }
                 ))
                 return results
 
-            # Success case
-            results.append(CheckResult(
-                name=playbook_path,
-                status="success",
-                message=f"Playbook completed successfully",
-                details={
-                    "return_code": ansible_result['return_code'],
-                    "output_preview": output_preview,
-                    "stderr": stderr
-                }
-            ))
+            # # Success case
+            # results.append(CheckResult(
+            #     name=playbook_path,
+            #     status="success",
+            #     message=f"Playbook completed successfully",
+            #     details={
+            #         "return_code": ansible_result['return_code'],
+            #         "output_preview": output_preview,
+            #         "stderr": stderr
+            #     }
+            # ))
 
         except Exception as e:
             results.append(CheckResult(
@@ -268,6 +265,25 @@ def extract_task_output(stdout: str) -> str:
 
     return '\n'.join(extracted_data) if extracted_data else "No structured data found"
 
+
+def get_output_preview(stdout: str) -> str:
+    """
+    Get first and last 50 lines of output for preview
+    """
+    stdout_lines = stdout.split('\n')
+    output_preview = ""
+
+    if stdout_lines:
+        first_50 = '\n'.join(stdout_lines[:50])
+        last_50 = '\n'.join(stdout_lines[-50:]) if len(stdout_lines) > 50 else ""
+
+        output_preview = f"First 50 lines:\n{first_50}"
+        if last_50:
+            output_preview += f"\n\nLast 50 lines:\n{last_50}"
+
+    return output_preview
+
+
 def output_playbook_result(playbook_name: str, results: List[CheckResult]):
     """Print results for a single playbook immediately after execution"""
     print(f"\n📊 Results for {playbook_name}:")
@@ -275,12 +291,20 @@ def output_playbook_result(playbook_name: str, results: List[CheckResult]):
         status_icon = "✅" if result.status == 'success' else "❌"
         print(f"  {status_icon} {result.name}: {result.message}")
 
-        if result.details and 'output_preview' in result.details:
-            # Extract clean output from the full preview
-            clean_output = extract_task_output(result.details['output_preview'])
-            print(f"\n  Clean output:")
+        if result.details and 'stdout' in result.details:
+            # Create preview from full stdout
+            output_preview = get_output_preview(result.details['stdout'])
+            # Extract clean output
+            # clean_output = extract_task_output(result.details['stdout'])
+
+            # print(f"\n  Clean output:")
+            # print("  " + "=" * 50)
+            # print(clean_output)
+            # print("  " + "=" * 50)
+
+            print(f"\n  Full preview (first/last 50 lines):")
             print("  " + "=" * 50)
-            print(clean_output)
+            print(output_preview)
             print("  " + "=" * 50)
 
 
