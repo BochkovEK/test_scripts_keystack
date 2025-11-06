@@ -35,38 +35,77 @@ class Pulse:
         return snapshot
 
     def run(self):
-        """Main monitoring loop"""
+        """Main monitoring loop with limited collection window"""
         print("Starting OpenStack Pulse monitoring...")
-        print(f"Check interval: {self.config.check_interval}s")
+        print(f"Enabled checks: {', '.join(self.config.settings.check_services)}")
+
+        # Calculate number of iterations based on collection window and interval
+        total_iterations = self.config.settings.collection_window // self.config.settings.check_interval
+        print(
+            f"Collection: {total_iterations} cycles ({self.config.settings.collection_window}s window, "
+            f"{self.config.settings.check_interval}s interval)")
 
         try:
-            while True:
-                # Collect metrics
+            for cycle in range(total_iterations):
                 snapshot = self.collect_metrics()
                 self.snapshots.append(snapshot)
 
-                # Keep only last 30 snapshots (5 minutes)
-                if len(self.snapshots) > 30:
+                # Keep only last N snapshots based on retention setting
+                if len(self.snapshots) > self.config.settings.snapshot_retention:
                     self.snapshots.pop(0)
 
-                # Simple console output
-                nova_status = snapshot['nova']['status']
-                response_time = snapshot['nova']['response_time']
-                print(f"[{time.ctime(snapshot['timestamp'])}] "
-                      f"Nova: {nova_status} ({response_time}s) | "
-                      f"Snapshots: {len(self.snapshots)}")
+                # General console output for all services
+                print(f"\n[{time.ctime(snapshot['timestamp'])}] Cycle {cycle + 1}/{total_iterations}")
 
-                # Check for problems
-                if nova_status == 'ERROR':
-                    print(f"ALERT: Nova check failed - {snapshot['nova']['error']}")
+                # Display results for each enabled service
+                for service_name in self.config.settings.enabled_checks:
+                    if service_name in snapshot:
+                        service_data = snapshot[service_name]
+                        self._display_service_status(service_name, service_data)
 
-                time.sleep(self.config.check_interval)
+                # Wait for next cycle (except after last iteration)
+                if cycle < total_iterations - 1:
+                    time.sleep(self.config.settings.check_interval)
+
+            print(f"\nCollection completed. Total snapshots: {len(self.snapshots)}")
 
         except KeyboardInterrupt:
             print("\nMonitoring stopped by user")
         except Exception as e:
             print(f"Fatal error: {e}")
             sys.exit(1)
+
+    def _display_service_status(self, service_name, service_data):
+        """Display status for specific service"""
+        status_icon = "✅" if service_data['status'] == 'OK' else "❌"
+        print(f"{status_icon} {service_name.upper()}: {service_data['status']} ({service_data['response_time']}s)")
+
+        # Service-specific display logic
+        if service_name == 'nova' and service_data['status'] == 'OK':
+            self._display_nova_details(service_data)
+        # Add other services here: keystone, neutron, rabbitmq, galera
+        # elif service_name == 'keystone' and service_data['status'] == 'OK':
+        #     self._display_keystone_details(service_data)
+
+    def _display_nova_details(self, nova_data):
+        """Display Nova-specific details"""
+        services = nova_data['services']
+        critical = services['critical_services']
+        hypervisors = nova_data['hypervisors']
+
+        # Critical services status
+        print("  Critical Services:")
+        for service, info in critical.items():
+            status_icon = "✅" if info['state'] == 'up' else "❌"
+            print(f"    {status_icon} {service}: {info['state']} on {info['host']}")
+
+        # Hypervisors with instances
+        print(f"  Hypervisors: {hypervisors['up']}/{hypervisors['total']} up")
+        print("  Instances per hypervisor:")
+        for hv in hypervisors['details']:
+            status_icon = "🔵" if hv['state'] == 'up' else "⚠"
+            instances_info = f"({hv['instances_count']} instances)" if hv['instances_count'] > 0 else "(no instances)"
+            print(f"    {status_icon} {hv['name']}: {hv['state']} {instances_info}")
 
 
 if __name__ == "__main__":

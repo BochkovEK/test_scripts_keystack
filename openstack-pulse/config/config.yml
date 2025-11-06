@@ -1,18 +1,18 @@
 # config/config.yml
 settings:
   # Список сервисов для диагностики
-  enabled_checks:
-    - keystone
+  check_services:
     - nova
-    - neutron
-    - rabbitmq
-    - galera
+#    - keystone
+#    - neutron
+#    - rabbitmq
+#    - galera
 
   # Временные параметры
   intervals:
-    check_interval: 10          # Промежуток между проверками (сек)
+    check_interval: 5          # Промежуток между проверками (сек)
     collection_window: 300      # Время сбора данных (сек) - 5 минут
-    snapshot_retention: 30      # Хранить 30 срезов (5 мин / 10 сек)
+    snapshot_retention: 10      # Хранить 30 срезов (5 мин / 10 сек)
 
 endpoints:
   keystone: "http://keystone:5000/v3"

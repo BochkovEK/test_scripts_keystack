@@ -5,6 +5,17 @@ from keystoneauth1 import session
 from keystoneauth1.identity import v3
 
 
+class DotDict:
+    """Simple dot-notation access to dictionary attributes"""
+
+    def __init__(self, data):
+        for key, value in data.items():
+            if isinstance(value, dict):
+                setattr(self, key, DotDict(value))
+            else:
+                setattr(self, key, value)
+
+
 class Config:
     def __init__(self):
         # Load environment variables from .env
@@ -16,7 +27,10 @@ class Config:
         # Load base config with absolute path
         config_path = os.path.join(self.project_root, 'config', 'config.yml')
         with open(config_path) as f:
-            self.config = yaml.safe_load(f)
+            config_data = yaml.safe_load(f)
+
+        # Convert to dot notation for easy access
+        self.settings = DotDict(config_data)
 
         # Create Keystone session
         self.session = self._create_session()
@@ -28,10 +42,6 @@ class Config:
             password=os.getenv('OS_PASSWORD'),
             project_name=os.getenv('OS_PROJECT_NAME'),
             user_domain_name=os.getenv('OS_USER_DOMAIN_NAME', 'Default'),
-            project_domain_name = os.getenv('OS_PROJECT_DOMAIN_NAME', 'Default')
+            project_domain_name=os.getenv('OS_PROJECT_DOMAIN_NAME', 'Default')
         )
         return session.Session(auth=auth)
-
-    @property
-    def check_interval(self):
-        return self.config['settings']['intervals']['check_interval']
