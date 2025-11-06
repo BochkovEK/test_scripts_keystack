@@ -61,15 +61,19 @@ class NovaCheck:
             else:
                 stats['by_state']['down'] += 1
 
-            # Track critical services
             if service.binary in critical_services:
-                stats['critical_services'][service.binary] = {
+                # Инициализируем список для этого типа сервиса
+                if service.binary not in stats['critical_services']:
+                    stats['critical_services'][service.binary] = []
+
+                # Добавляем сервис в список
+                stats['critical_services'][service.binary].append({
                     'host': service.host,
                     'state': service.state,
                     'status': service.status
-                }
+                })
 
-        return stats
+            return stats
 
     def _analyze_hypervisors_with_instances(self):
         """Get hypervisors with instance counts"""
