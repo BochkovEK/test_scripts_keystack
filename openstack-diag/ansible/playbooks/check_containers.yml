@@ -3,6 +3,7 @@
 - name: Check Podman containers
   hosts: control[0]
   gather_facts: false
+  become: true
   tasks:
     - name: List running containers
       command: podman ps
