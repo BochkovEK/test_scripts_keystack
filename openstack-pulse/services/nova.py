@@ -1,11 +1,11 @@
-import novaclient
+from novaclient import client as nova_client
 import time
 
 
 class NovaCheck:
     def __init__(self, session):
         # Create Nova client using modern python-novaclient
-        self.nova = novaclient.client.Client(
+        self.nova = nova_client.Client(
             version='2.1',
             session=session
         )
