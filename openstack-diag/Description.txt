@@ -16,6 +16,29 @@
 ❌ ERROR (ошибка):
     STATUS = "exited", "unhealthy", "restarting"
 
+community.general.podman_container
+yaml
+- name: Get container info
+  community.general.podman_container:
+    name: all
+    executable: podman
+    state: info
+  register: container_info
+2. community.general.podman_container_info
+yaml
+- name: Get container information
+  community.general.podman_container_info:
+    name: all
+  register: container_info
+3. containers.podman.podman_container
+yaml
+- name: Inspect containers
+  containers.podman.podman_container:
+    name: "{{ item }}"
+    state: inspected
+  loop: "{{ container_list }}"
+  register: container_inspect
+
 Создать скрипт диагностики базовых сервисов Openstack
 1) состояние контейнеров на узлах
 2) keystone
