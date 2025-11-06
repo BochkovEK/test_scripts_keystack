@@ -32,10 +32,22 @@ def main():
         quiet=True
     )
 
-    print("STDOUT:", result.stdout)
-    print("STDERR:", result.stderr)
-    print("RC:", result.rc)
-    print("STATUS:", result.status)
+    stdout_content = result.stdout.read() if result.stdout else ""
+    stderr_content = result.stderr.read() if result.stderr else ""
+
+    print("=== ANSIBLE RUNNER RESULT ===")
+    print(f"Success: {result.status == 'successful'}")
+    print(f"Return code: {result.rc}")
+    print(f"Status: {result.status}")
+    print(f"Stdout length: {len(stdout_content)}")
+    print(f"Stderr length: {len(stderr_content)}")
+
+    print("\n=== STDOUT ===")
+    print(stdout_content if stdout_content else "EMPTY")
+
+    if stderr_content:
+        print("\n=== STDERR ===")
+        print(stderr_content)
 
 
 if __name__ == "__main__":
