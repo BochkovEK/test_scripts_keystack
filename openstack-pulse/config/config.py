@@ -27,7 +27,8 @@ class Config:
             username=os.getenv('OS_USERNAME'),
             password=os.getenv('OS_PASSWORD'),
             project_name=os.getenv('OS_PROJECT_NAME'),
-            user_domain_name=os.getenv('OS_USER_DOMAIN_NAME', 'Default')
+            user_domain_name=os.getenv('OS_USER_DOMAIN_NAME', 'Default'),
+            project_domain_name = os.getenv('OS_PROJECT_DOMAIN_NAME', 'Default')
         )
         return session.Session(auth=auth)
 
