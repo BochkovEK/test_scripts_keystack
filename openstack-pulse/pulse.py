@@ -44,7 +44,7 @@ class Pulse:
                             self.config.settings.intervals.check_interval)
         print(
             f"Collection: {total_iterations} cycles ({self.config.settings.intervals.collection_window}s window, "
-            f"{self.config.settings.check_interval}s interval)")
+            f"{self.config.settings.intervals.check_interval}s interval)")
 
         try:
             for cycle in range(total_iterations):
