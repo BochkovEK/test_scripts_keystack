@@ -1,7 +1,7 @@
 # ansible/playbooks/check_containers.yml
 ---
 - name: Check Podman containers
-  hosts: control[0]
+  hosts: control[0],control[1]
   gather_facts: false
   tasks:
     - name: List running containers
