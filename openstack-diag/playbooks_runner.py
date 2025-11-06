@@ -91,34 +91,22 @@ class PlaybookRunner:
 
 def main():
     """Main function"""
-    parser = argparse.ArgumentParser(description='Run Ansible playbooks and extract registered variables')
-    parser.add_argument('--playbook', '-p', required=True, help='Full path to playbook to run')
+    parser = argparse.ArgumentParser(description='Run Ansible playbook and show output')
+    parser.add_argument('playbook', help='Playbook path to run')
 
     args = parser.parse_args()
-    runner = PlaybookRunner()
+
+    # from ansible import get_ansible_runner
+    runner = get_ansible_runner()
 
     playbook_path = Path(args.playbook)
-    if not playbook_path.exists():
-        print(f"Error: Playbook not found: {playbook_path}")
-        sys.exit(1)
+    result = runner.run_playbook(playbook_path)
 
-    print(f"🚀 Running playbook: {playbook_path}")
-    result = runner.run_playbook(str(playbook_path))
-
-    if not result['success']:
-        print(f"❌ Playbook failed: {result['error']}")
-        sys.exit(1)
-
-    print(f"✅ Playbook completed successfully")
-
-    # Show extracted registered variables
-    registered_vars = result.get('registered_vars', {})
-    if registered_vars:
-        print(f"\n📋 Registered variables:")
-        for var_name, var_value in registered_vars.items():
-            print(f"  {var_name}: {json.dumps(var_value, indent=2)}")
-    else:
-        print("No registered variables found in output")
+    print(f"Success: {result['success']}")
+    print(f"Return code: {result['return_code']}")
+    print(f"Stdout:\n{result['stdout']}")
+    if result['stderr']:
+        print(f"Stderr:\n{result['stderr']}")
 
 
 if __name__ == "__main__":
