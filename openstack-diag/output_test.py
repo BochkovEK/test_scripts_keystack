@@ -32,8 +32,10 @@ def main():
         quiet=False  # Show Ansible output
     )
 
-    print(f"\nReturn code: {result.rc}")
-    print(f"Status: {result.status}")
+    print("STDOUT:", result.stdout)
+    print("STDERR:", result.stderr)
+    print("RC:", result.rc)
+    print("STATUS:", result.status)
 
 
 if __name__ == "__main__":
