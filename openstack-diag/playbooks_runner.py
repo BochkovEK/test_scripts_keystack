@@ -125,27 +125,61 @@ class PlaybookRunner:
 #     return '\n'.join(useful_lines) if useful_lines else "No structured output found"
 
 
+# def extract_task_output(stdout: str) -> str:
+#     """
+#     Extract only the content inside { } from lines like [host] => { ... }
+#     """
+#     import re
+#
+#     lines = stdout.split('\n')
+#     extracted_data = []
+#
+#     # Pattern to match [host] => { ... }
+#     pattern = r'\[.*\]\s+=>\s+\{.*\}'
+#
+#     for line in lines:
+#         line = line.strip()
+#         # Find lines with [host] => { ... } pattern
+#         match = re.search(pattern, line)
+#         if match:
+#             json_like_content = match.group(1)
+#             extracted_data.append(json_like_content)
+#
+#     return '\n'.join(extracted_data) if extracted_data else "No structured data found"
+
 def extract_task_output(stdout: str) -> str:
     """
     Extract only the content inside { } from lines like [host] => { ... }
     """
     import re
 
+    print(f"🔍 DEBUG: Input length: {len(stdout)}")  # Отладка
+
     lines = stdout.split('\n')
     extracted_data = []
 
-    # Pattern to match [host] => { ... }
-    pattern = r'\[.*\]\s+=>\s+\{.*\}'
+    # Multiple patterns to catch different formats
+    patterns = [
+        r'\[.*\] => (\{.*\})',  # [host] => { ... }
+        r'ok: \[.*\] => (\{.*\})',  # ok: [host] => { ... }
+        r'changed: \[.*\] => (\{.*\})',  # changed: [host] => { ... }
+    ]
 
-    for line in lines:
+    for i, line in enumerate(lines):
         line = line.strip()
-        # Find lines with [host] => { ... } pattern
-        match = re.search(pattern, line)
-        if match:
-            json_like_content = match.group(1)
-            extracted_data.append(json_like_content)
+        print(f"🔍 DEBUG Line {i}: {line[:100]}...")  # Отладка
 
-    return '\n'.join(extracted_data) if extracted_data else "No structured data found"
+        for pattern in patterns:
+            match = re.search(pattern, line)
+            if match:
+                json_like_content = match.group(1)
+                print(f"✅ DEBUG: Found match: {json_like_content[:100]}...")  # Отладка
+                extracted_data.append(json_like_content)
+                break
+
+    result = '\n'.join(extracted_data) if extracted_data else "No structured data found"
+    print(f"🔍 DEBUG: Final result: {result}")  # Отладка
+    return result
 
 def output_playbook_result(playbook_name: str, results: List[CheckResult]):
     """Print results for a single playbook immediately after execution"""
