@@ -221,6 +221,7 @@ class PlaybookRunner:
 def extract_task_output(stdout: str) -> str:
     """
     Extract only the content inside { } from multi-line [host] => { ... } blocks
+    Stops at PLAY RECAP
     """
     import re
 
@@ -231,36 +232,37 @@ def extract_task_output(stdout: str) -> str:
     while i < len(lines):
         line = lines[i].strip()
 
-        # Look for lines with => { pattern (with or without ok:/changed:)
-        if '=> {' in line:
-            print(f"✅ DEBUG: Found => {{ pattern in line: {line}")  # Отладка
+        # Stop at PLAY RECAP
+        if 'PLAY RECAP' in line:
+            break
 
+        # Look for lines with => { pattern
+        if '=> {' in line:
             # Start collecting multi-line JSON
             json_lines = []
 
             # Find the opening brace position
             brace_pos = line.find('{')
             if brace_pos != -1:
-                # Start from the opening brace
                 json_lines.append(line[brace_pos:])
             else:
-                # If no brace on this line, start with {
                 json_lines.append('{')
 
-            # Collect all lines until we find the closing brace
+            # Collect all lines until we find the closing brace or PLAY RECAP
             j = i + 1
             while j < len(lines):
                 next_line = lines[j].strip()
+                if 'PLAY RECAP' in next_line:
+                    break
                 json_lines.append(next_line)
                 if next_line == '}':
                     break
                 j += 1
 
-            # Join the JSON block
+            # Join and clean the JSON block
             json_block = '\n'.join(json_lines)
-            print(f"✅ DEBUG: Extracted JSON block: {json_block}")  # Отладка
             extracted_data.append(json_block)
-            i = j  # Skip the lines we've processed
+            i = j  # Skip processed lines
         else:
             i += 1
 
