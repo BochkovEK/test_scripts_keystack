@@ -5,7 +5,8 @@
   gather_facts: false
   tasks:
     - name: List running containers
-      command: podman ps --format json
+      command: podman ps
+#        --format json
 #    - name: Show container list
 #      debug:
 #        var: containers_json.stdout
