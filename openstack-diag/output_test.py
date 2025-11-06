@@ -29,7 +29,7 @@ def main():
         playbook=str(playbook_path),
         inventory=str(inventory_path),
         private_data_dir='.',  # Current directory
-        quiet=False  # Show Ansible output
+        quiet=True
     )
 
     print("STDOUT:", result.stdout)
