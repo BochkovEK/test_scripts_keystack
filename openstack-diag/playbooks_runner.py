@@ -90,23 +90,22 @@ class PlaybookRunner:
 
 
 def main():
-    """Main function"""
     parser = argparse.ArgumentParser(description='Run Ansible playbook and show output')
-    parser.add_argument('--playbook', '-p', required=True, help='Playbook path to run')  # ✅ --playbook вернули
+    parser.add_argument('--playbook', '-p', required=True, help='Playbook path to run')
 
     args = parser.parse_args()
 
-    # from ansible import get_ansible_runner
     runner = PlaybookRunner()
-
     playbook_path = Path(args.playbook)
-    result = runner.run_playbook(str(playbook_path))
 
-    print(f"Success: {result['success']}")
-    print(f"Return code: {result['return_code']}")
-    print(f"Stdout:\n{result['stdout']}")
-    if result['stderr']:
-        print(f"Stderr:\n{result['stderr']}")
+    # Получаем сырой результат от ansible
+    ansible_result = runner.runner.run_playbook(playbook_path)  # ✅ Прямой вызов
+
+    print(f"Success: {ansible_result['success']}")
+    print(f"Return code: {ansible_result['return_code']}")
+    print(f"Stdout:\n{ansible_result['stdout']}")
+    if ansible_result['stderr']:
+        print(f"Stderr:\n{ansible_result['stderr']}")
 
 
 if __name__ == "__main__":
