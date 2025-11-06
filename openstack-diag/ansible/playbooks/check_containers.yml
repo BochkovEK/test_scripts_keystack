@@ -6,7 +6,7 @@
   tasks:
     - name: List running containers
       command: podman ps
-      register: containers_json
+#      register: containers_json
 #    - name: Show container list
 #      debug:
 #        var: containers_json.stdout
