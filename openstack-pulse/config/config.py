@@ -10,8 +10,12 @@ class Config:
         # Load environment variables from .env
         load_dotenv()
 
-        # Load base config
-        with open('config.yml') as f:
+        # Get project root directory
+        self.project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+        # Load base config with absolute path
+        config_path = os.path.join(self.project_root, 'config', 'config.yml')
+        with open(config_path) as f:
             self.settings = yaml.safe_load(f)
 
         # Create Keystone session
