@@ -84,7 +84,8 @@ class Pulse:
         # elif service_name == 'keystone' and service_data['status'] == 'OK':
         #     self._display_keystone_details(service_data)
 
-    def _display_nova_details(self, nova_data):
+    @staticmethod
+    def _display_nova_details(nova_data):
         """Display Nova-specific details"""
         services = nova_data['services']
         critical = services['critical_services']
@@ -98,11 +99,20 @@ class Pulse:
 
         # Hypervisors with instances
         print(f"  Hypervisors: {hypervisors['up']}/{hypervisors['total']} up")
-        print("  Instances per hypervisor:")
         for hv in hypervisors['details']:
-            status_icon = "✅" if hv['state'] == 'up' else "⚠"
-            instances_info = f"({hv['instances_count']} instances)" if hv['instances_count'] > 0 else "(no instances)"
-            print(f"    {status_icon} {hv['name']}: {hv['state']} {instances_info}")
+            # Определяем эмодзи статуса
+            if hv['state'] == 'up':
+                if hv['instances_count'] > 0:
+                    status_icon = "🟢"
+                    instances_info = f" 📦{hv['instances_count']} VM"
+                else:
+                    status_icon = "🔵"
+                    instances_info = ""
+            else:
+                status_icon = "🔴"
+                instances_info = " (down)"
+
+            print(f"    {status_icon} {hv['name']}{instances_info}")
 
 
 if __name__ == "__main__":
