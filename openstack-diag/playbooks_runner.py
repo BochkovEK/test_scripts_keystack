@@ -181,6 +181,43 @@ class PlaybookRunner:
 #     print(f"🔍 DEBUG: Final result: {result}")  # Отладка
 #     return result
 
+# def extract_task_output(stdout: str) -> str:
+#     """
+#     Extract only the content inside { } from multi-line [host] => { ... } blocks
+#     """
+#     import re
+#
+#     lines = stdout.split('\n')
+#     extracted_data = []
+#
+#     i = 0
+#     while i < len(lines):
+#         line = lines[i].strip()
+#
+#         # Look for lines starting with [host] => {
+#         if re.match(r'^(ok|changed): \[.*\] => \{', line):
+#             # Start collecting multi-line JSON
+#             json_lines = []
+#             json_lines.append('{')  # Start with the opening brace
+#
+#             # Collect all lines until we find the closing brace
+#             j = i + 1
+#             while j < len(lines):
+#                 next_line = lines[j].strip()
+#                 json_lines.append(next_line)
+#                 if next_line == '}':
+#                     break
+#                 j += 1
+#
+#             # Join and try to parse as JSON-like structure
+#             json_block = '\n'.join(json_lines)
+#             extracted_data.append(json_block)
+#             i = j  # Skip the lines we've processed
+#
+#         i += 1
+#
+#     return '\n'.join(extracted_data) if extracted_data else "No structured data found"
+
 def extract_task_output(stdout: str) -> str:
     """
     Extract only the content inside { } from multi-line [host] => { ... } blocks
@@ -194,11 +231,21 @@ def extract_task_output(stdout: str) -> str:
     while i < len(lines):
         line = lines[i].strip()
 
-        # Look for lines starting with [host] => {
-        if re.match(r'^(ok|changed): \[.*\] => \{', line):
+        # Look for lines with => { pattern (with or without ok:/changed:)
+        if '=> {' in line:
+            print(f"✅ DEBUG: Found => {{ pattern in line: {line}")  # Отладка
+
             # Start collecting multi-line JSON
             json_lines = []
-            json_lines.append('{')  # Start with the opening brace
+
+            # Find the opening brace position
+            brace_pos = line.find('{')
+            if brace_pos != -1:
+                # Start from the opening brace
+                json_lines.append(line[brace_pos:])
+            else:
+                # If no brace on this line, start with {
+                json_lines.append('{')
 
             # Collect all lines until we find the closing brace
             j = i + 1
@@ -209,12 +256,13 @@ def extract_task_output(stdout: str) -> str:
                     break
                 j += 1
 
-            # Join and try to parse as JSON-like structure
+            # Join the JSON block
             json_block = '\n'.join(json_lines)
+            print(f"✅ DEBUG: Extracted JSON block: {json_block}")  # Отладка
             extracted_data.append(json_block)
             i = j  # Skip the lines we've processed
-
-        i += 1
+        else:
+            i += 1
 
     return '\n'.join(extracted_data) if extracted_data else "No structured data found"
 
