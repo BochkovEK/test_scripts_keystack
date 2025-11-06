@@ -3,15 +3,13 @@
 - name: Check Podman containers
   hosts: control[0]
   gather_facts: false
-  become: true
   tasks:
     - name: List running containers
       command: podman ps
       register: containers_json
-#        --format json
-#    - name: Show container list
-#      debug:
-#        var: containers_json.stdout
+    - name: Show container list
+      debug:
+        var: containers_json.stdout
 
 
 

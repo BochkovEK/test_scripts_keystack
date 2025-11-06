@@ -1,13 +1,13 @@
 """
 Simple Ansible Playbook Runner for OpenStack Diagnostics
-Run playbooks and extract registered variables
+Run specific playbooks and display results
 """
 
 import sys
 import argparse
 from pathlib import Path
 from typing import List, Dict, Any
-import json
+from dataclasses import dataclass
 
 # Fix imports for direct script execution
 src_path = Path(__file__).parent / 'src'
@@ -18,9 +18,18 @@ from logger import get_logger
 from ansible import get_ansible_runner
 
 
+@dataclass
+class CheckResult:
+    """Result of a single check"""
+    name: str
+    status: str  # 'success', 'warning', 'error'
+    message: str
+    details: Dict[str, Any] = None
+
+
 class PlaybookRunner:
     """
-    Simple playbook runner that extracts registered variables
+    Simple playbook runner for OpenStack diagnostics
     """
 
     def __init__(self):
@@ -28,85 +37,131 @@ class PlaybookRunner:
         self.runner = get_ansible_runner(self.config)
         self.logger = get_logger(__name__)
 
-    def run_playbook(self, playbook_path: str) -> Dict[str, Any]:
+    def run_playbook(self, playbook_path: str) -> List[CheckResult]:
         """
-        Run playbook and extract registered variables from output
-        Returns raw registered data for parsing
+        Run specific playbook and return results with output preview
         """
         self.logger.info(f"Running playbook: {playbook_path}")
+        results = []
 
         try:
             ansible_result = self.runner.run_playbook(playbook_path)
 
+            # Create output preview
+            stdout = ansible_result['stdout'] or ""
+            stderr = ansible_result['stderr'] or ""
+
+            # Get first and last 50 lines
+            stdout_lines = stdout.split('\n')
+            output_preview = ""
+
+            if stdout_lines:
+                first_50 = '\n'.join(stdout_lines[:50])
+                last_50 = '\n'.join(stdout_lines[-50:]) if len(stdout_lines) > 50 else ""
+
+                output_preview = f"First 50 lines:\n{first_50}"
+                if last_50:
+                    output_preview += f"\n\nLast 50 lines:\n{last_50}"
+
             if not ansible_result['success']:
-                return {
-                    'success': False,
-                    'error': ansible_result.get('error', 'Unknown error'),
-                    'return_code': ansible_result['return_code']
+                results.append(CheckResult(
+                    name=playbook_path,
+                    status="error",
+                    message=f"Playbook failed: {ansible_result.get('error', 'Unknown error')}",
+                    details={
+                        "return_code": ansible_result['return_code'],
+                        "output_preview": output_preview,
+                        "stderr": stderr
+                    }
+                ))
+                return results
+
+            # Success case
+            results.append(CheckResult(
+                name=playbook_path,
+                status="success",
+                message=f"Playbook completed successfully",
+                details={
+                    "return_code": ansible_result['return_code'],
+                    "output_preview": output_preview,
+                    "stderr": stderr
                 }
-
-            # Extract registered variables from stdout
-            registered_data = self._extract_registered_vars(ansible_result['stdout'])
-
-            return {
-                'success': True,
-                'registered_vars': registered_data,
-                'return_code': ansible_result['return_code'],
-                'raw_stdout': ansible_result['stdout']
-            }
+            ))
 
         except Exception as e:
-            return {
-                'success': False,
-                'error': str(e)
-            }
+            results.append(CheckResult(
+                name=playbook_path,
+                status="error",
+                message=f"Execution error: {str(e)}"
+            ))
 
-    def _extract_registered_vars(self, stdout: str) -> Dict[str, Any]:
-        """
-        Extract registered variables from Ansible output
-        Looks for patterns like "containers_json": {...}
-        """
-        try:
-            # Look for JSON patterns in the output
-            lines = stdout.split('\n')
-            for line in lines:
-                line = line.strip()
-                # Look for registered variable patterns
-                if '"containers_json":' in line and '{' in line and '}' in line:
-                    # Extract the JSON part
-                    start = line.find('{')
-                    end = line.rfind('}') + 1
-                    if start != -1 and end != -1:
-                        json_str = line[start:end]
-                        return json.loads(json_str)
-        except Exception as e:
-            self.logger.error(f"Error extracting registered vars: {e}")
-
-        return {}
+        return results
 
     def get_available_playbooks(self) -> Dict[str, Path]:
         """Get all available playbooks"""
         return self.runner.get_available_playbooks()
 
 
+def output_playbook_result(playbook_name: str, results: List[CheckResult]):
+    """Print results for a single playbook immediately after execution"""
+    print(f"\n📊 Results for {playbook_name}:")
+    for result in results:
+        status_icon = "✅" if result.status == 'success' else "❌"
+        print(f"  {status_icon} {result.name}: {result.message}")
+
+        if result.details and 'output_preview' in result.details:
+            print(f"  Output preview:")
+            print("  " + "=" * 50)
+            print(result.details['output_preview'])
+            print("  " + "=" * 50)
+
+
 def main():
-    parser = argparse.ArgumentParser(description='Run Ansible playbook and show output')
-    parser.add_argument('--playbook', '-p', required=True, help='Playbook path to run')
+    """Main function"""
+    parser = argparse.ArgumentParser(description='Run Ansible playbooks for OpenStack diagnostics')
+    parser.add_argument('--playbook', '-p', help='Full path to specific playbook to run')
 
     args = parser.parse_args()
-
     runner = PlaybookRunner()
-    playbook_path = Path(args.playbook)
+    results = []
 
-    # Получаем сырой результат от ansible
-    ansible_result = runner.runner.run_playbook(playbook_path)  # ✅ Прямой вызов
+    if args.playbook:
+        # Scenario 1: Run specific playbook by full path
+        playbook_path = Path(args.playbook)
+        if not playbook_path.exists():
+            print(f"Error: Playbook not found: {playbook_path}")
+            sys.exit(1)
 
-    print(f"Success: {ansible_result['success']}")
-    print(f"Return code: {ansible_result['return_code']}")
-    print(f"Stdout:\n{ansible_result['stdout']}")
-    if ansible_result['stderr']:
-        print(f"Stderr:\n{ansible_result['stderr']}")
+        print(f"🚀 Running specific playbook: {playbook_path}")
+        results = runner.run_playbook(str(playbook_path))
+        output_playbook_result(playbook_path.name, results)
+
+    else:
+        # Scenario 2: Run all available playbooks
+        playbooks = runner.get_available_playbooks()
+        if not playbooks:
+            print("No playbooks found")
+            return
+
+        print(f"🚀 Running all playbooks ({len(playbooks)} total)")
+
+        for playbook_name, playbook_path in playbooks.items():
+            print(f"\n📋 Running: {playbook_name}")
+            playbook_results = runner.run_playbook(str(playbook_path))
+            output_playbook_result(playbook_name, playbook_results)
+            results.extend(playbook_results)
+
+    # Print results summary
+    print(f"\n📊 Final Results ({len(results)} checks):")
+    success_count = sum(1 for r in results if r.status == 'success')
+    error_count = sum(1 for r in results if r.status == 'error')
+
+    print(f"\n🎯 Final Summary:")
+    print(f"  Total playbooks run: {len(results) if not args.playbook else 1}")
+    print(f"  ✅ Successful: {success_count}")
+    print(f"  ❌ Failed: {error_count}")
 
 
 if __name__ == "__main__":
     main()
+
