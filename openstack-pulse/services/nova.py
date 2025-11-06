@@ -73,7 +73,7 @@ class NovaCheck:
                     'status': service.status
                 })
 
-            return stats
+        return stats
 
     def _analyze_hypervisors_with_instances(self):
         """Get hypervisors with instance counts"""
