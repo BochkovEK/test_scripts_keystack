@@ -5,10 +5,17 @@
   become: yes
   gather_facts: false
   tasks:
-    - name: Get container information
-      community.general.podman_container_info:
+    - name: Get container info
+      community.general.podman_container:
         name: all
+        executable: podman
+        state: info
       register: container_info
+
+#    - name: Get container information
+#      community.general.podman_container_info:
+#        name: all
+#      register: container_info
 
 #    - name: List running containers
 #      command: podman ps --format json
