@@ -62,37 +62,47 @@ class RabbitCheck:
         return urls
 
     def _check_rabbitmq_cluster(self, urls):
-        """Check RabbitMQ cluster health"""
-        print(f"DEBUG RabbitMQ: Checking {len(urls)} nodes...")
-
+        """Check RabbitMQ cluster health with queue statistics"""
         status = {
             'healthy': False,
             'reachable_nodes': [],
-            'unreachable_nodes': []
+            'unreachable_nodes': [],
+            'queues_count': 0,
+            'total_messages': 0,
+            'node_details': {}
         }
 
         for url in urls:
             try:
-                print(f"DEBUG RabbitMQ: Testing {url}...")
                 response = requests.get(f"{url}/api/overview",
                                         auth=self.auth, timeout=5)
-                print(f"DEBUG RabbitMQ: Response status: {response.status_code}")
 
                 if response.status_code == 200:
+                    overview = response.json()
                     status['reachable_nodes'].append(url)
-                    print(f"DEBUG RabbitMQ: ✅ {url} is reachable")
+
+                    # Собираем статистику очередей
+                    queue_totals = overview.get('queue_totals', {})
+                    object_totals = overview.get('object_totals', {})
+
+                    status['queues_count'] = object_totals.get('queues', 0)
+                    status['total_messages'] = queue_totals.get('messages', 0)
+
+                    status['node_details'][url] = {
+                        'queues': object_totals.get('queues', 0),
+                        'messages': queue_totals.get('messages', 0),
+                        'consumers': object_totals.get('consumers', 0)
+                    }
+
                 else:
                     status['unreachable_nodes'].append(url)
-                    print(f"DEBUG RabbitMQ: ❌ {url} returned {response.status_code}")
 
-            except Exception as e:
+            except Exception:
                 status['unreachable_nodes'].append(url)
-                print(f"DEBUG RabbitMQ: ❌ {url} failed: {e}")
 
         # Кластер здоров если больше половины узлов работают
         total = len(urls)
         reachable = len(status['reachable_nodes'])
         status['healthy'] = reachable > total // 2
 
-        print(f"DEBUG RabbitMQ: Final status - {reachable}/{total} reachable, healthy: {status['healthy']}")
         return status

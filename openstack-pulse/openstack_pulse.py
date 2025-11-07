@@ -283,15 +283,19 @@ class Pulse:
 
     def _display_rabbitmq_details(self, rabbit_data):
         """Display RabbitMQ-specific details"""
-        print(f"   Connection: ✅ established")
-        print(f"   Queues count: {rabbit_data['queues_count']}")
+        cluster = rabbit_data['cluster']
 
-        stats = rabbit_data.get('stats', {})
-        if stats.get('available', True):
-            if stats.get('consumers', 0) > 0:
-                print(f"   Consumers: {stats['consumers']} active")
-            if stats.get('messages_ready', 0) > 0:
-                print(f"   Messages ready: {stats['messages_ready']}")
+        print(f"   Cluster: {rabbit_data['reachable_nodes']}/{rabbit_data['total_nodes']} nodes healthy")
+        print(f"   Queues: {cluster['queues_count']} total")
+        print(f"   Messages: {cluster['total_messages']} total")
+
+        if cluster['reachable_nodes']:
+            print("   ✅ Reachable nodes:")
+            for node in cluster['reachable_nodes']:
+                details = cluster['node_details'].get(node, {})
+                queues = details.get('queues', 0)
+                messages = details.get('messages', 0)
+                print(f"      - {node} (queues: {queues}, messages: {messages})")
 
     def _display_neutron_details(self, neutron_data):
         """Display Neutron-specific details"""
