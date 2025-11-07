@@ -93,17 +93,40 @@ class RabbitCheck:
     #
     #     return {'reachable': False}
 
-    def _check_single_node(self, url):
-        """Check health of single RabbitMQ node with dedicated session"""
-        session = self._get_session_for_url(url)
-        print(f"DEBUG: Session ID: {id(session)} for {url}")  # Уникальный ID сессии
+    # def _check_single_node(self, url):
+    #     """Check health of single RabbitMQ node with dedicated session"""
+    #     session = self._get_session_for_url(url)
+    #     print(f"DEBUG: Session ID: {id(session)} for {url}")  # Уникальный ID сессии
+    #
+    #     if not session:
+    #         return {'reachable': False}
+    #
+    #     try:
+    #         response = session.get(f"{url}/api/overview", timeout=10)
+    #         print(f"DEBUG: Response time: {response.elapsed.total_seconds():.3f}s")  # Время запроса
+    #
+    #         if response.status_code == 200:
+    #             data = response.json()
+    #             return {
+    #                 'reachable': True,
+    #                 'details': {
+    #                     'queues': data.get('object_totals', {}).get('queues', 0),
+    #                     'messages': data.get('queue_totals', {}).get('messages', 0),
+    #                 }
+    #             }
+    #     except Exception as e:
+    #         print(f"DEBUG: Exception: {e}")
+    #         pass
+    #
+    #     return {'reachable': False}
 
+    def _check_single_node(self, url):
+        session = self._get_session_for_url(url)
         if not session:
             return {'reachable': False}
 
         try:
             response = session.get(f"{url}/api/overview", timeout=10)
-            print(f"DEBUG: Response time: {response.elapsed.total_seconds():.3f}s")  # Время запроса
 
             if response.status_code == 200:
                 data = response.json()
@@ -114,8 +137,30 @@ class RabbitCheck:
                         'messages': data.get('queue_totals', {}).get('messages', 0),
                     }
                 }
-        except Exception as e:
-            print(f"DEBUG: Exception: {e}")
+        except (requests.exceptions.ConnectionError, requests.exceptions.ChunkedEncodingError):
+            # Соединение разорвано - пересоздаем сессию
+            print(f"DEBUG: Recreating session for {url}")
+            host = self._extract_host_from_url(url)
+            new_session = requests.Session()
+            new_session.auth = self.auth
+            self.sessions[host] = new_session
+
+            # Повторяем запрос с новой сессией
+            try:
+                response = new_session.get(f"{url}/api/overview", timeout=10)
+                if response.status_code == 200:
+                    data = response.json()
+                    return {
+                        'reachable': True,
+                        'details': {
+                            'queues': data.get('object_totals', {}).get('queues', 0),
+                            'messages': data.get('queue_totals', {}).get('messages', 0),
+                        }
+                    }
+            except Exception:
+                pass
+
+        except Exception:
             pass
 
         return {'reachable': False}
