@@ -62,47 +62,74 @@ class RabbitCheck:
         return urls
 
     def _check_rabbitmq_cluster(self, urls):
-        """Check RabbitMQ cluster health with deep diagnostics"""
+        """Check RabbitMQ cluster in parallel"""
         status = {
             'healthy': False,
             'reachable_nodes': [],
             'unreachable_nodes': [],
-            'cluster_health': {
-                'replication_ok': False,
-                'uptime_ok': False,
-                'processes_ok': False
-            },
+            'cluster_health': {'replication_ok': False, 'uptime_ok': True, 'processes_ok': True},
             'node_details': {}
         }
 
-        for url in urls:
-            try:
-                response = requests.get(f"{url}/api/overview", auth=self.auth, timeout=5)
+        with ThreadPoolExecutor(max_workers=len(urls)) as executor:
+            # Запускаем проверку всех узлов параллельно
+            future_to_url = {executor.submit(self._check_single_node, url): url for url in urls}
 
-                if response.status_code == 200:
-                    overview = response.json()
-                    status['reachable_nodes'].append(url)
-
-                    # Получаем детальную информацию по узлу
-                    node_stats = self._get_node_stats(url)
-                    status['node_details'][url] = node_stats
-
-                else:
+            for future in as_completed(future_to_url):
+                url = future_to_url[future]
+                try:
+                    node_result = future.result()
+                    if node_result['reachable']:
+                        status['reachable_nodes'].append(url)
+                        status['node_details'][url] = node_result['details']
+                        # Анализируем здоровье
+                        self._analyze_node_health(node_result['details'], status['cluster_health'])
+                    else:
+                        status['unreachable_nodes'].append(url)
+                except Exception:
                     status['unreachable_nodes'].append(url)
 
-            except Exception as e:
-                status['unreachable_nodes'].append(url)
-                status['node_details'][url] = {'error': str(e)}
-
-        # Анализ здоровья кластера
-        if status['reachable_nodes']:
-            status['cluster_health'] = self._analyze_cluster_health(status)
-
-        total = len(urls)
-        reachable = len(status['reachable_nodes'])
-        status['healthy'] = reachable > total // 2
+        # Анализ репликации
+        total_nodes = len(urls)
+        reachable_count = len(status['reachable_nodes'])
+        status['cluster_health']['replication_ok'] = self._check_replication(total_nodes, reachable_count)
+        status['healthy'] = reachable_count > total_nodes // 2
 
         return status
+
+    def _check_single_node(self, url):
+        """Check single RabbitMQ node (runs in parallel)"""
+        try:
+            response = requests.get(f"{url}/api/nodes", auth=self.auth, timeout=5)
+            if response.status_code == 200:
+                nodes_data = response.json()
+                if nodes_data:
+                    node_info = nodes_data[0]
+                    return {
+                        'reachable': True,
+                        'details': {
+                            'uptime': node_info.get('uptime', 0),
+                            'processes_used': node_info.get('proc_used', 0),
+                            'processes_limit': node_info.get('proc_total', 0),
+                            'running': node_info.get('running', True)
+                        }
+                    }
+        except Exception:
+            pass
+
+        return {'reachable': False}
+
+    def _analyze_node_health(self, node_info, cluster_health):
+        """Analyze health metrics during main loop"""
+        # Uptime
+        if node_info.get('uptime', 0) < 600000:
+            cluster_health['uptime_ok'] = False
+
+        # Processes
+        proc_used = node_info.get('proc_used', 0)
+        proc_limit = node_info.get('proc_total', 1)
+        if proc_used >= proc_limit * 0.8:
+            cluster_health['processes_ok'] = False
 
     def _get_node_stats(self, url):
         """Get detailed node statistics"""
