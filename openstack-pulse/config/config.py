@@ -92,9 +92,7 @@ class Config:
 
     def _exit_with_file_error(self, file_type, expected_path):
         """Exit with detailed file error message"""
-        print("❌" * 50)
         print(f"❌ CRITICAL: {file_type} not found!")
-        print("❌" * 50)
         print(f"📂 Expected: {expected_path}")
         print("")
 
@@ -105,7 +103,6 @@ class Config:
             print("💡 Inventory file must be 'inventory' or 'inventory.ini'")
             print("   in the project root directory")
 
-        print("❌" * 50)
         sys.exit(1)
 
     def _load_inventory(self):
