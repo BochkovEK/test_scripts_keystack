@@ -303,8 +303,8 @@ class Pulse:
         print(f"     {'✅' if health['replication_ok'] else '❌'} Replication: {repl_status}")
         print(
             f"     {'✅' if health['uptime_ok'] else '⚠️ '} Uptime: {'All nodes >10min' if health['uptime_ok'] else 'Some nodes <10min'}")
-        print(
-            f"     {'✅' if health['processes_ok'] else '⚠️ '} Processes: {'Under 80% limit' if health['processes_ok'] else 'Near process limit'}")
+        # print(
+        #     f"     {'✅' if health['processes_ok'] else '⚠️ '} Processes: {'Under 80% limit' if health['processes_ok'] else 'Near process limit'}")
 
     def _display_neutron_details(self, neutron_data):
         """Display Neutron-specific details"""

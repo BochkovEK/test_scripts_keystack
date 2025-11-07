@@ -58,7 +58,6 @@ class RabbitCheck:
             'cluster_health': {
                 'replication_ok': False,
                 'uptime_ok': True,
-                'processes_ok': True
             },
             'node_details': {}
         }
@@ -76,7 +75,7 @@ class RabbitCheck:
                     if node_result['reachable']:
                         status['reachable_nodes'].append(url)
                         status['node_details'][url] = node_result['details']
-                        self._analyze_node_health(node_result['details'], status['cluster_health'])
+                        # self._analyze_node_health(node_result['details'], status['cluster_health'])
                     else:
                         status['unreachable_nodes'].append(url)
                 except Exception:
@@ -90,29 +89,21 @@ class RabbitCheck:
         return status
 
     def _check_single_node(self, url):
-        """Check health of single RabbitMQ node"""
+        """Check health of single RabbitMQ node (optimized)"""
         try:
-            # Get node overview for queue statistics
-            overview_response = requests.get(f"{url}/api/overview", auth=self.auth, timeout=5)
-            nodes_response = requests.get(f"{url}/api/nodes", auth=self.auth, timeout=5)
+            # Single API call to overview endpoint
+            response = requests.get(f"{url}/api/overview", auth=self.auth, timeout=3)
 
-            if overview_response.status_code == 200 and nodes_response.status_code == 200:
-                overview_data = overview_response.json()
-                nodes_data = nodes_response.json()
-
-                if nodes_data:
-                    node_info = nodes_data[0]
-                    return {
-                        'reachable': True,
-                        'details': {
-                            'queues': overview_data.get('object_totals', {}).get('queues', 0),
-                            'messages': overview_data.get('queue_totals', {}).get('messages', 0),
-                            'uptime': node_info.get('uptime', 0),
-                            'processes_used': node_info.get('proc_used', 0),
-                            'processes_limit': node_info.get('proc_total', 0),
-                            'running': node_info.get('running', True)
-                        }
+            if response.status_code == 200:
+                data = response.json()
+                return {
+                    'reachable': True,
+                    'details': {
+                        'queues': data.get('object_totals', {}).get('queues', 0),
+                        'messages': data.get('queue_totals', {}).get('messages', 0),
+                        # Removed: processes_used, processes_limit, uptime
                     }
+                }
         except Exception:
             pass
 
