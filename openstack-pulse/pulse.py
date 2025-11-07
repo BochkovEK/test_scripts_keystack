@@ -135,12 +135,21 @@ class Pulse:
         agents = neutron_data['agents']
         print(f"   Agents: {agents['up']}/{agents['total']} up")
 
-        # Критичные агенты
         if 'critical_agents' in agents:
             print("   Critical Agents:")
             for agent_type, stats in agents['critical_agents'].items():
-                status_icon = "🟢" if stats['up'] > 0 else "🔴"
-                print(f"     {status_icon} {agent_type}: {stats['up']} up, {stats['down']} down")
+                # Определяем цвет иконки
+                if stats['down'] == 0:
+                    status_icon = "🟢"  # Все работает
+                    status_info = f"{stats['up']} up"
+                elif stats['up'] == 0:
+                    status_icon = "🔴"  # Все упало
+                    status_info = f"{stats['down']} down"
+                else:
+                    status_icon = "🟡"  # Частичный отказ
+                    status_info = f"{stats['up']} up, {stats['down']} down"
+
+                print(f"     {status_icon} {agent_type}: {status_info}")
 
         print(f"   Networks: {neutron_data['networks_count']} available")
 
