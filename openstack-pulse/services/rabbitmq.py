@@ -22,19 +22,19 @@ class RabbitCheck:
             session = requests.Session()
             session.auth = self.auth
 
-            # Адаптер с настройками для долгих соединений
-            adapter = requests.adapters.HTTPAdapter(
-                pool_connections=len(urls),
-                pool_maxsize=len(urls),
-                # Увеличиваем таймауты пула
-                pool_block=False
-            )
-
-            session.mount('http://', adapter)
-            session.mount('https://', adapter)
-
-            # Явно указываем keep-alive
-            session.headers.update({'Connection': 'keep-alive'})
+            # # Адаптер с настройками для долгих соединений
+            # adapter = requests.adapters.HTTPAdapter(
+            #     pool_connections=len(urls),
+            #     pool_maxsize=len(urls),
+            #     # Увеличиваем таймауты пула
+            #     pool_block=False
+            # )
+            #
+            # session.mount('http://', adapter)
+            # session.mount('https://', adapter)
+            #
+            # # Явно указываем keep-alive
+            # session.headers.update({'Connection': 'keep-alive'})
 
             self.sessions[host] = session
 
@@ -70,14 +70,40 @@ class RabbitCheck:
                 'error': str(e)
             }
 
+    # def _check_single_node(self, url):
+    #     """Check health of single RabbitMQ node with dedicated session"""
+    #     session = self._get_session_for_url(url)
+    #     if not session:
+    #         return {'reachable': False}
+    #
+    #     try:
+    #         response = session.get(f"{url}/api/overview", timeout=10)
+    #
+    #         if response.status_code == 200:
+    #             data = response.json()
+    #             return {
+    #                 'reachable': True,
+    #                 'details': {
+    #                     'queues': data.get('object_totals', {}).get('queues', 0),
+    #                     'messages': data.get('queue_totals', {}).get('messages', 0),
+    #                 }
+    #             }
+    #     except Exception:
+    #         pass
+    #
+    #     return {'reachable': False}
+
     def _check_single_node(self, url):
         """Check health of single RabbitMQ node with dedicated session"""
         session = self._get_session_for_url(url)
+        print(f"DEBUG: Session ID: {id(session)} for {url}")  # Уникальный ID сессии
+
         if not session:
             return {'reachable': False}
 
         try:
             response = session.get(f"{url}/api/overview", timeout=10)
+            print(f"DEBUG: Response time: {response.elapsed.total_seconds():.3f}s")  # Время запроса
 
             if response.status_code == 200:
                 data = response.json()
@@ -88,7 +114,8 @@ class RabbitCheck:
                         'messages': data.get('queue_totals', {}).get('messages', 0),
                     }
                 }
-        except Exception:
+        except Exception as e:
+            print(f"DEBUG: Exception: {e}")
             pass
 
         return {'reachable': False}
