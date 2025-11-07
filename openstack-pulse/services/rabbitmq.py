@@ -11,6 +11,7 @@ class RabbitCheck:
         self.config = config
         self.auth = (self.config.auth['rabbit_user'], self.config.auth['rabbit_pass'])
         self.port = getattr(getattr(self.config.settings, 'endpoints', None), 'rabbitmq_port', 15672)
+        self.rabbitmq_requests_heartbeat = getattr(getattr(self.config.settings, 'rabbitmq', None), 'rabbitmq_requests_heartbeat', 4)
         self.sessions = {}
         self._init_sessions()
 
@@ -33,7 +34,7 @@ class RabbitCheck:
         """Continuous heartbeat worker"""
         while not self.heartbeat_stop_event.is_set():
             self._heartbeat()
-            self.heartbeat_stop_event.wait(1)  # wait 3 sec or until stop
+            self.heartbeat_stop_event.wait(self.rabbitmq_requests_heartbeat)  # wait 3 sec or until stop
 
     def _heartbeat(self):
         """Send heartbeat to all nodes to keep connections alive"""
