@@ -43,7 +43,7 @@ class Config:
         }
 
         # Load base config with absolute path
-        config_path = os.path.join(self.project_root, 'config', 'config.yml')
+        config_path = os.path.join(self.project_root, 'config', 'config.yml.template')
         with open(config_path) as f:
             config_data = yaml.safe_load(f)
 
