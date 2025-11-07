@@ -1,5 +1,6 @@
 import requests
 import time
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
@@ -13,30 +14,45 @@ class RabbitCheck:
         # Словарь для хранения сессий по хостам
         self.sessions = {}
         self._init_sessions()
+        self.heartbeat_stop_event = threading.Event()
+        self.heartbeat_thread = threading.Thread(target=self._heartbeat_worker)
+        self.heartbeat_thread.daemon = True
+        self.heartbeat_thread.start()
+
 
     def _init_sessions(self):
-        """Initialize sessions with long keep-alive"""
+        """Initialize separate sessions for each node"""
         urls = self._get_rabbitmq_urls()
         for url in urls:
             host = self._extract_host_from_url(url)
             session = requests.Session()
             session.auth = self.auth
-
-            # # Адаптер с настройками для долгих соединений
-            # adapter = requests.adapters.HTTPAdapter(
-            #     pool_connections=len(urls),
-            #     pool_maxsize=len(urls),
-            #     # Увеличиваем таймауты пула
-            #     pool_block=False
-            # )
-            #
-            # session.mount('http://', adapter)
-            # session.mount('https://', adapter)
-            #
-            # # Явно указываем keep-alive
-            # session.headers.update({'Connection': 'keep-alive'})
-
             self.sessions[host] = session
+            # print(f"DEBUG Rabbit: Created session for: {host}")
+
+    def _heartbeat_worker(self):
+        """Continuous heartbeat worker"""
+        while not self.heartbeat_stop_event.is_set():
+            self._heartbeat()
+            self.heartbeat_stop_event.wait(3)  # wait 3 sec or until stop
+
+    def _heartbeat(self):
+        """Send heartbeat to all nodes to keep connections alive"""
+        for url in self._get_rabbitmq_urls():
+            session = self._get_session_for_url(url)
+            if session:
+                try:
+                    session.get(f"{url}/api/aliveness-test/%2F", timeout=1)
+                except:
+                    pass  # Игнорируем ошибки heartbeat
+
+    def close_sessions(self):
+        """Close sessions and stop heartbeat"""
+        self.heartbeat_stop_event.set()
+        if self.heartbeat_thread.is_alive():
+            self.heartbeat_thread.join(timeout=5)
+
+
 
     def _extract_host_from_url(self, url):
         """Extract host from URL"""
@@ -166,22 +182,13 @@ class RabbitCheck:
     #     return {'reachable': False}
 
     def _check_single_node(self, url):
-        """Check health of single RabbitMQ node with heartbeat support"""
+        """Check health of single RabbitMQ node"""
         session = self._get_session_for_url(url)
         if not session:
             return {'reachable': False}
 
         try:
-            # Если интервал проверки > 4 сек, делаем легкий heartbeat запрос
-            if hasattr(self.config.settings.intervals, 'check_interval'):
-                if self.config.settings.intervals.check_interval > 4:
-                    try:
-                        # Легкий запрос для поддержания соединения
-                        session.get(f"{url}/api/health/checks/alarms", timeout=1)
-                    except:
-                        pass  # Игнорируем ошибки heartbeat
 
-            # Основной запрос
             response = session.get(f"{url}/api/overview", timeout=10)
 
             if response.status_code == 200:
@@ -198,15 +205,7 @@ class RabbitCheck:
 
         return {'reachable': False}
 
-    def _heartbeat(self):
-        """Send heartbeat to all nodes to keep connections alive"""
-        for url in self._get_rabbitmq_urls():
-            session = self._get_session_for_url(url)
-            if session:
-                try:
-                    session.get(f"{url}/api/aliveness-test/%2F", timeout=1)
-                except:
-                    pass  # Игнорируем ошибки heartbeat
+
 
     def _get_rabbitmq_urls(self):
         """Generate RabbitMQ API URLs from inventory nodes"""

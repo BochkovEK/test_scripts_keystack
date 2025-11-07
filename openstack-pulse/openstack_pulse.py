@@ -106,7 +106,7 @@ class Pulse:
     #         self._close_sessions()
 
     def run(self):
-        """Main monitoring loop with limited collection window"""
+        """Main monitoring loop - simplified with automatic heartbeat"""
         print("Starting OpenStack Pulse monitoring...")
         print(f"Enabled checks: {', '.join(self.config.settings.check_services)}")
 
@@ -118,7 +118,7 @@ class Pulse:
             for cycle in range(total_iterations):
                 cycle_start = time.time()
 
-                # Собираем метрики
+                # Собираем метрики (RabbitMQ heartbeat работает автоматически в фоне)
                 snapshot = self.collect_metrics()
 
                 # Сразу выводим на экран
@@ -130,25 +130,8 @@ class Pulse:
                 # Ждем перед следующим циклом (кроме последнего)
                 if cycle < total_iterations - 1:
                     interval = self.config.settings.intervals.check_interval
-
-                    # Если интервал > 4 сек, делаем heartbeat параллельно со sleep
-                    if interval > 4 and 'rabbitmq' in self.service_checks:
-                        print(f"💤 Sleeping {interval}s...")
-                        print(f"💓 RabbitMQ heartbeat after {interval / 2:.1f}s...")
-
-                        # Запускаем heartbeat в отдельном потоке
-                        with ThreadPoolExecutor(max_workers=1) as executor:
-                            # Heartbeat сработает в середине интервала
-                            heartbeat_future = executor.submit(
-                                self._delayed_heartbeat,
-                                self.service_checks['rabbitmq'],
-                                interval / 2
-                            )
-                            # Спим весь интервал
-                            time.sleep(interval)
-                    else:
-                        print(f"💤 Sleeping {interval}s...")
-                        time.sleep(interval)
+                    print(f"💤 Sleeping {interval}s...")
+                    time.sleep(interval)
 
             print(f"\nCollection completed. Total cycles: {total_iterations}")
 
