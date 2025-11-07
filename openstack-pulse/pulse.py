@@ -25,27 +25,41 @@ class Pulse:
         self.config = Config()
 
         # Initialize services
-        self._init_service_checks()
+        self.service_checks = {}
         # self.nova_check = NovaCheck(self.config.session)
 
         # Storage for snapshots
         self.snapshots = []
 
-
     def _init_service_checks(self):
-        """Initialize enabled service checks"""
+        """Initialize enabled service checks using dictionary"""
         service_map = {
-            'nova': NovaCheck,
-            'keystone': KeystoneCheck,
-            'neutron': NeutronCheck,
-            'rabbitmq': RabbitCheck,
-            # 'galera': GaleraCheck
+            'nova': (NovaCheck, 'session'),
+            'keystone': (KeystoneCheck, 'session'),
+            'neutron': (NeutronCheck, 'session'),
+            'rabbitmq': (RabbitCheck, 'config'),
+            # 'galera': (GaleraCheck, 'config')
         }
 
         for service_name in self.config.settings.check_services:
             if service_name in service_map:
-                check_class = service_map[service_name]
-                setattr(self, f'{service_name}_check', check_class(self.config.session))
+                check_class, param_type = service_map[service_name]
+
+                # Определяем параметр для конструктора
+                if param_type == 'session':
+                    param = self.config.session
+                elif param_type == 'config':
+                    param = self.config
+                else:
+                    # Логируем ошибку и пропускаем сервис
+                    print(f"⚠️  Unknown parameter type '{param_type}' for service '{service_name}'")
+                    continue
+
+                # Создаем экземпляр проверки
+                self.service_checks[service_name] = check_class(param)
+
+            else:
+                print(f"⚠️  Service '{service_name}' not found in service_map")
 
     def collect_metrics(self):
         """Collect metrics in parallel"""
