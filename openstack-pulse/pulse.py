@@ -127,8 +127,22 @@ class Pulse:
             self._display_keystone_details(service_data)
         elif service_name == 'neutron' and service_data['status'] == 'OK':
             self._display_neutron_details(service_data)
+        elif service_name == 'rabbitmq' and service_data['status'] == 'OK':
+            self._display_rabbitmq_details(service_data)
         elif service_data['status'] == 'ERROR':
             print(f"   Error: {service_data['error']}")
+
+    def _display_rabbitmq_details(self, rabbit_data):
+        """Display RabbitMQ-specific details"""
+        print(f"   Connection: ✅ established")
+        print(f"   Queues count: {rabbit_data['queues_count']}")
+
+        stats = rabbit_data.get('stats', {})
+        if stats.get('available', True):
+            if stats.get('consumers', 0) > 0:
+                print(f"   Consumers: {stats['consumers']} active")
+            if stats.get('messages_ready', 0) > 0:
+                print(f"   Messages ready: {stats['messages_ready']}")
 
     def _display_neutron_details(self, neutron_data):
         """Display Neutron-specific details"""
