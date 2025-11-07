@@ -20,15 +20,19 @@ from services.rabbitmq import RabbitCheck
 
 
 class Pulse:
+
     def __init__(self):
-        # Load configuration
         self.config = Config()
-
-        # Initialize services
         self.service_checks = {}
-        # self.nova_check = NovaCheck(self.config.session)
 
-        # Storage for snapshots
+        print("=== DEBUG CONFIG ===")
+        print(f"check_services: {self.config.settings.check_services}")
+        print(f"config type: {type(self.config)}")
+        print(f"session type: {type(self.config.session)}")
+        print(f"session available: {hasattr(self.config, 'session')}")
+        print("====================")
+
+        self._init_service_checks()
         self.snapshots = []
 
     # def _init_service_checks(self):
@@ -61,48 +65,64 @@ class Pulse:
     #         else:
     #             print(f"⚠️  Service '{service_name}' not found in service_map")
 
+    # def _init_service_checks(self):
+    #     """Initialize enabled service checks with full error handling"""
+    #     service_map = {
+    #         'nova': (NovaCheck, 'session'),
+    #         'keystone': (KeystoneCheck, 'session'),
+    #         'neutron': (NeutronCheck, 'session'),
+    #         'rabbitmq': (RabbitCheck, 'config'),
+    #     }
+    #
+    #     print(f"DEBUG: check_services from config: {self.config.settings.check_services}")
+    #
+    #     initialized_services = []
+    #
+    #     for service_name in self.config.settings.check_services:
+    #         try:
+    #             print(f"DEBUG: Processing service: {service_name}")
+    #
+    #             if service_name not in service_map:
+    #                 print(f"❌ Service '{service_name}' not supported. Available: {list(service_map.keys())}")
+    #                 continue
+    #
+    #             check_class, param_type = service_map[service_name]
+    #             print(f"DEBUG: check_class: {check_class}, param_type: {param_type}")
+    #
+    #             # Определяем параметр для конструктора
+    #             if param_type == 'session':
+    #                 param = self.config.session
+    #             elif param_type == 'config':
+    #                 param = self.config
+    #             else:
+    #                 raise ValueError(f"Unknown parameter type: {param_type}")
+    #
+    #             # Создаем экземпляр проверки
+    #             self.service_checks[service_name] = check_class(param)
+    #             initialized_services.append(service_name)
+    #             print(f"DEBUG: Successfully created {service_name}_check")
+    #
+    #         except Exception as e:
+    #             print(f"❌ Failed to initialize {service_name}: {e}")
+    #
+    #     print(f"✅ Initialized services: {', '.join(initialized_services)}")
+    #     print(f"DEBUG: service_checks keys: {list(self.service_checks.keys())}")
+
     def _init_service_checks(self):
-        """Initialize enabled service checks with full error handling"""
-        service_map = {
-            'nova': (NovaCheck, 'session'),
-            'keystone': (KeystoneCheck, 'session'),
-            'neutron': (NeutronCheck, 'session'),
-            'rabbitmq': (RabbitCheck, 'config'),
-        }
+        """Simple test initialization"""
+        print("=== DEBUG _init_service_checks ===")
 
-        print(f"DEBUG: check_services from config: {self.config.settings.check_services}")
+        # Простой тест - создаем один сервис вручную
+        try:
+            print("Trying to create NovaCheck...")
+            nova_check = NovaCheck(self.config.session)
+            self.service_checks['nova'] = nova_check
+            print("✅ NovaCheck created successfully")
+        except Exception as e:
+            print(f"❌ Failed to create NovaCheck: {e}")
 
-        initialized_services = []
-
-        for service_name in self.config.settings.check_services:
-            try:
-                print(f"DEBUG: Processing service: {service_name}")
-
-                if service_name not in service_map:
-                    print(f"❌ Service '{service_name}' not supported. Available: {list(service_map.keys())}")
-                    continue
-
-                check_class, param_type = service_map[service_name]
-                print(f"DEBUG: check_class: {check_class}, param_type: {param_type}")
-
-                # Определяем параметр для конструктора
-                if param_type == 'session':
-                    param = self.config.session
-                elif param_type == 'config':
-                    param = self.config
-                else:
-                    raise ValueError(f"Unknown parameter type: {param_type}")
-
-                # Создаем экземпляр проверки
-                self.service_checks[service_name] = check_class(param)
-                initialized_services.append(service_name)
-                print(f"DEBUG: Successfully created {service_name}_check")
-
-            except Exception as e:
-                print(f"❌ Failed to initialize {service_name}: {e}")
-
-        print(f"✅ Initialized services: {', '.join(initialized_services)}")
-        print(f"DEBUG: service_checks keys: {list(self.service_checks.keys())}")
+        print(f"service_checks: {self.service_checks}")
+        print("==================================")
 
     def collect_metrics(self):
         """Collect metrics from all enabled services in parallel"""
