@@ -3,7 +3,8 @@ import time
 import os
 
 # Configuration from environment variables
-RABBIT_URLs = ["http://cdm-bl-pca07.lab.itkey.com:15672", "http://cdm-bl-pca06.lab.itkey.com:15672", "http://cdm-bl-pca08.lab.itkey.com:15672"]
+RABBIT_URLs = ["http://cdm-bl-pca07.lab.itkey.com:15672"]
+# , "http://cdm-bl-pca06.lab.itkey.com:15672", "http://cdm-bl-pca08.lab.itkey.com:15672"]
 # RABBIT_URL = os.getenv('RABBIT_URL', 'http://localhost:15672')
 RABBIT_USER = os.getenv('RABBIT_USER', 'guest')
 RABBIT_PASS = os.getenv('RABBIT_PASS', 'guest')
