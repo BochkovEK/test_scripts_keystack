@@ -1,9 +1,9 @@
 import os
 import yaml
-import configparser
 from dotenv import load_dotenv
 import openstack
 import sys
+# import configparser
 # from keystoneauth1 import session
 # from keystoneauth1.identity import v3
 # from typing import Dict, Any
@@ -140,44 +140,74 @@ class Config:
     #
     #     return nodes
 
+    # def _parse_inventory(self, inventory_path):
+    #     """Parse Ansible inventory file with error handling"""
+    #     config = configparser.ConfigParser()
+    #
+    #     try:
+    #         # ✅ ОБРАБОТКА ОШИБОК ЧТЕНИЯ - ловим проблемы с файлом
+    #         files_read = config.read(inventory_path)
+    #         if not files_read:
+    #             raise ValueError(f"Failed to read inventory file: {inventory_path}")
+    #     except configparser.ParsingError as e:
+    #         # ✅ ЧЕТКОЕ СООБЩЕНИЕ ОБ ОШИБКЕ - вместо непонятного traceback
+    #         print(f"❌ CRITICAL: Invalid inventory file format!")
+    #         print(f"   File: {inventory_path}")
+    #         print(f"   Error: {e}")
+    #         print("💡 Check for syntax errors in inventory file")
+    #         sys.exit(1)
+    #
+    #     nodes = {'controllers': []}
+    #
+    #     if 'controllers' in config:
+    #         for host in config['controllers']:
+    #             if host.startswith('ansible_'):
+    #                 continue  # ✅ ПРОПУСК СЛУЖЕБНЫХ ПЕРЕМЕННЫХ
+    #
+    #             # ✅ БЕЗОПАСНЫЙ ПАРСИНГ ПАРАМЕТРОВ - вместо доступа к несуществующим ключам
+    #             params_string = config['controllers'][host]
+    #             if 'ansible_host=' in params_string:
+    #                 # ✅ РУЧНОЙ ПАРСИНГ СТРОКИ - не зависящий от структуры ConfigParser
+    #                 # Извлекаем IP после 'ansible_host='
+    #                 start = params_string.find('ansible_host=') + len('ansible_host=')
+    #                 end = params_string.find(' ', start)
+    #                 if end == -1:
+    #                     end = len(params_string)  # ✅ ОБРАБОТКА КОНЦА СТРОКИ
+    #                 ansible_host = params_string[start:end]
+    #                 nodes['controllers'].append(ansible_host)
+    #             else:
+    #                 # ✅ FALLBACK - если нет ansible_host, используем имя хоста
+    #                 nodes['controllers'].append(host)
+    #
+    #     return nodes
+
     def _parse_inventory(self, inventory_path):
-        """Parse Ansible inventory file with error handling"""
-        config = configparser.ConfigParser()
-
-        try:
-            # ✅ ОБРАБОТКА ОШИБОК ЧТЕНИЯ - ловим проблемы с файлом
-            files_read = config.read(inventory_path)
-            if not files_read:
-                raise ValueError(f"Failed to read inventory file: {inventory_path}")
-        except configparser.ParsingError as e:
-            # ✅ ЧЕТКОЕ СООБЩЕНИЕ ОБ ОШИБКЕ - вместо непонятного traceback
-            print(f"❌ CRITICAL: Invalid inventory file format!")
-            print(f"   File: {inventory_path}")
-            print(f"   Error: {e}")
-            print("💡 Check for syntax errors in inventory file")
-            sys.exit(1)
-
+        """Simple inventory parser"""
         nodes = {'controllers': []}
 
-        if 'controllers' in config:
-            for host in config['controllers']:
-                if host.startswith('ansible_'):
-                    continue  # ✅ ПРОПУСК СЛУЖЕБНЫХ ПЕРЕМЕННЫХ
+        try:
+            with open(inventory_path, 'r') as f:
+                in_controllers_section = False
 
-                # ✅ БЕЗОПАСНЫЙ ПАРСИНГ ПАРАМЕТРОВ - вместо доступа к несуществующим ключам
-                params_string = config['controllers'][host]
-                if 'ansible_host=' in params_string:
-                    # ✅ РУЧНОЙ ПАРСИНГ СТРОКИ - не зависящий от структуры ConfigParser
-                    # Извлекаем IP после 'ansible_host='
-                    start = params_string.find('ansible_host=') + len('ansible_host=')
-                    end = params_string.find(' ', start)
-                    if end == -1:
-                        end = len(params_string)  # ✅ ОБРАБОТКА КОНЦА СТРОКИ
-                    ansible_host = params_string[start:end]
-                    nodes['controllers'].append(ansible_host)
-                else:
-                    # ✅ FALLBACK - если нет ansible_host, используем имя хоста
-                    nodes['controllers'].append(host)
+                for line in f:
+                    line = line.strip()
+
+                    if line == '[controllers]':
+                        in_controllers_section = True
+                        continue
+                    elif line.startswith('['):
+                        in_controllers_section = False
+                        continue
+
+                    if in_controllers_section and line and not line.startswith('#'):
+                        # Берем первое слово как hostname
+                        host = line.split()[0]
+                        if host and not host.startswith('ansible_'):
+                            nodes['controllers'].append(host)
+
+        except Exception as e:
+            print(f"❌ Error reading inventory: {e}")
+            sys.exit(1)
 
         return nodes
 
