@@ -129,8 +129,8 @@ class Pulse:
 
                 # Ждем перед следующим циклом (кроме последнего)
                 if cycle < total_iterations - 1:
-                    interval = self.config.settings.intervals.check_interval
-                    rabbitmq_requests_heartbeat = self.config.settings.rabbitmq.rabbitmq_requests_heartbea
+                    interval = getattr(getattr(self.config.settings, 'intervals', None), 'check_interval', 5)
+                    rabbitmq_requests_heartbeat = getattr(getattr(self.config.settings, 'rabbitmq', None), 'rabbitmq_requests_heartbeat', 4)
 
                     # Запускаем heartbeat на время sleep (если интервал > 4 сек)
                     if interval > 4 and 'rabbitmq' in self.service_checks:
