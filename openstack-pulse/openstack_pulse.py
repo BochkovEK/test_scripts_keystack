@@ -150,8 +150,8 @@ class Pulse:
 
         try:
             for cycle in range(total_iterations):
-                if cycle >= 1 and 'rabbitmq' in self.service_checks:
-                    self.service_checks['rabbitmq'].stop_heartbeat()
+                # if cycle >= 1 and 'rabbitmq' in self.service_checks:
+                #     self.service_checks['rabbitmq'].stop_heartbeat()
                 cycle_start = time.time()
 
                 # Собираем метрики
@@ -178,6 +178,7 @@ class Pulse:
 
                     time.sleep(interval)
 
+            self.service_checks['rabbitmq'].stop_heartbeat()
             print(f"\nCollection completed. Total cycles: {total_iterations}")
 
         except KeyboardInterrupt:
