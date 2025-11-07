@@ -15,12 +15,27 @@ class RabbitCheck:
         self._init_sessions()
 
     def _init_sessions(self):
-        """Initialize separate sessions for each node"""
+        """Initialize sessions with long keep-alive"""
         urls = self._get_rabbitmq_urls()
         for url in urls:
             host = self._extract_host_from_url(url)
             session = requests.Session()
             session.auth = self.auth
+
+            # Адаптер с настройками для долгих соединений
+            adapter = requests.adapters.HTTPAdapter(
+                pool_connections=len(urls),
+                pool_maxsize=len(urls),
+                # Увеличиваем таймауты пула
+                pool_block=False
+            )
+
+            session.mount('http://', adapter)
+            session.mount('https://', adapter)
+
+            # Явно указываем keep-alive
+            session.headers.update({'Connection': 'keep-alive'})
+
             self.sessions[host] = session
 
     def _extract_host_from_url(self, url):
@@ -62,7 +77,7 @@ class RabbitCheck:
             return {'reachable': False}
 
         try:
-            response = session.get(f"{url}/api/overview", timeout=3)
+            response = session.get(f"{url}/api/overview", timeout=10)
 
             if response.status_code == 200:
                 data = response.json()
