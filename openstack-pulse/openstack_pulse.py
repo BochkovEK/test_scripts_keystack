@@ -48,31 +48,51 @@ class Pulse:
             else:
                 print(f"⚠️  Service '{service_name}' not supported")
 
+    # def collect_metrics(self):
+    #     """Collect metrics from all enabled services in parallel"""
+    #     snapshot = {'timestamp': time.time()}
+    #
+    #     # Проверяем что есть сервисы для проверки
+    #     if not self.service_checks:
+    #         print("❌ No services initialized! Check _init_service_checks()")
+    #         return snapshot
+    #
+    #     with ThreadPoolExecutor(max_workers=len(self.service_checks)) as executor:
+    #         future_to_service = {}
+    #         for service_name, check in self.service_checks.items():
+    #             future = executor.submit(check.run_check)
+    #             future_to_service[future] = service_name
+    #
+    #         for future in as_completed(future_to_service):
+    #             service_name = future_to_service[future]
+    #             try:
+    #                 snapshot[service_name] = future.result()
+    #             except Exception as e:
+    #                 snapshot[service_name] = {
+    #                     'status': 'ERROR',
+    #                     'response_time': 0,
+    #                     'error': str(e)
+    #                 }
+    #
+    #     return snapshot
     def collect_metrics(self):
-        """Collect metrics from all enabled services in parallel"""
         snapshot = {'timestamp': time.time()}
-
-        # Проверяем что есть сервисы для проверки
-        if not self.service_checks:
-            print("❌ No services initialized! Check _init_service_checks()")
-            return snapshot
 
         with ThreadPoolExecutor(max_workers=len(self.service_checks)) as executor:
             future_to_service = {}
             for service_name, check in self.service_checks.items():
+                print(f"🕐 Starting {service_name} at {time.time()}")
                 future = executor.submit(check.run_check)
                 future_to_service[future] = service_name
 
             for future in as_completed(future_to_service):
                 service_name = future_to_service[future]
                 try:
-                    snapshot[service_name] = future.result()
+                    result = future.result()
+                    print(f"🕐 Finished {service_name} at {time.time()}: {result['response_time']}s")
+                    snapshot[service_name] = result
                 except Exception as e:
-                    snapshot[service_name] = {
-                        'status': 'ERROR',
-                        'response_time': 0,
-                        'error': str(e)
-                    }
+                    snapshot[service_name] = {'status': 'ERROR', 'error': str(e)}
 
         return snapshot
 
