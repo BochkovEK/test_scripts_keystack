@@ -90,23 +90,15 @@ class Pulse:
 
         try:
             for cycle in range(total_iterations):
-                cycle_start_time = time.time()
-
                 # Собираем метрики
                 snapshot = self.collect_metrics()
 
                 # Сразу выводим на экран
                 self._display_snapshot(snapshot, cycle + 1, total_iterations)
 
-                # Логируем время выполнения цикла
-                cycle_time = time.time() - cycle_start_time
-                print(f"Cycle {cycle + 1} completed in {cycle_time:.2f}s")
-
                 # Ждем следующий цикл (кроме последнего)
                 if cycle < total_iterations - 1:
-                    sleep_time = self.config.settings.intervals.check_interval - cycle_time
-                    if sleep_time > 0:
-                        time.sleep(sleep_time)
+                    time.sleep(self.config.settings.intervals.check_interval)
 
             print(f"\nCollection completed. Total cycles: {total_iterations}")
 
