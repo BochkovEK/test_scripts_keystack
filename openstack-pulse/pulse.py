@@ -151,7 +151,7 @@ class Pulse:
 
                 print(f"     {status_icon} {agent_type}: {status_info}")
 
-        print(f"   Networks: {neutron_data['networks_count']} available")
+        # print(f"   Networks: {neutron_data['networks_count']} available")
 
     def _display_keystone_details(self, keystone_data):
         """Display Keystone-specific details"""

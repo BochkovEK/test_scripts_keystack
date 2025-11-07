@@ -22,14 +22,14 @@ class NeutronCheck:
             agent_stats = self._analyze_agents(agents)
 
             # Быстрая проверка сетей
-            networks = list(self.conn.network.networks(limit=5))
+            # networks = list(self.conn.network.networks(limit=5))
 
             return {
                 'status': 'OK',
                 'response_time': round(time.time() - start_time, 2),
                 'agents': agent_stats,
-                'networks_count': len(networks),
                 'total_agents': len(agents)
+                # 'networks_count': len(networks),
             }
 
         except Exception as e:
