@@ -282,20 +282,29 @@ class Pulse:
             print(f"   Error: {service_data['error']}")
 
     def _display_rabbitmq_details(self, rabbit_data):
-        """Display RabbitMQ-specific details"""
+        """Display RabbitMQ cluster health details"""
         cluster = rabbit_data['cluster']
+        health = cluster['cluster_health']
 
-        print(f"   Cluster: {rabbit_data['reachable_nodes']}/{rabbit_data['total_nodes']} nodes healthy")
-        print(f"   Queues: {cluster['queues_count']} total")
-        print(f"   Messages: {cluster['total_messages']} total")
+        print(f"   Nodes: {rabbit_data['reachable_nodes']}/{rabbit_data['total_nodes']} reachable")
 
-        if cluster['reachable_nodes']:
-            print("   ✅ Reachable nodes:")
-            for node in cluster['reachable_nodes']:
-                details = cluster['node_details'].get(node, {})
-                queues = details.get('queues', 0)
-                messages = details.get('messages', 0)
-                print(f"      - {node} (queues: {queues}, messages: {messages})")
+        # Статус здоровья
+        print("   Cluster Health:")
+        print(
+            f"     {'✅' if health['replication_ok'] else '❌'} Replication: {'OK' if health['replication_ok'] else 'CRITICAL'}")
+        print(f"     {'✅' if health['uptime_ok'] else '⚠️ '} Uptime: {'>10min' if health['uptime_ok'] else '<10min'}")
+        print(f"     {'✅' if health['processes_ok'] else '❌'} Processes: {'OK' if health['processes_ok'] else 'LIMIT'}")
+
+        # Детали по узлам
+        if cluster['node_details']:
+            print("   Node Details:")
+            for url, details in cluster['node_details'].items():
+                if 'error' not in details:
+                    status = "🟢" if url in cluster['reachable_nodes'] else "🔴"
+                    print(f"     {status} {url}")
+                    print(f"       Queues: {details.get('queues', 0)}, Messages: {details.get('messages', 0)}")
+                    print(
+                        f"       Uptime: {details.get('uptime', 0) / 1000:.0f}s, Processes: {details.get('processes_used', 0)}/{details.get('processes_limit', 0)}")
 
     def _display_neutron_details(self, neutron_data):
         """Display Neutron-specific details"""

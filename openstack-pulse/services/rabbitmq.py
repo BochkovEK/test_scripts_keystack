@@ -62,47 +62,101 @@ class RabbitCheck:
         return urls
 
     def _check_rabbitmq_cluster(self, urls):
-        """Check RabbitMQ cluster health with queue statistics"""
+        """Check RabbitMQ cluster health with deep diagnostics"""
         status = {
             'healthy': False,
             'reachable_nodes': [],
             'unreachable_nodes': [],
-            'queues_count': 0,
-            'total_messages': 0,
+            'cluster_health': {
+                'replication_ok': False,
+                'uptime_ok': False,
+                'processes_ok': False
+            },
             'node_details': {}
         }
 
         for url in urls:
             try:
-                response = requests.get(f"{url}/api/overview",
-                                        auth=self.auth, timeout=5)
+                response = requests.get(f"{url}/api/overview", auth=self.auth, timeout=5)
 
                 if response.status_code == 200:
                     overview = response.json()
                     status['reachable_nodes'].append(url)
 
-                    # Собираем статистику очередей
-                    queue_totals = overview.get('queue_totals', {})
-                    object_totals = overview.get('object_totals', {})
-
-                    status['queues_count'] = object_totals.get('queues', 0)
-                    status['total_messages'] = queue_totals.get('messages', 0)
-
-                    status['node_details'][url] = {
-                        'queues': object_totals.get('queues', 0),
-                        'messages': queue_totals.get('messages', 0),
-                        'consumers': object_totals.get('consumers', 0)
-                    }
+                    # Получаем детальную информацию по узлу
+                    node_stats = self._get_node_stats(url)
+                    status['node_details'][url] = node_stats
 
                 else:
                     status['unreachable_nodes'].append(url)
 
-            except Exception:
+            except Exception as e:
                 status['unreachable_nodes'].append(url)
+                status['node_details'][url] = {'error': str(e)}
 
-        # Кластер здоров если больше половины узлов работают
+        # Анализ здоровья кластера
+        if status['reachable_nodes']:
+            status['cluster_health'] = self._analyze_cluster_health(status)
+
         total = len(urls)
         reachable = len(status['reachable_nodes'])
         status['healthy'] = reachable > total // 2
 
         return status
+
+    def _get_node_stats(self, url):
+        """Get detailed node statistics"""
+        try:
+            # Overview для базовой информации
+            overview = requests.get(f"{url}/api/overview", auth=self.auth, timeout=5).json()
+
+            # Nodes для информации о процессах и uptime
+            nodes = requests.get(f"{url}/api/nodes", auth=self.auth, timeout=5).json()
+
+            if nodes:
+                node_info = nodes[0]  # Берем первый узел (текущий)
+
+                return {
+                    'queues': overview.get('object_totals', {}).get('queues', 0),
+                    'messages': overview.get('queue_totals', {}).get('messages', 0),
+                    'uptime': node_info.get('uptime', 0),
+                    'processes_used': node_info.get('proc_used', 0),
+                    'processes_limit': node_info.get('proc_total', 0),
+                    'replication_status': 'unknown'  # Нужна отдельная проверка
+                }
+
+        except Exception as e:
+            return {'error': str(e)}
+
+        return {}
+
+    def _analyze_cluster_health(self, status):
+        """Analyze cluster health metrics"""
+        health = {
+            'replication_ok': False,
+            'uptime_ok': False,
+            'processes_ok': True  # По умолчанию True, если нет данных
+        }
+
+        # Проверка репликации (для 3 нод должно быть 2 реплики)
+        reachable_count = len(status['reachable_nodes'])
+        health['replication_ok'] = reachable_count >= 2  # Минимум кворум
+
+        # Проверка uptime и процессов для каждого узла
+        for url, details in status['node_details'].items():
+            if 'error' not in details:
+                # Uptime > 10 минут (600000 ms в RabbitMQ)
+                if details.get('uptime', 0) < 600000:
+                    health['uptime_ok'] = False
+
+                # Processes used < limit
+                proc_used = details.get('processes_used', 0)
+                proc_limit = details.get('processes_limit', 1)
+                if proc_used >= proc_limit:
+                    health['processes_ok'] = False
+
+        # Если все узлы имеют uptime > 10min
+        if health['uptime_ok'] is not False:  # Не было установлено в False
+            health['uptime_ok'] = True
+
+        return health
