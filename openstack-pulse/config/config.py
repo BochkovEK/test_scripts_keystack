@@ -183,7 +183,7 @@ class Config:
 
     def _parse_inventory(self, inventory_path):
         """Simple inventory parser"""
-        nodes = {'controllers': []}
+        nodes = {'control': []}
 
         try:
             with open(inventory_path, 'r') as f:
@@ -203,7 +203,7 @@ class Config:
                         # Берем первое слово как hostname
                         host = line.split()[0]
                         if host and not host.startswith('ansible_'):
-                            nodes['controllers'].append(host)
+                            nodes['control'].append(host)
 
         except Exception as e:
             print(f"❌ Error reading inventory: {e}")
