@@ -227,18 +227,6 @@ class NovaCheck:
 
     def _analyze_hypervisors_with_instances(self, hypervisors):
         """Investigate hypervisor attributes to find running VMs"""
-        print("DEBUG Nova: === HYPERVISOR ATTRIBUTE INVESTIGATION ===")
-
-        if hypervisors:
-            sample_hv = hypervisors[0]
-            print("DEBUG Nova: All hypervisor attributes and values:")
-            for attr in [a for a in dir(sample_hv) if not a.startswith('_')]:
-                try:
-                    value = getattr(sample_hv, attr)
-                    if not callable(value):  # Показываем только не-методы
-                        print(f"  {attr}: {value} (type: {type(value)})")
-                except Exception as e:
-                    print(f"  {attr}: <ERROR: {e}>")
 
         stats = {
             'total': len(hypervisors),
@@ -270,10 +258,6 @@ class NovaCheck:
         try:
             # Получаем детальную информацию о гипервизоре
             hv_details = self.conn.compute.get_hypervisor(hypervisor.id)
-            print(f"DEBUG Nova: Hypervisor details for {hypervisor.name}:")
-            print(f"  running_vms: {hv_details.running_vms}")
-            print(f"  vcpus_used: {hv_details.vcpus_used}")
-            print(f"  memory_used: {hv_details.memory_used}")
 
             return hv_details.running_vms if hv_details.running_vms is not None else 0
         except Exception as e:
