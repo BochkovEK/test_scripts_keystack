@@ -108,20 +108,59 @@ class Pulse:
     #     print(f"✅ Initialized services: {', '.join(initialized_services)}")
     #     print(f"DEBUG: service_checks keys: {list(self.service_checks.keys())}")
 
+    # def _init_service_checks(self):
+    #     """Simple test initialization"""
+    #     print("=== DEBUG _init_service_checks ===")
+    #
+    #     # Простой тест - создаем один сервис вручную
+    #     try:
+    #         print("Trying to create NovaCheck...")
+    #         nova_check = NovaCheck(self.config.session)
+    #         self.service_checks['nova'] = nova_check
+    #         print("✅ NovaCheck created successfully")
+    #     except Exception as e:
+    #         print(f"❌ Failed to create NovaCheck: {e}")
+    #
+    #     print(f"service_checks: {self.service_checks}")
+    #     print("==================================")
+
     def _init_service_checks(self):
-        """Simple test initialization"""
+        """Initialize enabled service checks"""
+        service_map = {
+            'nova': (NovaCheck, 'session'),
+            'keystone': (KeystoneCheck, 'session'),
+            'neutron': (NeutronCheck, 'session'),
+            'rabbitmq': (RabbitCheck, 'config'),  # ← config для RabbitCheck!
+        }
+
         print("=== DEBUG _init_service_checks ===")
 
-        # Простой тест - создаем один сервис вручную
-        try:
-            print("Trying to create NovaCheck...")
-            nova_check = NovaCheck(self.config.session)
-            self.service_checks['nova'] = nova_check
-            print("✅ NovaCheck created successfully")
-        except Exception as e:
-            print(f"❌ Failed to create NovaCheck: {e}")
+        for service_name in self.config.settings.check_services:
+            try:
+                print(f"Processing {service_name}...")
 
-        print(f"service_checks: {self.service_checks}")
+                if service_name not in service_map:
+                    print(f"❌ Service '{service_name}' not in service_map")
+                    continue
+
+                check_class, param_type = service_map[service_name]
+                print(f"check_class: {check_class}, param_type: {param_type}")
+
+                if param_type == 'session':
+                    param = self.config.session
+                elif param_type == 'config':
+                    param = self.config  # ← ВАЖНО: config для RabbitCheck!
+                else:
+                    print(f"❌ Unknown param_type: {param_type}")
+                    continue
+
+                self.service_checks[service_name] = check_class(param)
+                print(f"✅ {service_name} initialized")
+
+            except Exception as e:
+                print(f"❌ Failed to initialize {service_name}: {e}")
+
+        print(f"Final service_checks: {list(self.service_checks.keys())}")
         print("==================================")
 
     def collect_metrics(self):
