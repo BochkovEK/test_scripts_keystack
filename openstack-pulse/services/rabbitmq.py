@@ -51,10 +51,10 @@ class RabbitCheck:
 
     def _get_rabbitmq_urls(self):
         """Generate RabbitMQ URLs for all controller nodes"""
-        print(f"DEBUG RabbitMQ: Controllers from inventory: {self.config.nodes['controll']}")
+        print(f"DEBUG RabbitMQ: Controllers from inventory: {self.config.nodes['control']}")
 
         urls = []
-        for controller in self.config.nodes['controllers']:
+        for controller in self.config.nodes['control']:
             url = f"http://{controller}:{self.port}"
             urls.append(url)
 
