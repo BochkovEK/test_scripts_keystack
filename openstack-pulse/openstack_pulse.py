@@ -78,7 +78,8 @@ class Pulse:
     def collect_metrics(self):
         snapshot = {'timestamp': time.time()}
 
-        with ThreadPoolExecutor(max_workers=len(self.service_checks)) as executor:
+        with ThreadPoolExecutor(max_workers=10) as executor:
+                                # len(self.service_checks)) as executor:
             future_to_service = {}
             for service_name, check in self.service_checks.items():
                 print(f"🕐 Starting {service_name} at {time.time()}")

@@ -29,7 +29,7 @@ class RabbitCheck:
             session = requests.Session()
             session.auth = self.auth
             self.sessions[host] = session
-            print(f"🔍 Created NEW session for: {host}, ID: {id(session)}")
+
 
     def start_heartbeat(self):
         """Start heartbeat for all nodes"""
