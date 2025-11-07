@@ -139,16 +139,19 @@ class Pulse:
                     if interval > 4 and 'rabbitmq' in self.service_checks:
                         print(f"💤 Sleeping {interval}s with heartbeat {rabbitmq_requests_heartbeat}s")
                         self.service_checks['rabbitmq'].start_heartbeat()
-                        time.sleep(interval)
                     else:
                         print(f"💤 Sleeping {interval}s...")
-                        time.sleep(interval)
+
+                    time.sleep(interval)
 
             print(f"\nCollection completed. Total cycles: {total_iterations}")
 
         except KeyboardInterrupt:
             print("\nMonitoring stopped by user")
         finally:
+            # Гарантируем остановку heartbeat при завершении
+            if 'rabbitmq' in self.service_checks:
+                self.service_checks['rabbitmq'].stop_heartbeat()
             self._close_sessions()
 
     def _delayed_heartbeat(self, rabbit_check, delay):
