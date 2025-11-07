@@ -22,7 +22,6 @@ class RabbitCheck:
             session = requests.Session()
             session.auth = self.auth
             self.sessions[host] = session
-            # print(f"DEBUG Rabbit: Created session for: {host}")
 
     def _extract_host_from_url(self, url):
         """Extract host from URL"""
@@ -35,29 +34,24 @@ class RabbitCheck:
 
     def run_check(self):
         """Execute RabbitMQ cluster health check"""
-        # start_time = time.time()
-        # print(f"DEBUG Rabbit: Starting check at {time.time()}")
+        start_time = time.time()
 
         try:
             urls = self._get_rabbitmq_urls()
-            # print(f"DEBUG Rabbit: URLs to check: {urls}")
-
             cluster_status = self._check_rabbitmq_cluster(urls)
-            # print(f"DEBUG Rabbit: Cluster check completed at {time.time()}")
 
             return {
                 'status': 'OK' if cluster_status['healthy'] else 'DEGRADED',
-                # 'response_time': round(time.time() - start_time, 2),
+                'response_time': round(time.time() - start_time, 2),
                 'cluster': cluster_status,
                 'reachable_nodes': len(cluster_status['reachable_nodes']),
                 'total_nodes': len(urls)
             }
 
         except Exception as e:
-            # print(f"DEBUG Rabbit: Exception: {e}")
             return {
                 'status': 'ERROR',
-                # 'response_time': round(time.time() - start_time, 2),
+                'response_time': round(time.time() - start_time, 2),
                 'error': str(e)
             }
 
@@ -139,18 +133,6 @@ class RabbitCheck:
         else:
             quorum = (total_nodes // 2) + 1
             return reachable_count >= quorum  # Need quorum majority
-
-    def _analyze_node_health(self, node_details, cluster_health):
-        """Analyze node-specific health metrics"""
-        # Check uptime (RabbitMQ reports uptime in milliseconds)
-        if node_details.get('uptime', 0) < 600000:  # 10 minutes
-            cluster_health['uptime_ok'] = False
-
-        # Check process usage (warn at 80% limit)
-        proc_used = node_details.get('processes_used', 0)
-        proc_limit = node_details.get('processes_limit', 1)
-        if proc_used >= proc_limit * 0.8:
-            cluster_health['processes_ok'] = False
 
     def close_sessions(self):
         """Close all sessions to free resources"""
