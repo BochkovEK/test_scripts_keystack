@@ -14,8 +14,4 @@ intervals:
 #  snapshot_retention: 10      # Хранить 30 срезов (5 мин / 10 сек)
 
 endpoints:
-  keystone: "http://keystone:5000/v3"
-  nova: "http://nova:8774/v2.1"
-  neutron: "http://neutron:9696"
-  rabbitmq: "http://rabbitmq:15672"
-  galera: "mysql://localhost"
+  rabbitmq_port: 15672

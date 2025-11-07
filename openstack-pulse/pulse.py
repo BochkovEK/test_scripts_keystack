@@ -31,15 +31,6 @@ class Pulse:
         # Storage for snapshots
         self.snapshots = []
 
-    # def collect_metrics(self):
-    #     """Collect metrics from all services"""
-    #     snapshot = {
-    #         'timestamp': time.time(),
-    #         'nova': self.nova_check.run_check()
-    #     }
-    #     return snapshot
-
-    from concurrent.futures import ThreadPoolExecutor, as_completed
 
     def _init_service_checks(self):
         """Initialize enabled service checks"""
@@ -122,14 +113,15 @@ class Pulse:
         status_icon = "✅" if service_data['status'] == 'OK' else "❌"
         print(f"{status_icon} {service_name.upper()}: {service_data['status']} ({service_data['response_time']}s)")
 
-        if service_name == 'nova' and service_data['status'] == 'OK':
-            self._display_nova_details(service_data)
-        elif service_name == 'keystone' and service_data['status'] == 'OK':
-            self._display_keystone_details(service_data)
-        elif service_name == 'neutron' and service_data['status'] == 'OK':
-            self._display_neutron_details(service_data)
-        elif service_name == 'rabbitmq' and service_data['status'] == 'OK':
-            self._display_rabbitmq_details(service_data)
+        display_methods = {
+            'nova': self._display_nova_details,
+            'keystone': self._display_keystone_details,
+            'neutron': self._display_neutron_details,
+            'rabbitmq': self._display_rabbitmq_details
+        }
+
+        if service_data['status'] == 'OK' and service_name in display_methods:
+            display_methods[service_name](service_data)
         elif service_data['status'] == 'ERROR':
             print(f"   Error: {service_data['error']}")
 

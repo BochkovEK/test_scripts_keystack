@@ -1,64 +1,40 @@
-import pika
+import requests
 import time
 
 
 class RabbitCheck:
     def __init__(self, config):
         self.config = config
-        self.connection_params = self._get_connection_params()
-
-    def _get_connection_params(self):
-        """Get RabbitMQ connection parameters"""
-        # Берем из endpoints или используем дефолты
-        host = 'localhost'
-        if hasattr(self.config.settings, 'endpoints') and hasattr(self.config.settings.endpoints, 'rabbitmq'):
-            # Парсим URL: http://rabbitmq:15672 -> rabbitmq
-            url = self.config.settings.endpoints.rabbitmq
-            host = url.replace('http://', '').replace('https://', '').split(':')[0]
-
-        credentials = pika.PlainCredentials(
-            self.config.auth.get('rabbit_user', 'guest'),
-            self.config.auth.get('rabbit_pass', 'guest')
+        self.auth = (
+            self.config.auth['rabbit_user'],
+            self.config.auth['rabbit_pass']
+        )
+        # Безопасное получение порта через getattr
+        self.port = getattr(
+            getattr(self.config.settings, 'endpoints', None),
+            'rabbitmq_port',
+            15672
         )
 
-        return pika.ConnectionParameters(
-            host=host,
-            credentials=credentials,
-            connection_attempts=2,
-            retry_delay=1,
-            socket_timeout=3
-        )
+    def _get_rabbitmq_urls(self):
+        """Generate RabbitMQ URLs for all controller nodes"""
+        return [f"http://{controller}:{self.port}"
+                for controller in self.config.nodes['controllers']]
 
     def run_check(self):
-        """Quick RabbitMQ status check using Pika"""
+        """Check RabbitMQ cluster health via HTTP API"""
         start_time = time.time()
-        connection = None
 
         try:
-            # Быстрое подключение
-            connection = pika.BlockingConnection(self.connection_params)
-            channel = connection.channel()
-
-            # Получаем список очередей
-            queues = channel.queue_declare(passive=True)
-            queue_count = queues.method.message_count if hasattr(queues.method, 'message_count') else 0
-
-            # Получаем статистику (требует rabbitmq_management plugin)
-            stats = self._get_basic_stats(channel)
+            urls = self._get_rabbitmq_urls()
+            cluster_status = self._check_rabbitmq_cluster(urls)
 
             return {
-                'status': 'OK',
+                'status': 'OK' if cluster_status['healthy'] else 'DEGRADED',
                 'response_time': round(time.time() - start_time, 2),
-                'queues_count': queue_count,
-                'connected': True,
-                'stats': stats
-            }
-
-        except pika.exceptions.AMQPConnectionError as e:
-            return {
-                'status': 'ERROR',
-                'response_time': round(time.time() - start_time, 2),
-                'error': f"Connection failed: {str(e)}"
+                'cluster': cluster_status,
+                'reachable_nodes': len(cluster_status['reachable_nodes']),
+                'total_nodes': len(urls)
             }
         except Exception as e:
             return {
@@ -66,24 +42,35 @@ class RabbitCheck:
                 'response_time': round(time.time() - start_time, 2),
                 'error': str(e)
             }
-        finally:
-            if connection and not connection.is_closed:
-                connection.close()
 
-    def _get_basic_stats(self, channel):
-        """Get basic RabbitMQ statistics"""
-        try:
-            # Пытаемся получить базовую статистику
-            # Это работает если установлен rabbitmq_management plugin
-            stats = {
-                'consumers': 0,
-                'messages_ready': 0,
-                'messages_unacknowledged': 0
-            }
+    def _check_rabbitmq_cluster(self, urls):
+        """Check RabbitMQ cluster health with detailed info"""
+        status = {
+            'healthy': False,
+            'reachable_nodes': [],
+            'unreachable_nodes': [],
+            'node_details': {}  # ← Добавляем детали по узлам
+        }
 
-            # Можно добавить более детальную статистику при необходимости
-            return stats
+        for url in urls:
+            try:
+                response = requests.get(f"{url}/api/overview",
+                                        auth=self.auth, timeout=5)
+                if response.status_code == 200:
+                    overview = response.json()
+                    status['reachable_nodes'].append(url)
+                    status['node_details'][url] = {
+                        'queues': overview.get('object_totals', {}).get('queues', 0),
+                        'messages': overview.get('queue_totals', {}).get('messages', 0)
+                    }
+                else:
+                    status['unreachable_nodes'].append(url)
+            except:
+                status['unreachable_nodes'].append(url)
 
-        except:
-            # Если статистика недоступна, возвращаем базовые данные
-            return {'available': False}
+        # Кластер здоров если больше половины узлов работают
+        total = len(urls)
+        reachable = len(status['reachable_nodes'])
+        status['healthy'] = reachable > total // 2
+
+        return status
