@@ -27,134 +27,6 @@ class Pulse:
         self._init_service_checks()
         self.snapshots = []
 
-    # def _init_service_checks(self):
-    #     """Initialize enabled service checks using dictionary"""
-    #     service_map = {
-    #         'nova': (NovaCheck, 'session'),
-    #         'keystone': (KeystoneCheck, 'session'),
-    #         'neutron': (NeutronCheck, 'session'),
-    #         'rabbitmq': (RabbitCheck, 'config'),
-    #         # 'galera': (GaleraCheck, 'config')
-    #     }
-    #
-    #     for service_name in self.config.settings.check_services:
-    #         if service_name in service_map:
-    #             check_class, param_type = service_map[service_name]
-    #
-    #             # Определяем параметр для конструктора
-    #             if param_type == 'session':
-    #                 param = self.config.session
-    #             elif param_type == 'config':
-    #                 param = self.config
-    #             else:
-    #                 # Логируем ошибку и пропускаем сервис
-    #                 print(f"⚠️  Unknown parameter type '{param_type}' for service '{service_name}'")
-    #                 continue
-    #
-    #             # Создаем экземпляр проверки
-    #             self.service_checks[service_name] = check_class(param)
-    #
-    #         else:
-    #             print(f"⚠️  Service '{service_name}' not found in service_map")
-
-    # def _init_service_checks(self):
-    #     """Initialize enabled service checks with full error handling"""
-    #     service_map = {
-    #         'nova': (NovaCheck, 'session'),
-    #         'keystone': (KeystoneCheck, 'session'),
-    #         'neutron': (NeutronCheck, 'session'),
-    #         'rabbitmq': (RabbitCheck, 'config'),
-    #     }
-    #
-    #     print(f"DEBUG: check_services from config: {self.config.settings.check_services}")
-    #
-    #     initialized_services = []
-    #
-    #     for service_name in self.config.settings.check_services:
-    #         try:
-    #             print(f"DEBUG: Processing service: {service_name}")
-    #
-    #             if service_name not in service_map:
-    #                 print(f"❌ Service '{service_name}' not supported. Available: {list(service_map.keys())}")
-    #                 continue
-    #
-    #             check_class, param_type = service_map[service_name]
-    #             print(f"DEBUG: check_class: {check_class}, param_type: {param_type}")
-    #
-    #             # Определяем параметр для конструктора
-    #             if param_type == 'session':
-    #                 param = self.config.session
-    #             elif param_type == 'config':
-    #                 param = self.config
-    #             else:
-    #                 raise ValueError(f"Unknown parameter type: {param_type}")
-    #
-    #             # Создаем экземпляр проверки
-    #             self.service_checks[service_name] = check_class(param)
-    #             initialized_services.append(service_name)
-    #             print(f"DEBUG: Successfully created {service_name}_check")
-    #
-    #         except Exception as e:
-    #             print(f"❌ Failed to initialize {service_name}: {e}")
-    #
-    #     print(f"✅ Initialized services: {', '.join(initialized_services)}")
-    #     print(f"DEBUG: service_checks keys: {list(self.service_checks.keys())}")
-
-    # def _init_service_checks(self):
-    #     """Simple test initialization"""
-    #     print("=== DEBUG _init_service_checks ===")
-    #
-    #     # Простой тест - создаем один сервис вручную
-    #     try:
-    #         print("Trying to create NovaCheck...")
-    #         nova_check = NovaCheck(self.config.session)
-    #         self.service_checks['nova'] = nova_check
-    #         print("✅ NovaCheck created successfully")
-    #     except Exception as e:
-    #         print(f"❌ Failed to create NovaCheck: {e}")
-    #
-    #     print(f"service_checks: {self.service_checks}")
-    #     print("==================================")
-
-    # def _init_service_checks(self):
-    #     """Initialize enabled service checks"""
-    #     service_map = {
-    #         'nova': (NovaCheck, 'session'),
-    #         'keystone': (KeystoneCheck, 'session'),
-    #         'neutron': (NeutronCheck, 'session'),
-    #         'rabbitmq': (RabbitCheck, 'config'),  # ← config для RabbitCheck!
-    #     }
-    #
-    #     print("=== DEBUG _init_service_checks ===")
-    #
-    #     for service_name in self.config.settings.check_services:
-    #         try:
-    #             print(f"Processing {service_name}...")
-    #
-    #             if service_name not in service_map:
-    #                 print(f"❌ Service '{service_name}' not in service_map")
-    #                 continue
-    #
-    #             check_class, param_type = service_map[service_name]
-    #             print(f"check_class: {check_class}, param_type: {param_type}")
-    #
-    #             if param_type == 'session':
-    #                 param = self.config.session
-    #             elif param_type == 'config':
-    #                 param = self.config  # ← ВАЖНО: config для RabbitCheck!
-    #             else:
-    #                 print(f"❌ Unknown param_type: {param_type}")
-    #                 continue
-    #
-    #             self.service_checks[service_name] = check_class(param)
-    #             print(f"✅ {service_name} initialized")
-    #
-    #         except Exception as e:
-    #             print(f"❌ Failed to initialize {service_name}: {e}")
-    #
-    #     print(f"Final service_checks: {list(self.service_checks.keys())}")
-    #     print("==================================")
-
     def _init_service_checks(self):
         """Initialize enabled service checks with warnings"""
         service_map = {
@@ -170,6 +42,7 @@ class Pulse:
                     check_class, param_type = service_map[service_name]
                     param = self.config.session if param_type == 'session' else self.config
                     self.service_checks[service_name] = check_class(param)
+                    print(f"✅ {service_name} initialized")
                 except Exception as e:
                     print(f"⚠️  Failed to initialize {service_name}: {e}")
             else:
@@ -203,26 +76,6 @@ class Pulse:
 
         return snapshot
 
-    # def collect_metrics(self):
-    #     """Collect metrics in parallel"""
-    #     snapshot = {'timestamp': time.time()}
-    #
-    #     with ThreadPoolExecutor(max_workers=5) as executor:
-    #         # Запускаем все проверки параллельно
-    #         future_to_service = {}
-    #         for service_name in self.config.settings.check_services:
-    #             if hasattr(self, f'{service_name}_check'):
-    #                 check = getattr(self, f'{service_name}_check')
-    #                 future = executor.submit(check.run_check)
-    #                 future_to_service[future] = service_name
-    #
-    #         # Собираем результаты
-    #         for future in as_completed(future_to_service):
-    #             service_name = future_to_service[future]
-    #             snapshot[service_name] = future.result()
-    #
-    #     return snapshot
-
     def run(self):
         """Main monitoring loop with limited collection window"""
         print("Starting OpenStack Pulse monitoring...")
@@ -237,24 +90,41 @@ class Pulse:
 
         try:
             for cycle in range(total_iterations):
+                cycle_start_time = time.time()
+
                 # Собираем метрики
                 snapshot = self.collect_metrics()
 
                 # Сразу выводим на экран
                 self._display_snapshot(snapshot, cycle + 1, total_iterations)
 
+                # Логируем время выполнения цикла
+                cycle_time = time.time() - cycle_start_time
+                print(f"Cycle {cycle + 1} completed in {cycle_time:.2f}s")
+
                 # Ждем следующий цикл (кроме последнего)
                 if cycle < total_iterations - 1:
-                    time.sleep(self.config.settings.intervals.check_interval)
+                    sleep_time = self.config.settings.intervals.check_interval - cycle_time
+                    if sleep_time > 0:
+                        time.sleep(sleep_time)
 
             print(f"\nCollection completed. Total cycles: {total_iterations}")
 
         except KeyboardInterrupt:
             print("\nMonitoring stopped by user")
+        finally:
+            # Закрываем сессии при завершении
+            self._close_sessions()
+
+    def _close_sessions(self):
+        """Close all sessions to free resources"""
+        for service_name, check in self.service_checks.items():
+            if hasattr(check, 'close_sessions'):
+                check.close_sessions()
+                print(f"Closed sessions for {service_name}")
 
     def _display_snapshot(self, snapshot, current_cycle, total_cycles):
         """Display current snapshot to console"""
-        # print(f"\n[{time.ctime(snapshot['timestamp'])}] Cycle {current_cycle}/{total_cycles}")
         timestamp = time.ctime(snapshot['timestamp'])
         print("=" * 45)
         print(f"    Cycle {current_cycle}/{total_cycles} - {timestamp}")
@@ -303,8 +173,6 @@ class Pulse:
         print(f"     {'✅' if health['replication_ok'] else '❌'} Replication: {repl_status}")
         print(
             f"     {'✅' if health['uptime_ok'] else '⚠️ '} Uptime: {'All nodes >10min' if health['uptime_ok'] else 'Some nodes <10min'}")
-        # print(
-        #     f"     {'✅' if health['processes_ok'] else '⚠️ '} Processes: {'Under 80% limit' if health['processes_ok'] else 'Near process limit'}")
 
     def _display_neutron_details(self, neutron_data):
         """Display Neutron-specific details"""
@@ -326,8 +194,6 @@ class Pulse:
                     status_info = f"{stats['up']} up, {stats['down']} down"
 
                 print(f"     {status_icon} {agent_type}: {status_info}")
-
-        # print(f"   Networks: {neutron_data['networks_count']} available")
 
     def _display_keystone_details(self, keystone_data):
         """Display Keystone-specific details"""
