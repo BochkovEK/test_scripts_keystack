@@ -163,10 +163,40 @@ class NovaCheck:
     #
     #     return stats
 
-    def _analyze_hypervisors_with_instances(self, hypervisors):
-        """Get hypervisors with instance counts"""
-        print(f"DEBUG Nova: Analyzing {len(hypervisors)} hypervisors")
+    # def _analyze_hypervisors_with_instances(self, hypervisors):
+    #     """Get hypervisors with instance counts"""
+    #     print(f"DEBUG Nova: Analyzing {len(hypervisors)} hypervisors")
+    #
+    #     stats = {
+    #         'total': len(hypervisors),
+    #         'up': 0,
+    #         'down': 0,
+    #         'details': []
+    #     }
+    #
+    #     for i, hv in enumerate(hypervisors):
+    #         print(f"DEBUG Nova: Hypervisor {i}:")
+    #         print(f"  name: {hv.name}")
+    #         print(f"  state: {hv.state} (type: {type(hv.state)})")
+    #         print(f"  running_vms: {hv.running_vms} (type: {type(hv.running_vms)})")
+    #         print(f"  status: {hv.status}")
+    #
+    #         hv_info = {
+    #             'name': hv.name,
+    #             'state': hv.state,
+    #             'instances_count': hv.running_vms
+    #         }
+    #         stats['details'].append(hv_info)
+    #
+    #         if hv.state == 'up':
+    #             stats['up'] += 1
+    #         else:
+    #             stats['down'] += 1
+    #
+    #     print(f"DEBUG Nova: Final stats: {stats}")
+    #     return stats
 
+    def _analyze_hypervisors_with_instances(self, hypervisors):
         stats = {
             'total': len(hypervisors),
             'up': 0,
@@ -174,17 +204,17 @@ class NovaCheck:
             'details': []
         }
 
-        for i, hv in enumerate(hypervisors):
-            print(f"DEBUG Nova: Hypervisor {i}:")
-            print(f"  name: {hv.name}")
-            print(f"  state: {hv.state} (type: {type(hv.state)})")
-            print(f"  running_vms: {hv.running_vms} (type: {type(hv.running_vms)})")
-            print(f"  status: {hv.status}")
+        for hv in hypervisors:
+            # Полная защита от None
+            try:
+                running_vms = int(hv.running_vms) if hv.running_vms is not None else 0
+            except (TypeError, ValueError):
+                running_vms = 0
 
             hv_info = {
                 'name': hv.name,
                 'state': hv.state,
-                'instances_count': hv.running_vms
+                'instances_count': running_vms
             }
             stats['details'].append(hv_info)
 
@@ -193,5 +223,4 @@ class NovaCheck:
             else:
                 stats['down'] += 1
 
-        print(f"DEBUG Nova: Final stats: {stats}")
         return stats
