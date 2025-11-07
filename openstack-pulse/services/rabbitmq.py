@@ -21,10 +21,14 @@ class RabbitCheck:
     def run_check(self):
         """Execute RabbitMQ cluster health check"""
         start_time = time.time()
+        print(f"DEBUG Rabbit: Starting check at {time.time()}")
 
         try:
             urls = self._get_rabbitmq_urls()
+            print(f"DEBUG Rabbit: URLs to check: {urls}")
+
             cluster_status = self._check_rabbitmq_cluster(urls)
+            print(f"DEBUG Rabbit: Cluster check completed at {time.time()}")
 
             return {
                 'status': 'OK' if cluster_status['healthy'] else 'DEGRADED',
@@ -35,11 +39,35 @@ class RabbitCheck:
             }
 
         except Exception as e:
+            print(f"DEBUG Rabbit: Exception: {e}")
             return {
                 'status': 'ERROR',
                 'response_time': round(time.time() - start_time, 2),
                 'error': str(e)
             }
+
+    def _check_single_node(self, url):
+        """Check health of single RabbitMQ node (optimized)"""
+        print(f"DEBUG Rabbit: Checking {url} at {time.time()}")
+        try:
+            # Single API call to overview endpoint
+            response = requests.get(f"{url}/api/overview", auth=self.auth, timeout=3)
+            print(f"DEBUG Rabbit: {url} response at {time.time()}")
+
+            if response.status_code == 200:
+                data = response.json()
+                return {
+                    'reachable': True,
+                    'details': {
+                        'queues': data.get('object_totals', {}).get('queues', 0),
+                        'messages': data.get('queue_totals', {}).get('messages', 0),
+                    }
+                }
+        except Exception as e:
+            print(f"DEBUG Rabbit: {url} failed: {e}")
+            pass
+
+        return {'reachable': False}
 
     def _get_rabbitmq_urls(self):
         """Generate RabbitMQ API URLs from inventory nodes"""
@@ -87,27 +115,6 @@ class RabbitCheck:
         status['healthy'] = status['cluster_health']['replication_ok']
 
         return status
-
-    def _check_single_node(self, url):
-        """Check health of single RabbitMQ node (optimized)"""
-        try:
-            # Single API call to overview endpoint
-            response = requests.get(f"{url}/api/overview", auth=self.auth, timeout=3)
-
-            if response.status_code == 200:
-                data = response.json()
-                return {
-                    'reachable': True,
-                    'details': {
-                        'queues': data.get('object_totals', {}).get('queues', 0),
-                        'messages': data.get('queue_totals', {}).get('messages', 0),
-                        # Removed: processes_used, processes_limit, uptime
-                    }
-                }
-        except Exception:
-            pass
-
-        return {'reachable': False}
 
     def _check_replication_quorum(self, total_nodes, reachable_count):
         """Verify cluster has sufficient nodes for replication"""
