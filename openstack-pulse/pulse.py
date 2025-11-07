@@ -124,44 +124,64 @@ class Pulse:
     #     print(f"service_checks: {self.service_checks}")
     #     print("==================================")
 
+    # def _init_service_checks(self):
+    #     """Initialize enabled service checks"""
+    #     service_map = {
+    #         'nova': (NovaCheck, 'session'),
+    #         'keystone': (KeystoneCheck, 'session'),
+    #         'neutron': (NeutronCheck, 'session'),
+    #         'rabbitmq': (RabbitCheck, 'config'),  # ← config для RabbitCheck!
+    #     }
+    #
+    #     print("=== DEBUG _init_service_checks ===")
+    #
+    #     for service_name in self.config.settings.check_services:
+    #         try:
+    #             print(f"Processing {service_name}...")
+    #
+    #             if service_name not in service_map:
+    #                 print(f"❌ Service '{service_name}' not in service_map")
+    #                 continue
+    #
+    #             check_class, param_type = service_map[service_name]
+    #             print(f"check_class: {check_class}, param_type: {param_type}")
+    #
+    #             if param_type == 'session':
+    #                 param = self.config.session
+    #             elif param_type == 'config':
+    #                 param = self.config  # ← ВАЖНО: config для RabbitCheck!
+    #             else:
+    #                 print(f"❌ Unknown param_type: {param_type}")
+    #                 continue
+    #
+    #             self.service_checks[service_name] = check_class(param)
+    #             print(f"✅ {service_name} initialized")
+    #
+    #         except Exception as e:
+    #             print(f"❌ Failed to initialize {service_name}: {e}")
+    #
+    #     print(f"Final service_checks: {list(self.service_checks.keys())}")
+    #     print("==================================")
+
     def _init_service_checks(self):
-        """Initialize enabled service checks"""
+        """Initialize enabled service checks with warnings"""
         service_map = {
             'nova': (NovaCheck, 'session'),
             'keystone': (KeystoneCheck, 'session'),
             'neutron': (NeutronCheck, 'session'),
-            'rabbitmq': (RabbitCheck, 'config'),  # ← config для RabbitCheck!
+            'rabbitmq': (RabbitCheck, 'config'),
         }
 
-        print("=== DEBUG _init_service_checks ===")
-
         for service_name in self.config.settings.check_services:
-            try:
-                print(f"Processing {service_name}...")
-
-                if service_name not in service_map:
-                    print(f"❌ Service '{service_name}' not in service_map")
-                    continue
-
-                check_class, param_type = service_map[service_name]
-                print(f"check_class: {check_class}, param_type: {param_type}")
-
-                if param_type == 'session':
-                    param = self.config.session
-                elif param_type == 'config':
-                    param = self.config  # ← ВАЖНО: config для RabbitCheck!
-                else:
-                    print(f"❌ Unknown param_type: {param_type}")
-                    continue
-
-                self.service_checks[service_name] = check_class(param)
-                print(f"✅ {service_name} initialized")
-
-            except Exception as e:
-                print(f"❌ Failed to initialize {service_name}: {e}")
-
-        print(f"Final service_checks: {list(self.service_checks.keys())}")
-        print("==================================")
+            if service_name in service_map:
+                try:
+                    check_class, param_type = service_map[service_name]
+                    param = self.config.session if param_type == 'session' else self.config
+                    self.service_checks[service_name] = check_class(param)
+                except Exception as e:
+                    print(f"⚠️  Failed to initialize {service_name}: {e}")
+            else:
+                print(f"⚠️  Service '{service_name}' not supported")
 
     def collect_metrics(self):
         """Collect metrics from all enabled services in parallel"""
