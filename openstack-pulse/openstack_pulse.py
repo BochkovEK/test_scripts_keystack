@@ -81,15 +81,14 @@ class Pulse:
         print("Starting OpenStack Pulse monitoring...")
         print(f"Enabled checks: {', '.join(self.config.settings.check_services)}")
 
-        # Calculate number of iterations based on collection window and interval
         total_iterations = (self.config.settings.intervals.collection_window //
                             self.config.settings.intervals.check_interval)
-        print(
-            f"Collection: {total_iterations} cycles ({self.config.settings.intervals.collection_window}s window, "
-            f"{self.config.settings.intervals.check_interval}s interval)")
+        print(f"Collection: {total_iterations} cycles")
 
         try:
             for cycle in range(total_iterations):
+                cycle_start_time = time.time()
+
                 # Собираем метрики
                 snapshot = self.collect_metrics()
 
@@ -98,14 +97,18 @@ class Pulse:
 
                 # Ждем следующий цикл (кроме последнего)
                 if cycle < total_iterations - 1:
-                    time.sleep(self.config.settings.intervals.check_interval)
+                    cycle_time = time.time() - cycle_start_time
+                    sleep_time = self.config.settings.intervals.check_interval - cycle_time
+                    if sleep_time > 0:
+                        time.sleep(sleep_time)
+                    else:
+                        print(f"⚠️ Cycle took longer than interval ({cycle_time:.1f}s)")
 
             print(f"\nCollection completed. Total cycles: {total_iterations}")
 
         except KeyboardInterrupt:
             print("\nMonitoring stopped by user")
         finally:
-            # Закрываем сессии при завершении
             self._close_sessions()
 
     def _close_sessions(self):
