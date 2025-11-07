@@ -16,6 +16,7 @@ from config.config import Config
 from services.nova import NovaCheck
 from services.keystone import KeystoneCheck
 from services.neutron import NeutronCheck
+from services.rabbitmq import RabbitCheck
 
 
 class Pulse:
@@ -46,7 +47,7 @@ class Pulse:
             'nova': NovaCheck,
             'keystone': KeystoneCheck,
             'neutron': NeutronCheck,
-            # 'rabbitmq': RabbitCheck,
+            'rabbitmq': RabbitCheck,
             # 'galera': GaleraCheck
         }
 
