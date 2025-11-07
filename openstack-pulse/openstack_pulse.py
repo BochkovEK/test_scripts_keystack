@@ -116,6 +116,8 @@ class Pulse:
 
         try:
             for cycle in range(total_iterations):
+                if cycle >= 1 and 'rabbitmq' in self.service_checks:
+                    self.service_checks['rabbitmq'].stop_heartbeat()
                 cycle_start = time.time()
 
                 # Собираем метрики
@@ -128,8 +130,7 @@ class Pulse:
                 print(f"🕒 Cycle {cycle + 1} WORK time: {cycle_work_time:.1f}s")
 
                 # Ждем перед следующим циклом (кроме последнего)
-                if cycle >= 1 and 'rabbitmq' in self.service_checks:
-                    self.service_checks['rabbitmq'].stop_heartbeat()
+
                 if cycle < total_iterations - 1:
                     interval = getattr(getattr(self.config.settings, 'intervals', None), 'check_interval', 5)
                     rabbitmq_requests_heartbeat = getattr(getattr(self.config.settings, 'rabbitmq', None), 'rabbitmq_requests_heartbeat', 4)
