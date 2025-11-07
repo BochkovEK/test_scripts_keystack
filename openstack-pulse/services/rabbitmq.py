@@ -18,7 +18,7 @@ class RabbitCheck:
         # Heartbeat
         self.heartbeat_stop_event = threading.Event()
         self.heartbeat_thread = threading.Thread(target=self._heartbeat_worker)
-        self.heartbeat_thread.daemon = True
+        # self.heartbeat_thread.daemon = True
         # self.heartbeat_thread.start()
 
     def _init_sessions(self):
