@@ -3,6 +3,7 @@ import yaml
 import configparser
 from dotenv import load_dotenv
 import openstack
+import sys
 # from keystoneauth1 import session
 # from keystoneauth1.identity import v3
 # from typing import Dict, Any
@@ -74,12 +75,15 @@ class Config:
         for filename in inventory_files:
             inventory_path = os.path.join(self.project_root, filename)
             if os.path.exists(inventory_path):
+                print(f"📁 Using inventory: {filename}")
                 return self._parse_inventory(inventory_path)
 
-        raise FileNotFoundError(
-            f"Inventory file not found in project root. "
-            f"Expected: {', '.join(inventory_files)}"
-        )
+        # FATAL ERROR - stop script
+        print("❌ CRITICAL: Inventory file not found!")
+        print(f"   Expected in project root: {', '.join(inventory_files)}")
+        print(f"   Project root: {self.project_root}")
+        print("   Please create inventory file with [controllers] section")
+        sys.exit(1)
 
     # def _load_inventory(self):
     #     """Load nodes from Ansible inventory file in project root"""
