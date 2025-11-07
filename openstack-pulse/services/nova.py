@@ -196,7 +196,50 @@ class NovaCheck:
     #     print(f"DEBUG Nova: Final stats: {stats}")
     #     return stats
 
+    # def _analyze_hypervisors_with_instances(self, hypervisors):
+    #     stats = {
+    #         'total': len(hypervisors),
+    #         'up': 0,
+    #         'down': 0,
+    #         'details': []
+    #     }
+    #
+    #     for hv in hypervisors:
+    #         # Полная защита от None
+    #         try:
+    #             running_vms = int(hv.running_vms) if hv.running_vms is not None else 0
+    #         except (TypeError, ValueError):
+    #             running_vms = 0
+    #
+    #         hv_info = {
+    #             'name': hv.name,
+    #             'state': hv.state,
+    #             'instances_count': running_vms
+    #         }
+    #         stats['details'].append(hv_info)
+    #
+    #         if hv.state == 'up':
+    #             stats['up'] += 1
+    #         else:
+    #             stats['down'] += 1
+    #
+    #     return stats
+
     def _analyze_hypervisors_with_instances(self, hypervisors):
+        """Investigate hypervisor attributes to find running VMs"""
+        print("DEBUG Nova: === HYPERVISOR ATTRIBUTE INVESTIGATION ===")
+
+        if hypervisors:
+            sample_hv = hypervisors[0]
+            print("DEBUG Nova: All hypervisor attributes and values:")
+            for attr in [a for a in dir(sample_hv) if not a.startswith('_')]:
+                try:
+                    value = getattr(sample_hv, attr)
+                    if not callable(value):  # Показываем только не-методы
+                        print(f"  {attr}: {value} (type: {type(value)})")
+                except Exception as e:
+                    print(f"  {attr}: <ERROR: {e}>")
+
         stats = {
             'total': len(hypervisors),
             'up': 0,
@@ -205,11 +248,8 @@ class NovaCheck:
         }
 
         for hv in hypervisors:
-            # Полная защита от None
-            try:
-                running_vms = int(hv.running_vms) if hv.running_vms is not None else 0
-            except (TypeError, ValueError):
-                running_vms = 0
+            # Пробуем разные атрибуты для получения количества ВМ
+            running_vms = self._get_running_vms_count(hv)
 
             hv_info = {
                 'name': hv.name,
@@ -224,3 +264,32 @@ class NovaCheck:
                 stats['down'] += 1
 
         return stats
+
+    def _get_running_vms_count(self, hypervisor):
+        """Try different methods to get running VMs count"""
+        # Метод 1: Стандартный атрибут
+        if hypervisor.running_vms is not None:
+            return hypervisor.running_vms
+
+        # Метод 2: Через vcpus_used (может быть связан)
+        if hasattr(hypervisor, 'vcpus_used') and hypervisor.vcpus_used:
+            print(f"DEBUG Nova: Using vcpus_used for {hypervisor.name}: {hypervisor.vcpus_used}")
+            return hypervisor.vcpus_used
+
+        # Метод 3: Попробуем получить серверы напрямую
+        try:
+            servers = list(self.conn.compute.servers(all_tenants=True, host=hypervisor.name))
+            print(f"DEBUG Nova: Found {len(servers)} servers on {hypervisor.name}")
+            return len(servers)
+        except Exception as e:
+            print(f"DEBUG Nova: Failed to get servers for {hypervisor.name}: {e}")
+
+        # Метод 4: Посмотрим другие возможные атрибуты
+        for attr in ['vms', 'instances', 'servers_count']:
+            if hasattr(hypervisor, attr):
+                value = getattr(hypervisor, attr)
+                if value is not None:
+                    print(f"DEBUG Nova: Using {attr} for {hypervisor.name}: {value}")
+                    return value
+
+        return 0
