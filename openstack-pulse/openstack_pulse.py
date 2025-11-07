@@ -118,7 +118,7 @@ class Pulse:
             for cycle in range(total_iterations):
                 cycle_start = time.time()
 
-                # Собираем метрики (RabbitMQ heartbeat работает автоматически в фоне)
+                # Собираем метрики
                 snapshot = self.collect_metrics()
 
                 # Сразу выводим на экран
@@ -130,8 +130,16 @@ class Pulse:
                 # Ждем перед следующим циклом (кроме последнего)
                 if cycle < total_iterations - 1:
                     interval = self.config.settings.intervals.check_interval
-                    print(f"💤 Sleeping {interval}s...")
-                    time.sleep(interval)
+
+                    # Запускаем heartbeat на время sleep (если интервал > 4 сек)
+                    if interval > 4 and 'rabbitmq' in self.service_checks:
+                        print(f"💤 Sleeping {interval}s with heartbeat...")
+                        self.service_checks['rabbitmq'].start_heartbeat()
+                        time.sleep(interval)
+                        self.service_checks['rabbitmq'].stop_heartbeat()
+                    else:
+                        print(f"💤 Sleeping {interval}s...")
+                        time.sleep(interval)
 
             print(f"\nCollection completed. Total cycles: {total_iterations}")
 

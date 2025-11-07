@@ -19,7 +19,7 @@ class RabbitCheck:
         self.heartbeat_stop_event = threading.Event()
         self.heartbeat_thread = threading.Thread(target=self._heartbeat_worker)
         self.heartbeat_thread.daemon = True
-        self.heartbeat_thread.start()
+        # self.heartbeat_thread.start()
 
     def _init_sessions(self):
         """Initialize separate sessions for each node"""
@@ -29,6 +29,20 @@ class RabbitCheck:
             session = requests.Session()
             session.auth = self.auth
             self.sessions[host] = session
+
+    def start_heartbeat(self):
+        """Start heartbeat for all nodes"""
+        self.heartbeat_stop_event = threading.Event()
+        self.heartbeat_thread = threading.Thread(target=self._heartbeat_worker)
+        self.heartbeat_thread.daemon = True
+        self.heartbeat_thread.start()
+
+    def stop_heartbeat(self):
+        """Stop heartbeat"""
+        if hasattr(self, 'heartbeat_stop_event'):
+            self.heartbeat_stop_event.set()
+            if hasattr(self, 'heartbeat_thread') and self.heartbeat_thread.is_alive():
+                self.heartbeat_thread.join(timeout=5)
 
     def _heartbeat_worker(self):
         """Continuous heartbeat worker"""
