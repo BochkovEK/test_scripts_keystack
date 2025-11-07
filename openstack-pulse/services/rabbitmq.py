@@ -1,6 +1,6 @@
 import requests
 import time
-
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 class RabbitCheck:
     def __init__(self, config):
