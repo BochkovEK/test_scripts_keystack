@@ -198,6 +198,16 @@ class RabbitCheck:
 
         return {'reachable': False}
 
+    def _heartbeat(self):
+        """Send heartbeat to all nodes to keep connections alive"""
+        for url in self._get_rabbitmq_urls():
+            session = self._get_session_for_url(url)
+            if session:
+                try:
+                    session.get(f"{url}/api/aliveness-test/%2F", timeout=1)
+                except:
+                    pass  # Игнорируем ошибки heartbeat
+
     def _get_rabbitmq_urls(self):
         """Generate RabbitMQ API URLs from inventory nodes"""
         urls = []

@@ -106,7 +106,7 @@ class Pulse:
     #         self._close_sessions()
 
     def run(self):
-        """Main monitoring loop with timing debug"""
+        """Main monitoring loop with limited collection window"""
         print("Starting OpenStack Pulse monitoring...")
         print(f"Enabled checks: {', '.join(self.config.settings.check_services)}")
 
@@ -121,16 +121,34 @@ class Pulse:
                 # Собираем метрики
                 snapshot = self.collect_metrics()
 
-                cycle_work_time = time.time() - cycle_start
-                print(f"🕒 Cycle {cycle + 1} WORK time: {cycle_work_time:.1f}s")
-
                 # Сразу выводим на экран
                 self._display_snapshot(snapshot, cycle + 1, total_iterations)
 
+                cycle_work_time = time.time() - cycle_start
+                print(f"🕒 Cycle {cycle + 1} WORK time: {cycle_work_time:.1f}s")
+
                 # Ждем перед следующим циклом (кроме последнего)
                 if cycle < total_iterations - 1:
-                    print(f"💤 Sleeping {self.config.settings.intervals.check_interval}s...")
-                    time.sleep(self.config.settings.intervals.check_interval)
+                    interval = self.config.settings.intervals.check_interval
+
+                    # Если интервал > 4 сек, делаем heartbeat параллельно со sleep
+                    if interval > 4 and 'rabbitmq' in self.service_checks:
+                        print(f"💤 Sleeping {interval}s...")
+                        print(f"💓 RabbitMQ heartbeat after {interval / 2:.1f}s...")
+
+                        # Запускаем heartbeat в отдельном потоке
+                        with ThreadPoolExecutor(max_workers=1) as executor:
+                            # Heartbeat сработает в середине интервала
+                            heartbeat_future = executor.submit(
+                                self._delayed_heartbeat,
+                                self.service_checks['rabbitmq'],
+                                interval / 2
+                            )
+                            # Спим весь интервал
+                            time.sleep(interval)
+                    else:
+                        print(f"💤 Sleeping {interval}s...")
+                        time.sleep(interval)
 
             print(f"\nCollection completed. Total cycles: {total_iterations}")
 
@@ -138,6 +156,11 @@ class Pulse:
             print("\nMonitoring stopped by user")
         finally:
             self._close_sessions()
+
+    def _delayed_heartbeat(self, rabbit_check, delay):
+        """Execute heartbeat after delay"""
+        time.sleep(delay)
+        rabbit_check._heartbeat()
 
     def _close_sessions(self):
         """Close all sessions to free resources"""
