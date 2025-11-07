@@ -14,6 +14,14 @@ openstack_pulse/
     ├── config.py         # Загрузчик конфигов
     └── config.yml        # Базовые настройки
 
+RabbitCheck
+├── run_check()
+├── _get_rabbitmq_urls()           # использует 'control'
+├── _check_rabbitmq_cluster()      # параллельная версия
+├── _check_single_node()           # + queues_count, messages
+├── _check_replication_quorum()    # единая логика репликации
+└── _analyze_node_health()         # инкрементальный анализ
+
 Для зауска необходимо:
     1) Наличие переменных окружения согласно .env-template
         cp .env.template .env
