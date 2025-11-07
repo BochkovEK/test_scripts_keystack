@@ -135,28 +135,43 @@ class RabbitCheck:
         health = {
             'replication_ok': False,
             'uptime_ok': False,
-            'processes_ok': True  # По умолчанию True, если нет данных
+            'processes_ok': True
         }
 
-        # Проверка репликации (для 3 нод должно быть 2 реплики)
+        total_nodes = len(status['reachable_nodes']) + len(status['unreachable_nodes'])
         reachable_count = len(status['reachable_nodes'])
-        health['replication_ok'] = reachable_count >= 2  # Минимум кворум
 
-        # Проверка uptime и процессов для каждого узла
+        # Логика репликации для RabbitMQ кластера:
+        if total_nodes == 1:
+            # Одна нода - репликации нет, но это нормально
+            health['replication_ok'] = True
+        elif total_nodes == 2:
+            # Две ноды - нужны обе для кворума
+            health['replication_ok'] = (reachable_count == 2)
+        elif total_nodes >= 3:
+            # Три и более нод - нужен кворум N/2 + 1
+            quorum = (total_nodes // 2) + 1
+            health['replication_ok'] = (reachable_count >= quorum)
+        else:
+            health['replication_ok'] = False
+
+        # Проверка uptime и процессов
+        uptime_ok = True
+        processes_ok = True
+
         for url, details in status['node_details'].items():
             if 'error' not in details:
                 # Uptime > 10 минут (600000 ms в RabbitMQ)
                 if details.get('uptime', 0) < 600000:
-                    health['uptime_ok'] = False
+                    uptime_ok = False
 
-                # Processes used < limit
+                # Processes used < limit (80% от лимита как предупреждение)
                 proc_used = details.get('processes_used', 0)
                 proc_limit = details.get('processes_limit', 1)
-                if proc_used >= proc_limit:
-                    health['processes_ok'] = False
+                if proc_used >= proc_limit * 0.8:  # 80% лимита
+                    processes_ok = False
 
-        # Если все узлы имеют uptime > 10min
-        if health['uptime_ok'] is not False:  # Не было установлено в False
-            health['uptime_ok'] = True
+        health['uptime_ok'] = uptime_ok
+        health['processes_ok'] = processes_ok
 
         return health

@@ -43,27 +43,70 @@ class Config:
         }
 
         # Load base config with absolute path
-        config_path = os.path.join(self.project_root, 'config', 'config.yml.template')
-        with open(config_path) as f:
-            config_data = yaml.safe_load(f)
+        self._check_required_files()
 
-        # Convert to dot notation for easy access
-        self.settings = DotDict(config_data)
+        # with open(config_path) as f:
+        #     config_data = yaml.safe_load(f)
+        # self.settings = DotDict(config_data)
+        #
+        # # Load inventory - STRICT CHECK
+        # self.nodes = self._load_inventory()
+
+        # Create OpenStack connection
+        self.conn = self._create_connection()
+        self.session = self.conn.session
 
         # Create OpenStack connection using auth dict
         self.conn = self._create_connection()
         self.session = self.conn.session
 
-        try:
-            self.nodes = self._load_inventory()
-        except FileNotFoundError as e:
-            print(f"⚠️  {e}")
-            print("   Continuing without inventory data...")
-            self.nodes = {'controllers': []}  # Пустой inventory
+        # try:
+        #     self.nodes = self._load_inventory()
+        # except FileNotFoundError as e:
+        #     print(f"⚠️  {e}")
+        #     print("   Continuing without inventory data...")
+        #     self.nodes = {'controllers': []}  # Пустой inventory
 
             # Create OpenStack connection
         self.conn = self._create_connection()
         self.session = self.conn.session
+
+    def _check_required_files(self):
+        """Check all required configuration files"""
+        required_files = {
+            'config.yml': os.path.join(self.project_root, 'config', 'config.yml'),
+            'inventory': [
+                os.path.join(self.project_root, 'inventory.ini'),
+                os.path.join(self.project_root, 'inventory')
+            ]
+        }
+
+        # Проверка config.yml
+        if not os.path.exists(required_files['config.yml']):
+            self._exit_with_file_error('config.yml', required_files['config.yml'])
+
+        # Проверка inventory
+        inventory_found = any(os.path.exists(path) for path in required_files['inventory'])
+        if not inventory_found:
+            self._exit_with_file_error('inventory', required_files['inventory'][0])
+
+    def _exit_with_file_error(self, file_type, expected_path):
+        """Exit with detailed file error message"""
+        print("❌" * 50)
+        print(f"❌ CRITICAL: {file_type} not found!")
+        print("❌" * 50)
+        print(f"📂 Expected: {expected_path}")
+        print("")
+
+        if file_type == 'config.yml':
+            print("💡 Config file must be named exactly 'config.yml'")
+            print("   Templates and other names are NOT accepted")
+        elif file_type == 'inventory':
+            print("💡 Inventory file must be 'inventory' or 'inventory.ini'")
+            print("   in the project root directory")
+
+        print("❌" * 50)
+        sys.exit(1)
 
     def _load_inventory(self):
         """Load nodes from Ansible inventory file in project root"""

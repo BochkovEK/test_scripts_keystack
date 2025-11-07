@@ -285,26 +285,26 @@ class Pulse:
         """Display RabbitMQ cluster health details"""
         cluster = rabbit_data['cluster']
         health = cluster['cluster_health']
+        total_nodes = rabbit_data['total_nodes']
+        reachable_nodes = rabbit_data['reachable_nodes']
 
-        print(f"   Nodes: {rabbit_data['reachable_nodes']}/{rabbit_data['total_nodes']} reachable")
+        print(f"   Nodes: {reachable_nodes}/{total_nodes} reachable")
 
-        # Статус здоровья
+        # Статус репликации с пояснением
+        if total_nodes == 1:
+            repl_status = "Single node (no replication)"
+        elif total_nodes == 2:
+            repl_status = "2-node cluster (needs both)"
+        else:
+            quorum = (total_nodes // 2) + 1
+            repl_status = f"{total_nodes}-node cluster (needs {quorum} for quorum)"
+
         print("   Cluster Health:")
+        print(f"     {'✅' if health['replication_ok'] else '❌'} Replication: {repl_status}")
         print(
-            f"     {'✅' if health['replication_ok'] else '❌'} Replication: {'OK' if health['replication_ok'] else 'CRITICAL'}")
-        print(f"     {'✅' if health['uptime_ok'] else '⚠️ '} Uptime: {'>10min' if health['uptime_ok'] else '<10min'}")
-        print(f"     {'✅' if health['processes_ok'] else '❌'} Processes: {'OK' if health['processes_ok'] else 'LIMIT'}")
-
-        # Детали по узлам
-        if cluster['node_details']:
-            print("   Node Details:")
-            for url, details in cluster['node_details'].items():
-                if 'error' not in details:
-                    status = "🟢" if url in cluster['reachable_nodes'] else "🔴"
-                    print(f"     {status} {url}")
-                    print(f"       Queues: {details.get('queues', 0)}, Messages: {details.get('messages', 0)}")
-                    print(
-                        f"       Uptime: {details.get('uptime', 0) / 1000:.0f}s, Processes: {details.get('processes_used', 0)}/{details.get('processes_limit', 0)}")
+            f"     {'✅' if health['uptime_ok'] else '⚠️ '} Uptime: {'All nodes >10min' if health['uptime_ok'] else 'Some nodes <10min'}")
+        print(
+            f"     {'✅' if health['processes_ok'] else '⚠️ '} Processes: {'Under 80% limit' if health['processes_ok'] else 'Near process limit'}")
 
     def _display_neutron_details(self, neutron_data):
         """Display Neutron-specific details"""
