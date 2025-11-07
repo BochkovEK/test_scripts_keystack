@@ -82,7 +82,7 @@ class Config:
         print("❌ CRITICAL: Inventory file not found!")
         print(f"   Expected in project root: {', '.join(inventory_files)}")
         print(f"   Project root: {self.project_root}")
-        print("   Please create inventory file with [controllers] section")
+        print("   Please create inventory file with [control] section")
         sys.exit(1)
 
     # def _load_inventory(self):
@@ -192,7 +192,7 @@ class Config:
                 for line in f:
                     line = line.strip()
 
-                    if line == '[controllers]':
+                    if line == '[control]':
                         in_controllers_section = True
                         continue
                     elif line.startswith('['):
