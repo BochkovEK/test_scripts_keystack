@@ -33,7 +33,7 @@ class RabbitCheck:
         """Continuous heartbeat worker"""
         while not self.heartbeat_stop_event.is_set():
             self._heartbeat()
-            self.heartbeat_stop_event.wait(2)  # wait 3 sec or until stop
+            self.heartbeat_stop_event.wait(1)  # wait 3 sec or until stop
 
     def _heartbeat(self):
         """Send heartbeat to all nodes to keep connections alive"""
