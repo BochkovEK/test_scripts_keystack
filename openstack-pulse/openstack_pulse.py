@@ -253,7 +253,7 @@ class Pulse:
         for service_type, instances in critical.items():
             for instance in instances:
                 status_icon = "✅" if instance['state'] == 'up' else "❌"
-                print(f"    {status_icon} {service_type}: {instance['state']} on {instance['host']}")
+                # print(f"    {status_icon} {service_type}: {instance['state']} on {instance['host']}")
 
         # Hypervisors with instances
         print(f"  Hypervisors: {hypervisors['up']}/{hypervisors['total']} up")
@@ -270,7 +270,7 @@ class Pulse:
                 status_icon = "🔴"
                 instances_info = " (down)"
 
-            print(f"    {status_icon} {hv['name']}{instances_info}")
+            # print(f"    {status_icon} {hv['name']}{instances_info}")
 
 
 if __name__ == "__main__":
