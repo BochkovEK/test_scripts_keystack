@@ -67,7 +67,11 @@ class RabbitCheck:
             'healthy': False,
             'reachable_nodes': [],
             'unreachable_nodes': [],
-            'cluster_health': {'replication_ok': False, 'uptime_ok': True, 'processes_ok': True},
+            'cluster_health': {
+                'replication_ok': False,
+                'uptime_ok': True,
+                'processes_ok': True
+            },
             'node_details': {}
         }
 
@@ -92,10 +96,20 @@ class RabbitCheck:
         # Анализ репликации
         total_nodes = len(urls)
         reachable_count = len(status['reachable_nodes'])
-        status['cluster_health']['replication_ok'] = self._check_replication(total_nodes, reachable_count)
-        status['healthy'] = reachable_count > total_nodes // 2
+        status['cluster_health']['replication_ok'] = self._check_replication_quorum(total_nodes, reachable_count)
+        status['healthy'] = status['cluster_health']['replication_ok']  # ← здоровье = есть кворум
 
         return status
+
+    def _check_replication_quorum(self, total_nodes, reachable_count):
+        """Check if cluster has replication quorum"""
+        if total_nodes == 1:
+            return True  # Одна нода - нормально
+        elif total_nodes == 2:
+            return reachable_count == 2  # Нужны обе
+        else:
+            quorum = (total_nodes // 2) + 1
+            return reachable_count >= quorum  # Кворум N/2 + 1
 
     def _check_single_node(self, url):
         """Check single RabbitMQ node (runs in parallel)"""
