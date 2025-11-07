@@ -35,21 +35,47 @@ class NovaCheck:
     #             'error': str(e)
     #         }
 
+    # def run_check(self):
+    #     """Detailed Nova services status check"""
+    #     start_time = time.time()
+    #
+    #     try:
+    #         print("DEBUG Nova: Getting services...")
+    #         services = list(self.conn.compute.services())
+    #         print(f"DEBUG Nova: Found {len(services)} services")
+    #
+    #         service_stats = self._analyze_services(services)
+    #
+    #         print("DEBUG Nova: Getting hypervisors...")
+    #         hypervisors = list(self.conn.compute.hypervisors())
+    #         print(f"DEBUG Nova: Found {len(hypervisors)} hypervisors")
+    #
+    #         hypervisor_stats = self._analyze_hypervisors_with_instances(hypervisors)
+    #
+    #         return {
+    #             'status': 'OK',
+    #             'response_time': round(time.time() - start_time, 2),
+    #             'services': service_stats,
+    #             'hypervisors': hypervisor_stats
+    #         }
+    #
+    #     except Exception as e:
+    #         print(f"DEBUG Nova: ERROR - {e}")
+    #         return {
+    #             'status': 'ERROR',
+    #             'response_time': round(time.time() - start_time, 2),
+    #             'error': str(e)
+    #         }
+
     def run_check(self):
         """Detailed Nova services status check"""
         start_time = time.time()
 
         try:
-            print("DEBUG Nova: Getting services...")
             services = list(self.conn.compute.services())
-            print(f"DEBUG Nova: Found {len(services)} services")
-
             service_stats = self._analyze_services(services)
 
-            print("DEBUG Nova: Getting hypervisors...")
             hypervisors = list(self.conn.compute.hypervisors())
-            print(f"DEBUG Nova: Found {len(hypervisors)} hypervisors")
-
             hypervisor_stats = self._analyze_hypervisors_with_instances(hypervisors)
 
             return {
@@ -60,7 +86,6 @@ class NovaCheck:
             }
 
         except Exception as e:
-            print(f"DEBUG Nova: ERROR - {e}")
             return {
                 'status': 'ERROR',
                 'response_time': round(time.time() - start_time, 2),
