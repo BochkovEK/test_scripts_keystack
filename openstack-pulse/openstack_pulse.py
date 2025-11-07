@@ -76,8 +76,37 @@ class Pulse:
 
         return snapshot
 
+    # def run(self):
+    #     """Main monitoring loop without sleep"""
+    #     print("Starting OpenStack Pulse monitoring...")
+    #     print(f"Enabled checks: {', '.join(self.config.settings.check_services)}")
+    #
+    #     total_iterations = (self.config.settings.intervals.collection_window //
+    #                         self.config.settings.intervals.check_interval)
+    #     print(f"Collection: {total_iterations} cycles")
+    #
+    #     try:
+    #         for cycle in range(total_iterations):
+    #             cycle_start_time = time.time()
+    #
+    #             # Собираем метрики
+    #             snapshot = self.collect_metrics()
+    #
+    #             # Сразу выводим на экран
+    #             self._display_snapshot(snapshot, cycle + 1, total_iterations)
+    #
+    #             cycle_time = time.time() - cycle_start_time
+    #             print(f"Cycle {cycle + 1} took {cycle_time:.2f}s")
+    #
+    #         print(f"\nCollection completed. Total cycles: {total_iterations}")
+    #
+    #     except KeyboardInterrupt:
+    #         print("\nMonitoring stopped by user")
+    #     finally:
+    #         self._close_sessions()
+
     def run(self):
-        """Main monitoring loop without sleep"""
+        """Main monitoring loop with limited collection window"""
         print("Starting OpenStack Pulse monitoring...")
         print(f"Enabled checks: {', '.join(self.config.settings.check_services)}")
 
@@ -87,16 +116,15 @@ class Pulse:
 
         try:
             for cycle in range(total_iterations):
-                cycle_start_time = time.time()
-
                 # Собираем метрики
                 snapshot = self.collect_metrics()
 
                 # Сразу выводим на экран
                 self._display_snapshot(snapshot, cycle + 1, total_iterations)
 
-                cycle_time = time.time() - cycle_start_time
-                print(f"Cycle {cycle + 1} took {cycle_time:.2f}s")
+                # Ждем следующий цикл (кроме последнего И кроме первого цикла)
+                if cycle < total_iterations - 1 and cycle >= 1:
+                    time.sleep(self.config.settings.intervals.check_interval)
 
             print(f"\nCollection completed. Total cycles: {total_iterations}")
 
