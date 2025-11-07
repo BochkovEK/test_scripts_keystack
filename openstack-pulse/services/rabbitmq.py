@@ -8,15 +8,12 @@ class RabbitCheck:
 
     def __init__(self, config):
         self.config = config
-        self.auth = (
-            self.config.auth['rabbit_user'],
-            self.config.auth['rabbit_pass']
-        )
-        self.port = getattr(
-            getattr(self.config.settings, 'endpoints', None),
-            'rabbitmq_port',
-            15672
-        )
+        self.auth = (self.config.auth['rabbit_user'], self.config.auth['rabbit_pass'])
+        self.port = getattr(getattr(self.config.settings, 'endpoints', None), 'rabbitmq_port', 15672)
+        # Создаем сессию для reuse соединений
+        self.session = requests.Session()
+        self.session.auth = self.auth
+        self.session.timeout = 3
 
     def run_check(self):
         """Execute RabbitMQ cluster health check"""
@@ -70,19 +67,22 @@ class RabbitCheck:
     #     return {'reachable': False}
 
     def _check_single_node(self, url):
-        """Check health of single RabbitMQ node - simple version"""
-        # Single API call to overview endpoint
-        response = requests.get(f"{url}/api/overview", auth=self.auth, timeout=3)
+        """Check health of single RabbitMQ node with session"""
+        try:
+            # Используем сессию - соединение reuse, auth кешируется
+            response = self.session.get(f"{url}/api/overview")
 
-        if response.status_code == 200:
-            data = response.json()
-            return {
-                'reachable': True,
-                'details': {
-                    'queues': data.get('object_totals', {}).get('queues', 0),
-                    'messages': data.get('queue_totals', {}).get('messages', 0),
+            if response.status_code == 200:
+                data = response.json()
+                return {
+                    'reachable': True,
+                    'details': {
+                        'queues': data.get('object_totals', {}).get('queues', 0),
+                        'messages': data.get('queue_totals', {}).get('messages', 0),
+                    }
                 }
-            }
+        except Exception:
+            pass
 
         return {'reachable': False}
 
