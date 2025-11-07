@@ -128,6 +128,8 @@ class Pulse:
                 print(f"🕒 Cycle {cycle + 1} WORK time: {cycle_work_time:.1f}s")
 
                 # Ждем перед следующим циклом (кроме последнего)
+                if cycle >= 1 and 'rabbitmq' in self.service_checks:
+                    self.service_checks['rabbitmq'].stop_heartbeat()
                 if cycle < total_iterations - 1:
                     interval = getattr(getattr(self.config.settings, 'intervals', None), 'check_interval', 5)
                     rabbitmq_requests_heartbeat = getattr(getattr(self.config.settings, 'rabbitmq', None), 'rabbitmq_requests_heartbeat', 4)
@@ -137,7 +139,6 @@ class Pulse:
                         print(f"💤 Sleeping {interval}s with heartbeat {rabbitmq_requests_heartbeat}s")
                         self.service_checks['rabbitmq'].start_heartbeat()
                         time.sleep(interval)
-                        self.service_checks['rabbitmq'].stop_heartbeat()
                     else:
                         print(f"💤 Sleeping {interval}s...")
                         time.sleep(interval)
