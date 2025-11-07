@@ -45,12 +45,15 @@ class Config:
         # Load base config with absolute path
         self._check_required_files()
 
-        # with open(config_path) as f:
-        #     config_data = yaml.safe_load(f)
-        # self.settings = DotDict(config_data)
-        #
-        # # Load inventory - STRICT CHECK
-        # self.nodes = self._load_inventory()
+        # Load base config - STRICT CHECK
+        config_path = os.path.join(self.project_root, 'config', 'config.yml')
+
+        with open(config_path) as f:
+            config_data = yaml.safe_load(f)
+        self.settings = DotDict(config_data)
+
+        # Load inventory - STRICT CHECK
+        self.nodes = self._load_inventory()
 
         # Create OpenStack connection
         self.conn = self._create_connection()
