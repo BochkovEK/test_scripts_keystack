@@ -106,32 +106,30 @@ class Pulse:
 
     def collect_metrics(self):
         """Collect metrics from all enabled services in parallel"""
-        print(f"DEBUG: Starting collect_metrics, service_checks: {list(self.service_checks.keys())}")
-
         snapshot = {'timestamp': time.time()}
+
+        # Проверяем что есть сервисы для проверки
+        if not self.service_checks:
+            print("❌ No services initialized! Check _init_service_checks()")
+            return snapshot
 
         with ThreadPoolExecutor(max_workers=len(self.service_checks)) as executor:
             future_to_service = {}
             for service_name, check in self.service_checks.items():
-                print(f"DEBUG: Submitting {service_name}")
                 future = executor.submit(check.run_check)
                 future_to_service[future] = service_name
 
             for future in as_completed(future_to_service):
                 service_name = future_to_service[future]
                 try:
-                    result = future.result()
-                    print(f"DEBUG: {service_name} result: {result}")
-                    snapshot[service_name] = result
+                    snapshot[service_name] = future.result()
                 except Exception as e:
-                    print(f"DEBUG: {service_name} error: {e}")
                     snapshot[service_name] = {
                         'status': 'ERROR',
                         'response_time': 0,
                         'error': str(e)
                     }
 
-        print(f"DEBUG: Final snapshot keys: {list(snapshot.keys())}")
         return snapshot
 
     # def collect_metrics(self):
