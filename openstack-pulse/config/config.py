@@ -53,6 +53,17 @@ class Config:
         self.conn = self._create_connection()
         self.session = self.conn.session
 
+        try:
+            self.nodes = self._load_inventory()
+        except FileNotFoundError as e:
+            print(f"⚠️  {e}")
+            print("   Continuing without inventory data...")
+            self.nodes = {'controllers': []}  # Пустой inventory
+
+            # Create OpenStack connection
+        self.conn = self._create_connection()
+        self.session = self.conn.session
+
     def _load_inventory(self):
         """Load nodes from Ansible inventory file in project root"""
         inventory_files = [
@@ -69,6 +80,23 @@ class Config:
             f"Inventory file not found in project root. "
             f"Expected: {', '.join(inventory_files)}"
         )
+
+    # def _load_inventory(self):
+    #     """Load nodes from Ansible inventory file in project root"""
+    #     inventory_files = [
+    #         'inventory.ini',
+    #         'inventory'
+    #     ]
+    #
+    #     for filename in inventory_files:
+    #         inventory_path = os.path.join(self.project_root, filename)
+    #         if os.path.exists(inventory_path):
+    #             return self._parse_inventory(inventory_path)
+    #
+    #     raise FileNotFoundError(
+    #         f"Inventory file not found in project root. "
+    #         f"Expected: {', '.join(inventory_files)}"
+    #     )
 
     def _create_connection(self):
         """Create OpenStack connection using credentials from self.auth"""

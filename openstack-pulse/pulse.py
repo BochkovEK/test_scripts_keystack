@@ -24,14 +24,6 @@ class Pulse:
     def __init__(self):
         self.config = Config()
         self.service_checks = {}
-
-        print("=== DEBUG CONFIG ===")
-        print(f"check_services: {self.config.settings.check_services}")
-        print(f"config type: {type(self.config)}")
-        print(f"session type: {type(self.config.session)}")
-        print(f"session available: {hasattr(self.config, 'session')}")
-        print("====================")
-
         self._init_service_checks()
         self.snapshots = []
 
