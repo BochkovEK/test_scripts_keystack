@@ -105,7 +105,10 @@ class Pulse:
 
     def _display_snapshot(self, snapshot, current_cycle, total_cycles):
         """Display current snapshot to console"""
-        print(f"\n[{time.ctime(snapshot['timestamp'])}] Cycle {current_cycle}/{total_cycles}")
+        # print(f"\n[{time.ctime(snapshot['timestamp'])}] Cycle {current_cycle}/{total_cycles}")
+        print(f"\n╔═══════ {time.ctime(snapshot['timestamp'])} ═══════╗")
+        print(f"║           Cycle {current_cycle}/{total_cycles}           ║")
+        print(f"╚═══════════════════════════════════════╝")
 
         for service_name in self.config.settings.check_services:
             if service_name in snapshot:
