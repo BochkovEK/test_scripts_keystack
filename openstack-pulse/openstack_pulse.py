@@ -75,40 +75,40 @@ class Pulse:
     #                 }
     #
     #     return snapshot
-    # def collect_metrics(self):
-    #     snapshot = {'timestamp': time.time()}
-    #
-    #     with ThreadPoolExecutor(max_workers=len(self.service_checks)) as executor:
-    #         future_to_service = {}
-    #         for service_name, check in self.service_checks.items():
-    #             print(f"🕐 Starting {service_name} at {time.time()}")
-    #             future = executor.submit(check.run_check)
-    #             future_to_service[future] = service_name
-    #
-    #         for future in as_completed(future_to_service):
-    #             service_name = future_to_service[future]
-    #             try:
-    #                 result = future.result()
-    #                 print(f"🕐 Finished {service_name} at {time.time()}: {result['response_time']}s")
-    #                 snapshot[service_name] = result
-    #             except Exception as e:
-    #                 snapshot[service_name] = {'status': 'ERROR', 'error': str(e)}
-    #
-    #     return snapshot
     def collect_metrics(self):
-        """Collect metrics sequentially without threading"""
         snapshot = {'timestamp': time.time()}
 
-        for service_name, check in self.service_checks.items():
-            print(f"🕐 Starting {service_name} at {time.time()}")
-            try:
-                result = check.run_check()
-                print(f"🕐 Finished {service_name} at {time.time()}: {result['response_time']}s")
-                snapshot[service_name] = result
-            except Exception as e:
-                snapshot[service_name] = {'status': 'ERROR', 'error': str(e)}
+        with ThreadPoolExecutor(max_workers=len(self.service_checks)) as executor:
+            future_to_service = {}
+            for service_name, check in self.service_checks.items():
+                print(f"🕐 Starting {service_name} at {time.time()}")
+                future = executor.submit(check.run_check)
+                future_to_service[future] = service_name
+
+            for future in as_completed(future_to_service):
+                service_name = future_to_service[future]
+                try:
+                    result = future.result()
+                    print(f"🕐 Finished {service_name} at {time.time()}: {result['response_time']}s")
+                    snapshot[service_name] = result
+                except Exception as e:
+                    snapshot[service_name] = {'status': 'ERROR', 'error': str(e)}
 
         return snapshot
+    # def collect_metrics(self):
+    #     """Collect metrics sequentially without threading"""
+    #     snapshot = {'timestamp': time.time()}
+    #
+    #     for service_name, check in self.service_checks.items():
+    #         print(f"🕐 Starting {service_name} at {time.time()}")
+    #         try:
+    #             result = check.run_check()
+    #             print(f"🕐 Finished {service_name} at {time.time()}: {result['response_time']}s")
+    #             snapshot[service_name] = result
+    #         except Exception as e:
+    #             snapshot[service_name] = {'status': 'ERROR', 'error': str(e)}
+    #
+    #     return snapshot
 
     # def run(self):
     #     """Main monitoring loop without sleep"""
