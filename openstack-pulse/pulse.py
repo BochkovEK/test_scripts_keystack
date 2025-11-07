@@ -31,19 +31,59 @@ class Pulse:
         # Storage for snapshots
         self.snapshots = []
 
+    # def _init_service_checks(self):
+    #     """Initialize enabled service checks using dictionary"""
+    #     service_map = {
+    #         'nova': (NovaCheck, 'session'),
+    #         'keystone': (KeystoneCheck, 'session'),
+    #         'neutron': (NeutronCheck, 'session'),
+    #         'rabbitmq': (RabbitCheck, 'config'),
+    #         # 'galera': (GaleraCheck, 'config')
+    #     }
+    #
+    #     for service_name in self.config.settings.check_services:
+    #         if service_name in service_map:
+    #             check_class, param_type = service_map[service_name]
+    #
+    #             # Определяем параметр для конструктора
+    #             if param_type == 'session':
+    #                 param = self.config.session
+    #             elif param_type == 'config':
+    #                 param = self.config
+    #             else:
+    #                 # Логируем ошибку и пропускаем сервис
+    #                 print(f"⚠️  Unknown parameter type '{param_type}' for service '{service_name}'")
+    #                 continue
+    #
+    #             # Создаем экземпляр проверки
+    #             self.service_checks[service_name] = check_class(param)
+    #
+    #         else:
+    #             print(f"⚠️  Service '{service_name}' not found in service_map")
+
     def _init_service_checks(self):
-        """Initialize enabled service checks using dictionary"""
+        """Initialize enabled service checks with full error handling"""
         service_map = {
             'nova': (NovaCheck, 'session'),
             'keystone': (KeystoneCheck, 'session'),
             'neutron': (NeutronCheck, 'session'),
             'rabbitmq': (RabbitCheck, 'config'),
-            # 'galera': (GaleraCheck, 'config')
         }
 
+        print(f"DEBUG: check_services from config: {self.config.settings.check_services}")
+
+        initialized_services = []
+
         for service_name in self.config.settings.check_services:
-            if service_name in service_map:
+            try:
+                print(f"DEBUG: Processing service: {service_name}")
+
+                if service_name not in service_map:
+                    print(f"❌ Service '{service_name}' not supported. Available: {list(service_map.keys())}")
+                    continue
+
                 check_class, param_type = service_map[service_name]
+                print(f"DEBUG: check_class: {check_class}, param_type: {param_type}")
 
                 # Определяем параметр для конструктора
                 if param_type == 'session':
@@ -51,35 +91,68 @@ class Pulse:
                 elif param_type == 'config':
                     param = self.config
                 else:
-                    # Логируем ошибку и пропускаем сервис
-                    print(f"⚠️  Unknown parameter type '{param_type}' for service '{service_name}'")
-                    continue
+                    raise ValueError(f"Unknown parameter type: {param_type}")
 
                 # Создаем экземпляр проверки
                 self.service_checks[service_name] = check_class(param)
+                initialized_services.append(service_name)
+                print(f"DEBUG: Successfully created {service_name}_check")
 
-            else:
-                print(f"⚠️  Service '{service_name}' not found in service_map")
+            except Exception as e:
+                print(f"❌ Failed to initialize {service_name}: {e}")
+
+        print(f"✅ Initialized services: {', '.join(initialized_services)}")
+        print(f"DEBUG: service_checks keys: {list(self.service_checks.keys())}")
 
     def collect_metrics(self):
-        """Collect metrics in parallel"""
+        """Collect metrics from all enabled services in parallel"""
+        print(f"DEBUG: Starting collect_metrics, service_checks: {list(self.service_checks.keys())}")
+
         snapshot = {'timestamp': time.time()}
 
-        with ThreadPoolExecutor(max_workers=5) as executor:
-            # Запускаем все проверки параллельно
+        with ThreadPoolExecutor(max_workers=len(self.service_checks)) as executor:
             future_to_service = {}
-            for service_name in self.config.settings.check_services:
-                if hasattr(self, f'{service_name}_check'):
-                    check = getattr(self, f'{service_name}_check')
-                    future = executor.submit(check.run_check)
-                    future_to_service[future] = service_name
+            for service_name, check in self.service_checks.items():
+                print(f"DEBUG: Submitting {service_name}")
+                future = executor.submit(check.run_check)
+                future_to_service[future] = service_name
 
-            # Собираем результаты
             for future in as_completed(future_to_service):
                 service_name = future_to_service[future]
-                snapshot[service_name] = future.result()
+                try:
+                    result = future.result()
+                    print(f"DEBUG: {service_name} result: {result}")
+                    snapshot[service_name] = result
+                except Exception as e:
+                    print(f"DEBUG: {service_name} error: {e}")
+                    snapshot[service_name] = {
+                        'status': 'ERROR',
+                        'response_time': 0,
+                        'error': str(e)
+                    }
 
+        print(f"DEBUG: Final snapshot keys: {list(snapshot.keys())}")
         return snapshot
+
+    # def collect_metrics(self):
+    #     """Collect metrics in parallel"""
+    #     snapshot = {'timestamp': time.time()}
+    #
+    #     with ThreadPoolExecutor(max_workers=5) as executor:
+    #         # Запускаем все проверки параллельно
+    #         future_to_service = {}
+    #         for service_name in self.config.settings.check_services:
+    #             if hasattr(self, f'{service_name}_check'):
+    #                 check = getattr(self, f'{service_name}_check')
+    #                 future = executor.submit(check.run_check)
+    #                 future_to_service[future] = service_name
+    #
+    #         # Собираем результаты
+    #         for future in as_completed(future_to_service):
+    #             service_name = future_to_service[future]
+    #             snapshot[service_name] = future.result()
+    #
+    #     return snapshot
 
     def run(self):
         """Main monitoring loop with limited collection window"""
