@@ -80,6 +80,7 @@ class RabbitCheck:
 
     def run_check(self):
         """Execute RabbitMQ cluster health check"""
+        print(f"🔍 RabbitCheck sessions: {len(self.sessions)}")
         start_time = time.time()
 
         try:
