@@ -44,11 +44,20 @@ class RabbitCheck:
             if hasattr(self, 'heartbeat_thread') and self.heartbeat_thread.is_alive():
                 self.heartbeat_thread.join(timeout=5)
 
+    # def _heartbeat_worker(self):
+    #     """Continuous heartbeat worker"""
+    #     while not self.heartbeat_stop_event.is_set():
+    #         self._heartbeat()
+    #         self.heartbeat_stop_event.wait(self.rabbitmq_requests_heartbeat)  # wait 3 sec or until stop
+
     def _heartbeat_worker(self):
         """Continuous heartbeat worker"""
+        heartbeat_count = 0
         while not self.heartbeat_stop_event.is_set():
             self._heartbeat()
-            self.heartbeat_stop_event.wait(self.rabbitmq_requests_heartbeat)  # wait 3 sec or until stop
+            heartbeat_count += 1
+            print(f"💓 RabbitMQ heartbeat #{heartbeat_count}")
+            self.heartbeat_stop_event.wait(self.rabbitmq_requests_heartbeat)
 
     def _heartbeat(self):
         """Send heartbeat to all nodes to keep connections alive"""
