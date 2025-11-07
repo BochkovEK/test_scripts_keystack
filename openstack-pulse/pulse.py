@@ -15,6 +15,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'config'))
 from config.config import Config
 from services.nova import NovaCheck
 from services.keystone import KeystoneCheck
+from services.neutron import NeutronCheck
 
 
 class Pulse:
@@ -44,7 +45,7 @@ class Pulse:
         service_map = {
             'nova': NovaCheck,
             'keystone': KeystoneCheck,
-            # 'neutron': NeutronCheck,
+            'neutron': NeutronCheck,
             # 'rabbitmq': RabbitCheck,
             # 'galera': GaleraCheck
         }
@@ -117,17 +118,31 @@ class Pulse:
                 self._display_service_status(service_name, service_data)
 
     def _display_service_status(self, service_name, service_data):
-        """Display status for specific service"""
         status_icon = "✅" if service_data['status'] == 'OK' else "❌"
         print(f"{status_icon} {service_name.upper()}: {service_data['status']} ({service_data['response_time']}s)")
 
-        # Service-specific display logic
         if service_name == 'nova' and service_data['status'] == 'OK':
             self._display_nova_details(service_data)
         elif service_name == 'keystone' and service_data['status'] == 'OK':
             self._display_keystone_details(service_data)
+        elif service_name == 'neutron' and service_data['status'] == 'OK':
+            self._display_neutron_details(service_data)
         elif service_data['status'] == 'ERROR':
             print(f"   Error: {service_data['error']}")
+
+    def _display_neutron_details(self, neutron_data):
+        """Display Neutron-specific details"""
+        agents = neutron_data['agents']
+        print(f"   Agents: {agents['up']}/{agents['total']} up")
+
+        # Критичные агенты
+        if 'critical_agents' in agents:
+            print("   Critical Agents:")
+            for agent_type, stats in agents['critical_agents'].items():
+                status_icon = "🟢" if stats['up'] > 0 else "🔴"
+                print(f"     {status_icon} {agent_type}: {stats['up']} up, {stats['down']} down")
+
+        print(f"   Networks: {neutron_data['networks_count']} available")
 
     def _display_keystone_details(self, keystone_data):
         """Display Keystone-specific details"""

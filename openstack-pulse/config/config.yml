@@ -3,7 +3,7 @@
 check_services:
   - nova
   - keystone
-#    - neutron
+  - neutron
 #    - rabbitmq
 #    - galera
 
