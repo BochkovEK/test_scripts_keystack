@@ -120,12 +120,68 @@ class RabbitCheck:
     #
     #     return {'reachable': False}
 
+    # def _check_single_node(self, url):
+    #     session = self._get_session_for_url(url)
+    #     if not session:
+    #         return {'reachable': False}
+    #
+    #     try:
+    #         response = session.get(f"{url}/api/overview", timeout=10)
+    #
+    #         if response.status_code == 200:
+    #             data = response.json()
+    #             return {
+    #                 'reachable': True,
+    #                 'details': {
+    #                     'queues': data.get('object_totals', {}).get('queues', 0),
+    #                     'messages': data.get('queue_totals', {}).get('messages', 0),
+    #                 }
+    #             }
+    #     except (requests.exceptions.ConnectionError, requests.exceptions.ChunkedEncodingError):
+    #         # Соединение разорвано - пересоздаем сессию
+    #         print(f"DEBUG: Recreating session for {url}")
+    #         host = self._extract_host_from_url(url)
+    #         new_session = requests.Session()
+    #         new_session.auth = self.auth
+    #         self.sessions[host] = new_session
+    #
+    #         # Повторяем запрос с новой сессией
+    #         try:
+    #             response = new_session.get(f"{url}/api/overview", timeout=10)
+    #             if response.status_code == 200:
+    #                 data = response.json()
+    #                 return {
+    #                     'reachable': True,
+    #                     'details': {
+    #                         'queues': data.get('object_totals', {}).get('queues', 0),
+    #                         'messages': data.get('queue_totals', {}).get('messages', 0),
+    #                     }
+    #                 }
+    #         except Exception:
+    #             pass
+    #
+    #     except Exception:
+    #         pass
+    #
+    #     return {'reachable': False}
+
     def _check_single_node(self, url):
+        """Check health of single RabbitMQ node with heartbeat support"""
         session = self._get_session_for_url(url)
         if not session:
             return {'reachable': False}
 
         try:
+            # Если интервал проверки > 4 сек, делаем легкий heartbeat запрос
+            if hasattr(self.config.settings.intervals, 'check_interval'):
+                if self.config.settings.intervals.check_interval > 4:
+                    try:
+                        # Легкий запрос для поддержания соединения
+                        session.get(f"{url}/api/health/checks/alarms", timeout=1)
+                    except:
+                        pass  # Игнорируем ошибки heartbeat
+
+            # Основной запрос
             response = session.get(f"{url}/api/overview", timeout=10)
 
             if response.status_code == 200:
@@ -137,29 +193,6 @@ class RabbitCheck:
                         'messages': data.get('queue_totals', {}).get('messages', 0),
                     }
                 }
-        except (requests.exceptions.ConnectionError, requests.exceptions.ChunkedEncodingError):
-            # Соединение разорвано - пересоздаем сессию
-            print(f"DEBUG: Recreating session for {url}")
-            host = self._extract_host_from_url(url)
-            new_session = requests.Session()
-            new_session.auth = self.auth
-            self.sessions[host] = new_session
-
-            # Повторяем запрос с новой сессией
-            try:
-                response = new_session.get(f"{url}/api/overview", timeout=10)
-                if response.status_code == 200:
-                    data = response.json()
-                    return {
-                        'reachable': True,
-                        'details': {
-                            'queues': data.get('object_totals', {}).get('queues', 0),
-                            'messages': data.get('queue_totals', {}).get('messages', 0),
-                        }
-                    }
-            except Exception:
-                pass
-
         except Exception:
             pass
 
