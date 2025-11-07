@@ -1,27 +1,26 @@
-from novaclient import client as nova_client
+import openstack
 from typing import Dict, Any
 import time
 
 
 class NovaCheck:
     def __init__(self, session):
-        self.nova = nova_client.Client(version='2.1', session=session)
+        self.conn = openstack.connection.Connection(
+            session=session,
+            compute_api_version='2.1'
+        )
 
     def run_check(self):
-        """
-        Detailed Nova services status check
-        """
         start_time = time.time()
 
         try:
-            # Get all services
-            services = self.nova.services.list()
-
-            # Get detailed services info
+            # Сервисы через OpenStackSDK
+            services = list(self.conn.compute.services())
             service_stats = self._analyze_services(services)
 
-            # Get hypervisors with instances
-            hypervisor_stats = self._analyze_hypervisors_with_instances()
+            # Гипервизоры через OpenStackSDK
+            hypervisors = list(self.conn.compute.hypervisors())
+            hypervisor_stats = self._analyze_hypervisors_with_instances(hypervisors)
 
             return {
                 'status': 'OK',
@@ -29,7 +28,6 @@ class NovaCheck:
                 'services': service_stats,
                 'hypervisors': hypervisor_stats
             }
-
         except Exception as e:
             return {
                 'status': 'ERROR',
@@ -69,10 +67,10 @@ class NovaCheck:
 
         return stats
 
-    def _analyze_hypervisors_with_instances(self):
+    def _analyze_hypervisors_with_instances(self, hypervisors):
         """Get hypervisors with instance counts"""
         try:
-            hypervisors = self.nova.hypervisors.list()
+            # hypervisors = self.nova.hypervisors.list()
 
             stats = {
                 'total': len(hypervisors),
