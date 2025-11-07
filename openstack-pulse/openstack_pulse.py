@@ -122,8 +122,8 @@ class Pulse:
                 # Сразу выводим на экран
                 self._display_snapshot(snapshot, cycle + 1, total_iterations)
 
-                # Ждем следующий цикл (кроме последнего И кроме первого цикла)
-                if cycle < total_iterations - 1 and cycle >= 1:
+                # Ждем перед следующим циклом (кроме последнего)
+                if cycle < total_iterations - 1:
                     time.sleep(self.config.settings.intervals.check_interval)
 
             print(f"\nCollection completed. Total cycles: {total_iterations}")
