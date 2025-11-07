@@ -40,12 +40,6 @@ class NovaCheck:
     def _analyze_services(self, services):
         """Analyze Nova services by type"""
 
-        # ДЕБАГ - посмотрим все сервисы которые приходят
-        print("=== DEBUG All Nova Services ===")
-        for i, service in enumerate(services):
-            print(f"{i:2d}. {service.binary:20} on {service.host:15} state: {service.state:6} status: {service.status}")
-        print("===============================")
-
         stats: Dict[str, Any] = {
             'total': len(services),
             'by_state': {'up': 0, 'down': 0},

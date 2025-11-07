@@ -6,6 +6,7 @@ OpenStack Pulse - Lightweight diagnostic tool
 import time
 import sys
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Add project directories to Python path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'services'))
@@ -13,6 +14,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'config'))
 
 from config.config import Config
 from services.nova import NovaCheck
+from services.keystone import KeystoneCheck
 
 
 class Pulse:
@@ -20,18 +22,56 @@ class Pulse:
         # Load configuration
         self.config = Config()
 
-        # Initialize Nova check with session
-        self.nova_check = NovaCheck(self.config.session)
+        # Initialize services
+        self._init_service_checks()
+        # self.nova_check = NovaCheck(self.config.session)
 
         # Storage for snapshots
         self.snapshots = []
 
-    def collect_metrics(self):
-        """Collect metrics from all services"""
-        snapshot = {
-            'timestamp': time.time(),
-            'nova': self.nova_check.run_check()
+    # def collect_metrics(self):
+    #     """Collect metrics from all services"""
+    #     snapshot = {
+    #         'timestamp': time.time(),
+    #         'nova': self.nova_check.run_check()
+    #     }
+    #     return snapshot
+
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    def _init_service_checks(self):
+        """Initialize enabled service checks"""
+        service_map = {
+            'nova': NovaCheck,
+            'keystone': KeystoneCheck,
+            # 'neutron': NeutronCheck,
+            # 'rabbitmq': RabbitCheck,
+            # 'galera': GaleraCheck
         }
+
+        for service_name in self.config.settings.check_services:
+            if service_name in service_map:
+                check_class = service_map[service_name]
+                setattr(self, f'{service_name}_check', check_class(self.config.session))
+
+    def collect_metrics(self):
+        """Collect metrics in parallel"""
+        snapshot = {'timestamp': time.time()}
+
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            # Запускаем все проверки параллельно
+            future_to_service = {}
+            for service_name in self.config.settings.check_services:
+                if hasattr(self, f'{service_name}_check'):
+                    check = getattr(self, f'{service_name}_check')
+                    future = executor.submit(check.run_check)
+                    future_to_service[future] = service_name
+
+            # Собираем результаты
+            for future in as_completed(future_to_service):
+                service_name = future_to_service[future]
+                snapshot[service_name] = future.result()
+
         return snapshot
 
     def run(self):
@@ -80,9 +120,17 @@ class Pulse:
         # Service-specific display logic
         if service_name == 'nova' and service_data['status'] == 'OK':
             self._display_nova_details(service_data)
-        # Add other services here: keystone, neutron, rabbitmq, galera
-        # elif service_name == 'keystone' and service_data['status'] == 'OK':
-        #     self._display_keystone_details(service_data)
+        elif service_name == 'keystone' and service_data['status'] == 'OK':
+            self._display_keystone_details(service_data)
+        elif service_data['status'] == 'ERROR':
+            print(f"   Error: {service_data['error']}")
+
+    def _display_keystone_details(self, keystone_data):
+        """Display Keystone-specific details"""
+        if keystone_data.get('token_valid'):
+            print("   Token: ✅ valid")
+        if keystone_data.get('services_count'):
+            print(f"   Services: {keystone_data['services_count']} available")
 
     @staticmethod
     def _display_nova_details(nova_data):

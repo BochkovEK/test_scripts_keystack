@@ -2,7 +2,7 @@
 # Список сервисов для диагностики
 check_services:
   - nova
-#    - keystone
+  - keystone
 #    - neutron
 #    - rabbitmq
 #    - galera
