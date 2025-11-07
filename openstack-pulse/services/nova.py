@@ -99,32 +99,66 @@ class NovaCheck:
 
         return stats
 
+    # def _analyze_hypervisors_with_instances(self, hypervisors):
+    #     """Get hypervisors with instance counts"""
+    #     try:
+    #         # hypervisors = self.nova.hypervisors.list()
+    #
+    #         stats = {
+    #             'total': len(hypervisors),
+    #             'up': 0,
+    #             'down': 0,
+    #             'details': []
+    #         }
+    #
+    #         for hv in hypervisors:
+    #             hv_info = {
+    #                 'name': hv.hypervisor_hostname,
+    #                 'state': hv.state,
+    #                 'instances_count': hv.running_vms
+    #             }
+    #             stats['details'].append(hv_info)
+    #
+    #             if hv.state == 'up':
+    #                 stats['up'] += 1
+    #             else:
+    #                 stats['down'] += 1
+    #
+    #         return stats
+    #
+    #     except Exception:
+    #         return {'total': 0, 'up': 0, 'down': 0, 'details': []}
+
     def _analyze_hypervisors_with_instances(self, hypervisors):
         """Get hypervisors with instance counts"""
-        try:
-            # hypervisors = self.nova.hypervisors.list()
+        print(
+            f"DEBUG Nova: Hypervisor attributes: {[attr for attr in dir(hypervisors[0]) if not attr.startswith('_')]}")
 
-            stats = {
-                'total': len(hypervisors),
-                'up': 0,
-                'down': 0,
-                'details': []
+        stats = {
+            'total': len(hypervisors),
+            'up': 0,
+            'down': 0,
+            'details': []
+        }
+
+        for hv in hypervisors:
+            # Проверяем какие атрибуты доступны
+            name = getattr(hv, 'name', getattr(hv, 'hypervisor_hostname', 'unknown'))
+            state = getattr(hv, 'state', 'unknown')
+            running_vms = getattr(hv, 'running_vms', 0)
+
+            print(f"DEBUG Nova: {name} - state: {state}, vms: {running_vms}")
+
+            hv_info = {
+                'name': name,
+                'state': state,
+                'instances_count': running_vms
             }
+            stats['details'].append(hv_info)
 
-            for hv in hypervisors:
-                hv_info = {
-                    'name': hv.hypervisor_hostname,
-                    'state': hv.state,
-                    'instances_count': hv.running_vms
-                }
-                stats['details'].append(hv_info)
+            if state == 'up':
+                stats['up'] += 1
+            else:
+                stats['down'] += 1
 
-                if hv.state == 'up':
-                    stats['up'] += 1
-                else:
-                    stats['down'] += 1
-
-            return stats
-
-        except Exception:
-            return {'total': 0, 'up': 0, 'down': 0, 'details': []}
+        return stats
