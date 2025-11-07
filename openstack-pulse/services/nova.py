@@ -266,30 +266,16 @@ class NovaCheck:
         return stats
 
     def _get_running_vms_count(self, hypervisor):
-        """Try different methods to get running VMs count"""
-        # Метод 1: Стандартный атрибут
-        if hypervisor.running_vms is not None:
-            return hypervisor.running_vms
-
-        # Метод 2: Через vcpus_used (может быть связан)
-        if hasattr(hypervisor, 'vcpus_used') and hypervisor.vcpus_used:
-            print(f"DEBUG Nova: Using vcpus_used for {hypervisor.name}: {hypervisor.vcpus_used}")
-            return hypervisor.vcpus_used
-
-        # Метод 3: Попробуем получить серверы напрямую
+        """Get running VMs via hypervisor details"""
         try:
-            servers = list(self.conn.compute.servers(all_tenants=True, host=hypervisor.name))
-            print(f"DEBUG Nova: Found {len(servers)} servers on {hypervisor.name}")
-            return len(servers)
+            # Получаем детальную информацию о гипервизоре
+            hv_details = self.conn.compute.get_hypervisor(hypervisor.id)
+            print(f"DEBUG Nova: Hypervisor details for {hypervisor.name}:")
+            print(f"  running_vms: {hv_details.running_vms}")
+            print(f"  vcpus_used: {hv_details.vcpus_used}")
+            print(f"  memory_used: {hv_details.memory_used}")
+
+            return hv_details.running_vms if hv_details.running_vms is not None else 0
         except Exception as e:
-            print(f"DEBUG Nova: Failed to get servers for {hypervisor.name}: {e}")
-
-        # Метод 4: Посмотрим другие возможные атрибуты
-        for attr in ['vms', 'instances', 'servers_count']:
-            if hasattr(hypervisor, attr):
-                value = getattr(hypervisor, attr)
-                if value is not None:
-                    print(f"DEBUG Nova: Using {attr} for {hypervisor.name}: {value}")
-                    return value
-
-        return 0
+            print(f"DEBUG Nova: Failed to get hypervisor details: {e}")
+            return 0
