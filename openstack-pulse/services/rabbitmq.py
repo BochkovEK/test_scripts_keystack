@@ -26,12 +26,12 @@ class RabbitCheck:
         start_time = time.time()
 
         try:
-            print(f"DEBUG RabbitMQ: Starting check...")
+            # print(f"DEBUG RabbitMQ: Starting check...")
             urls = self._get_rabbitmq_urls()
-            print(f"DEBUG RabbitMQ: URLs to check: {urls}")
-
+            # print(f"DEBUG RabbitMQ: URLs to check: {urls}")
+            #
             cluster_status = self._check_rabbitmq_cluster(urls)
-            print(f"DEBUG RabbitMQ: Cluster status: {cluster_status}")
+            # print(f"DEBUG RabbitMQ: Cluster status: {cluster_status}")
 
             return {
                 'status': 'OK' if cluster_status['healthy'] else 'DEGRADED',
