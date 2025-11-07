@@ -75,7 +75,7 @@ class Config:
         for filename in inventory_files:
             inventory_path = os.path.join(self.project_root, filename)
             if os.path.exists(inventory_path):
-                print(f"📁 Using inventory: {filename}")
+                print(f"📁 Using inventory: {filename} from project root")
                 return self._parse_inventory(inventory_path)
 
         # FATAL ERROR - stop script
