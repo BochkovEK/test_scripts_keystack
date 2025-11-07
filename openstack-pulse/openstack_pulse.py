@@ -106,7 +106,7 @@ class Pulse:
     #         self._close_sessions()
 
     def run(self):
-        """Main monitoring loop with limited collection window"""
+        """Main monitoring loop with timing debug"""
         print("Starting OpenStack Pulse monitoring...")
         print(f"Enabled checks: {', '.join(self.config.settings.check_services)}")
 
@@ -116,14 +116,20 @@ class Pulse:
 
         try:
             for cycle in range(total_iterations):
+                cycle_start = time.time()
+
                 # Собираем метрики
                 snapshot = self.collect_metrics()
+
+                cycle_work_time = time.time() - cycle_start
+                print(f"🕒 Cycle {cycle + 1} WORK time: {cycle_work_time:.1f}s")
 
                 # Сразу выводим на экран
                 self._display_snapshot(snapshot, cycle + 1, total_iterations)
 
                 # Ждем перед следующим циклом (кроме последнего)
                 if cycle < total_iterations - 1:
+                    print(f"💤 Sleeping {self.config.settings.intervals.check_interval}s...")
                     time.sleep(self.config.settings.intervals.check_interval)
 
             print(f"\nCollection completed. Total cycles: {total_iterations}")
