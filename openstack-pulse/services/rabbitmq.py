@@ -10,10 +10,9 @@ class RabbitCheck:
         self.config = config
         self.auth = (self.config.auth['rabbit_user'], self.config.auth['rabbit_pass'])
         self.port = getattr(getattr(self.config.settings, 'endpoints', None), 'rabbitmq_port', 15672)
-        # Создаем сессию для reuse соединений
+        # Session для reuse соединений
         self.session = requests.Session()
         self.session.auth = self.auth
-        self.session.timeout = 3
 
     def run_check(self):
         """Execute RabbitMQ cluster health check"""
@@ -69,8 +68,8 @@ class RabbitCheck:
     def _check_single_node(self, url):
         """Check health of single RabbitMQ node with session"""
         try:
-            # Используем сессию - соединение reuse, auth кешируется
-            response = self.session.get(f"{url}/api/overview")
+            # Используем сессию для reuse соединений
+            response = self.session.get(f"{url}/api/overview", timeout=3)
 
             if response.status_code == 200:
                 data = response.json()
@@ -134,35 +133,37 @@ class RabbitCheck:
     #     return status
 
     def _check_rabbitmq_cluster(self, urls):
-        """Check RabbitMQ cluster nodes sequentially"""
+        """Check RabbitMQ cluster nodes in parallel with session"""
         status = {
             'healthy': False,
             'reachable_nodes': [],
             'unreachable_nodes': [],
             'cluster_health': {
                 'replication_ok': False,
+                'uptime_ok': True,  # ← ВОССТАНОВИТЬ uptime_ok
             },
             'node_details': {}
         }
 
+        with ThreadPoolExecutor(max_workers=len(urls)) as executor:
+            future_to_url = {
+                executor.submit(self._check_single_node, url): url
+                for url in urls
+            }
+
+            for future in as_completed(future_to_url):
+                url = future_to_url[future]
+                try:
+                    node_result = future.result()
+                    if node_result['reachable']:
+                        status['reachable_nodes'].append(url)
+                        status['node_details'][url] = node_result['details']
+                    else:
+                        status['unreachable_nodes'].append(url)
+                except Exception:
+                    status['unreachable_nodes'].append(url)
+
         total_nodes = len(urls)
-
-        # Sequential check - no ThreadPoolExecutor
-        for url in urls:
-            node_start = time.time()
-            print(f"DEBUG Rabbit: Checking {url} at {node_start}")
-
-            node_result = self._check_single_node(url)
-
-            node_time = time.time() - node_start
-            print(f"DEBUG Rabbit: {url} completed in {node_time:.2f}s")
-
-            if node_result['reachable']:
-                status['reachable_nodes'].append(url)
-                status['node_details'][url] = node_result['details']
-            else:
-                status['unreachable_nodes'].append(url)
-
         reachable_count = len(status['reachable_nodes'])
         status['cluster_health']['replication_ok'] = self._check_replication_quorum(total_nodes, reachable_count)
         status['healthy'] = status['cluster_health']['replication_ok']
