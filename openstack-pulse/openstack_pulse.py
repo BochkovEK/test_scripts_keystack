@@ -66,12 +66,12 @@ class Pulse:
                 result = check.run_check()
                 self.latest_results[service_name] = result
                 self.service_ready_events[service_name].set()
-                print(f"   ✅ {service_name} updated: {result['status']} ({result['response_time']}s)")
+                # print(f"   ✅ {service_name} updated: {result['status']} ({result['response_time']}s)")
             except Exception as e:
                 error_result = {'status': 'ERROR', 'error': str(e), 'response_time': 0}
                 self.latest_results[service_name] = error_result
                 self.service_ready_events[service_name].set()
-                print(f"   ❌ {service_name} error: {e}")
+                # print(f"   ❌ {service_name} error: {e}")
 
             # Используем heartbeat_requests_services из конфига
             heartbeat_interval = getattr(self.config.settings, 'heartbeat_requests_services', 4)
