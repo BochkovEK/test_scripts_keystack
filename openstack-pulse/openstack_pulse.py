@@ -2,6 +2,7 @@ import time
 import sys
 import os
 import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Add project directories to Python path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'services'))
@@ -15,30 +16,30 @@ from services.rabbitmq import RabbitCheck
 
 
 class Pulse:
+    """OpenStack Pulse - Lightweight diagnostic tool"""
 
     def __init__(self):
         self.config = Config()
         self.service_checks = {}
-        self.latest_results = {}  # Хранилище последних результатов
-        self.service_ready_events = {}  # События готовности сервисов
+        self.latest_results = {}  # Store latest service results
+        self.service_ready_events = {}  # Track service readiness
         self._init_service_checks()
         self._start_continuous_checks()
 
     def _init_service_checks(self):
-        """Initialize enabled service checks"""
+        """Initialize service check instances"""
         service_map = {
-            'nova': (NovaCheck, 'session'),
-            'keystone': (KeystoneCheck, 'session'),
-            'neutron': (NeutronCheck, 'session'),
-            'rabbitmq': (RabbitCheck, 'config'),
+            'nova': NovaCheck,
+            'keystone': KeystoneCheck,
+            'neutron': NeutronCheck,
+            'rabbitmq': RabbitCheck,
         }
 
         for service_name in self.config.settings.check_services:
             if service_name in service_map:
                 try:
-                    check_class, param_type = service_map[service_name]
-                    param = self.config.session if param_type == 'session' else self.config
-                    self.service_checks[service_name] = check_class(param)
+                    # All services now receive config object
+                    self.service_checks[service_name] = service_map[service_name](self.config)
                     self.service_ready_events[service_name] = threading.Event()
                     print(f"✅ {service_name} initialized")
                 except Exception as e:
@@ -60,36 +61,32 @@ class Pulse:
             print(f"   📡 {service_name} check started")
 
     def _run_service_continuously(self, service_name, check):
-        """Run service checks with heartbeat interval"""
+        """Run service checks continuously in background"""
         while True:
             try:
                 result = check.run_check()
                 self.latest_results[service_name] = result
-                self.service_ready_events[service_name].set()
-                # print(f"   ✅ {service_name} updated: {result['status']} ({result['response_time']}s)")
+                self.service_ready_events[service_name].set()  # Mark as ready
             except Exception as e:
                 error_result = {'status': 'ERROR', 'error': str(e), 'response_time': 0}
                 self.latest_results[service_name] = error_result
                 self.service_ready_events[service_name].set()
-                # print(f"   ❌ {service_name} error: {e}")
 
-            # Используем heartbeat_requests_services из конфига
+            # Use heartbeat interval for service polling
             heartbeat_interval = getattr(self.config.settings, 'heartbeat_requests_services', 4)
             time.sleep(heartbeat_interval)
 
     def collect_metrics(self):
+        """Collect latest metrics from all services"""
         snapshot = {'timestamp': time.time()}
 
+        # Wait for all services to have at least one result
         for service_name, event in self.service_ready_events.items():
             if not event.is_set():
                 event.wait(timeout=30)
 
-        # Добавляем время сбора для каждого сервиса
-        current_time = time.time()
-        for service_name, result in self.latest_results.items():
-            snapshot[service_name] = result.copy()
-            snapshot[service_name]['collection_time'] = current_time
-
+        # Copy latest results
+        snapshot.update(self.latest_results.copy())
         return snapshot
 
     def run(self):
@@ -111,8 +108,8 @@ class Pulse:
                 # Display snapshot
                 self._display_snapshot(snapshot, cycle + 1, total_iterations)
 
-                # cycle_work_time = time.time() - cycle_start
-                # print(f"📸 Snapshot {cycle + 1} collection time: {cycle_work_time:.1f}s")
+                cycle_work_time = time.time() - cycle_start
+                print(f"📸 Snapshot {cycle + 1} collection time: {cycle_work_time:.1f}s")
 
                 # Wait for next snapshot (except last one)
                 if cycle < total_iterations - 1:
@@ -136,7 +133,9 @@ class Pulse:
 
     def _display_snapshot(self, snapshot, current_cycle, total_cycles):
         """Display current snapshot to console"""
-        timestamp = time.ctime(snapshot['timestamp'])
+        from datetime import datetime
+        timestamp = datetime.fromtimestamp(snapshot['timestamp']).strftime('%H:%M:%S')
+
         print("=" * 45)
         print(f"    Cycle {current_cycle}/{total_cycles} - {timestamp}")
         print("=" * 45)
@@ -147,19 +146,9 @@ class Pulse:
                 self._display_service_status(service_name, service_data)
 
     def _display_service_status(self, service_name, service_data):
+        """Display individual service status"""
         status_icon = "✅" if service_data['status'] == 'OK' else "❌"
-
-        # Добавляем время последнего обновления
-        last_update = service_data.get('timestamp', service_data.get('collection_time', 0))
-        if last_update:
-            from datetime import datetime
-            update_time = datetime.fromtimestamp(last_update).strftime('%H:%M:%S')
-            time_info = f" [{update_time}]"
-        else:
-            time_info = ""
-
-        print(
-            f"{status_icon} {service_name.upper()}: {service_data['status']} ({service_data['response_time']}s){time_info}")
+        print(f"{status_icon} {service_name.upper()}: {service_data['status']} ({service_data['response_time']}s)")
 
         display_methods = {
             'nova': self._display_nova_details,
@@ -182,21 +171,19 @@ class Pulse:
 
         print(f"   Nodes: {reachable_nodes}/{total_nodes} reachable")
 
-        # Выводим каждый узел отдельно
+        # Display each node separately
         for url in cluster['reachable_nodes']:
-            # Извлекаем имя узла из URL
             node_name = url.replace('http://', '').split(':')[0]
             details = cluster['node_details'][url]
             response_time = details.get('response_time', '?')
-
             print(f"     {node_name}: ✅ ({response_time}s)")
 
-        # Выводим недоступные узлы
+        # Display unreachable nodes
         for url in cluster['unreachable_nodes']:
             node_name = url.replace('http://', '').split(':')[0]
             print(f"     {node_name}: ❌ (unreachable)")
 
-        # Статус репликации с пояснением
+        # Replication status
         if total_nodes == 1:
             repl_status = "Single node (no replication)"
         elif total_nodes == 2:
@@ -218,15 +205,14 @@ class Pulse:
         if 'critical_agents' in agents:
             print("   Critical Agents:")
             for agent_type, stats in agents['critical_agents'].items():
-                # Определяем цвет иконки
                 if stats['down'] == 0:
-                    status_icon = "🟢"  # Все работает
+                    status_icon = "🟢"
                     status_info = f"{stats['up']} up"
                 elif stats['up'] == 0:
-                    status_icon = "🔴"  # Все упало
+                    status_icon = "🔴"
                     status_info = f"{stats['down']} down"
                 else:
-                    status_icon = "🟡"  # Частичный отказ
+                    status_icon = "🟡"
                     status_info = f"{stats['up']} up, {stats['down']} down"
 
                 print(f"     {status_icon} {agent_type}: {status_info}")
@@ -246,17 +232,13 @@ class Pulse:
         hypervisors = nova_data['hypervisors']
 
         print("  Critical Services:")
-
-        # Теперь critical - это Dict[str, List[Dict]]
         for service_type, instances in critical.items():
             for instance in instances:
                 status_icon = "✅" if instance['state'] == 'up' else "❌"
                 print(f"    {status_icon} {service_type}: {instance['state']} on {instance['host']}")
 
-        # Hypervisors with instances
         print(f"  Hypervisors: {hypervisors['up']}/{hypervisors['total']} up")
         for hv in hypervisors['details']:
-            # Определяем эмодзи статуса
             if hv['state'] == 'up':
                 if hv['instances_count'] > 0:
                     status_icon = "🟢"
@@ -274,4 +256,3 @@ class Pulse:
 if __name__ == "__main__":
     pulse = Pulse()
     pulse.run()
-

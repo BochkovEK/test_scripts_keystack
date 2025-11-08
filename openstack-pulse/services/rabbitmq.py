@@ -1,8 +1,8 @@
 import requests
 import time
-import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from config.config import ServiceType
+import threading
 
 
 class RabbitCheck:
