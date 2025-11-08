@@ -77,33 +77,83 @@ class RabbitCheck:
                 'error': str(e)
             }
 
+    # def _check_single_node(self, hostname, url):
+    #     """
+    #     Check health of single RabbitMQ node with sequential API calls
+    #
+    #     Args:
+    #         url: RabbitMQ node API URL
+    #
+    #     Returns:
+    #         Dictionary with node status and detailed metrics
+    #     """
+    #     session = self._get_session_for_url(url)
+    #     if not session:
+    #         return {'reachable': False}
+    #
+    #     try:
+    #         start_time = time.time()
+    #
+    #         overview_response = session.get(f"{url}/api/overview", timeout=3)
+    #         nodes_response = session.get(f"{url}/api/nodes", timeout=3)
+    #         queues_response = session.get(f"{url}/api/queues", timeout=3)
+    #
+    #         response_time = time.time() - start_time
+    #
+    #         if overview_response.status_code == 200:
+    #             node_info = self._extract_node_details(nodes_response.json(), hostname)
+    #             overview_info = self._extract_overview_details(overview_response.json())
+    #             queues_info = self._extract_queues_details(queues_response.json())
+    #
+    #             return {
+    #                 'reachable': True,
+    #                 'details': {
+    #                     'response_time': round(response_time, 3),
+    #                     'node_status': node_info['status'],
+    #                     'resources': node_info['resources'],
+    #                     'replication': queues_info['replication'],
+    #                     'queues': overview_info['queues']
+    #                 }
+    #             }
+    #     except Exception:
+    #         pass
+    #
+    #     return {'reachable': False}
+
     def _check_single_node(self, hostname, url):
         """
         Check health of single RabbitMQ node with sequential API calls
-
-        Args:
-            url: RabbitMQ node API URL
-
-        Returns:
-            Dictionary with node status and detailed metrics
         """
         session = self._get_session_for_url(url)
         if not session:
+            print(f"🔍 DEBUG: No session for {url}")
             return {'reachable': False}
 
         try:
             start_time = time.time()
 
+            # Sequential requests to different endpoints for one node
+            print(f"🔍 DEBUG: Checking {url}...")
             overview_response = session.get(f"{url}/api/overview", timeout=3)
             nodes_response = session.get(f"{url}/api/nodes", timeout=3)
             queues_response = session.get(f"{url}/api/queues", timeout=3)
 
+            print(f"🔍 DEBUG: {url} responses - "
+                  f"overview: {overview_response.status_code}, "
+                  f"nodes: {nodes_response.status_code}, "
+                  f"queues: {queues_response.status_code}")
+
             response_time = time.time() - start_time
 
             if overview_response.status_code == 200:
+                # Process each API response with dedicated functions
                 node_info = self._extract_node_details(nodes_response.json(), hostname)
                 overview_info = self._extract_overview_details(overview_response.json())
                 queues_info = self._extract_queues_details(queues_response.json())
+
+                print(f"🔍 DEBUG: {url} extracted - "
+                      f"node_status: {node_info['status']}, "
+                      f"queues: {overview_info['queues']['total']}")
 
                 return {
                     'reachable': True,
@@ -115,7 +165,11 @@ class RabbitCheck:
                         'queues': overview_info['queues']
                     }
                 }
-        except Exception:
+            else:
+                print(f"🔍 DEBUG: {url} overview failed: {overview_response.status_code}")
+
+        except Exception as e:
+            print(f"🔍 DEBUG: {url} exception: {e}")
             pass
 
         return {'reachable': False}
