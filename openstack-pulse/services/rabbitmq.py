@@ -155,36 +155,75 @@ class RabbitCheck:
 
         return {'reachable': False}
 
-    def _extract_node_details(self, nodes_data, hostname):
+    # def _extract_node_details(self, nodes_data, hostname):
+    #     """
+    #     Extract node status and resource information from /api/nodes response
+    #
+    #     Args:
+    #         nodes_data: JSON response from /api/nodes endpoint
+    #         hostname: Target node hostname
+    #
+    #     Returns:
+    #         Dictionary with node status and resource metrics
+    #     """
+    #     for node in nodes_data:
+    #         if node.get('name') == hostname or node.get('name', '').startswith(hostname):
+    #
+    #             running = node.get('running', False)
+    #             status = 'running' if running else 'not_running'
+    #
+    #             return {
+    #                 'status': status,
+    #                 'resources': {
+    #                     'proc_used': node.get('proc_used', 0),
+    #                     'proc_total': node.get('proc_total', 0),
+    #                     'mem_used': node.get('mem_used', 0),
+    #                     'mem_limit': node.get('mem_limit', 0),
+    #                     'fd_used': node.get('fd_used', 0),
+    #                     'fd_total': node.get('fd_total', 0),
+    #                     'disk_free': node.get('disk_free', 0)
+    #                 }
+    #             }
+    #
+    #     return {
+    #         'status': 'unknown',
+    #         'resources': {}
+    #     }
+
+    def _extract_node_details(self, nodes_data, display_name):
         """
         Extract node status and resource information from /api/nodes response
-
-        Args:
-            nodes_data: JSON response from /api/nodes endpoint
-            hostname: Target node hostname
-
-        Returns:
-            Dictionary with node status and resource metrics
         """
+        # Варианты имен для поиска (на основе диагностики)
+        search_names = [
+            f"rabbit@{display_name.split('.')[0]}",  # rabbit@ctrl1
+            display_name,  # ctrl1.foo.bar.com
+            display_name.split('.')[0]  # ctrl1
+        ]
+
         for node in nodes_data:
-            if node.get('name') == hostname or node.get('name', '').startswith(hostname):
+            node_name = node.get('name', '')
+            for search_name in search_names:
+                if node_name == search_name or search_name in node_name:
+                    running = node.get('running', False)
+                    status = 'running' if running else 'not_running'
 
-                running = node.get('running', False)
-                status = 'running' if running else 'not_running'
+                    print(f"🔍 DEBUG: Found node {node_name} for {display_name} (status: {status})")
 
-                return {
-                    'status': status,
-                    'resources': {
-                        'proc_used': node.get('proc_used', 0),
-                        'proc_total': node.get('proc_total', 0),
-                        'mem_used': node.get('mem_used', 0),
-                        'mem_limit': node.get('mem_limit', 0),
-                        'fd_used': node.get('fd_used', 0),
-                        'fd_total': node.get('fd_total', 0),
-                        'disk_free': node.get('disk_free', 0)
+                    return {
+                        'status': status,
+                        'resources': {
+                            'proc_used': node.get('proc_used', 0),
+                            'proc_total': node.get('proc_total', 0),
+                            'mem_used': node.get('mem_used', 0),
+                            'mem_limit': node.get('mem_limit', 0),
+                            'fd_used': node.get('fd_used', 0),
+                            'fd_total': node.get('fd_total', 0),
+                            'disk_free': node.get('disk_free', 0)
+                        }
                     }
-                }
 
+        print(f"🔍 DEBUG: No node found for {display_name}. Tried: {search_names}")
         return {
             'status': 'unknown',
             'resources': {}
