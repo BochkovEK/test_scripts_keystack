@@ -2,11 +2,10 @@ import requests
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from config.config import ServiceType
-import threading
 
 
 class RabbitCheck:
-    """RabbitMQ cluster health monitoring with optimized sessions"""
+    """RabbitMQ cluster health monitoring with detailed node information"""
 
     def __init__(self, config):
         """
@@ -27,9 +26,8 @@ class RabbitCheck:
 
     def _init_sessions(self):
         """Initialize separate sessions for each node"""
-        urls = self._get_rabbitmq_urls()
-        for url in urls:
-            host = self._extract_host_from_url(url)
+        urls_with_hosts = self._get_rabbitmq_urls()
+        for host, url in urls_with_hosts:
             session = requests.Session()
             session.auth = self.auth
             self.sessions[host] = session
@@ -40,8 +38,10 @@ class RabbitCheck:
 
     def _get_session_for_url(self, url):
         """Get dedicated session for specific URL"""
-        host = self._extract_host_from_url(url)
-        return self.sessions.get(host)
+        for host, node_url in self._get_rabbitmq_urls():
+            if node_url == url:
+                return self.sessions.get(host)
+        return None
 
     def run_check(self):
         """Execute RabbitMQ cluster health check"""
@@ -51,12 +51,23 @@ class RabbitCheck:
             urls = self._get_rabbitmq_urls()
             cluster_status = self._check_rabbitmq_cluster(urls)
 
+            # Determine overall status based on node availability
+            reachable_count = len(cluster_status['reachable_nodes'])
+            total_count = len(urls)
+
+            if reachable_count == total_count:
+                status = 'OK'
+            elif reachable_count > 0:
+                status = 'DEGRADED'
+            else:
+                status = 'ERROR'
+
             return {
-                'status': 'OK' if cluster_status['healthy'] else 'DEGRADED',
+                'status': status,
                 'response_time': round(time.time() - start_time, 2),
                 'cluster': cluster_status,
-                'reachable_nodes': len(cluster_status['reachable_nodes']),
-                'total_nodes': len(urls)
+                'reachable_nodes': reachable_count,
+                'total_nodes': total_count
             }
 
         except Exception as e:
@@ -66,15 +77,15 @@ class RabbitCheck:
                 'error': str(e)
             }
 
-    def _check_single_node(self, url):
+    def _check_single_node(self, hostname, url):
         """
-        Check health of single RabbitMQ node
+        Check health of single RabbitMQ node with sequential API calls
 
         Args:
             url: RabbitMQ node API URL
 
         Returns:
-            Dictionary with node status and details
+            Dictionary with node status and detailed metrics
         """
         session = self._get_session_for_url(url)
         if not session:
@@ -82,17 +93,26 @@ class RabbitCheck:
 
         try:
             start_time = time.time()
-            response = session.get(f"{url}/api/overview", timeout=3)
+
+            overview_response = session.get(f"{url}/api/overview", timeout=3)
+            nodes_response = session.get(f"{url}/api/nodes", timeout=3)
+            queues_response = session.get(f"{url}/api/queues", timeout=3)
+
             response_time = time.time() - start_time
 
-            if response.status_code == 200:
-                data = response.json()
+            if overview_response.status_code == 200:
+                node_info = self._extract_node_details(nodes_response.json(), hostname)
+                overview_info = self._extract_overview_details(overview_response.json())
+                queues_info = self._extract_queues_details(queues_response.json())
+
                 return {
                     'reachable': True,
                     'details': {
-                        'queues': data.get('object_totals', {}).get('queues', 0),
-                        'messages': data.get('queue_totals', {}).get('messages', 0),
-                        'response_time': round(response_time, 3)
+                        'response_time': round(response_time, 3),
+                        'node_status': node_info['status'],
+                        'resources': node_info['resources'],
+                        'replication': queues_info['replication'],
+                        'queues': overview_info['queues']
                     }
                 }
         except Exception:
@@ -100,43 +120,114 @@ class RabbitCheck:
 
         return {'reachable': False}
 
+    def _extract_node_details(self, nodes_data, hostname):
+        """
+        Extract node status and resource information from /api/nodes response
+
+        Args:
+            nodes_data: JSON response from /api/nodes endpoint
+            hostname: Target node hostname
+
+        Returns:
+            Dictionary with node status and resource metrics
+        """
+        for node in nodes_data:
+            if node.get('name') == hostname or node.get('name', '').startswith(hostname):
+                return {
+                    'status': 'running' if node.get('running', False) else 'not_running',
+                    'resources': {
+                        'proc_used': node.get('proc_used', 0),
+                        'proc_total': node.get('proc_total', 0),
+                        'mem_used': node.get('mem_used', 0),
+                        'mem_limit': node.get('mem_limit', 0),
+                        'fd_used': node.get('fd_used', 0),
+                        'fd_total': node.get('fd_total', 0),
+                        'disk_free': node.get('disk_free', 0)
+                    }
+                }
+
+        return {
+            'status': 'unknown',
+            'resources': {}
+        }
+
+    def _extract_overview_details(self, overview_data):
+        """
+        Extract queue information from /api/overview response
+
+        Args:
+            overview_data: JSON response from /api/overview endpoint
+
+        Returns:
+            Dictionary with queue statistics
+        """
+        return {
+            'queues': {
+                'total': overview_data.get('object_totals', {}).get('queues', 0),
+                'messages': overview_data.get('queue_totals', {}).get('messages', 0)
+            }
+        }
+
+    def _extract_queues_details(self, queues_data):
+        """
+        Extract replication information from /api/queues response
+
+        Args:
+            queues_data: JSON response from /api/queues endpoint
+
+        Returns:
+            Dictionary with replication metrics
+        """
+        mirrored_queues = 0
+        synchronized_queues = 0
+
+        for queue in queues_data:
+            if queue.get('arguments', {}).get('x-ha-policy') == 'all':
+                mirrored_queues += 1
+                # Simplified synchronization check
+                if queue.get('messages') == queue.get('messages_ready', 0):
+                    synchronized_queues += 1
+
+        return {
+            'replication': {
+                'mirrored_queues': mirrored_queues,
+                'synchronized_queues': synchronized_queues,
+                'unsynchronized_queues': mirrored_queues - synchronized_queues
+            }
+        }
+
     def _get_rabbitmq_urls(self):
-        """Generate RabbitMQ API URLs from inventory nodes"""
-        urls = []
+        """Generate RabbitMQ API URLs with hostnames"""
+        urls_with_hosts = []
         for node in self.nodes:
             url = f"http://{node}:{self.port}"
-            urls.append(url)
-        return urls
+            urls_with_hosts.append((node, url))
+        return urls_with_hosts
 
-    def _check_rabbitmq_cluster(self, urls):
+    def _check_rabbitmq_cluster(self,  urls_with_hosts):
         """
-        Check RabbitMQ cluster nodes in parallel
+        Check RabbitMQ cluster nodes in parallel (max 5 workers)
 
         Args:
             urls: List of RabbitMQ node URLs
 
         Returns:
-            Dictionary with cluster status
+            Dictionary with cluster status and node details
         """
         status = {
-            'healthy': False,
             'reachable_nodes': [],
             'unreachable_nodes': [],
-            'cluster_health': {
-                'replication_ok': False,
-                'uptime_ok': True,
-            },
             'node_details': {}
         }
 
-        with ThreadPoolExecutor(max_workers=len(urls)) as executor:
-            future_to_url = {
-                executor.submit(self._check_single_node, url): url
-                for url in urls
+        with ThreadPoolExecutor(max_workers=min(5, len(urls_with_hosts))) as executor:
+            future_to_host_url = {
+                executor.submit(self._check_single_node, host, url): (host, url)
+                for host, url in urls_with_hosts  # ← распаковываем host и url
             }
 
-            for future in as_completed(future_to_url):
-                url = future_to_url[future]
+            for future in as_completed(future_to_host_url):
+                host, url = future_to_host_url[future]
                 try:
                     node_result = future.result()
                     if node_result['reachable']:
@@ -147,31 +238,7 @@ class RabbitCheck:
                 except Exception:
                     status['unreachable_nodes'].append(url)
 
-        total_nodes = len(urls)
-        reachable_count = len(status['reachable_nodes'])
-        status['cluster_health']['replication_ok'] = self._check_replication_quorum(total_nodes, reachable_count)
-        status['healthy'] = status['cluster_health']['replication_ok']
-
         return status
-
-    def _check_replication_quorum(self, total_nodes, reachable_count):
-        """
-        Verify cluster has sufficient nodes for replication
-
-        Args:
-            total_nodes: Total number of nodes in cluster
-            reachable_count: Number of reachable nodes
-
-        Returns:
-            Boolean indicating if replication is healthy
-        """
-        if total_nodes == 1:
-            return True  # Single node setup
-        elif total_nodes == 2:
-            return reachable_count == 2  # Need both nodes
-        else:
-            quorum = (total_nodes // 2) + 1
-            return reachable_count >= quorum  # Need quorum majority
 
     def close_sessions(self):
         """Close all sessions to free resources"""
