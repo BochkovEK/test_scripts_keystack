@@ -16,5 +16,4 @@ intervals:
 endpoints:
   rabbitmq_port: 15672
 
-rabbitmq:
-  rabbitmq_requests_heartbeat: 4
+heartbeat_requests_services: 4

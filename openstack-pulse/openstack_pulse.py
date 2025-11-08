@@ -60,14 +60,12 @@ class Pulse:
             print(f"   📡 {service_name} check started")
 
     def _run_service_continuously(self, service_name, check):
-        """Run service checks continuously in background"""
-        print(f"   🔄 {service_name} continuous check started")
-
+        """Run service checks with heartbeat interval"""
         while True:
             try:
                 result = check.run_check()
                 self.latest_results[service_name] = result
-                self.service_ready_events[service_name].set()  # Mark as ready
+                self.service_ready_events[service_name].set()
                 print(f"   ✅ {service_name} updated: {result['status']} ({result['response_time']}s)")
             except Exception as e:
                 error_result = {'status': 'ERROR', 'error': str(e), 'response_time': 0}
@@ -75,8 +73,9 @@ class Pulse:
                 self.service_ready_events[service_name].set()
                 print(f"   ❌ {service_name} error: {e}")
 
-            # Sleep until next check
-            time.sleep(self.config.settings.intervals.check_interval)
+            # Используем heartbeat_requests_services из конфига
+            heartbeat_interval = getattr(self.config.settings, 'heartbeat_requests_services', 4)
+            time.sleep(heartbeat_interval)
 
     def collect_metrics(self):
         """Collect latest metrics from all services"""
