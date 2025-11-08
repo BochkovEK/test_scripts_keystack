@@ -134,8 +134,8 @@ class Pulse:
     def _display_snapshot(self, snapshot, current_cycle, total_cycles):
         """Display current snapshot to console"""
         from datetime import datetime
-        timestamp = datetime.fromtimestamp(snapshot['timestamp']).strftime('%H:%M:%S')
-
+        # timestamp = datetime.fromtimestamp(snapshot['timestamp']).strftime('%H:%M:%S')
+        timestamp = time.ctime(snapshot['timestamp'])
         print("=" * 45)
         print(f"    Cycle {current_cycle}/{total_cycles} - {timestamp}")
         print("=" * 45)
