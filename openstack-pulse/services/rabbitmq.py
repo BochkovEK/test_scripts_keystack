@@ -208,7 +208,7 @@ class RabbitCheck:
                     running = node.get('running', False)
                     status = 'running' if running else 'not_running'
 
-                    print(f"🔍 DEBUG: Found node {node_name} for {display_name} (status: {status})")
+                    # print(f"🔍 DEBUG: Found node {node_name} for {display_name} (status: {status})")
 
                     return {
                         'status': status,
@@ -223,7 +223,7 @@ class RabbitCheck:
                         }
                     }
 
-        print(f"🔍 DEBUG: No node found for {display_name}. Tried: {search_names}")
+        # print(f"🔍 DEBUG: No node found for {display_name}. Tried: {search_names}")
         return {
             'status': 'unknown',
             'resources': {}
