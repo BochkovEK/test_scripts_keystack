@@ -1,12 +1,7 @@
-#!/usr/bin/env python3
-"""
-OpenStack Pulse - Lightweight diagnostic tool
-"""
-import threading
 import time
 import sys
 import os
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
 
 # Add project directories to Python path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'services'))
@@ -24,11 +19,13 @@ class Pulse:
     def __init__(self):
         self.config = Config()
         self.service_checks = {}
+        self.latest_results = {}  # Хранилище последних результатов
+        self.service_ready_events = {}  # События готовности сервисов
         self._init_service_checks()
-        self.snapshots = []
+        self._start_continuous_checks()
 
     def _init_service_checks(self):
-        """Initialize enabled service checks with warnings"""
+        """Initialize enabled service checks"""
         service_map = {
             'nova': (NovaCheck, 'session'),
             'keystone': (KeystoneCheck, 'session'),
@@ -42,207 +39,100 @@ class Pulse:
                     check_class, param_type = service_map[service_name]
                     param = self.config.session if param_type == 'session' else self.config
                     self.service_checks[service_name] = check_class(param)
+                    self.service_ready_events[service_name] = threading.Event()
                     print(f"✅ {service_name} initialized")
                 except Exception as e:
                     print(f"⚠️  Failed to initialize {service_name}: {e}")
             else:
                 print(f"⚠️  Service '{service_name}' not supported")
 
-    # def collect_metrics(self):
-    #     """Collect metrics from all enabled services in parallel"""
-    #     snapshot = {'timestamp': time.time()}
-    #
-    #     # Проверяем что есть сервисы для проверки
-    #     if not self.service_checks:
-    #         print("❌ No services initialized! Check _init_service_checks()")
-    #         return snapshot
-    #
-    #     with ThreadPoolExecutor(max_workers=len(self.service_checks)) as executor:
-    #         future_to_service = {}
-    #         for service_name, check in self.service_checks.items():
-    #             future = executor.submit(check.run_check)
-    #             future_to_service[future] = service_name
-    #
-    #         for future in as_completed(future_to_service):
-    #             service_name = future_to_service[future]
-    #             try:
-    #                 snapshot[service_name] = future.result()
-    #             except Exception as e:
-    #                 snapshot[service_name] = {
-    #                     'status': 'ERROR',
-    #                     'response_time': 0,
-    #                     'error': str(e)
-    #                 }
-    #
-    #     return snapshot
-
-    # threading
-    def collect_metrics(self):
-        """Collect metrics using threading instead of ThreadPoolExecutor"""
-        snapshot = {'timestamp': time.time()}
-        threads = []
-        results = {}
-        exceptions = {}
-
-        def run_service(service_name, check):
-            try:
-                print(f"🕐 Starting {service_name} at {time.time()}")
-                result = check.run_check()
-                print(f"🕐 Finished {service_name} at {time.time()}: {result['response_time']}s")
-                results[service_name] = result
-            except Exception as e:
-                exceptions[service_name] = e
-
-        # Запускаем потоки для каждого сервиса
+    def _start_continuous_checks(self):
+        """Start continuous monitoring for each service in separate threads"""
+        print("🚀 Starting continuous service checks...")
         for service_name, check in self.service_checks.items():
-            thread = threading.Thread(target=run_service, args=(service_name, check))
+            thread = threading.Thread(
+                target=self._run_service_continuously,
+                args=(service_name, check),
+                name=f"ServiceCheck-{service_name}"
+            )
             thread.daemon = True
             thread.start()
-            threads.append(thread)
+            print(f"   📡 {service_name} check started")
 
-        # Ждем завершения всех потоков
-        for thread in threads:
-            thread.join()
+    def _run_service_continuously(self, service_name, check):
+        """Run service checks continuously in background"""
+        print(f"   🔄 {service_name} continuous check started")
 
-        # Собираем результаты
-        for service_name in self.service_checks:
-            if service_name in results:
-                snapshot[service_name] = results[service_name]
-            elif service_name in exceptions:
-                snapshot[service_name] = {'status': 'ERROR', 'error': str(exceptions[service_name])}
-            else:
-                snapshot[service_name] = {'status': 'ERROR', 'error': 'Thread failed'}
+        while True:
+            try:
+                result = check.run_check()
+                self.latest_results[service_name] = result
+                self.service_ready_events[service_name].set()  # Mark as ready
+                print(f"   ✅ {service_name} updated: {result['status']} ({result['response_time']}s)")
+            except Exception as e:
+                error_result = {'status': 'ERROR', 'error': str(e), 'response_time': 0}
+                self.latest_results[service_name] = error_result
+                self.service_ready_events[service_name].set()
+                print(f"   ❌ {service_name} error: {e}")
 
+            # Sleep until next check
+            time.sleep(self.config.settings.intervals.check_interval)
+
+    def collect_metrics(self):
+        """Collect latest metrics from all services"""
+        snapshot = {'timestamp': time.time()}
+
+        # Wait for all services to have at least one result
+        for service_name, event in self.service_ready_events.items():
+            if not event.is_set():
+                print(f"   ⏳ Waiting for {service_name} first result...")
+                event.wait(timeout=30)  # Wait up to 30 seconds
+
+        # Copy latest results (thread-safe)
+        snapshot.update(self.latest_results.copy())
         return snapshot
 
-    # multy
-    # def collect_metrics(self):
-    #     snapshot = {'timestamp': time.time()}
-    #
-    #     with ThreadPoolExecutor(max_workers=len(self.service_checks)) as executor:
-    #         future_to_service = {}
-    #         for service_name, check in self.service_checks.items():
-    #             print(f"🕐 Starting {service_name} at {time.time()}")
-    #             future = executor.submit(check.run_check)
-    #             future_to_service[future] = service_name
-    #
-    #         for future in as_completed(future_to_service):
-    #             service_name = future_to_service[future]
-    #             try:
-    #                 result = future.result()
-    #                 print(f"🕐 Finished {service_name} at {time.time()}: {result['response_time']}s")
-    #                 snapshot[service_name] = result
-    #             except Exception as e:
-    #                 snapshot[service_name] = {'status': 'ERROR', 'error': str(e)}
-    #
-    #     return snapshot
-
-    # single
-    # def collect_metrics(self):
-    #     """Collect metrics sequentially without threading"""
-    #     snapshot = {'timestamp': time.time()}
-    #
-    #     for service_name, check in self.service_checks.items():
-    #         print(f"🕐 Starting {service_name} at {time.time()}")
-    #         try:
-    #             result = check.run_check()
-    #             print(f"🕐 Finished {service_name} at {time.time()}: {result['response_time']}s")
-    #             snapshot[service_name] = result
-    #         except Exception as e:
-    #             snapshot[service_name] = {'status': 'ERROR', 'error': str(e)}
-    #
-    #     return snapshot
-
-    # def run(self):
-    #     """Main monitoring loop without sleep"""
-    #     print("Starting OpenStack Pulse monitoring...")
-    #     print(f"Enabled checks: {', '.join(self.config.settings.check_services)}")
-    #
-    #     total_iterations = (self.config.settings.intervals.collection_window //
-    #                         self.config.settings.intervals.check_interval)
-    #     print(f"Collection: {total_iterations} cycles")
-    #
-    #     try:
-    #         for cycle in range(total_iterations):
-    #             cycle_start_time = time.time()
-    #
-    #             # Собираем метрики
-    #             snapshot = self.collect_metrics()
-    #
-    #             # Сразу выводим на экран
-    #             self._display_snapshot(snapshot, cycle + 1, total_iterations)
-    #
-    #             cycle_time = time.time() - cycle_start_time
-    #             print(f"Cycle {cycle + 1} took {cycle_time:.2f}s")
-    #
-    #         print(f"\nCollection completed. Total cycles: {total_iterations}")
-    #
-    #     except KeyboardInterrupt:
-    #         print("\nMonitoring stopped by user")
-    #     finally:
-    #         self._close_sessions()
-
     def run(self):
-        """Main monitoring loop - simplified with automatic heartbeat"""
+        """Main monitoring loop - collects snapshots periodically"""
         print("Starting OpenStack Pulse monitoring...")
         print(f"Enabled checks: {', '.join(self.config.settings.check_services)}")
 
         total_iterations = (self.config.settings.intervals.collection_window //
                             self.config.settings.intervals.check_interval)
-        print(f"Collection: {total_iterations} cycles")
+        print(f"Collection: {total_iterations} snapshots")
 
         try:
             for cycle in range(total_iterations):
-                # if cycle >= 1 and 'rabbitmq' in self.service_checks:
-                #     self.service_checks['rabbitmq'].stop_heartbeat()
                 cycle_start = time.time()
 
-                # Собираем метрики
+                # Collect snapshot of current state
                 snapshot = self.collect_metrics()
 
-                # Сразу выводим на экран
+                # Display snapshot
                 self._display_snapshot(snapshot, cycle + 1, total_iterations)
 
                 cycle_work_time = time.time() - cycle_start
-                print(f"🕒 Cycle {cycle + 1} WORK time: {cycle_work_time:.1f}s")
+                print(f"📸 Snapshot {cycle + 1} collection time: {cycle_work_time:.1f}s")
 
-                # Ждем перед следующим циклом (кроме последнего)
-
+                # Wait for next snapshot (except last one)
                 if cycle < total_iterations - 1:
-                    interval = getattr(getattr(self.config.settings, 'intervals', None), 'check_interval', 5)
-                    rabbitmq_requests_heartbeat = getattr(getattr(self.config.settings, 'rabbitmq', None), 'rabbitmq_requests_heartbeat', 4)
-
-                    # Запускаем heartbeat на время sleep (если интервал > 4 сек)
-                    if interval > 4 and 'rabbitmq' in self.service_checks:
-                        print(f"💤 Sleeping {interval}s with heartbeat {rabbitmq_requests_heartbeat}s")
-                        self.service_checks['rabbitmq'].start_heartbeat()
-                    else:
-                        print(f"💤 Sleeping {interval}s...")
-
+                    interval = self.config.settings.intervals.check_interval
+                    print(f"💤 Waiting {interval}s for next snapshot...")
                     time.sleep(interval)
 
-            self.service_checks['rabbitmq'].stop_heartbeat()
-            print(f"\nCollection completed. Total cycles: {total_iterations}")
+            print(f"\n🎉 Collection completed. Total snapshots: {total_iterations}")
 
         except KeyboardInterrupt:
-            print("\nMonitoring stopped by user")
+            print("\n🛑 Monitoring stopped by user")
         finally:
-            # Гарантируем остановку heartbeat при завершении
-            if 'rabbitmq' in self.service_checks:
-                self.service_checks['rabbitmq'].stop_heartbeat()
             self._close_sessions()
-
-    def _delayed_heartbeat(self, rabbit_check, delay):
-        """Execute heartbeat after delay"""
-        time.sleep(delay)
-        rabbit_check._heartbeat()
 
     def _close_sessions(self):
         """Close all sessions to free resources"""
         for service_name, check in self.service_checks.items():
             if hasattr(check, 'close_sessions'):
                 check.close_sessions()
-                print(f"Closed sessions for {service_name}")
+                print(f"🔒 Closed sessions for {service_name}")
 
     def _display_snapshot(self, snapshot, current_cycle, total_cycles):
         """Display current snapshot to console"""
@@ -359,3 +249,4 @@ class Pulse:
 if __name__ == "__main__":
     pulse = Pulse()
     pulse.run()
+

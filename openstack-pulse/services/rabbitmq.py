@@ -15,11 +15,11 @@ class RabbitCheck:
         self.sessions = {}
         self._init_sessions()
 
-        # Heartbeat
-        self.heartbeat_stop_event = threading.Event()
-        self.heartbeat_thread = threading.Thread(target=self._heartbeat_worker)
-        # self.heartbeat_thread.daemon = True
-        # self.heartbeat_thread.start()
+        # # Heartbeat
+        # self.heartbeat_stop_event = threading.Event()
+        # self.heartbeat_thread = threading.Thread(target=self._heartbeat_worker)
+        # # self.heartbeat_thread.daemon = True
+        # # self.heartbeat_thread.start()
 
     def _init_sessions(self):
         """Initialize separate sessions for each node"""
@@ -31,44 +31,44 @@ class RabbitCheck:
             self.sessions[host] = session
 
 
-    def start_heartbeat(self):
-        """Start heartbeat for all nodes"""
-        self.heartbeat_stop_event = threading.Event()
-        self.heartbeat_thread = threading.Thread(target=self._heartbeat_worker)
-        self.heartbeat_thread.daemon = True
-        self.heartbeat_thread.start()
+    # def start_heartbeat(self):
+    #     """Start heartbeat for all nodes"""
+    #     self.heartbeat_stop_event = threading.Event()
+    #     self.heartbeat_thread = threading.Thread(target=self._heartbeat_worker)
+    #     self.heartbeat_thread.daemon = True
+    #     self.heartbeat_thread.start()
 
-    def stop_heartbeat(self):
-        """Stop heartbeat"""
-        if hasattr(self, 'heartbeat_stop_event'):
-            self.heartbeat_stop_event.set()
-            if hasattr(self, 'heartbeat_thread') and self.heartbeat_thread.is_alive():
-                self.heartbeat_thread.join(timeout=5)
-
+    # def stop_heartbeat(self):
+    #     """Stop heartbeat"""
+    #     if hasattr(self, 'heartbeat_stop_event'):
+    #         self.heartbeat_stop_event.set()
+    #         if hasattr(self, 'heartbeat_thread') and self.heartbeat_thread.is_alive():
+    #             self.heartbeat_thread.join(timeout=5)
+    #
+    # # def _heartbeat_worker(self):
+    # #     """Continuous heartbeat worker"""
+    # #     while not self.heartbeat_stop_event.is_set():
+    # #         self._heartbeat()
+    # #         self.heartbeat_stop_event.wait(self.rabbitmq_requests_heartbeat)  # wait 3 sec or until stop
+    #
     # def _heartbeat_worker(self):
     #     """Continuous heartbeat worker"""
+    #     heartbeat_count = 0
     #     while not self.heartbeat_stop_event.is_set():
     #         self._heartbeat()
-    #         self.heartbeat_stop_event.wait(self.rabbitmq_requests_heartbeat)  # wait 3 sec or until stop
-
-    def _heartbeat_worker(self):
-        """Continuous heartbeat worker"""
-        heartbeat_count = 0
-        while not self.heartbeat_stop_event.is_set():
-            self._heartbeat()
-            heartbeat_count += 1
-            print(f"💓 RabbitMQ heartbeat #{heartbeat_count}")
-            self.heartbeat_stop_event.wait(self.rabbitmq_requests_heartbeat)
-
-    def _heartbeat(self):
-        """Send heartbeat to all nodes to keep connections alive"""
-        for url in self._get_rabbitmq_urls():
-            session = self._get_session_for_url(url)
-            if session:
-                try:
-                    session.get(f"{url}/api/aliveness-test/%2F", timeout=1)
-                except:
-                    pass  # Ignore heartbeat errors
+    #         heartbeat_count += 1
+    #         print(f"💓 RabbitMQ heartbeat #{heartbeat_count}")
+    #         self.heartbeat_stop_event.wait(self.rabbitmq_requests_heartbeat)
+    #
+    # def _heartbeat(self):
+    #     """Send heartbeat to all nodes to keep connections alive"""
+    #     for url in self._get_rabbitmq_urls():
+    #         session = self._get_session_for_url(url)
+    #         if session:
+    #             try:
+    #                 session.get(f"{url}/api/aliveness-test/%2F", timeout=1)
+    #             except:
+    #                 pass  # Ignore heartbeat errors
 
     def _extract_host_from_url(self, url):
         """Extract host from URL"""
@@ -182,12 +182,12 @@ class RabbitCheck:
             quorum = (total_nodes // 2) + 1
             return reachable_count >= quorum  # Need quorum majority
 
-    def close_sessions(self):
-        """Close all sessions and stop heartbeat"""
-        self.heartbeat_stop_event.set()
-        if self.heartbeat_thread.is_alive():
-            self.heartbeat_thread.join(timeout=5)
-
-        for host, session in self.sessions.items():
-            session.close()
-        self.sessions.clear()
+    # def close_sessions(self):
+    #     """Close all sessions and stop heartbeat"""
+    #     self.heartbeat_stop_event.set()
+    #     if self.heartbeat_thread.is_alive():
+    #         self.heartbeat_thread.join(timeout=5)
+    #
+    #     for host, session in self.sessions.items():
+    #         session.close()
+    #     self.sessions.clear()
