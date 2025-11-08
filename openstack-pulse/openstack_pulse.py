@@ -111,8 +111,8 @@ class Pulse:
                 # Display snapshot
                 self._display_snapshot(snapshot, cycle + 1, total_iterations)
 
-                cycle_work_time = time.time() - cycle_start
-                print(f"📸 Snapshot {cycle + 1} collection time: {cycle_work_time:.1f}s")
+                # cycle_work_time = time.time() - cycle_start
+                # print(f"📸 Snapshot {cycle + 1} collection time: {cycle_work_time:.1f}s")
 
                 # Wait for next snapshot (except last one)
                 if cycle < total_iterations - 1:
@@ -251,7 +251,7 @@ class Pulse:
         for service_type, instances in critical.items():
             for instance in instances:
                 status_icon = "✅" if instance['state'] == 'up' else "❌"
-                # print(f"    {status_icon} {service_type}: {instance['state']} on {instance['host']}")
+                print(f"    {status_icon} {service_type}: {instance['state']} on {instance['host']}")
 
         # Hypervisors with instances
         print(f"  Hypervisors: {hypervisors['up']}/{hypervisors['total']} up")
@@ -268,7 +268,7 @@ class Pulse:
                 status_icon = "🔴"
                 instances_info = " (down)"
 
-            # print(f"    {status_icon} {hv['name']}{instances_info}")
+            print(f"    {status_icon} {hv['name']}{instances_info}")
 
 
 if __name__ == "__main__":
