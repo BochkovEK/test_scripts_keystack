@@ -77,43 +77,43 @@ class Pulse:
     #     return snapshot
 
     # threading
-    # def collect_metrics(self):
-    #     """Collect metrics using threading instead of ThreadPoolExecutor"""
-    #     snapshot = {'timestamp': time.time()}
-    #     threads = []
-    #     results = {}
-    #     exceptions = {}
-    #
-    #     def run_service(service_name, check):
-    #         try:
-    #             print(f"🕐 Starting {service_name} at {time.time()}")
-    #             result = check.run_check()
-    #             print(f"🕐 Finished {service_name} at {time.time()}: {result['response_time']}s")
-    #             results[service_name] = result
-    #         except Exception as e:
-    #             exceptions[service_name] = e
-    #
-    #     # Запускаем потоки для каждого сервиса
-    #     for service_name, check in self.service_checks.items():
-    #         thread = threading.Thread(target=run_service, args=(service_name, check))
-    #         thread.daemon = True
-    #         thread.start()
-    #         threads.append(thread)
-    #
-    #     # Ждем завершения всех потоков
-    #     for thread in threads:
-    #         thread.join()
-    #
-    #     # Собираем результаты
-    #     for service_name in self.service_checks:
-    #         if service_name in results:
-    #             snapshot[service_name] = results[service_name]
-    #         elif service_name in exceptions:
-    #             snapshot[service_name] = {'status': 'ERROR', 'error': str(exceptions[service_name])}
-    #         else:
-    #             snapshot[service_name] = {'status': 'ERROR', 'error': 'Thread failed'}
-    #
-    #     return snapshot
+    def collect_metrics(self):
+        """Collect metrics using threading instead of ThreadPoolExecutor"""
+        snapshot = {'timestamp': time.time()}
+        threads = []
+        results = {}
+        exceptions = {}
+
+        def run_service(service_name, check):
+            try:
+                print(f"🕐 Starting {service_name} at {time.time()}")
+                result = check.run_check()
+                print(f"🕐 Finished {service_name} at {time.time()}: {result['response_time']}s")
+                results[service_name] = result
+            except Exception as e:
+                exceptions[service_name] = e
+
+        # Запускаем потоки для каждого сервиса
+        for service_name, check in self.service_checks.items():
+            thread = threading.Thread(target=run_service, args=(service_name, check))
+            thread.daemon = True
+            thread.start()
+            threads.append(thread)
+
+        # Ждем завершения всех потоков
+        for thread in threads:
+            thread.join()
+
+        # Собираем результаты
+        for service_name in self.service_checks:
+            if service_name in results:
+                snapshot[service_name] = results[service_name]
+            elif service_name in exceptions:
+                snapshot[service_name] = {'status': 'ERROR', 'error': str(exceptions[service_name])}
+            else:
+                snapshot[service_name] = {'status': 'ERROR', 'error': 'Thread failed'}
+
+        return snapshot
 
     # multy
     # def collect_metrics(self):
@@ -138,20 +138,20 @@ class Pulse:
     #     return snapshot
 
     # single
-    def collect_metrics(self):
-        """Collect metrics sequentially without threading"""
-        snapshot = {'timestamp': time.time()}
-
-        for service_name, check in self.service_checks.items():
-            print(f"🕐 Starting {service_name} at {time.time()}")
-            try:
-                result = check.run_check()
-                print(f"🕐 Finished {service_name} at {time.time()}: {result['response_time']}s")
-                snapshot[service_name] = result
-            except Exception as e:
-                snapshot[service_name] = {'status': 'ERROR', 'error': str(e)}
-
-        return snapshot
+    # def collect_metrics(self):
+    #     """Collect metrics sequentially without threading"""
+    #     snapshot = {'timestamp': time.time()}
+    #
+    #     for service_name, check in self.service_checks.items():
+    #         print(f"🕐 Starting {service_name} at {time.time()}")
+    #         try:
+    #             result = check.run_check()
+    #             print(f"🕐 Finished {service_name} at {time.time()}: {result['response_time']}s")
+    #             snapshot[service_name] = result
+    #         except Exception as e:
+    #             snapshot[service_name] = {'status': 'ERROR', 'error': str(e)}
+    #
+    #     return snapshot
 
     # def run(self):
     #     """Main monitoring loop without sleep"""
