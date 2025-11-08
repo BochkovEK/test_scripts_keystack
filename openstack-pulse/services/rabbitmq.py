@@ -2,24 +2,28 @@ import requests
 import time
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from config.config import ServiceType
 
 
 class RabbitCheck:
-    """RabbitMQ cluster health monitoring with optimized sessions and heartbeat"""
+    """RabbitMQ cluster health monitoring with optimized sessions"""
 
     def __init__(self, config):
+        """
+        Initialize RabbitMQ health check
+
+        Args:
+            config: Config object providing service authentication
+        """
         self.config = config
-        self.auth = (self.config.auth['rabbit_user'], self.config.auth['rabbit_pass'])
-        self.port = getattr(getattr(self.config.settings, 'endpoints', None), 'rabbitmq_port', 15672)
-        self.rabbitmq_requests_heartbeat = getattr(getattr(self.config.settings, 'rabbitmq', None), 'rabbitmq_requests_heartbeat', 4)
+        auth_params = config.get_service_auth(ServiceType.RABBITMQ)
+
+        self.auth = (auth_params['username'], auth_params['password'])
+        self.port = auth_params['port']
+        self.nodes = auth_params['nodes']
+
         self.sessions = {}
         self._init_sessions()
-
-        # # Heartbeat
-        # self.heartbeat_stop_event = threading.Event()
-        # self.heartbeat_thread = threading.Thread(target=self._heartbeat_worker)
-        # # self.heartbeat_thread.daemon = True
-        # # self.heartbeat_thread.start()
 
     def _init_sessions(self):
         """Initialize separate sessions for each node"""
@@ -30,48 +34,8 @@ class RabbitCheck:
             session.auth = self.auth
             self.sessions[host] = session
 
-
-    # def start_heartbeat(self):
-    #     """Start heartbeat for all nodes"""
-    #     self.heartbeat_stop_event = threading.Event()
-    #     self.heartbeat_thread = threading.Thread(target=self._heartbeat_worker)
-    #     self.heartbeat_thread.daemon = True
-    #     self.heartbeat_thread.start()
-
-    # def stop_heartbeat(self):
-    #     """Stop heartbeat"""
-    #     if hasattr(self, 'heartbeat_stop_event'):
-    #         self.heartbeat_stop_event.set()
-    #         if hasattr(self, 'heartbeat_thread') and self.heartbeat_thread.is_alive():
-    #             self.heartbeat_thread.join(timeout=5)
-    #
-    # # def _heartbeat_worker(self):
-    # #     """Continuous heartbeat worker"""
-    # #     while not self.heartbeat_stop_event.is_set():
-    # #         self._heartbeat()
-    # #         self.heartbeat_stop_event.wait(self.rabbitmq_requests_heartbeat)  # wait 3 sec or until stop
-    #
-    # def _heartbeat_worker(self):
-    #     """Continuous heartbeat worker"""
-    #     heartbeat_count = 0
-    #     while not self.heartbeat_stop_event.is_set():
-    #         self._heartbeat()
-    #         heartbeat_count += 1
-    #         print(f"💓 RabbitMQ heartbeat #{heartbeat_count}")
-    #         self.heartbeat_stop_event.wait(self.rabbitmq_requests_heartbeat)
-    #
-    # def _heartbeat(self):
-    #     """Send heartbeat to all nodes to keep connections alive"""
-    #     for url in self._get_rabbitmq_urls():
-    #         session = self._get_session_for_url(url)
-    #         if session:
-    #             try:
-    #                 session.get(f"{url}/api/aliveness-test/%2F", timeout=1)
-    #             except:
-    #                 pass  # Ignore heartbeat errors
-
     def _extract_host_from_url(self, url):
-        """Extract host from URL"""
+        """Extract hostname from URL"""
         return url.replace('http://', '').replace('https://', '').split(':')[0]
 
     def _get_session_for_url(self, url):
@@ -81,7 +45,6 @@ class RabbitCheck:
 
     def run_check(self):
         """Execute RabbitMQ cluster health check"""
-        # print(f"🔍 RabbitCheck sessions: {len(self.sessions)}")
         start_time = time.time()
 
         try:
@@ -104,6 +67,15 @@ class RabbitCheck:
             }
 
     def _check_single_node(self, url):
+        """
+        Check health of single RabbitMQ node
+
+        Args:
+            url: RabbitMQ node API URL
+
+        Returns:
+            Dictionary with node status and details
+        """
         session = self._get_session_for_url(url)
         if not session:
             return {'reachable': False}
@@ -120,7 +92,7 @@ class RabbitCheck:
                     'details': {
                         'queues': data.get('object_totals', {}).get('queues', 0),
                         'messages': data.get('queue_totals', {}).get('messages', 0),
-                        'response_time': round(response_time, 3)  # ← ДОБАВИТЬ
+                        'response_time': round(response_time, 3)
                     }
                 }
         except Exception:
@@ -131,13 +103,21 @@ class RabbitCheck:
     def _get_rabbitmq_urls(self):
         """Generate RabbitMQ API URLs from inventory nodes"""
         urls = []
-        for controller in self.config.nodes['control']:
-            url = f"http://{controller}:{self.port}"
+        for node in self.nodes:
+            url = f"http://{node}:{self.port}"
             urls.append(url)
         return urls
 
     def _check_rabbitmq_cluster(self, urls):
-        """Check RabbitMQ cluster nodes in parallel with dedicated sessions"""
+        """
+        Check RabbitMQ cluster nodes in parallel
+
+        Args:
+            urls: List of RabbitMQ node URLs
+
+        Returns:
+            Dictionary with cluster status
+        """
         status = {
             'healthy': False,
             'reachable_nodes': [],
@@ -175,7 +155,16 @@ class RabbitCheck:
         return status
 
     def _check_replication_quorum(self, total_nodes, reachable_count):
-        """Verify cluster has sufficient nodes for replication"""
+        """
+        Verify cluster has sufficient nodes for replication
+
+        Args:
+            total_nodes: Total number of nodes in cluster
+            reachable_count: Number of reachable nodes
+
+        Returns:
+            Boolean indicating if replication is healthy
+        """
         if total_nodes == 1:
             return True  # Single node setup
         elif total_nodes == 2:
@@ -184,12 +173,8 @@ class RabbitCheck:
             quorum = (total_nodes // 2) + 1
             return reachable_count >= quorum  # Need quorum majority
 
-    # def close_sessions(self):
-    #     """Close all sessions and stop heartbeat"""
-    #     self.heartbeat_stop_event.set()
-    #     if self.heartbeat_thread.is_alive():
-    #         self.heartbeat_thread.join(timeout=5)
-    #
-    #     for host, session in self.sessions.items():
-    #         session.close()
-    #     self.sessions.clear()
+    def close_sessions(self):
+        """Close all sessions to free resources"""
+        for host, session in self.sessions.items():
+            session.close()
+        self.sessions.clear()

@@ -1,12 +1,17 @@
 import os
 import yaml
 from dotenv import load_dotenv
-import openstack
 import sys
-# import configparser
-# from keystoneauth1 import session
-# from keystoneauth1.identity import v3
-# from typing import Dict, Any
+from typing import Dict, Any
+from enum import Enum
+# import openstack
+
+
+class ServiceType(Enum):
+    """Service types for authentication"""
+    OPENSTACK = "openstack"
+    RABBITMQ = "rabbitmq"
+    MARIADB = "mariadb"
 
 
 class DotDict:
@@ -21,6 +26,8 @@ class DotDict:
 
 
 class Config:
+    """Central configuration provider for all services"""
+
     def __init__(self):
         # Load environment variables from .env
         load_dotenv()
@@ -28,8 +35,21 @@ class Config:
         # Get project root directory
         self.project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-        # Load auth credentials first
-        self.auth = {
+        # Load authentication credentials
+        self.auth = self._load_auth_credentials()
+
+        # Validate required configuration files
+        self._check_required_files()
+
+        # Load YAML configuration
+        self.settings = self._load_yaml_config()
+
+        # Load inventory nodes
+        self.nodes = self._load_inventory()
+
+    def _load_auth_credentials(self) -> Dict[str, str]:
+        """Load authentication credentials from environment variables"""
+        return {
             'username': os.getenv('OS_USERNAME'),
             'password': os.getenv('OS_PASSWORD'),
             'project_name': os.getenv('OS_PROJECT_NAME'),
@@ -38,44 +58,51 @@ class Config:
             'auth_url': os.getenv('OS_AUTH_URL'),
             'rabbit_user': os.getenv('RABBIT_USER', 'guest'),
             'rabbit_pass': os.getenv('RABBIT_PASS', 'guest'),
-            'mysql_user': os.getenv('MYSQL_USER', 'monitor'),
-            'mysql_pass': os.getenv('MYSQL_PASS', '')
+            'mysql_user': os.getenv('MYSQL_USER', 'user'),
+            'mysql_pass': os.getenv('MYSQL_PASS', 'pass')
         }
 
-        # Load base config with absolute path
-        self._check_required_files()
+    def get_service_auth(self, service_type: ServiceType) -> Dict[str, Any]:
+        """
+        Get authentication parameters for specific service type
 
-        # Load base config - STRICT CHECK
-        config_path = os.path.join(self.project_root, 'config', 'config.yml')
+        Args:
+            service_type: Type of service (OPENSTACK, RABBITMQ, MARIADB)
 
-        with open(config_path) as f:
-            config_data = yaml.safe_load(f)
-        self.settings = DotDict(config_data)
+        Returns:
+            Dictionary with authentication parameters
+        """
+        if service_type == ServiceType.OPENSTACK:
+            return {
+                'auth_url': self.auth['auth_url'],
+                'username': self.auth['username'],
+                'password': self.auth['password'],
+                'project_name': self.auth['project_name'],
+                'user_domain_name': self.auth['user_domain_name'],
+                'project_domain_name': self.auth['project_domain_name'],
+                'verify': False  # Disable SSL verification
+            }
 
-        # Load inventory - STRICT CHECK
-        self.nodes = self._load_inventory()
+        elif service_type == ServiceType.RABBITMQ:
+            return {
+                'username': self.auth['rabbit_user'],
+                'password': self.auth['rabbit_pass'],
+                'port': self.settings.endpoints.rabbitmq_port,
+                'nodes': self.nodes['control']  # List of RabbitMQ nodes
+            }
 
-        # Create OpenStack connection
-        self.conn = self._create_connection()
-        self.session = self.conn.session
+        elif service_type == ServiceType.MARIADB:
+            return {
+                'username': self.auth['mysql_user'],
+                'password': self.auth['mysql_pass'],
+                'nodes': self.nodes['control']  # List of database nodes
+            }
 
-        # Create OpenStack connection using auth dict
-        self.conn = self._create_connection()
-        self.session = self.conn.session
-
-        # try:
-        #     self.nodes = self._load_inventory()
-        # except FileNotFoundError as e:
-        #     print(f"⚠️  {e}")
-        #     print("   Continuing without inventory data...")
-        #     self.nodes = {'controllers': []}  # Пустой inventory
-
-            # Create OpenStack connection
-        self.conn = self._create_connection()
-        self.session = self.conn.session
+        else:
+            raise ValueError(f"Unknown service type: {service_type}")
 
     def _check_required_files(self):
-        """Check all required configuration files"""
+        """Validate that all required configuration files exist"""
         required_files = {
             'config.yml': os.path.join(self.project_root, 'config', 'config.yml'),
             'inventory': [
@@ -84,36 +111,25 @@ class Config:
             ]
         }
 
-        # Проверка config.yml
+        # Check config.yml
         if not os.path.exists(required_files['config.yml']):
             self._exit_with_file_error('config.yml', required_files['config.yml'])
 
-        # Проверка inventory
+        # Check inventory file
         inventory_found = any(os.path.exists(path) for path in required_files['inventory'])
         if not inventory_found:
             self._exit_with_file_error('inventory', required_files['inventory'][0])
 
-    def _exit_with_file_error(self, file_type, expected_path):
-        """Exit with detailed file error message"""
-        print(f"❌ CRITICAL: {file_type} not found!")
-        print(f"📂 Expected: {expected_path}")
-        print("")
+    def _load_yaml_config(self) -> DotDict:
+        """Load and parse YAML configuration file"""
+        config_path = os.path.join(self.project_root, 'config', 'config.yml')
+        with open(config_path) as f:
+            config_data = yaml.safe_load(f)
+        return DotDict(config_data)
 
-        if file_type == 'config.yml':
-            print("💡 Config file must be named exactly 'config.yml'")
-            print("   Templates and other names are NOT accepted")
-        elif file_type == 'inventory':
-            print("💡 Inventory file must be 'inventory' or 'inventory.ini'")
-            print("   in the project root directory")
-
-        sys.exit(1)
-
-    def _load_inventory(self):
-        """Load nodes from Ansible inventory file in project root"""
-        inventory_files = [
-            'inventory.ini',
-            'inventory'
-        ]
+    def _load_inventory(self) -> Dict[str, list]:
+        """Load node inventory from Ansible inventory file"""
+        inventory_files = ['inventory.ini', 'inventory']
 
         for filename in inventory_files:
             inventory_path = os.path.join(self.project_root, filename)
@@ -121,136 +137,58 @@ class Config:
                 print(f"📁 Using inventory: {filename} from project root")
                 return self._parse_inventory(inventory_path)
 
-        # FATAL ERROR - stop script
+        # Critical error - inventory is required
         print("❌ CRITICAL: Inventory file not found!")
         print(f"   Expected in project root: {', '.join(inventory_files)}")
         print(f"   Project root: {self.project_root}")
-        print("   Please create inventory file with [control] section")
         sys.exit(1)
 
-    # def _load_inventory(self):
-    #     """Load nodes from Ansible inventory file in project root"""
-    #     inventory_files = [
-    #         'inventory.ini',
-    #         'inventory'
-    #     ]
-    #
-    #     for filename in inventory_files:
-    #         inventory_path = os.path.join(self.project_root, filename)
-    #         if os.path.exists(inventory_path):
-    #             return self._parse_inventory(inventory_path)
-    #
-    #     raise FileNotFoundError(
-    #         f"Inventory file not found in project root. "
-    #         f"Expected: {', '.join(inventory_files)}"
-    #     )
+    def _parse_inventory(self, inventory_path: str) -> Dict[str, list]:
+        """
+        Parse simple Ansible inventory file
 
-    def _create_connection(self):
-        """Create OpenStack connection using credentials from self.auth"""
-        return openstack.connect(
-            auth_url=self.auth['auth_url'],
-            username=self.auth['username'],
-            password=self.auth['password'],
-            project_name=self.auth['project_name'],
-            user_domain_name=self.auth['user_domain_name'],
-            project_domain_name=self.auth['project_domain_name']
-        )
-
-    # def _parse_inventory(self, inventory_path):
-    #     config = configparser.ConfigParser()
-    #     files_read = config.read(inventory_path)
-    #     if not files_read:
-    #         raise ValueError(f"Failed to read inventory file: {inventory_path}")
-    #
-    #     nodes = {'controllers': []}
-    #
-    #     if 'controllers' in config:
-    #         for host in config['controllers']:
-    #             if host.startswith('ansible_'):
-    #                 continue
-    #
-    #             # Получаем всю строку параметров для хоста
-    #             params_string = config['controllers'][host]
-    #
-    #             # Ищем в строке 'ansible_host=IP'
-    #             if 'ansible_host=' in params_string:
-    #                 # Извлекаем IP после 'ansible_host='
-    #                 ansible_host = params_string.split('ansible_host=')[1].split()[0]
-    #                 nodes['controllers'].append(ansible_host)
-    #             else:
-    #                 # Если нет ansible_host, используем имя хоста как есть
-    #                 nodes['controllers'].append(host)
-    #
-    #     return nodes
-
-    # def _parse_inventory(self, inventory_path):
-    #     """Parse Ansible inventory file with error handling"""
-    #     config = configparser.ConfigParser()
-    #
-    #     try:
-    #         # ✅ ОБРАБОТКА ОШИБОК ЧТЕНИЯ - ловим проблемы с файлом
-    #         files_read = config.read(inventory_path)
-    #         if not files_read:
-    #             raise ValueError(f"Failed to read inventory file: {inventory_path}")
-    #     except configparser.ParsingError as e:
-    #         # ✅ ЧЕТКОЕ СООБЩЕНИЕ ОБ ОШИБКЕ - вместо непонятного traceback
-    #         print(f"❌ CRITICAL: Invalid inventory file format!")
-    #         print(f"   File: {inventory_path}")
-    #         print(f"   Error: {e}")
-    #         print("💡 Check for syntax errors in inventory file")
-    #         sys.exit(1)
-    #
-    #     nodes = {'controllers': []}
-    #
-    #     if 'controllers' in config:
-    #         for host in config['controllers']:
-    #             if host.startswith('ansible_'):
-    #                 continue  # ✅ ПРОПУСК СЛУЖЕБНЫХ ПЕРЕМЕННЫХ
-    #
-    #             # ✅ БЕЗОПАСНЫЙ ПАРСИНГ ПАРАМЕТРОВ - вместо доступа к несуществующим ключам
-    #             params_string = config['controllers'][host]
-    #             if 'ansible_host=' in params_string:
-    #                 # ✅ РУЧНОЙ ПАРСИНГ СТРОКИ - не зависящий от структуры ConfigParser
-    #                 # Извлекаем IP после 'ansible_host='
-    #                 start = params_string.find('ansible_host=') + len('ansible_host=')
-    #                 end = params_string.find(' ', start)
-    #                 if end == -1:
-    #                     end = len(params_string)  # ✅ ОБРАБОТКА КОНЦА СТРОКИ
-    #                 ansible_host = params_string[start:end]
-    #                 nodes['controllers'].append(ansible_host)
-    #             else:
-    #                 # ✅ FALLBACK - если нет ansible_host, используем имя хоста
-    #                 nodes['controllers'].append(host)
-    #
-    #     return nodes
-
-    def _parse_inventory(self, inventory_path):
-        """Simple inventory parser"""
+        Expected format:
+        [control]
+        controller1
+        controller2
+        controller3
+        """
         nodes = {'control': []}
 
         try:
             with open(inventory_path, 'r') as f:
-                in_controllers_section = False
+                in_control_section = False
 
                 for line in f:
                     line = line.strip()
 
                     if line == '[control]':
-                        in_controllers_section = True
+                        in_control_section = True
                         continue
                     elif line.startswith('['):
-                        in_controllers_section = False
+                        in_control_section = False
                         continue
 
-                    if in_controllers_section and line and not line.startswith('#'):
-                        # Берем первое слово как hostname
-                        host = line.split()[0]
+                    if in_control_section and line and not line.startswith('#'):
+                        host = line.split()[0]  # Take first word as hostname
                         if host and not host.startswith('ansible_'):
                             nodes['control'].append(host)
+
+            return nodes
 
         except Exception as e:
             print(f"❌ Error reading inventory: {e}")
             sys.exit(1)
 
-        return nodes
+    def _exit_with_file_error(self, file_type: str, expected_path: str):
+        """Exit with descriptive error message for missing files"""
+        print(f"❌ CRITICAL: {file_type} not found!")
+        print(f"📂 Expected: {expected_path}")
+        print("")
 
+        if file_type == 'config.yml':
+            print("💡 Config file must be named exactly 'config.yml'")
+        elif file_type == 'inventory':
+            print("💡 Inventory file must be 'inventory' or 'inventory.ini'")
+
+        sys.exit(1)

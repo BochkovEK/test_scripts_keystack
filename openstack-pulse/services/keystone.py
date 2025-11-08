@@ -1,27 +1,35 @@
 import openstack
 import time
+from config.config import ServiceType
 
 
 class KeystoneCheck:
-    def __init__(self, session):
+    def __init__(self, config):
+        """
+        Initialize Keystone health check
+
+        Args:
+            config: Config object providing service authentication
+        """
+        auth_params = config.get_service_auth(ServiceType.OPENSTACK)
         self.conn = openstack.connection.Connection(
-            session=session,
+            **auth_params,
             identity_api_version='3'
         )
 
     def run_check(self):
-        """Quick Keystone API check using OpenStackSDK"""
+        """Execute Keystone API health check"""
         start_time = time.time()
 
         try:
-            # Проверка аутентификации (автоматически делается при создании Connection)
+            # Authentication check (automatically performed during Connection creation)
             current_user = self.conn.current_user_id
             token_valid = bool(current_user)
 
-            # Получение сервисов через OpenStackSDK
+            # Get services via OpenStackSDK
             services = list(self.conn.identity.services())
 
-            # Получение эндпоинтов
+            # Get endpoints
             endpoints = list(self.conn.identity.endpoints())
 
             return {

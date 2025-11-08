@@ -1,16 +1,24 @@
 import openstack
 import time
+from config.config import ServiceType
 
 
 class NovaCheck:
-    def __init__(self, session):
+    def __init__(self, config):
+        """
+        Initialize Nova health check
+
+        Args:
+            config: Config object providing service authentication
+        """
+        auth_params = config.get_service_auth(ServiceType.OPENSTACK)
         self.conn = openstack.connection.Connection(
-            session=session,
+            **auth_params,
             compute_api_version='2.1'
         )
 
     def run_check(self):
-        """Nova services status check"""
+        """Execute Nova services health check"""
         start_time = time.time()
 
         try:
@@ -35,7 +43,15 @@ class NovaCheck:
             }
 
     def _analyze_services(self, services):
-        """Analyze Nova services"""
+        """
+        Analyze Nova service status
+
+        Args:
+            services: List of Nova service objects
+
+        Returns:
+            Dictionary with service statistics
+        """
         stats = {
             'total': len(services),
             'up': 0,
@@ -46,11 +62,13 @@ class NovaCheck:
         critical_services = ['nova-conductor', 'nova-scheduler', 'nova-compute']
 
         for service in services:
+            # Count services by state
             if service.state == 'up':
                 stats['up'] += 1
             else:
                 stats['down'] += 1
 
+            # Track critical services
             if service.binary in critical_services:
                 if service.binary not in stats['critical_services']:
                     stats['critical_services'][service.binary] = []
@@ -64,7 +82,15 @@ class NovaCheck:
         return stats
 
     def _analyze_hypervisors(self, hypervisors):
-        """Analyze hypervisors with instance counts"""
+        """
+        Analyze hypervisor status and instance counts
+
+        Args:
+            hypervisors: List of hypervisor objects
+
+        Returns:
+            Dictionary with hypervisor statistics
+        """
         stats = {
             'total': len(hypervisors),
             'up': 0,
