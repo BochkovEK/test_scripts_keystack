@@ -82,15 +82,7 @@ class NovaCheck:
         return stats
 
     def _analyze_hypervisors(self, hypervisors):
-        """
-        Analyze hypervisor status and instance counts
-
-        Args:
-            hypervisors: List of hypervisor objects
-
-        Returns:
-            Dictionary with hypervisor statistics
-        """
+        """Analyze hypervisors with instance counts"""
         stats = {
             'total': len(hypervisors),
             'up': 0,
@@ -99,7 +91,8 @@ class NovaCheck:
         }
 
         for hv in hypervisors:
-            running_vms = hv.running_vms if hv.running_vms is not None else 0
+            # Try multiple ways to get running VMs count
+            running_vms = self._get_running_vms_count(hv)
 
             hv_info = {
                 'name': hv.name,
@@ -114,3 +107,24 @@ class NovaCheck:
                 stats['down'] += 1
 
         return stats
+
+    def _get_running_vms_count(self, hypervisor):
+        """Get running VMs count using hypervisor statistics"""
+        try:
+            # Method 1: Try to get detailed hypervisor stats
+            hv_details = self.conn.compute.get_hypervisor(hypervisor.id)
+            if hasattr(hv_details, 'running_vms') and hv_details.running_vms is not None:
+                return hv_details.running_vms
+
+            # Method 2: Try alternative attribute names
+            if hasattr(hypervisor, 'running_vms') and hypervisor.running_vms is not None:
+                return hypervisor.running_vms
+
+            # Method 3: Try to get VMs via compute API
+            servers = list(self.conn.compute.servers(all_projects=True, host=hypervisor.name))
+            return len([s for s in servers if s.status == 'ACTIVE'])
+
+        except Exception as e:
+            print(f"⚠️  Failed to get VM count for {hypervisor.name}: {e}")
+
+        return 0
