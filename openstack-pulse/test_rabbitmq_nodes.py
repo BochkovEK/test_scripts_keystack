@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
 import requests
 import sys
+import os
 
 
 def check_rabbit_node(display_name, connect_host, port=15672, username='guest', password='guest'):
     """Simple script to check RabbitMQ node and parse response"""
 
+    username = os.getenv('RABBIT_USER', 'guest')
+    password = os.getenv('RABBIT_PASS', 'guest')
+
     url = f"http://{connect_host}:{port}"
     auth = (username, password)
 
     print(f"🔍 Checking: {display_name} -> {url}")
+    print(f"🔐 Auth: {username}:***")
 
     try:
         session = requests.Session()
