@@ -81,7 +81,7 @@ class RabbitCheck:
 
     def run_check(self):
         """Execute RabbitMQ cluster health check"""
-        print(f"🔍 RabbitCheck sessions: {len(self.sessions)}")
+        # print(f"🔍 RabbitCheck sessions: {len(self.sessions)}")
         start_time = time.time()
 
         try:
@@ -104,13 +104,14 @@ class RabbitCheck:
             }
 
     def _check_single_node(self, url):
-        """Check health of single RabbitMQ node"""
         session = self._get_session_for_url(url)
         if not session:
             return {'reachable': False}
 
         try:
+            start_time = time.time()
             response = session.get(f"{url}/api/overview", timeout=3)
+            response_time = time.time() - start_time
 
             if response.status_code == 200:
                 data = response.json()
@@ -119,6 +120,7 @@ class RabbitCheck:
                     'details': {
                         'queues': data.get('object_totals', {}).get('queues', 0),
                         'messages': data.get('queue_totals', {}).get('messages', 0),
+                        'response_time': round(response_time, 3)  # ← ДОБАВИТЬ
                     }
                 }
         except Exception:

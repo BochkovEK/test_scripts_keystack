@@ -78,17 +78,18 @@ class Pulse:
             time.sleep(heartbeat_interval)
 
     def collect_metrics(self):
-        """Collect latest metrics from all services"""
         snapshot = {'timestamp': time.time()}
 
-        # Wait for all services to have at least one result
         for service_name, event in self.service_ready_events.items():
             if not event.is_set():
-                print(f"   ⏳ Waiting for {service_name} first result...")
-                event.wait(timeout=30)  # Wait up to 30 seconds
+                event.wait(timeout=30)
 
-        # Copy latest results (thread-safe)
-        snapshot.update(self.latest_results.copy())
+        # Добавляем время сбора для каждого сервиса
+        current_time = time.time()
+        for service_name, result in self.latest_results.items():
+            snapshot[service_name] = result.copy()
+            snapshot[service_name]['collection_time'] = current_time
+
         return snapshot
 
     def run(self):
@@ -147,7 +148,18 @@ class Pulse:
 
     def _display_service_status(self, service_name, service_data):
         status_icon = "✅" if service_data['status'] == 'OK' else "❌"
-        print(f"{status_icon} {service_name.upper()}: {service_data['status']} ({service_data['response_time']}s)")
+
+        # Добавляем время последнего обновления
+        last_update = service_data.get('timestamp', service_data.get('collection_time', 0))
+        if last_update:
+            from datetime import datetime
+            update_time = datetime.fromtimestamp(last_update).strftime('%H:%M:%S')
+            time_info = f" [{update_time}]"
+        else:
+            time_info = ""
+
+        print(
+            f"{status_icon} {service_name.upper()}: {service_data['status']} ({service_data['response_time']}s){time_info}")
 
         display_methods = {
             'nova': self._display_nova_details,
@@ -162,13 +174,27 @@ class Pulse:
             print(f"   Error: {service_data['error']}")
 
     def _display_rabbitmq_details(self, rabbit_data):
-        """Display RabbitMQ cluster health details"""
+        """Display RabbitMQ cluster health with per-node details"""
         cluster = rabbit_data['cluster']
         health = cluster['cluster_health']
         total_nodes = rabbit_data['total_nodes']
         reachable_nodes = rabbit_data['reachable_nodes']
 
         print(f"   Nodes: {reachable_nodes}/{total_nodes} reachable")
+
+        # Выводим каждый узел отдельно
+        for url in cluster['reachable_nodes']:
+            # Извлекаем имя узла из URL
+            node_name = url.replace('http://', '').split(':')[0]
+            details = cluster['node_details'][url]
+            response_time = details.get('response_time', '?')
+
+            print(f"     {node_name}: ✅ ({response_time}s)")
+
+        # Выводим недоступные узлы
+        for url in cluster['unreachable_nodes']:
+            node_name = url.replace('http://', '').split(':')[0]
+            print(f"     {node_name}: ❌ (unreachable)")
 
         # Статус репликации с пояснением
         if total_nodes == 1:
