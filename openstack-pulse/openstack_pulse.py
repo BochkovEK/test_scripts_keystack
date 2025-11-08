@@ -165,37 +165,57 @@ class Pulse:
     def _display_rabbitmq_details(self, rabbit_data):
         """Display RabbitMQ cluster health with per-node details"""
         cluster = rabbit_data['cluster']
-        health = cluster['cluster_health']
         total_nodes = rabbit_data['total_nodes']
         reachable_nodes = rabbit_data['reachable_nodes']
 
         print(f"   Nodes: {reachable_nodes}/{total_nodes} reachable")
 
-        # Display each node separately
-        for url in cluster['reachable_nodes']:
-            node_name = url.replace('http://', '').split(':')[0]
-            details = cluster['node_details'][url]
+        # Display reachable nodes with detailed info
+        for hostname, details in cluster['node_details'].items():
             response_time = details.get('response_time', '?')
-            print(f"     {node_name}: ✅ ({response_time}s)")
+            node_status = details.get('node_status', 'unknown')
+
+            # Get status emoji
+            status_emoji = self._get_rabbitmq_status_emoji(node_status)
+
+            print(f"     {status_emoji} ({response_time}s) {hostname}:")
+            print(f"        Status: {node_status}")
+
+            # Display replication info
+            replication = details.get('replication', {})
+            if replication.get('mirrored_queues', 0) > 0:
+                print(f"        Replication: {replication['mirrored_queues']} mirrored queues "
+                      f"({replication['synchronized_queues']} synced, "
+                      f"{replication['unsynchronized_queues']} unsynced)")
+
+            # Display resources
+            resources = details.get('resources', {})
+            if resources:
+                proc_used = resources.get('proc_used', 0)
+                proc_total = resources.get('proc_total', 0)
+                mem_used_mb = resources.get('mem_used', 0) // 1024 // 1024
+                mem_limit_mb = resources.get('mem_limit', 0) // 1024 // 1024
+                print(f"        Resources: {proc_used}/{proc_total} procs, "
+                      f"{mem_used_mb}MB/{mem_limit_mb}MB memory")
+
+            # Display queues
+            queues = details.get('queues', {})
+            print(f"        Queues: {queues.get('total', 0)} total, "
+                  f"{queues.get('messages', 0)} messages")
 
         # Display unreachable nodes
-        for url in cluster['unreachable_nodes']:
-            node_name = url.replace('http://', '').split(':')[0]
-            print(f"     {node_name}: ❌ (unreachable)")
+        for hostname in cluster['unreachable_nodes']:
+            print(f"     ⚠️ (timeout) {hostname}:")
+            print(f"        Status: Unknown - Connection timeout")
 
-        # Replication status
-        if total_nodes == 1:
-            repl_status = "Single node (no replication)"
-        elif total_nodes == 2:
-            repl_status = "2-node cluster (needs both)"
-        else:
-            quorum = (total_nodes // 2) + 1
-            repl_status = f"{total_nodes}-node cluster (needs {quorum} for quorum)"
-
-        print("   Cluster Health:")
-        print(f"     {'✅' if health['replication_ok'] else '❌'} Replication: {repl_status}")
-        print(
-            f"     {'✅' if health['uptime_ok'] else '⚠️ '} Uptime: {'All nodes >10min' if health['uptime_ok'] else 'Some nodes <10min'}")
+    def _get_rabbitmq_status_emoji(self, node_status):
+        """Get emoji for RabbitMQ node status"""
+        emoji_map = {
+            'running': '✅',
+            'not_running': '❌',
+            'unknown': '⚠'
+        }
+        return emoji_map.get(node_status, '⚪')
 
     def _display_neutron_details(self, neutron_data):
         """Display Neutron-specific details"""

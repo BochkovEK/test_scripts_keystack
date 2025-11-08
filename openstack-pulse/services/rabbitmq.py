@@ -204,16 +204,7 @@ class RabbitCheck:
             urls_with_hosts.append((node, url))
         return urls_with_hosts
 
-    def _check_rabbitmq_cluster(self,  urls_with_hosts):
-        """
-        Check RabbitMQ cluster nodes in parallel (max 5 workers)
-
-        Args:
-            urls: List of RabbitMQ node URLs
-
-        Returns:
-            Dictionary with cluster status and node details
-        """
+    def _check_rabbitmq_cluster(self, urls_with_hosts):
         status = {
             'reachable_nodes': [],
             'unreachable_nodes': [],
@@ -223,7 +214,7 @@ class RabbitCheck:
         with ThreadPoolExecutor(max_workers=min(5, len(urls_with_hosts))) as executor:
             future_to_host_url = {
                 executor.submit(self._check_single_node, host, url): (host, url)
-                for host, url in urls_with_hosts  # ← распаковываем host и url
+                for host, url in urls_with_hosts
             }
 
             for future in as_completed(future_to_host_url):
@@ -231,12 +222,12 @@ class RabbitCheck:
                 try:
                     node_result = future.result()
                     if node_result['reachable']:
-                        status['reachable_nodes'].append(url)
-                        status['node_details'][url] = node_result['details']
+                        status['reachable_nodes'].append(host)
+                        status['node_details'][host] = node_result['details']
                     else:
-                        status['unreachable_nodes'].append(url)
+                        status['unreachable_nodes'].append(host)
                 except Exception:
-                    status['unreachable_nodes'].append(url)
+                    status['unreachable_nodes'].append(host)
 
         return status
 
