@@ -187,8 +187,12 @@ class RabbitCheck:
         """
         for node in nodes_data:
             if node.get('name') == hostname or node.get('name', '').startswith(hostname):
+
+                running = node.get('running', False)
+                status = 'running' if running else 'not_running'
+
                 return {
-                    'status': 'running' if node.get('running', False) else 'not_running',
+                    'status': status,
                     'resources': {
                         'proc_used': node.get('proc_used', 0),
                         'proc_total': node.get('proc_total', 0),
