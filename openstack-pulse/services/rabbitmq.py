@@ -32,14 +32,6 @@ class RabbitCheck:
             session.auth = self.auth
             self.sessions[connect_host] = session
 
-    # def _extract_host_from_url(self, url):
-    #     """Extract hostname from URL"""
-    #     return url.replace('http://', '').replace('https://', '').split(':')[0]
-
-    # def _get_session_for_host(self, connect_host):
-    #     """Get dedicated session for specific connect host"""
-    #     return self.sessions.get(connect_host)
-
     def run_check(self):
         """Execute RabbitMQ cluster health check"""
         start_time = time.time()
@@ -74,49 +66,6 @@ class RabbitCheck:
                 'error': str(e)
             }
 
-    # def _check_single_node(self, hostname, url):
-    #     """
-    #     Check health of single RabbitMQ node with sequential API calls
-    #
-    #     Args:
-    #         url: RabbitMQ node API URL
-    #
-    #     Returns:
-    #         Dictionary with node status and detailed metrics
-    #     """
-    #     session = self._get_session_for_url(url)
-    #     if not session:
-    #         return {'reachable': False}
-    #
-    #     try:
-    #         start_time = time.time()
-    #
-    #         overview_response = session.get(f"{url}/api/overview", timeout=3)
-    #         nodes_response = session.get(f"{url}/api/nodes", timeout=3)
-    #         queues_response = session.get(f"{url}/api/queues", timeout=3)
-    #
-    #         response_time = time.time() - start_time
-    #
-    #         if overview_response.status_code == 200:
-    #             node_info = self._extract_node_details(nodes_response.json(), hostname)
-    #             overview_info = self._extract_overview_details(overview_response.json())
-    #             queues_info = self._extract_queues_details(queues_response.json())
-    #
-    #             return {
-    #                 'reachable': True,
-    #                 'details': {
-    #                     'response_time': round(response_time, 3),
-    #                     'node_status': node_info['status'],
-    #                     'resources': node_info['resources'],
-    #                     'replication': queues_info['replication'],
-    #                     'queues': overview_info['queues']
-    #                 }
-    #             }
-    #     except Exception:
-    #         pass
-    #
-    #     return {'reachable': False}
-
     def _check_single_node(self, display_name, connect_host, url):
         """
         Check health of single RabbitMQ node with sequential API calls
@@ -135,7 +84,6 @@ class RabbitCheck:
             response_time = time.time() - start_time
 
             if overview_response.status_code == 200:
-                # Используем display_name для поиска в API данных
                 node_info = self._extract_node_details(nodes_response.json(), display_name)
                 overview_info = self._extract_overview_details(overview_response.json())
                 queues_info = self._extract_queues_details(queues_response.json())
@@ -155,46 +103,10 @@ class RabbitCheck:
 
         return {'reachable': False}
 
-    # def _extract_node_details(self, nodes_data, hostname):
-    #     """
-    #     Extract node status and resource information from /api/nodes response
-    #
-    #     Args:
-    #         nodes_data: JSON response from /api/nodes endpoint
-    #         hostname: Target node hostname
-    #
-    #     Returns:
-    #         Dictionary with node status and resource metrics
-    #     """
-    #     for node in nodes_data:
-    #         if node.get('name') == hostname or node.get('name', '').startswith(hostname):
-    #
-    #             running = node.get('running', False)
-    #             status = 'running' if running else 'not_running'
-    #
-    #             return {
-    #                 'status': status,
-    #                 'resources': {
-    #                     'proc_used': node.get('proc_used', 0),
-    #                     'proc_total': node.get('proc_total', 0),
-    #                     'mem_used': node.get('mem_used', 0),
-    #                     'mem_limit': node.get('mem_limit', 0),
-    #                     'fd_used': node.get('fd_used', 0),
-    #                     'fd_total': node.get('fd_total', 0),
-    #                     'disk_free': node.get('disk_free', 0)
-    #                 }
-    #             }
-    #
-    #     return {
-    #         'status': 'unknown',
-    #         'resources': {}
-    #     }
-
     def _extract_node_details(self, nodes_data, display_name):
         """
         Extract node status and resource information from /api/nodes response
         """
-        # Варианты имен для поиска (на основе диагностики)
         search_names = [
             f"rabbit@{display_name.split('.')[0]}",  # rabbit@ctrl1
             display_name,  # ctrl1.foo.bar.com

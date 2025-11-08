@@ -2,9 +2,8 @@ import os
 import yaml
 from dotenv import load_dotenv
 import sys
-from typing import Dict, Any
+from typing import Dict, Any, Tuple, List
 from enum import Enum
-# import openstack
 
 
 class ServiceType(Enum):
@@ -17,7 +16,7 @@ class ServiceType(Enum):
 class DotDict:
     """Simple dot-notation access to dictionary attributes"""
 
-    def __init__(self, data):
+    def __init__(self, data: Dict):
         for key, value in data.items():
             if isinstance(value, dict):
                 setattr(self, key, DotDict(value))
@@ -29,23 +28,16 @@ class Config:
     """Central configuration provider for all services"""
 
     def __init__(self):
-        # Load environment variables from .env
         load_dotenv()
-
-        # Get project root directory
-        self.project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-        # Load authentication credentials
+        self.project_root = self._get_project_root()
         self.auth = self._load_auth_credentials()
-
-        # Validate required configuration files
-        self._check_required_files()
-
-        # Load YAML configuration
+        self._validate_config_files()
         self.settings = self._load_yaml_config()
-
-        # Load inventory nodes
         self.nodes = self._load_inventory()
+
+    def _get_project_root(self) -> str:
+        """Get project root directory"""
+        return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     def _load_auth_credentials(self) -> Dict[str, str]:
         """Load authentication credentials from environment variables"""
@@ -67,67 +59,73 @@ class Config:
         Get authentication parameters for specific service type
 
         Args:
-            service_type: Type of service (OPENSTACK, RABBITMQ, MARIADB)
+            service_type: Type of service
 
         Returns:
             Dictionary with authentication parameters
         """
-        if service_type == ServiceType.OPENSTACK:
-            return {
-                'auth_url': self.auth['auth_url'],
-                'username': self.auth['username'],
-                'password': self.auth['password'],
-                'project_name': self.auth['project_name'],
-                'user_domain_name': self.auth['user_domain_name'],
-                'project_domain_name': self.auth['project_domain_name'],
-                'verify': False  # Disable SSL verification
-            }
-
-        elif service_type == ServiceType.RABBITMQ:
-            return {
-                'username': self.auth['rabbit_user'],
-                'password': self.auth['rabbit_pass'],
-                'port': self.settings.endpoints.rabbitmq_port,
-                'nodes': self.nodes['control']  # List of RabbitMQ nodes
-            }
-
-        elif service_type == ServiceType.MARIADB:
-            return {
-                'username': self.auth['mysql_user'],
-                'password': self.auth['mysql_pass'],
-                'nodes': self.nodes['control']  # List of database nodes
-            }
-
-        else:
-            raise ValueError(f"Unknown service type: {service_type}")
-
-    def _check_required_files(self):
-        """Validate that all required configuration files exist"""
-        required_files = {
-            'config.yml': os.path.join(self.project_root, 'config', 'config.yml'),
-            'inventory': [
-                os.path.join(self.project_root, 'inventory.ini'),
-                os.path.join(self.project_root, 'inventory')
-            ]
+        auth_handlers = {
+            ServiceType.OPENSTACK: self._get_openstack_auth,
+            ServiceType.RABBITMQ: self._get_rabbitmq_auth,
+            ServiceType.MARIADB: self._get_mariadb_auth
         }
 
-        # Check config.yml
-        if not os.path.exists(required_files['config.yml']):
-            self._exit_with_file_error('config.yml', required_files['config.yml'])
+        handler = auth_handlers.get(service_type)
+        if handler:
+            return handler()
 
-        # Check inventory file
-        inventory_found = any(os.path.exists(path) for path in required_files['inventory'])
-        if not inventory_found:
-            self._exit_with_file_error('inventory', required_files['inventory'][0])
+        raise ValueError(f"Unknown service type: {service_type}")
+
+    def _get_openstack_auth(self) -> Dict[str, Any]:
+        """Get OpenStack authentication parameters"""
+        return {
+            'auth_url': self.auth['auth_url'],
+            'username': self.auth['username'],
+            'password': self.auth['password'],
+            'project_name': self.auth['project_name'],
+            'user_domain_name': self.auth['user_domain_name'],
+            'project_domain_name': self.auth['project_domain_name'],
+            'verify': False
+        }
+
+    def _get_rabbitmq_auth(self) -> Dict[str, Any]:
+        """Get RabbitMQ authentication parameters"""
+        return {
+            'username': self.auth['rabbit_user'],
+            'password': self.auth['rabbit_pass'],
+            'port': self.settings.endpoints.rabbitmq_port,
+            'nodes': self.nodes['control']
+        }
+
+    def _get_mariadb_auth(self) -> Dict[str, Any]:
+        """Get MariaDB authentication parameters"""
+        return {
+            'username': self.auth['mysql_user'],
+            'password': self.auth['mysql_pass'],
+            'nodes': self.nodes['control']
+        }
+
+    def _validate_config_files(self):
+        """Validate that all required configuration files exist"""
+        config_path = os.path.join(self.project_root, 'config', 'config.yml')
+        inventory_paths = [
+            os.path.join(self.project_root, 'inventory.ini'),
+            os.path.join(self.project_root, 'inventory')
+        ]
+
+        if not os.path.exists(config_path):
+            self._exit_with_file_error('config.yml', config_path)
+
+        if not any(os.path.exists(path) for path in inventory_paths):
+            self._exit_with_file_error('inventory', inventory_paths[0])
 
     def _load_yaml_config(self) -> DotDict:
         """Load and parse YAML configuration file"""
         config_path = os.path.join(self.project_root, 'config', 'config.yml')
         with open(config_path) as f:
-            config_data = yaml.safe_load(f)
-        return DotDict(config_data)
+            return DotDict(yaml.safe_load(f))
 
-    def _load_inventory(self) -> Dict[str, list]:
+    def _load_inventory(self) -> Dict[str, List[Tuple[str, str]]]:
         """Load node inventory from Ansible inventory file"""
         inventory_files = ['inventory.ini', 'inventory']
 
@@ -137,23 +135,18 @@ class Config:
                 print(f"📁 Using inventory: {filename} from project root")
                 return self._parse_inventory(inventory_path)
 
-        # Critical error - inventory is required
-        print("❌ CRITICAL: Inventory file not found!")
-        print(f"   Expected in project root: {', '.join(inventory_files)}")
-        print(f"   Project root: {self.project_root}")
-        sys.exit(1)
+        self._exit_with_file_error('inventory', inventory_files[0])
 
-    def _parse_inventory(self, inventory_path: str) -> Dict[str, list]:
+    def _parse_inventory(self, inventory_path: str) -> Dict[str, List[Tuple[str, str]]]:
         """
-        Parse simple Ansible inventory file
+        Parse Ansible inventory file with host information
 
-        Expected format:
-        [control]
-        controller1
-        controller2
-        controller3
+        Args:
+            inventory_path: Path to inventory file
+
+        Returns:
+            Dictionary with node information by section
         """
-
         nodes = {'control': []}
 
         try:
@@ -171,42 +164,44 @@ class Config:
                         continue
 
                     if in_control_section and line and not line.startswith('#'):
-                        parts = line.split()
-                        display_name = parts[0]
+                        self._parse_inventory_line(line, nodes)
 
-                        # Ищем ansible_host=IP
-                        connect_host = display_name  # по умолчанию используем само имя
-                        for part in parts[1:]:
-                            if part.startswith('ansible_host='):
-                                connect_host = part.split('=')[1]
-                                break
-
-                        nodes['control'].append((display_name, connect_host))
             return nodes
 
-        #     with open(inventory_path, 'r') as f:
-        #         in_control_section = False
-        #
-        #         for line in f:
-        #             line = line.strip()
-        #
-        #             if line == '[control]':
-        #                 in_control_section = True
-        #                 continue
-        #             elif line.startswith('['):
-        #                 in_control_section = False
-        #                 continue
-        #
-        #             if in_control_section and line and not line.startswith('#'):
-        #                 host = line.split()[0]  # Take first word as hostname
-        #                 if host and not host.startswith('ansible_'):
-        #                     nodes['control'].append(host)
-        #
-        #     return nodes
-        #
         except Exception as e:
             print(f"❌ Error reading inventory: {e}")
             sys.exit(1)
+
+    def _parse_inventory_line(self, line: str, nodes: Dict[str, List[Tuple[str, str]]]):
+        """
+        Parse a single line from inventory file
+
+        Args:
+            line: Inventory file line
+            nodes: Nodes dictionary to update
+        """
+        parts = line.split()
+        if not parts:
+            return
+
+        display_name = parts[0]
+        connect_host = self._extract_connect_host(parts)
+        nodes['control'].append((display_name, connect_host))
+
+    def _extract_connect_host(self, parts: List[str]) -> str:
+        """
+        Extract connection host from inventory parts
+
+        Args:
+            parts: Split inventory line parts
+
+        Returns:
+            Connection host (IP or hostname)
+        """
+        for part in parts[1:]:
+            if part.startswith('ansible_host='):
+                return part.split('=')[1]
+        return parts[0]  # Default to display name
 
     def _exit_with_file_error(self, file_type: str, expected_path: str):
         """Exit with descriptive error message for missing files"""
