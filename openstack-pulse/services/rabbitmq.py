@@ -26,22 +26,19 @@ class RabbitCheck:
 
     def _init_sessions(self):
         """Initialize separate sessions for each node"""
-        urls_with_hosts = self._get_rabbitmq_urls()
-        for host, url in urls_with_hosts:
+        urls_with_info = self._get_rabbitmq_urls()
+        for display_name, connect_host, url in urls_with_info:
             session = requests.Session()
             session.auth = self.auth
-            self.sessions[host] = session
+            self.sessions[connect_host] = session
 
-    def _extract_host_from_url(self, url):
-        """Extract hostname from URL"""
-        return url.replace('http://', '').replace('https://', '').split(':')[0]
+    # def _extract_host_from_url(self, url):
+    #     """Extract hostname from URL"""
+    #     return url.replace('http://', '').replace('https://', '').split(':')[0]
 
-    def _get_session_for_url(self, url):
-        """Get dedicated session for specific URL"""
-        for host, node_url in self._get_rabbitmq_urls():
-            if node_url == url:
-                return self.sessions.get(host)
-        return None
+    # def _get_session_for_host(self, connect_host):
+    #     """Get dedicated session for specific connect host"""
+    #     return self.sessions.get(connect_host)
 
     def run_check(self):
         """Execute RabbitMQ cluster health check"""
@@ -120,40 +117,28 @@ class RabbitCheck:
     #
     #     return {'reachable': False}
 
-    def _check_single_node(self, hostname, url):
+    def _check_single_node(self, display_name, connect_host, url):
         """
         Check health of single RabbitMQ node with sequential API calls
         """
-        session = self._get_session_for_url(url)
+        session = self.sessions.get(connect_host)  # ← сессия по connect_host
         if not session:
-            print(f"🔍 DEBUG: No session for {url}")
             return {'reachable': False}
 
         try:
             start_time = time.time()
 
-            # Sequential requests to different endpoints for one node
-            print(f"🔍 DEBUG: Checking {url}...")
             overview_response = session.get(f"{url}/api/overview", timeout=3)
             nodes_response = session.get(f"{url}/api/nodes", timeout=3)
             queues_response = session.get(f"{url}/api/queues", timeout=3)
 
-            print(f"🔍 DEBUG: {url} responses - "
-                  f"overview: {overview_response.status_code}, "
-                  f"nodes: {nodes_response.status_code}, "
-                  f"queues: {queues_response.status_code}")
-
             response_time = time.time() - start_time
 
             if overview_response.status_code == 200:
-                # Process each API response with dedicated functions
-                node_info = self._extract_node_details(nodes_response.json(), hostname)
+                # Используем display_name для поиска в API данных
+                node_info = self._extract_node_details(nodes_response.json(), display_name)
                 overview_info = self._extract_overview_details(overview_response.json())
                 queues_info = self._extract_queues_details(queues_response.json())
-
-                print(f"🔍 DEBUG: {url} extracted - "
-                      f"node_status: {node_info['status']}, "
-                      f"queues: {overview_info['queues']['total']}")
 
                 return {
                     'reachable': True,
@@ -165,12 +150,8 @@ class RabbitCheck:
                         'queues': overview_info['queues']
                     }
                 }
-            else:
-                print(f"🔍 DEBUG: {url} overview failed: {overview_response.status_code}")
-
         except Exception as e:
             print(f"🔍 DEBUG: {url} exception: {e}")
-            pass
 
         return {'reachable': False}
 
@@ -256,36 +237,37 @@ class RabbitCheck:
 
     def _get_rabbitmq_urls(self):
         """Generate RabbitMQ API URLs with hostnames"""
-        urls_with_hosts = []
-        for node in self.nodes:
-            url = f"http://{node}:{self.port}"
-            urls_with_hosts.append((node, url))
-        return urls_with_hosts
+        urls_with_info = []
+        for display_name, connect_host in self.nodes:
+            url = f"http://{connect_host}:{self.port}"
+            urls_with_info.append((display_name, connect_host, url))
+        return urls_with_info
 
-    def _check_rabbitmq_cluster(self, urls_with_hosts):
+    def _check_rabbitmq_cluster(self, urls_with_info):
         status = {
             'reachable_nodes': [],
             'unreachable_nodes': [],
             'node_details': {}
         }
 
-        with ThreadPoolExecutor(max_workers=min(5, len(urls_with_hosts))) as executor:
-            future_to_host_url = {
-                executor.submit(self._check_single_node, host, url): (host, url)
-                for host, url in urls_with_hosts
+        with ThreadPoolExecutor(max_workers=min(5, len(urls_with_info))) as executor:
+            future_to_info = {
+                executor.submit(self._check_single_node, display_name, connect_host, url):
+                    (display_name, connect_host, url)
+                for display_name, connect_host, url in urls_with_info
             }
 
-            for future in as_completed(future_to_host_url):
-                host, url = future_to_host_url[future]
+            for future in as_completed(future_to_info):
+                display_name, connect_host, url = future_to_info[future]
                 try:
                     node_result = future.result()
                     if node_result['reachable']:
-                        status['reachable_nodes'].append(host)
-                        status['node_details'][host] = node_result['details']
+                        status['reachable_nodes'].append(display_name)
+                        status['node_details'][display_name] = node_result['details']
                     else:
-                        status['unreachable_nodes'].append(host)
+                        status['unreachable_nodes'].append(display_name)
                 except Exception:
-                    status['unreachable_nodes'].append(host)
+                    status['unreachable_nodes'].append(display_name)
 
         return status
 

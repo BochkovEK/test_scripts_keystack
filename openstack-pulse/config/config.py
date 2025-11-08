@@ -153,6 +153,7 @@ class Config:
         controller2
         controller3
         """
+
         nodes = {'control': []}
 
         try:
@@ -170,12 +171,39 @@ class Config:
                         continue
 
                     if in_control_section and line and not line.startswith('#'):
-                        host = line.split()[0]  # Take first word as hostname
-                        if host and not host.startswith('ansible_'):
-                            nodes['control'].append(host)
+                        parts = line.split()
+                        display_name = parts[0]
 
+                        # Ищем ansible_host=IP
+                        connect_host = display_name  # по умолчанию используем само имя
+                        for part in parts[1:]:
+                            if part.startswith('ansible_host='):
+                                connect_host = part.split('=')[1]
+                                break
+
+                        nodes['control'].append((display_name, connect_host))
             return nodes
 
+        #     with open(inventory_path, 'r') as f:
+        #         in_control_section = False
+        #
+        #         for line in f:
+        #             line = line.strip()
+        #
+        #             if line == '[control]':
+        #                 in_control_section = True
+        #                 continue
+        #             elif line.startswith('['):
+        #                 in_control_section = False
+        #                 continue
+        #
+        #             if in_control_section and line and not line.startswith('#'):
+        #                 host = line.split()[0]  # Take first word as hostname
+        #                 if host and not host.startswith('ansible_'):
+        #                     nodes['control'].append(host)
+        #
+        #     return nodes
+        #
         except Exception as e:
             print(f"❌ Error reading inventory: {e}")
             sys.exit(1)
