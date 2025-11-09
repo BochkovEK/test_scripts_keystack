@@ -297,7 +297,7 @@ class Pulse:
         total_nodes = mariadb_data['total_nodes']
         reachable_nodes = mariadb_data['reachable_nodes']
 
-        print(f"\tNodes: {reachable_nodes}/{total_nodes} reachable")
+        print(f"  Nodes: {reachable_nodes}/{total_nodes} reachable")
 
         # Display each node's status and metrics
         for node_name, details in cluster['node_details'].items():
@@ -307,11 +307,11 @@ class Pulse:
             # Status emoji based on node health
             status_emoji = self._get_mariadb_status_emoji(metrics)
 
-            print(f"\t\t{status_emoji} ({response_time}s) {node_name}:")
+            print(f"    {status_emoji} ({response_time}s) {node_name}:")
 
             # Display Galera metrics
             if metrics:
-                print(f"\t\t\tStatus: {metrics.get('local_state', 'Unknown')}, "
+                print(f"      Status: {metrics.get('local_state', 'Unknown')}, "
                       f"Cluster: {metrics.get('cluster_status', 'Unknown')} "
                       f"({metrics.get('cluster_size', 0)} nodes), "
                       f"Ready: {'ON' if metrics.get('node_ready') else 'OFF'}, "
@@ -319,8 +319,8 @@ class Pulse:
 
         # Display unreachable nodes
         for node_name in cluster['unreachable_nodes']:
-            print(f"\t\t⚠️ (timeout) {node_name}:")
-            print(f"\t\t\tStatus: Unknown - Connection failed")
+            print(f"    ⚠️ (timeout) {node_name}:")
+            print(f"      Status: Unknown - Connection failed")
 
     def _get_mariadb_status_emoji(self, metrics):
         """Get emoji for MariaDB node status based on Galera metrics"""
