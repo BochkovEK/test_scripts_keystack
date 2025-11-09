@@ -211,12 +211,12 @@ class Pulse:
             replication = details.get('replication', {})
 
             print(f"        Queues: {queues.get('total', 0)} total, "
-                  f"{queues.get('messages', 0)} messages")
+                  f"{queues.get('messages', 0)} messages (from {source_hostname} perspective)")
 
             if replication.get('mirrored_queues', 0) > 0:
                 print(f"        Replicated queues: {replication['mirrored_queues']} mirrored, "
                       f"{replication['synchronized_queues']} synchronized, "
-                      f"{replication['unsynchronized_queues']} unsynchronized")
+                      f"{replication['unsynchronized_queues']} unsynchronized (from {source_hostname} perspective)")
 
     def _get_rabbitmq_status_emoji(self, node_status):
         """Get emoji for RabbitMQ node status"""
