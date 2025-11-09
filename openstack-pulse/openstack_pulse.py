@@ -222,8 +222,6 @@ class Pulse:
 
                 if alarms:
                     print(f"                {' | '.join(alarms)}")
-                else:
-                    print(f"                ✅ No alarms")
 
     def _get_rabbitmq_status_emoji(self, node_status):
         """Get emoji for RabbitMQ node status"""
