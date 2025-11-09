@@ -175,18 +175,25 @@ class Pulse:
                     print(f"   Unreachable nodes: {cluster.get('unreachable_nodes', [])}")
 
     def _display_rabbitmq_details(self, rabbit_data):
-        """Display RabbitMQ cluster health with ALL nodes from each source perspective"""
+        """Display RabbitMQ cluster health with per-source perspective"""
         cluster = rabbit_data['cluster']
         total_nodes = rabbit_data['total_nodes']
         reachable_nodes = rabbit_data['reachable_nodes']
 
         print(f"   Nodes: {reachable_nodes}/{total_nodes} reachable")
 
-        # Display each source node's perspective of the entire cluster
+        # Display each source node's perspective
         for source_hostname, details in cluster['node_details'].items():
             response_time = details.get('response_time', '?')
 
             print(f"     ✅ ({response_time}s) {source_hostname}:")
+
+            # Display queues from THIS source's perspective
+            queues = details.get('queues', {})
+            print(f"        Queues: {queues.get('total', 0)} total, "
+                  f"{queues.get('messages', 0)} messages "
+                  f"({queues.get('messages_ready', 0)} ready, "
+                  f"{queues.get('messages_unacknowledged', 0)} unacked)")
 
             # Display ALL nodes from this source's perspective
             all_nodes = details.get('all_nodes', {})
@@ -196,7 +203,7 @@ class Pulse:
 
                 print(f"        {status_emoji} {target_hostname} ({node_status}):")
 
-                # Display resources for THIS target node
+                # Display resources
                 resources = node_info.get('resources', {})
                 if resources:
                     proc_used = resources.get('proc_used', 0)
@@ -206,25 +213,17 @@ class Pulse:
                     print(f"                Resources: {proc_used}/{proc_total} procs, "
                           f"{mem_used_mb}MB/{mem_limit_mb}MB memory")
 
-                # Display queues for THIS target node from source's perspective
-                queues = details.get('queues', {})
-                print(f"        Queues: {queues.get('total', 0)} total, "
-                      f"{queues.get('messages', 0)} messages (from {source_hostname} perspective)")
+                # Display alarms
+                alarms = []
+                if resources.get('mem_alarm'):
+                    alarms.append("🚨 Memory alarm")
+                if resources.get('disk_free_alarm'):
+                    alarms.append("🚨 Disk alarm")
 
-            # Display replication from THIS source's perspective (общее для всего кластера)
-            replication = details.get('replication', {})
-            if replication.get('mirrored_queues', 0) > 0:
-                print(f"        Replicated queues: {replication['mirrored_queues']} mirrored, "
-                      f"{replication['synchronized_queues']} synchronized, "
-                      f"{replication['unsynchronized_queues']} unsynchronized (from {source_hostname} perspective)")
-
-            # print(f"        Queues: {queues.get('total', 0)} total, "
-            #       f"{queues.get('messages', 0)} messages (from {source_hostname} perspective)")
-            #
-            # if replication.get('mirrored_queues', 0) > 0:
-            #     print(f"        Replicated queues: {replication['mirrored_queues']} mirrored, "
-            #           f"{replication['synchronized_queues']} synchronized, "
-            #           f"{replication['unsynchronized_queues']} unsynchronized (from {source_hostname} perspective)")
+                if alarms:
+                    print(f"                {' | '.join(alarms)}")
+                else:
+                    print(f"                ✅ No alarms")
 
     def _get_rabbitmq_status_emoji(self, node_status):
         """Get emoji for RabbitMQ node status"""

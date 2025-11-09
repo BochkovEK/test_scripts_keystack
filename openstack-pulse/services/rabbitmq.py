@@ -120,18 +120,11 @@ class RabbitCheck:
         return {'reachable': False}
 
     def _extract_all_nodes_details(self, nodes_data):
-        """
-        Extract status and resources for ALL nodes from /api/nodes response
-        Returns dict with node_name: {status, resources}
-        """
-        print(f"🔍 DEBUG nodes_data: {nodes_data}")  # Посмотрим что приходит
-
+        """Extract status and resources for ALL nodes from /api/nodes response"""
         all_nodes = {}
 
         for node in nodes_data:
             node_name = self._extract_short_node_name(node.get('name', ''))
-            print(f"🔍 DEBUG Processing node: {node.get('name', '')} -> {node_name}")
-
             running = node.get('running', False)
             status = 'running' if running else 'not_running'
 
@@ -142,13 +135,11 @@ class RabbitCheck:
                     'proc_total': node.get('proc_total', 0),
                     'mem_used': node.get('mem_used', 0),
                     'mem_limit': node.get('mem_limit', 0),
-                    'fd_used': node.get('fd_used', 0),
-                    'fd_total': node.get('fd_total', 0),
-                    'disk_free': node.get('disk_free', 0)
+                    'mem_alarm': node.get('mem_alarm', False),  # ← важно!
+                    'disk_free_alarm': node.get('disk_free_alarm', False)  # ← важно!
                 }
             }
 
-        print(f"🔍 DEBUG Final all_nodes: {all_nodes}")
         return all_nodes
 
     def _extract_short_node_name(self, full_node_name):
@@ -208,10 +199,15 @@ class RabbitCheck:
         Returns:
             Dictionary with queue statistics
         """
+        object_totals = overview_data.get('object_totals', {})
+        queue_totals = overview_data.get('queue_totals', {})
+
         return {
             'queues': {
-                'total': overview_data.get('object_totals', {}).get('queues', 0),
-                'messages': overview_data.get('queue_totals', {}).get('messages', 0)
+                'total': object_totals.get('queues', 0),
+                'messages': queue_totals.get('messages', 0),
+                'messages_ready': queue_totals.get('messages_ready', 0),
+                'messages_unacknowledged': queue_totals.get('messages_unacknowledged', 0)
             }
         }
 
