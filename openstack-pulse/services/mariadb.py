@@ -65,7 +65,7 @@ class MariaDBCheck:
         start_time = time.time()
 
         try:
-            print(f"🔍 DEBUG MariaDB: Checking {len(self.nodes)} nodes")
+            # print(f"🔍 DEBUG MariaDB: Checking {len(self.nodes)} nodes")
 
             # 1. Check all nodes in parallel
             cluster_status = self._check_galera_cluster()
@@ -74,14 +74,14 @@ class MariaDBCheck:
             reachable_count = len(cluster_status['reachable_nodes'])
             total_count = len(self.nodes)
 
-            print(f"🔍 DEBUG MariaDB: {reachable_count}/{total_count} nodes reachable")
-            print(f"🔍 DEBUG Reachable: {cluster_status['reachable_nodes']}")
-            print(f"🔍 DEBUG Unreachable: {cluster_status['unreachable_nodes']}")
+            # print(f"🔍 DEBUG MariaDB: {reachable_count}/{total_count} nodes reachable")
+            # print(f"🔍 DEBUG Reachable: {cluster_status['reachable_nodes']}")
+            # print(f"🔍 DEBUG Unreachable: {cluster_status['unreachable_nodes']}")
 
             # 3. Determine overall status
             if reachable_count == total_count:
                 cluster_healthy = self._determine_cluster_status(cluster_status)
-                print(f"🔍 DEBUG Cluster healthy: {cluster_healthy}")
+                # print(f"🔍 DEBUG Cluster healthy: {cluster_healthy}")
                 status = 'OK' if cluster_healthy else 'DEGRADED'
             elif reachable_count > 0:
                 status = 'DEGRADED'
@@ -96,11 +96,11 @@ class MariaDBCheck:
                 'total_nodes': total_count
             }
 
-            print(f"🔍 DEBUG Final status: {status}")
+            # print(f"🔍 DEBUG Final status: {status}")
             return result
 
         except Exception as e:
-            print(f"🔍 DEBUG MariaDB exception: {e}")
+            # print(f"🔍 DEBUG MariaDB exception: {e}")
             return {
                 'status': 'ERROR',
                 'response_time': round(time.time() - start_time, 2),
@@ -154,7 +154,7 @@ class MariaDBCheck:
     def _check_single_node(self, display_name, connect_host):
         """Check health of single MariaDB node"""
         try:
-            print(f"🔍 DEBUG Connecting to {display_name} ({connect_host})")
+            # print(f"🔍 DEBUG Connecting to {display_name} ({connect_host})")
             start_time = time.time()
 
             # 1. Establish database connection
@@ -189,7 +189,7 @@ class MariaDBCheck:
             # 3. Parse metrics into structured format
             metrics = self._parse_galera_metrics(results)
 
-            print(f"🔍 DEBUG {display_name}: connected successfully")
+            # print(f"🔍 DEBUG {display_name}: connected successfully")
             return {
                 'reachable': True,
                 'response_time': round(response_time, 3),
@@ -197,7 +197,7 @@ class MariaDBCheck:
             }
 
         except Exception as e:
-            print(f"🔍 DEBUG {display_name} failed: {e}")
+            # print(f"🔍 DEBUG {display_name} failed: {e}")
             return {
                 'reachable': False,
                 'error': str(e)
