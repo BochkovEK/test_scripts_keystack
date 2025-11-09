@@ -10,7 +10,7 @@ class ServiceType(Enum):
     """Service types for authentication"""
     OPENSTACK = "openstack"
     RABBITMQ = "rabbitmq"
-    MARIADB = "mariadb"
+    MARIADB = "galera"
 
 
 class DotDict:
