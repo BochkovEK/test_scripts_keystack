@@ -58,7 +58,7 @@ class Pulse:
             )
             thread.daemon = True
             thread.start()
-            print(f"   📡 {service_name} check started")
+            print(f"  📡 {service_name} check started")
 
     def _run_service_continuously(self, service_name, check):
         """Run service checks continuously in background"""
@@ -133,11 +133,9 @@ class Pulse:
 
     def _display_snapshot(self, snapshot, current_cycle, total_cycles):
         """Display current snapshot to console"""
-        from datetime import datetime
-        # timestamp = datetime.fromtimestamp(snapshot['timestamp']).strftime('%H:%M:%S')
         timestamp = time.ctime(snapshot['timestamp'])
         print("=" * 45)
-        print(f"    Cycle {current_cycle}/{total_cycles} - {timestamp}")
+        print(f"  Cycle {current_cycle}/{total_cycles} - {timestamp}")
         print("=" * 45)
 
         for service_name in self.config.settings.check_services:
@@ -164,15 +162,15 @@ class Pulse:
             display_methods[service_name](service_data)
         elif status == 'ERROR':
             error_message = service_data.get('error', 'Unknown error')
-            print(f"   Error: {error_message}")
+            print(f"  Error: {error_message}")
 
-            # Дополнительная отладочная информация для RabbitMQ
+            # Additional debug information for RabbitMQ
             if service_name == 'rabbitmq':
-                print(f"   Debug - service_data keys: {list(service_data.keys())}")
+                print(f"  Debug - service_data keys: {list(service_data.keys())}")
                 if 'cluster' in service_data:
                     cluster = service_data['cluster']
-                    print(f"   Reachable nodes: {cluster.get('reachable_nodes', [])}")
-                    print(f"   Unreachable nodes: {cluster.get('unreachable_nodes', [])}")
+                    print(f"  Reachable nodes: {cluster.get('reachable_nodes', [])}")
+                    print(f"  Unreachable nodes: {cluster.get('unreachable_nodes', [])}")
 
     def _display_rabbitmq_details(self, rabbit_data):
         """Display RabbitMQ cluster health with per-source perspective"""
@@ -201,7 +199,7 @@ class Pulse:
                 node_status = node_info.get('status', 'unknown')
                 status_emoji = self._get_rabbitmq_status_emoji(node_status)
 
-                print(f"        {status_emoji} {target_hostname} ({node_status}):")
+                print(f"      {status_emoji} {target_hostname} ({node_status}):")
 
                 # Display resources
                 resources = node_info.get('resources', {})
@@ -210,7 +208,7 @@ class Pulse:
                     proc_total = resources.get('proc_total', 0)
                     mem_used_mb = resources.get('mem_used', 0) // 1024 // 1024
                     mem_limit_mb = resources.get('mem_limit', 0) // 1024 // 1024
-                    print(f"          Resources: {proc_used}/{proc_total} procs, "
+                    print(f"        Resources: {proc_used}/{proc_total} procs, "
                           f"{mem_used_mb}MB/{mem_limit_mb}MB memory")
 
                 # Display alarms
@@ -221,7 +219,9 @@ class Pulse:
                     alarms.append("🚨 Disk alarm")
 
                 if alarms:
-                    print(f"                {' | '.join(alarms)}")
+                    print(f"        {' | '.join(alarms)}")
+                # else:
+                #     print(f"        ✅ No alarms")
 
     def _get_rabbitmq_status_emoji(self, node_status):
         """Get emoji for RabbitMQ node status"""
@@ -236,10 +236,10 @@ class Pulse:
     def _display_neutron_details(self, neutron_data):
         """Display Neutron-specific details"""
         agents = neutron_data['agents']
-        print(f"   Agents: {agents['up']}/{agents['total']} up")
+        print(f"  Agents: {agents['up']}/{agents['total']} up")
 
         if 'critical_agents' in agents:
-            print("   Critical Agents:")
+            print("  Critical Agents:")
             for agent_type, stats in agents['critical_agents'].items():
                 if stats['down'] == 0:
                     status_icon = "🟢"
@@ -251,14 +251,14 @@ class Pulse:
                     status_icon = "🟡"
                     status_info = f"{stats['up']} up, {stats['down']} down"
 
-                print(f"     {status_icon} {agent_type}: {status_info}")
+                print(f"    {status_icon} {agent_type}: {status_info}")
 
     def _display_keystone_details(self, keystone_data):
         """Display Keystone-specific details"""
         if keystone_data.get('token_valid'):
-            print("   Token: ✅ valid")
+            print("  Token: ✅ valid")
         if keystone_data.get('services_count'):
-            print(f"   Services: {keystone_data['services_count']} available")
+            print(f"  Services: {keystone_data['services_count']} available")
 
     @staticmethod
     def _display_nova_details(nova_data):
