@@ -20,12 +20,14 @@ def test_mariadb_connection():
     try:
         # Test connection
         connection = pymysql.connect(
-            host=host,
-            user=user,
-            password=password,
-            port=port,
-            connect_timeout=5,
-            unix_socket=None  # Force TCP connection
+            host=host,  # IP удаленного сервера
+            user='username',
+            password='password',
+            port=3306,
+            connect_timeout=10,
+            autocommit=True,
+            charset='utf8mb4',
+            cursorclass=pymysql.cursors.DictCursor
         )
 
         print("✅ Connection successful!")
