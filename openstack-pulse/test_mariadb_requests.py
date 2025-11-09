@@ -11,8 +11,8 @@ import sys
 def test_mariadb_connection():
     # Get credentials from environment variables
     host = os.getenv('MARIADB_HOST', 'localhost')
-    user = os.getenv('MARIADB_USER', 'root')
-    password = os.getenv('MARIADB_PASSWORD', '')
+    user = os.getenv('MYSQL_USER', 'root')
+    password = os.getenv('MYSQL_PASS', '')
     port = int(os.getenv('MARIADB_PORT', '3306'))
 
     print(f"🔍 Testing connection to: {user}@{host}:{port}")
