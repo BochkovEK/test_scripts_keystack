@@ -1,0 +1,54 @@
+#!/usr/bin/env python3
+"""
+Simple MariaDB connection debug script
+"""
+
+import pymysql
+import os
+import sys
+
+
+def test_mariadb_connection():
+    # Get credentials from environment variables
+    host = os.getenv('MARIADB_HOST', 'localhost')
+    user = os.getenv('MARIADB_USER', 'root')
+    password = os.getenv('MARIADB_PASSWORD', '')
+    port = int(os.getenv('MARIADB_PORT', '3306'))
+
+    print(f"🔍 Testing connection to: {user}@{host}:{port}")
+
+    try:
+        # Test connection
+        connection = pymysql.connect(
+            host=host,
+            user=user,
+            password=password,
+            port=port,
+            connect_timeout=5,
+            unix_socket=None  # Force TCP connection
+        )
+
+        print("✅ Connection successful!")
+
+        # Test query
+        with connection.cursor() as cursor:
+            cursor.execute("SHOW GLOBAL STATUS LIKE 'wsrep%'")
+            results = cursor.fetchall()
+
+            print("✅ Galera status query successful!")
+            print("📊 Galera metrics found:")
+            for name, value in results:
+                print(f"   {name}: {value}")
+
+        connection.close()
+
+    except pymysql.Error as e:
+        print(f"❌ Connection failed: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"❌ Unexpected error: {e}")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    test_mariadb_connection()
