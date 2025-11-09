@@ -43,8 +43,5 @@ def test_mariadb_connection():
         if 'connection' in locals() and connection.is_connected():
             connection.close()
 
-
-
-
 if __name__ == "__main__":
     test_mariadb_connection()

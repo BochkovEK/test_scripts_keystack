@@ -23,8 +23,12 @@ def test_mariadb_connection():
             host=host,
             user=user,
             password=password,
-            port=3306,
+            port=port,  # Исправлено: было 3306 вместо port
             connect_timeout=10,
+            unix_socket=None,  # Force TCP
+            read_default_file=None,  # Ignore my.cnf
+            read_default_group=None,
+            autocommit=True
         )
 
         print("✅ Connection successful!")
