@@ -44,6 +44,8 @@ class RabbitCheck:
             reachable_count = len(cluster_status['reachable_nodes'])
             total_count = len(urls)
 
+            print(f"🔍 DEBUG run_check: {reachable_count}/{total_count} nodes reachable")
+
             if reachable_count == total_count:
                 status = 'OK'
             elif reachable_count > 0:
@@ -51,7 +53,7 @@ class RabbitCheck:
             else:
                 status = 'ERROR'
 
-            return {
+            result = {
                 'status': status,
                 'response_time': round(time.time() - start_time, 2),
                 'cluster': cluster_status,
@@ -59,7 +61,11 @@ class RabbitCheck:
                 'total_nodes': total_count
             }
 
+            print(f"🔍 DEBUG Final result status: {status}")
+            return result
+
         except Exception as e:
+            print(f"🔍 DEBUG run_check exception: {e}")
             return {
                 'status': 'ERROR',
                 'response_time': round(time.time() - start_time, 2),
@@ -246,13 +252,18 @@ class RabbitCheck:
         return urls_with_info
 
     def _check_rabbitmq_cluster(self, urls_with_info):
+        """Check entire RabbitMQ cluster using thread pool"""
         status = {
             'reachable_nodes': [],
             'unreachable_nodes': [],
             'node_details': {}
         }
 
-        with ThreadPoolExecutor(max_workers=min(5, len(urls_with_info))) as executor:
+        max_workers = min(5, len(urls_with_info))
+
+        print(f"🔍 DEBUG _check_rabbitmq_cluster: checking {len(urls_with_info)} nodes")
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
             future_to_info = {
                 executor.submit(self._check_single_node, display_name, connect_host, url):
                     (display_name, connect_host, url)
@@ -263,18 +274,20 @@ class RabbitCheck:
                 display_name, connect_host, url = future_to_info[future]
                 try:
                     node_result = future.result()
+                    print(f"🔍 DEBUG Node {display_name}: reachable={node_result['reachable']}")
+
                     if node_result['reachable']:
                         status['reachable_nodes'].append(display_name)
                         status['node_details'][display_name] = node_result['details']
                     else:
                         status['unreachable_nodes'].append(display_name)
-                except Exception:
+                except Exception as e:
+                    print(f"🔍 DEBUG Node {display_name}: exception={e}")
                     status['unreachable_nodes'].append(display_name)
 
-        return status
+        print(f"🔍 DEBUG Final cluster status:")
+        print(f"   Reachable: {status['reachable_nodes']}")
+        print(f"   Unreachable: {status['unreachable_nodes']}")
+        print(f"   Node details keys: {list(status['node_details'].keys())}")
 
-    def close_sessions(self):
-        """Close all sessions to free resources"""
-        for host, session in self.sessions.items():
-            session.close()
-        self.sessions.clear()
+        return status
