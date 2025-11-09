@@ -202,8 +202,11 @@ class MariaDBCheck:
             # 1. Establish database connection
             connection = pymysql.connect(
                 host=connect_host,
-                **self.db_config
+                **self.db_config,
+                unix_socket=None
             )
+
+
 
             # 2. Execute Galera status query
             with connection.cursor() as cursor:
