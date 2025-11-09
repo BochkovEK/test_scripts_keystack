@@ -13,6 +13,7 @@ from services.nova import NovaCheck
 from services.keystone import KeystoneCheck
 from services.neutron import NeutronCheck
 from services.rabbitmq import RabbitCheck
+from services.mariadb import MariaDBCheck
 
 
 class Pulse:
@@ -33,6 +34,7 @@ class Pulse:
             'keystone': KeystoneCheck,
             'neutron': NeutronCheck,
             'rabbitmq': RabbitCheck,
+            'galera': MariaDBCheck,
         }
 
         for service_name in self.config.settings.check_services:
@@ -287,6 +289,56 @@ class Pulse:
                 instances_info = " (down)"
 
             print(f"    {status_icon} {hv['name']}{instances_info}")
+
+    def _display_mariadb_details(self, mariadb_data):
+        """Display MariaDB/Galera cluster health details"""
+        cluster = mariadb_data['cluster']
+        total_nodes = mariadb_data['total_nodes']
+        reachable_nodes = mariadb_data['reachable_nodes']
+
+        print(f"\tNodes: {reachable_nodes}/{total_nodes} reachable")
+
+        # Display each node's status and metrics
+        for node_name, details in cluster['node_details'].items():
+            response_time = details.get('response_time', '?')
+            metrics = details.get('metrics', {})
+
+            # Status emoji based on node health
+            status_emoji = self._get_mariadb_status_emoji(metrics)
+
+            print(f"\t\t{status_emoji} ({response_time}s) {node_name}:")
+
+            # Display Galera metrics
+            if metrics:
+                print(f"\t\t\tStatus: {metrics.get('local_state', 'Unknown')}, "
+                      f"Cluster: {metrics.get('cluster_status', 'Unknown')} "
+                      f"({metrics.get('cluster_size', 0)} nodes), "
+                      f"Ready: {'ON' if metrics.get('node_ready') else 'OFF'}, "
+                      f"Connected: {'ON' if metrics.get('connected') else 'OFF'}")
+
+        # Display unreachable nodes
+        for node_name in cluster['unreachable_nodes']:
+            print(f"\t\t⚠️ (timeout) {node_name}:")
+            print(f"\t\t\tStatus: Unknown - Connection failed")
+
+    def _get_mariadb_status_emoji(self, metrics):
+        """Get emoji for MariaDB node status based on Galera metrics"""
+        if not metrics:
+            return '⚪'  # Unknown
+
+        is_healthy = (
+                metrics.get('cluster_status') == 'Primary' and
+                metrics.get('node_ready') is True and
+                metrics.get('connected') is True and
+                metrics.get('local_state') == 'Synced'
+        )
+
+        if is_healthy:
+            return '✅'  # Healthy node
+        elif metrics.get('local_state') in ['Donor', 'Joiner']:
+            return '🔄'  # Syncing state
+        else:
+            return '⚠️'  # Degraded or error state
 
 
 if __name__ == "__main__":
