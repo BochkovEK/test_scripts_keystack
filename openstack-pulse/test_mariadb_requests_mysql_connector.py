@@ -6,7 +6,6 @@ Simple MariaDB connection debug script
 import mysql.connector
 from mysql.connector import Error
 import os
-import sys
 
 
 def test_mariadb_connection():
@@ -20,7 +19,6 @@ def test_mariadb_connection():
 
     try:
         # Test connection
-
         connection = mysql.connector.connect(
             host=host,
             user=user,

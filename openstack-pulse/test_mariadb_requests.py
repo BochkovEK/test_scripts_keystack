@@ -3,9 +3,7 @@
 Simple MariaDB connection debug script
 """
 
-# import mysql.connector
 import pymysql
-from mysql.connector import Error
 import os
 import sys
 
@@ -22,35 +20,12 @@ def test_mariadb_connection():
     try:
         # Test connection
         connection = pymysql.connect(
-            host=host,  # IP удаленного сервера
+            host=host,
             user=user,
             password=password,
             port=3306,
             connect_timeout=10,
         )
-        # connection = mysql.connector.connect(
-        #     host=host,
-        #     user=user,
-        #     password=password,
-        #     port=3306,
-        #     # database='your_database',  # опционально
-        #     connection_timeout=10
-        # )
-
-    #     if connection.is_connected():
-    #         print("✅ Успешное подключение через mysql.connector!")
-    #
-    #         # Пример запроса
-    #         cursor = connection.cursor()
-    #         cursor.execute("SELECT @@version;")
-    #         result = cursor.fetchone()
-    #         print(f"Версия MySQL: {result[0]}")
-    #
-    # except Error as e:
-    #     print(f"❌ Ошибка: {e}")
-    # finally:
-    #     if 'connection' in locals() and connection.is_connected():
-    #         connection.close()
 
         print("✅ Connection successful!")
 
