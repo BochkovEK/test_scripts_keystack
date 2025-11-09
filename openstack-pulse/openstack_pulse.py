@@ -163,57 +163,56 @@ class Pulse:
             print(f"   Error: {service_data['error']}")
 
     def _display_rabbitmq_details(self, rabbit_data):
-        """Display RabbitMQ cluster health with per-node details"""
+        """Display RabbitMQ cluster health with ALL nodes from each source perspective"""
         cluster = rabbit_data['cluster']
         total_nodes = rabbit_data['total_nodes']
         reachable_nodes = rabbit_data['reachable_nodes']
 
         print(f"   Nodes: {reachable_nodes}/{total_nodes} reachable")
 
-        # Display reachable nodes with detailed info
-        for hostname, details in cluster['node_details'].items():
+        # Display each source node's perspective of the entire cluster
+        for source_hostname, details in cluster['node_details'].items():
             response_time = details.get('response_time', '?')
-            node_status = details.get('node_status', 'unknown')
 
-            # Get status emoji
-            status_emoji = self._get_rabbitmq_status_emoji(node_status)
+            print(f"     ✅ ({response_time}s) {source_hostname}:")
 
-            print(f"     {status_emoji} ({response_time}s) {hostname}:")
-            print(f"        Status: {node_status}")
+            # Display ALL nodes from this source's perspective
+            all_nodes = details.get('all_nodes', {})
+            for target_hostname, node_info in all_nodes.items():
+                node_status = node_info.get('status', 'unknown')
+                status_emoji = self._get_rabbitmq_status_emoji(node_status)
 
-            # Display replication info
-            replication = details.get('replication', {})
-            if replication.get('mirrored_queues', 0) > 0:
-                print(f"        Replication: {replication['mirrored_queues']} mirrored queues "
-                      f"({replication['synchronized_queues']} synced, "
-                      f"{replication['unsynchronized_queues']} unsynced)")
+                print(f"        {status_emoji} {target_hostname} ({node_status}):")
 
-            # Display resources
-            resources = details.get('resources', {})
-            if resources:
-                proc_used = resources.get('proc_used', 0)
-                proc_total = resources.get('proc_total', 0)
-                mem_used_mb = resources.get('mem_used', 0) // 1024 // 1024
-                mem_limit_mb = resources.get('mem_limit', 0) // 1024 // 1024
-                print(f"        Resources: {proc_used}/{proc_total} procs, "
-                      f"{mem_used_mb}MB/{mem_limit_mb}MB memory")
+                # Display resources for THIS target node
+                resources = node_info.get('resources', {})
+                if resources:
+                    proc_used = resources.get('proc_used', 0)
+                    proc_total = resources.get('proc_total', 0)
+                    mem_used_mb = resources.get('mem_used', 0) // 1024 // 1024
+                    mem_limit_mb = resources.get('mem_limit', 0) // 1024 // 1024
+                    print(f"                Resources: {proc_used}/{proc_total} procs, "
+                          f"{mem_used_mb}MB/{mem_limit_mb}MB memory")
 
-            # Display queues
+            # Display queues and replication from THIS source's perspective
             queues = details.get('queues', {})
+            replication = details.get('replication', {})
+
             print(f"        Queues: {queues.get('total', 0)} total, "
                   f"{queues.get('messages', 0)} messages")
 
-        # Display unreachable nodes
-        for hostname in cluster['unreachable_nodes']:
-            print(f"     ⚠️ (timeout) {hostname}:")
-            print(f"        Status: Unknown - Connection timeout")
+            if replication.get('mirrored_queues', 0) > 0:
+                print(f"        Replicated queues: {replication['mirrored_queues']} mirrored, "
+                      f"{replication['synchronized_queues']} synchronized, "
+                      f"{replication['unsynchronized_queues']} unsynchronized")
 
     def _get_rabbitmq_status_emoji(self, node_status):
         """Get emoji for RabbitMQ node status"""
         emoji_map = {
             'running': '✅',
-            'not_running': '❌',
-            'unknown': '⚠'
+            'not_running': '⚠️',
+            'unknown': '❓',
+            'syncing': '🔄'
         }
         return emoji_map.get(node_status, '⚪')
 

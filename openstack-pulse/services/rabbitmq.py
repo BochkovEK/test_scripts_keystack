@@ -68,9 +68,9 @@ class RabbitCheck:
 
     def _check_single_node(self, display_name, connect_host, url):
         """
-        Check health of single RabbitMQ node with sequential API calls
+        Check health of single RabbitMQ node and collect data about ALL nodes
         """
-        session = self.sessions.get(connect_host)  # ← сессия по connect_host
+        session = self.sessions.get(connect_host)
         if not session:
             return {'reachable': False}
 
@@ -84,7 +84,8 @@ class RabbitCheck:
             response_time = time.time() - start_time
 
             if overview_response.status_code == 200:
-                node_info = self._extract_node_details(nodes_response.json(), display_name)
+                # Extract data about ALL nodes from this node's perspective
+                all_nodes_info = self._extract_all_nodes_details(nodes_response.json(), display_name)
                 overview_info = self._extract_overview_details(overview_response.json())
                 queues_info = self._extract_queues_details(queues_response.json())
 
@@ -92,54 +93,105 @@ class RabbitCheck:
                     'reachable': True,
                     'details': {
                         'response_time': round(response_time, 3),
-                        'node_status': node_info['status'],
-                        'resources': node_info['resources'],
-                        'replication': queues_info['replication'],
-                        'queues': overview_info['queues']
+                        'all_nodes': all_nodes_info,  # Data about all nodes
+                        'queues': overview_info['queues'],
+                        'replication': queues_info['replication']
                     }
                 }
-        except Exception as e:
-            print(f"🔍 DEBUG: {url} exception: {e}")
+        except Exception:
+            pass
 
         return {'reachable': False}
 
-    def _extract_node_details(self, nodes_data, display_name):
+    def _extract_all_nodes_details(self, nodes_data):
         """
-        Extract node status and resource information from /api/nodes response
+        Extract status and resources for ALL nodes from /api/nodes response
+        Returns dict with node_name: {status, resources}
         """
-        search_names = [
-            f"rabbit@{display_name.split('.')[0]}",  # rabbit@ctrl1
-            display_name,  # ctrl1.foo.bar.com
-            display_name.split('.')[0]  # ctrl1
-        ]
+        all_nodes = {}
 
         for node in nodes_data:
-            node_name = node.get('name', '')
-            for search_name in search_names:
-                if node_name == search_name or search_name in node_name:
-                    running = node.get('running', False)
-                    status = 'running' if running else 'not_running'
+            node_name = self._extract_short_node_name(node.get('name', ''))
+            running = node.get('running', False)
 
-                    # print(f"🔍 DEBUG: Found node {node_name} for {display_name} (status: {status})")
+            # Determine node status with more detail
+            if running:
+                # Check if node is in syncing state (based on specific RabbitMQ indicators)
+                is_syncing = (
+                        node.get('io_read_avg', 0) > 100 or  # High IO might indicate syncing
+                        node.get('mem_alarm', False) or  # Memory alarm might affect sync
+                        node.get('disk_free_alarm', False)  # Disk alarm might affect sync
+                )
+                status = 'syncing' if is_syncing else 'running'
+            else:
+                status = 'not_running'
 
-                    return {
-                        'status': status,
-                        'resources': {
-                            'proc_used': node.get('proc_used', 0),
-                            'proc_total': node.get('proc_total', 0),
-                            'mem_used': node.get('mem_used', 0),
-                            'mem_limit': node.get('mem_limit', 0),
-                            'fd_used': node.get('fd_used', 0),
-                            'fd_total': node.get('fd_total', 0),
-                            'disk_free': node.get('disk_free', 0)
-                        }
-                    }
+            all_nodes[node_name] = {
+                'status': status,
+                'resources': {
+                    'proc_used': node.get('proc_used', 0),
+                    'proc_total': node.get('proc_total', 0),
+                    'mem_used': node.get('mem_used', 0),
+                    'mem_limit': node.get('mem_limit', 0),
+                    'fd_used': node.get('fd_used', 0),
+                    'fd_total': node.get('fd_total', 0),
+                    'disk_free': node.get('disk_free', 0),
+                    # Additional metrics that might help detect syncing state
+                    'io_read_avg': node.get('io_read_avg', 0),
+                    'io_write_avg': node.get('io_write_avg', 0),
+                    'mem_alarm': node.get('mem_alarm', False),
+                    'disk_free_alarm': node.get('disk_free_alarm', False)
+                }
+            }
 
-        # print(f"🔍 DEBUG: No node found for {display_name}. Tried: {search_names}")
-        return {
-            'status': 'unknown',
-            'resources': {}
-        }
+        return all_nodes
+
+    def _extract_short_node_name(self, full_node_name):
+        """
+        Extract short node name from full RabbitMQ node name
+        Example: 'rabbit@ctrl1' -> 'ctrl1'
+        """
+        if '@' in full_node_name:
+            return full_node_name.split('@')[1]
+        return full_node_name
+
+    # def _extract_node_details(self, nodes_data, display_name):
+    #     """
+    #     Extract node status and resource information from /api/nodes response
+    #     """
+    #     search_names = [
+    #         f"rabbit@{display_name.split('.')[0]}",  # rabbit@ctrl1
+    #         display_name,  # ctrl1.foo.bar.com
+    #         display_name.split('.')[0]  # ctrl1
+    #     ]
+    #
+    #     for node in nodes_data:
+    #         node_name = node.get('name', '')
+    #         for search_name in search_names:
+    #             if node_name == search_name or search_name in node_name:
+    #                 running = node.get('running', False)
+    #                 status = 'running' if running else 'not_running'
+    #
+    #                 # print(f"🔍 DEBUG: Found node {node_name} for {display_name} (status: {status})")
+    #
+    #                 return {
+    #                     'status': status,
+    #                     'resources': {
+    #                         'proc_used': node.get('proc_used', 0),
+    #                         'proc_total': node.get('proc_total', 0),
+    #                         'mem_used': node.get('mem_used', 0),
+    #                         'mem_limit': node.get('mem_limit', 0),
+    #                         'fd_used': node.get('fd_used', 0),
+    #                         'fd_total': node.get('fd_total', 0),
+    #                         'disk_free': node.get('disk_free', 0)
+    #                     }
+    #                 }
+    #
+    #     # print(f"🔍 DEBUG: No node found for {display_name}. Tried: {search_names}")
+    #     return {
+    #         'status': 'unknown',
+    #         'resources': {}
+    #     }
 
     def _extract_overview_details(self, overview_data):
         """
