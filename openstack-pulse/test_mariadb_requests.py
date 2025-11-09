@@ -31,8 +31,8 @@ def test_mariadb_connection():
         # )
         connection = mysql.connector.connect(
             host=host,
-            user='username',
-            password='password',
+            user=user,
+            password=password,
             port=3306,
             # database='your_database',  # опционально
             connection_timeout=10
