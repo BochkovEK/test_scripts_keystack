@@ -83,23 +83,33 @@ class RabbitCheck:
 
             response_time = time.time() - start_time
 
+            print(f"🔍 DEBUG {url}:")
+            print(f"   Overview status: {overview_response.status_code}")
+            print(f"   Nodes status: {nodes_response.status_code}")
+            print(f"   Queues status: {queues_response.status_code}")
+
             if overview_response.status_code == 200:
                 # Extract data about ALL nodes from this node's perspective
-                all_nodes_info = self._extract_all_nodes_details(nodes_response.json(), display_name)
+                all_nodes_info = self._extract_all_nodes_details(nodes_response.json())
                 overview_info = self._extract_overview_details(overview_response.json())
                 queues_info = self._extract_queues_details(queues_response.json())
+
+                print(f"   All nodes found: {list(all_nodes_info.keys())}")
 
                 return {
                     'reachable': True,
                     'details': {
                         'response_time': round(response_time, 3),
-                        'all_nodes': all_nodes_info,  # Data about all nodes
+                        'all_nodes': all_nodes_info,
                         'queues': overview_info['queues'],
                         'replication': queues_info['replication']
                     }
                 }
-        except Exception:
-            pass
+            else:
+                print(f"   ❌ API call failed")
+
+        except Exception as e:
+            print(f"   ❌ Exception: {e}")
 
         return {'reachable': False}
 
@@ -108,23 +118,16 @@ class RabbitCheck:
         Extract status and resources for ALL nodes from /api/nodes response
         Returns dict with node_name: {status, resources}
         """
+        print(f"🔍 DEBUG nodes_data: {nodes_data}")  # Посмотрим что приходит
+
         all_nodes = {}
 
         for node in nodes_data:
             node_name = self._extract_short_node_name(node.get('name', ''))
-            running = node.get('running', False)
+            print(f"🔍 DEBUG Processing node: {node.get('name', '')} -> {node_name}")
 
-            # Determine node status with more detail
-            if running:
-                # Check if node is in syncing state (based on specific RabbitMQ indicators)
-                is_syncing = (
-                        node.get('io_read_avg', 0) > 100 or  # High IO might indicate syncing
-                        node.get('mem_alarm', False) or  # Memory alarm might affect sync
-                        node.get('disk_free_alarm', False)  # Disk alarm might affect sync
-                )
-                status = 'syncing' if is_syncing else 'running'
-            else:
-                status = 'not_running'
+            running = node.get('running', False)
+            status = 'running' if running else 'not_running'
 
             all_nodes[node_name] = {
                 'status': status,
@@ -135,15 +138,11 @@ class RabbitCheck:
                     'mem_limit': node.get('mem_limit', 0),
                     'fd_used': node.get('fd_used', 0),
                     'fd_total': node.get('fd_total', 0),
-                    'disk_free': node.get('disk_free', 0),
-                    # Additional metrics that might help detect syncing state
-                    'io_read_avg': node.get('io_read_avg', 0),
-                    'io_write_avg': node.get('io_write_avg', 0),
-                    'mem_alarm': node.get('mem_alarm', False),
-                    'disk_free_alarm': node.get('disk_free_alarm', False)
+                    'disk_free': node.get('disk_free', 0)
                 }
             }
 
+        print(f"🔍 DEBUG Final all_nodes: {all_nodes}")
         return all_nodes
 
     def _extract_short_node_name(self, full_node_name):
