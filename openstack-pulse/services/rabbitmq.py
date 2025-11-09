@@ -44,8 +44,6 @@ class RabbitCheck:
             reachable_count = len(cluster_status['reachable_nodes'])
             total_count = len(urls)
 
-            print(f"🔍 DEBUG run_check: {reachable_count}/{total_count} nodes reachable")
-
             if reachable_count == total_count:
                 status = 'OK'
             elif reachable_count > 0:
@@ -61,11 +59,9 @@ class RabbitCheck:
                 'total_nodes': total_count
             }
 
-            print(f"🔍 DEBUG Final result status: {status}")
             return result
 
         except Exception as e:
-            print(f"🔍 DEBUG run_check exception: {e}")
             return {
                 'status': 'ERROR',
                 'response_time': round(time.time() - start_time, 2),
@@ -89,18 +85,11 @@ class RabbitCheck:
 
             response_time = time.time() - start_time
 
-            print(f"🔍 DEBUG {url}:")
-            print(f"   Overview status: {overview_response.status_code}")
-            print(f"   Nodes status: {nodes_response.status_code}")
-            print(f"   Queues status: {queues_response.status_code}")
-
             if overview_response.status_code == 200:
                 # Extract data about ALL nodes from this node's perspective
                 all_nodes_info = self._extract_all_nodes_details(nodes_response.json())
                 overview_info = self._extract_overview_details(overview_response.json())
-                queues_info = self._extract_queues_details(queues_response.json())
-
-                print(f"   All nodes found: {list(all_nodes_info.keys())}")
+                # queues_info = self._extract_queues_details(queues_response.json())
 
                 return {
                     'reachable': True,
@@ -108,14 +97,11 @@ class RabbitCheck:
                         'response_time': round(response_time, 3),
                         'all_nodes': all_nodes_info,
                         'queues': overview_info['queues'],
-                        'replication': queues_info['replication']
                     }
                 }
-            else:
-                print(f"   ❌ API call failed")
 
-        except Exception as e:
-            print(f"   ❌ Exception: {e}")
+        except Exception:
+            pass
 
         return {'reachable': False}
 
@@ -135,8 +121,8 @@ class RabbitCheck:
                     'proc_total': node.get('proc_total', 0),
                     'mem_used': node.get('mem_used', 0),
                     'mem_limit': node.get('mem_limit', 0),
-                    'mem_alarm': node.get('mem_alarm', False),  # ← важно!
-                    'disk_free_alarm': node.get('disk_free_alarm', False)  # ← важно!
+                    'mem_alarm': node.get('mem_alarm', False),
+                    'disk_free_alarm': node.get('disk_free_alarm', False)
                 }
             }
 
@@ -151,53 +137,9 @@ class RabbitCheck:
             return full_node_name.split('@')[1]
         return full_node_name
 
-    # def _extract_node_details(self, nodes_data, display_name):
-    #     """
-    #     Extract node status and resource information from /api/nodes response
-    #     """
-    #     search_names = [
-    #         f"rabbit@{display_name.split('.')[0]}",  # rabbit@ctrl1
-    #         display_name,  # ctrl1.foo.bar.com
-    #         display_name.split('.')[0]  # ctrl1
-    #     ]
-    #
-    #     for node in nodes_data:
-    #         node_name = node.get('name', '')
-    #         for search_name in search_names:
-    #             if node_name == search_name or search_name in node_name:
-    #                 running = node.get('running', False)
-    #                 status = 'running' if running else 'not_running'
-    #
-    #                 # print(f"🔍 DEBUG: Found node {node_name} for {display_name} (status: {status})")
-    #
-    #                 return {
-    #                     'status': status,
-    #                     'resources': {
-    #                         'proc_used': node.get('proc_used', 0),
-    #                         'proc_total': node.get('proc_total', 0),
-    #                         'mem_used': node.get('mem_used', 0),
-    #                         'mem_limit': node.get('mem_limit', 0),
-    #                         'fd_used': node.get('fd_used', 0),
-    #                         'fd_total': node.get('fd_total', 0),
-    #                         'disk_free': node.get('disk_free', 0)
-    #                     }
-    #                 }
-    #
-    #     # print(f"🔍 DEBUG: No node found for {display_name}. Tried: {search_names}")
-    #     return {
-    #         'status': 'unknown',
-    #         'resources': {}
-    #     }
-
     def _extract_overview_details(self, overview_data):
         """
         Extract queue information from /api/overview response
-
-        Args:
-            overview_data: JSON response from /api/overview endpoint
-
-        Returns:
-            Dictionary with queue statistics
         """
         object_totals = overview_data.get('object_totals', {})
         queue_totals = overview_data.get('queue_totals', {})
@@ -212,32 +154,7 @@ class RabbitCheck:
         }
 
     def _extract_queues_details(self, queues_data):
-        """
-        Extract replication information from /api/queues response
-
-        Args:
-            queues_data: JSON response from /api/queues endpoint
-
-        Returns:
-            Dictionary with replication metrics
-        """
-        mirrored_queues = 0
-        synchronized_queues = 0
-
-        for queue in queues_data:
-            if queue.get('arguments', {}).get('x-ha-policy') == 'all':
-                mirrored_queues += 1
-                # Simplified synchronization check
-                if queue.get('messages') == queue.get('messages_ready', 0):
-                    synchronized_queues += 1
-
-        return {
-            'replication': {
-                'mirrored_queues': mirrored_queues,
-                'synchronized_queues': synchronized_queues,
-                'unsynchronized_queues': mirrored_queues - synchronized_queues
-            }
-        }
+        pass
 
     def _get_rabbitmq_urls(self):
         """Generate RabbitMQ API URLs with hostnames"""
@@ -257,8 +174,6 @@ class RabbitCheck:
 
         max_workers = min(5, len(urls_with_info))
 
-        print(f"🔍 DEBUG _check_rabbitmq_cluster: checking {len(urls_with_info)} nodes")
-
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             future_to_info = {
                 executor.submit(self._check_single_node, display_name, connect_host, url):
@@ -270,20 +185,19 @@ class RabbitCheck:
                 display_name, connect_host, url = future_to_info[future]
                 try:
                     node_result = future.result()
-                    print(f"🔍 DEBUG Node {display_name}: reachable={node_result['reachable']}")
 
                     if node_result['reachable']:
                         status['reachable_nodes'].append(display_name)
                         status['node_details'][display_name] = node_result['details']
                     else:
                         status['unreachable_nodes'].append(display_name)
-                except Exception as e:
-                    print(f"🔍 DEBUG Node {display_name}: exception={e}")
+                except Exception:
                     status['unreachable_nodes'].append(display_name)
 
-        print(f"🔍 DEBUG Final cluster status:")
-        print(f"   Reachable: {status['reachable_nodes']}")
-        print(f"   Unreachable: {status['unreachable_nodes']}")
-        print(f"   Node details keys: {list(status['node_details'].keys())}")
-
         return status
+
+    def close_sessions(self):
+        """Close all sessions to free resources"""
+        for session in self.sessions.values():
+            session.close()
+        self.sessions.clear()
