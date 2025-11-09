@@ -147,7 +147,6 @@ class Pulse:
 
     def _display_service_status(self, service_name, service_data):
         """Display individual service status"""
-
         status = service_data.get('status', 'UNKNOWN')
         response_time = service_data.get('response_time', 0)
 
@@ -166,6 +165,14 @@ class Pulse:
         elif status == 'ERROR':
             error_message = service_data.get('error', 'Unknown error')
             print(f"   Error: {error_message}")
+
+            # Дополнительная отладочная информация для RabbitMQ
+            if service_name == 'rabbitmq':
+                print(f"   Debug - service_data keys: {list(service_data.keys())}")
+                if 'cluster' in service_data:
+                    cluster = service_data['cluster']
+                    print(f"   Reachable nodes: {cluster.get('reachable_nodes', [])}")
+                    print(f"   Unreachable nodes: {cluster.get('unreachable_nodes', [])}")
 
     def _display_rabbitmq_details(self, rabbit_data):
         """Display RabbitMQ cluster health with ALL nodes from each source perspective"""
