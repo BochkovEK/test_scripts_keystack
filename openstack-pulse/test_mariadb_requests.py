@@ -30,7 +30,7 @@ def test_mariadb_connection():
         #     cursorclass=pymysql.cursors.DictCursor
         # )
         connection = mysql.connector.connect(
-            host=host,
+            host="foo",
             user='username',
             password='password',
             port=3306,
