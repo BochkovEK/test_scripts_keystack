@@ -147,8 +147,12 @@ class Pulse:
 
     def _display_service_status(self, service_name, service_data):
         """Display individual service status"""
-        status_icon = "✅" if service_data['status'] == 'OK' else "❌"
-        print(f"{status_icon} {service_name.upper()}: {service_data['status']} ({service_data['response_time']}s)")
+
+        status = service_data.get('status', 'UNKNOWN')
+        response_time = service_data.get('response_time', 0)
+
+        status_icon = "✅" if status == 'OK' else "❌"
+        print(f"{status_icon} {service_name.upper()}: {status} ({response_time}s)")
 
         display_methods = {
             'nova': self._display_nova_details,
@@ -157,10 +161,11 @@ class Pulse:
             'rabbitmq': self._display_rabbitmq_details
         }
 
-        if service_data['status'] == 'OK' and service_name in display_methods:
+        if status == 'OK' and service_name in display_methods:
             display_methods[service_name](service_data)
-        elif service_data['status'] == 'ERROR':
-            print(f"   Error: {service_data['error']}")
+        elif status == 'ERROR':
+            error_message = service_data.get('error', 'Unknown error')
+            print(f"   Error: {error_message}")
 
     def _display_rabbitmq_details(self, rabbit_data):
         """Display RabbitMQ cluster health with ALL nodes from each source perspective"""
