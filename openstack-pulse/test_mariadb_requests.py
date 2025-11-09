@@ -34,7 +34,7 @@ def test_mariadb_connection():
             user='username',
             password='password',
             port=3306,
-            database='your_database',  # опционально
+            # database='your_database',  # опционально
             connection_timeout=10
         )
 
