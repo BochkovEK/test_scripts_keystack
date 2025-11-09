@@ -15,5 +15,6 @@ intervals:
 
 endpoints:
   rabbitmq_port: 15672
+  mariadb_port: 3306
 
 heartbeat_requests_services: 4
