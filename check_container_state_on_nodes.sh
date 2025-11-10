@@ -5,10 +5,10 @@
 
 # Colors
 normal=$(tput sgr0)
-green=$(tput setaf 2)
 yellow=$(tput setaf 3)
 red=$(tput setaf 1)
 cyan=$(tput setaf 6)
+#green=$(tput setaf 2)
 
 script_dir=$(dirname "$0")
 utils_dir="$script_dir/utils"
@@ -17,6 +17,7 @@ get_ssh_user_script="get_ssh_user.sh"
 check_ssh_connectivity_script="check_ssh_connectivity.sh"
 default_ssh_user="root"
 default_container_engine="docker"
+default_ks_release="ks-2025.2.5"
 virtual_stands_mark="[NOTE] required for virtual stands"
 #script_name=$(basename "$0")
 
@@ -27,7 +28,7 @@ external_scripts=(
 )
 
 # Required container lists
-ctrl_required_container_list=(
+default_ctrl_required_container_list=(
     "keystone"
     "keystone_ssh"
     "rabbitmq"
@@ -61,7 +62,7 @@ ctrl_required_container_list=(
 )
 #    "prometheus_rabbitmq_exporter"
 
-comp_required_container_list=(
+default_comp_required_container_list=(
     "iscsid:$virtual_stands_mark"
     "consul"
     "neutron_openvswitch_agent"
@@ -87,6 +88,7 @@ comp_required_container_list=(
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $SSH_USER ]] && SSH_USER=""
 [[ -z $CONTAINER_ENGINE ]] && CONTAINER_ENGINE="$default_container_engine"
+[[ -z $KS_RELEASE ]] && KS_RELEASE=$default_ks_release
 
 # Function to display help information
 show_help() {
@@ -161,6 +163,38 @@ while [ -n "$1" ]; do
     esac
     shift
 done
+
+# Function to find and load container config
+load_container_config() {
+    local config_pattern=".container_set_$KS_RELEASE" # .container_set_ks_2025.2.5
+    local config_files=()
+
+    # Find all matching config files
+    while IFS= read -r -d $'\0' file; do
+        config_files+=("$file")
+    done < <(find "$script_dir" -maxdepth 1 -name "$config_pattern" -type f -print0)
+
+    if [ ${#config_files[@]} -eq 0 ]; then
+        echo -e "${yellow}Warning: No container config files found matching pattern: $config_pattern${normal}"
+        echo -e "${yellow}Using default container lists${normal}"
+        # Set default lists if no config found
+        ctrl_required_container_list=("${default_ctrl_required_container_list[@]}")
+        comp_required_container_list=("${default_comp_required_container_list[@]}")
+        return 1
+    elif [ ${#config_files[@]} -eq 1 ]; then
+        # Only one config file found, use it
+        load_container_lists_from_config "${config_files[0]}"
+        return $?
+    else
+        # Multiple config files found, use the first one and show warning
+        echo -e "${yellow}Warning: Multiple container config files found, using: $(basename "${config_files[0]}")${normal}"
+        load_container_lists_from_config "${config_files[0]}"
+        return $?
+    fi
+}
+
+
+
 
 # Function to check required containers on a node
 check_required_containers() {

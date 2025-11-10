@@ -1,0 +1,50 @@
+# Container configuration file for KS Foo environment
+# Format: container_name[:optional_note]
+
+[ctrl]
+keystone
+keystone_ssh
+rabbitmq
+memcached
+mariadb
+redis
+haproxy
+horizon
+nova_serialproxy
+nova_novncproxy
+nova_conductor
+nova_api
+nova_scheduler
+placement_api
+cinder_volume
+cinder_scheduler
+cinder_api
+adminui_frontend
+adminui_backend
+drs
+consul
+prometheus_consul_exporter
+prometheus_blackbox_exporter
+prometheus_elasticsearch_exporter
+prometheus_openstack_exporter
+prometheus_alertmanager
+prometheus_memcached_exporter
+prometheus_mysqld_exporter
+prometheus_node_exporter
+prometheus_server:[NOTE] alternative containers victoriametrics_vminsert, victoriametrics_vmselect, victoriametrics_vmagent
+
+[comp]
+iscsid:[NOTE] required for virtual stands
+consul
+neutron_openvswitch_agent
+openvswitch_vswitchd
+openvswitch_db
+nova_compute
+nova_libvirt
+nova_ssh
+prometheus_hypervisor_exporter
+prometheus_ovs_exporter
+prometheus_libvirt_exporter
+prometheus_node_exporter
+cron
+fluentd
