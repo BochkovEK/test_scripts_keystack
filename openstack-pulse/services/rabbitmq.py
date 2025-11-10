@@ -29,7 +29,7 @@ class RabbitCheck:
         urls_with_info = self._get_rabbitmq_urls()
         for display_name, connect_host, url in urls_with_info:
             session = requests.Session()
-            # session.auth = self.auth
+            session.auth = self.auth
             self.sessions[connect_host] = session
 
     def run_check(self):
