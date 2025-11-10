@@ -176,7 +176,6 @@ load_container_config() {
 
     if [ ${#config_files[@]} -eq 0 ]; then
         echo -e "${yellow}Warning: No container config files found matching pattern: $config_pattern${normal}"
-        echo -e "${yellow}Using default container lists${normal}"
         # Set default lists if no config found
         ctrl_required_container_list=("${default_ctrl_required_container_list[@]}")
         comp_required_container_list=("${default_comp_required_container_list[@]}")
