@@ -356,6 +356,11 @@ main() {
         exit 1
     fi
 
+    # Load container configuration
+    if ! load_container_config; then
+        echo -e "${yellow}Using default container lists${normal}"
+    fi
+
     echo -e "Using SSH user: $SSH_USER"
 
     # Get nodes list
