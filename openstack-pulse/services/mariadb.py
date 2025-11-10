@@ -21,45 +21,6 @@ class MariaDBCheck:
         }
         self.nodes = auth_params['nodes']  # [display_name, connect_host]
 
-    # def run_check(self):
-    #     """Execute MariaDB/Galera cluster health check"""
-    #     start_time = time.time()
-    #
-    #     try:
-    #         # 1. Check all nodes in parallel
-    #         cluster_status = self._check_galera_cluster()
-    #
-    #         # 2. Calculate reachable nodes count
-    #         reachable_count = len(cluster_status['reachable_nodes'])
-    #         total_count = len(self.nodes)
-    #
-    #         # 3. Determine overall status based on Galera-specific criteria
-    #         if reachable_count == total_count:
-    #             # All nodes reachable - check Galera cluster health
-    #             if self._determine_cluster_status(cluster_status):
-    #                 status = 'OK'
-    #             else:
-    #                 status = 'DEGRADED'
-    #         elif reachable_count > 0:
-    #             status = 'DEGRADED'  # Some nodes unreachable
-    #         else:
-    #             status = 'ERROR'  # All nodes unreachable
-    #
-    #         return {
-    #             'status': status,
-    #             'response_time': round(time.time() - start_time, 2),
-    #             'cluster': cluster_status,
-    #             'reachable_nodes': reachable_count,
-    #             'total_nodes': total_count
-    #         }
-    #
-    #     except Exception as e:
-    #         return {
-    #             'status': 'ERROR',
-    #             'response_time': round(time.time() - start_time, 2),
-    #             'error': str(e)
-    #         }
-
     def run_check(self):
         """Execute MariaDB/Galera cluster health check"""
         start_time = time.time()
@@ -157,13 +118,6 @@ class MariaDBCheck:
             # print(f"🔍 DEBUG Connecting to {display_name} ({connect_host})")
             start_time = time.time()
 
-            # 1. Establish database connection
-            # connection = pymysql.connect(
-            #     host=connect_host,
-            #     **self.db_config,
-            #     unix_socket=None
-            # )
-
             connection = mysql.connector.connect(
                 host=connect_host,
                 **self.db_config,
@@ -202,51 +156,6 @@ class MariaDBCheck:
                 'reachable': False,
                 'error': str(e)
             }
-
-    # def _check_single_node(self, display_name, connect_host):
-    #     """Check health of single MariaDB node and collect Galera metrics"""
-    #     try:
-    #         start_time = time.time()
-    #
-    #         # 1. Establish database connection
-    #         connection = pymysql.connect(
-    #             host=connect_host,
-    #             **self.db_config
-    #         )
-    #
-    #         # 2. Execute Galera status query
-    #         with connection.cursor() as cursor:
-    #             cursor.execute("""
-    #                 SHOW GLOBAL STATUS WHERE Variable_name IN (
-    #                     'wsrep_cluster_status',
-    #                     'wsrep_cluster_size',
-    #                     'wsrep_ready',
-    #                     'wsrep_local_state_comment',
-    #                     'wsrep_connected'
-    #                 )
-    #             """)
-    #             results = cursor.fetchall()
-    #
-    #         response_time = time.time() - start_time
-    #         connection.close()
-    #
-    #         # 3. Parse metrics into structured format
-    #         metrics = self._parse_galera_metrics(results)
-    #
-    #         return {
-    #             'reachable': True,
-    #             'response_time': round(response_time, 3),
-    #             'metrics': metrics
-    #         }
-    #
-    #     except Exception as e:
-    #         # Connection errors, timeouts, authentication failures
-    #         return {
-    #             'reachable': False,
-    #             'error': str(e)
-    #         }
-
-
 
     def _parse_galera_metrics(self, results):
         """
