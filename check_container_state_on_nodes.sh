@@ -192,8 +192,55 @@ load_container_config() {
     fi
 }
 
+# Function to load container lists from config file
+load_container_lists_from_config() {
+    local config_file="$1"
+    local config_name=$(basename "$config_file")
 
+    if [ ! -f "$config_file" ]; then
+        echo -e "${red}Error: Container config file not found: $config_file${normal}"
+        return 1
+    fi
 
+    echo "Container set obtained from config: $config_name"
+
+    # Clear existing arrays
+    ctrl_required_container_list=()
+    comp_required_container_list=()
+
+    # Parse config file
+    local current_section=""
+    while IFS= read -r line || [ -n "$line" ]; do
+        # Remove leading/trailing whitespace and comments
+        line=$(echo "$line" | sed 's/#.*$//' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+
+        # Skip empty lines
+        [ -z "$line" ] && continue
+
+        # Check for section headers
+        if [[ "$line" == "[ctrl]" ]]; then
+            current_section="ctrl"
+            continue
+        elif [[ "$line" == "[comp]" ]]; then
+            current_section="comp"
+            continue
+        fi
+
+        # Add to appropriate array based on current section
+        if [ "$current_section" = "ctrl" ]; then
+            ctrl_required_container_list+=("$line")
+        elif [ "$current_section" = "comp" ]; then
+            comp_required_container_list+=("$line")
+        fi
+    done < "$config_file"
+
+    if [ "$TS_DEBUG" = true ]; then
+        echo -e "[DEBUG] Loaded CTRL containers: ${ctrl_required_container_list[*]}"
+        echo -e "[DEBUG] Loaded COMP containers: ${comp_required_container_list[*]}"
+    fi
+
+    return 0
+}
 
 # Function to check required containers on a node
 check_required_containers() {
