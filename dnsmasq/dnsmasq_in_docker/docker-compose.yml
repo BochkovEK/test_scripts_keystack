@@ -4,6 +4,7 @@ services:
     restart: always
     container_name: dnsmasq
     image: strm/dnsmasq
+    user: root
     volumes:
       - ./dnsmasq.conf:/etc/dnsmasq.conf
     ports:
