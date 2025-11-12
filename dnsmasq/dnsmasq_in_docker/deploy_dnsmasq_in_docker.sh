@@ -5,9 +5,32 @@
 # /etc/hosts
 
 #Error starting userland proxy: listen udp4 0.0.0.0:53: bind: address already in use
+#Ubuntu/Debian (systemd-resolved):
+#
+#bash
 #sudo systemctl stop systemd-resolved
 #sudo systemctl disable systemd-resolved
+#CentOS/RHEL (NetworkManager):
+#
+#bash
+#sudo systemctl stop NetworkManager
+#sudo systemctl disable NetworkManager
 
+#sudo netstat -tulpn | grep :53
+#tcp        0      0 127.0.0.1:53            0.0.0.0:*               LISTEN      2900395/dnsmasq
+#tcp6       0      0 ::1:53                  :::*                    LISTEN      2900395/dnsmasq
+#udp        0      0 0.0.0.0:5353            0.0.0.0:*                           750/avahi-daemon: r
+#udp        0      0 127.0.0.1:53            0.0.0.0:*                           2900395/dnsmasq
+#udp6       0      0 :::5353                 :::*                                750/avahi-daemon: r
+#udp6       0      0 ::1:53                  :::*                                2900395/dnsmasq
+
+#sudo pkill dnsmasq
+#
+#sudo netstat -tulpn | grep :53
+#udp        0      0 0.0.0.0:5353            0.0.0.0:*                           750/avahi-daemon: r
+#udp6       0      0 :::5353                 :::*                                750/avahi-daemon: r
+
+# Call to address port
 #nc -vzu <IP> 53
 
 script_dir=$(dirname $0)
