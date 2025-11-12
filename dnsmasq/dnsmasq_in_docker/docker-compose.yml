@@ -1,13 +1,14 @@
-version: '2'
+version: '3.8'
 services:
   dns:
-    restart: always
+    restart: unless-stopped
     container_name: dnsmasq
     image: strm/dnsmasq
-    user: root
     volumes:
-      - ./dnsmasq.conf:/etc/dnsmasq.conf
+      - ./dnsmasq.conf:/etc/dnsmasq.conf:Z,ro  # :Z для SELinux, ro для безопасности
     ports:
       - "53:53/udp"
+      - "53:53/tcp"
     cap_add:
       - NET_ADMIN
+    user: "root:root"
