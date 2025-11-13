@@ -17,3 +17,4 @@ foo.yml
 /openstack-pulse/tmp/
 /tmp/
 /ansible-openstack-diag/tmp/
+/dnsmasq/tmp/
