@@ -184,17 +184,17 @@ class Pulse:
         total_nodes = rabbit_data['total_nodes']
         reachable_nodes = rabbit_data['reachable_nodes']
 
-        print(f"  Nodes: {reachable_nodes}/{total_nodes} reachable")
+        print(f"🟩 Nodes: {reachable_nodes}/{total_nodes} reachable")
 
         # Display each source node's perspective
         for source_hostname, details in cluster['node_details'].items():
             response_time = details.get('response_time', '?')
 
-            print(f"    ✅ ({response_time}s) {source_hostname}:")
+            print(f"  🟢 ({response_time}s) {source_hostname}:")
 
             # Display queues from THIS source's perspective
             queues = details.get('queues', {})
-            print(f"      Queues: {queues.get('total', 0)} total, "
+            print(f"    📊 Queues: {queues.get('total', 0)} total, "
                   f"{queues.get('messages', 0)} messages "
                   f"({queues.get('messages_ready', 0)} ready, "
                   f"{queues.get('messages_unacknowledged', 0)} unacked)")
@@ -203,9 +203,9 @@ class Pulse:
             all_nodes = details.get('all_nodes', {})
             for target_hostname, node_info in all_nodes.items():
                 node_status = node_info.get('status', 'unknown')
-                status_emoji = self._get_rabbitmq_status_emoji(node_status)
+                status_emoji = "🟢" if node_status == 'running' else "🔴"
 
-                print(f"      {status_emoji} {target_hostname} ({node_status}):")
+                print(f"    {status_emoji} {target_hostname} ({node_status}):")
 
                 # Display resources
                 resources = node_info.get('resources', {})
@@ -214,7 +214,7 @@ class Pulse:
                     proc_total = resources.get('proc_total', 0)
                     mem_used_mb = resources.get('mem_used', 0) // 1024 // 1024
                     mem_limit_mb = resources.get('mem_limit', 0) // 1024 // 1024
-                    print(f"        Resources: {proc_used}/{proc_total} procs, "
+                    print(f"      📈 Resources: {proc_used}/{proc_total} procs, "
                           f"{mem_used_mb}MB/{mem_limit_mb}MB memory")
 
                 # Display alarms
@@ -225,9 +225,7 @@ class Pulse:
                     alarms.append("🚨 Disk alarm")
 
                 if alarms:
-                    print(f"        {' | '.join(alarms)}")
-                # else:
-                #     print(f"        ✅ No alarms")
+                    print(f"      {' | '.join(alarms)}")
 
     def _get_rabbitmq_status_emoji(self, node_status):
         """Get emoji for RabbitMQ node status"""
