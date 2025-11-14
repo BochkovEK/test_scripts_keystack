@@ -7,19 +7,25 @@ from config.config import ServiceType
 class RabbitCheck:
     """RabbitMQ cluster health monitoring with detailed node information"""
 
-    def __init__(self, config):
+    def __init__(self, config, debug=False):
         """
         Initialize RabbitMQ health check
 
         Args:
             config: Config object providing service authentication
+            debug: Enable debug output
         """
         self.config = config
+        self.debug = debug
         auth_params = config.get_service_auth(ServiceType.RABBITMQ)
 
         self.auth = (auth_params['username'], auth_params['password'])
         self.port = auth_params['port']
         self.nodes = auth_params['nodes']
+
+        if self.debug:
+            print(f"🔧 [RABBIT_DEBUG] Initialized with {len(self.nodes)} nodes: {[node[0] for node in self.nodes]}")
+            print(f"🔧 [RABBIT_DEBUG] Auth: user={auth_params['username']}, port={self.port}")
 
         self.sessions = {}
         self._init_sessions()
@@ -32,9 +38,15 @@ class RabbitCheck:
             session.auth = self.auth
             self.sessions[connect_host] = session
 
+            if self.debug:
+                print(f"🔧 [RABBIT_DEBUG] Created session for {display_name} -> {url}")
+
     def run_check(self):
         """Execute RabbitMQ cluster health check"""
         start_time = time.time()
+
+        if self.debug:
+            print(f"🔧 [RABBIT_DEBUG] Starting cluster health check")
 
         try:
             urls = self._get_rabbitmq_urls()
@@ -43,6 +55,11 @@ class RabbitCheck:
             # Determine overall status based on node availability
             reachable_count = len(cluster_status['reachable_nodes'])
             total_count = len(urls)
+
+            if self.debug:
+                print(f"🔧 [RABBIT_DEBUG] Cluster status: {reachable_count}/{total_count} nodes reachable")
+                print(f"🔧 [RABBIT_DEBUG] Reachable: {cluster_status['reachable_nodes']}")
+                print(f"🔧 [RABBIT_DEBUG] Unreachable: {cluster_status['unreachable_nodes']}")
 
             if reachable_count == total_count:
                 status = 'OK'
@@ -59,9 +76,14 @@ class RabbitCheck:
                 'total_nodes': total_count
             }
 
+            if self.debug:
+                print(f"🔧 [RABBIT_DEBUG] Check completed in {result['response_time']}s, status: {status}")
+
             return result
 
         except Exception as e:
+            if self.debug:
+                print(f"🔧 [RABBIT_DEBUG] Check failed with error: {str(e)}")
             return {
                 'status': 'ERROR',
                 'response_time': round(time.time() - start_time, 2),
@@ -74,9 +96,14 @@ class RabbitCheck:
         """
         session = self.sessions.get(connect_host)
         if not session:
+            if self.debug:
+                print(f"🔧 [RABBIT_DEBUG] No session found for {display_name}")
             return {'reachable': False}
 
         try:
+            if self.debug:
+                print(f"🔧 [RABBIT_DEBUG] Checking node {display_name} at {url}")
+
             start_time = time.time()
 
             overview_response = session.get(f"{url}/api/overview", timeout=3)
@@ -85,11 +112,17 @@ class RabbitCheck:
 
             response_time = time.time() - start_time
 
+            if self.debug:
+                print(f"🔧 [RABBIT_DEBUG] {display_name} responded in {response_time:.3f}s")
+
             if overview_response.status_code == 200:
                 # Extract data about ALL nodes from this node's perspective
                 all_nodes_info = self._extract_all_nodes_details(nodes_response.json())
                 overview_info = self._extract_overview_details(overview_response.json())
-                # queues_info = self._extract_queues_details(queues_response.json())
+
+                if self.debug:
+                    print(f"🔧 [RABBIT_DEBUG] {display_name} sees {len(all_nodes_info)} total nodes")
+                    print(f"🔧 [RABBIT_DEBUG] {display_name} queues: {overview_info['queues']}")
 
                 return {
                     'reachable': True,
@@ -99,9 +132,13 @@ class RabbitCheck:
                         'queues': overview_info['queues'],
                     }
                 }
+            else:
+                if self.debug:
+                    print(f"🔧 [RABBIT_DEBUG] {display_name} returned status {overview_response.status_code}")
 
-        except Exception:
-            pass
+        except Exception as e:
+            if self.debug:
+                print(f"🔧 [RABBIT_DEBUG] {display_name} check failed: {str(e)}")
 
         return {'reachable': False}
 
@@ -125,6 +162,9 @@ class RabbitCheck:
                     'disk_free_alarm': node.get('disk_free_alarm', False)
                 }
             }
+
+        if self.debug:
+            print(f"🔧 [RABBIT_DEBUG] Extracted {len(all_nodes)} nodes from cluster view")
 
         return all_nodes
 
@@ -174,6 +214,9 @@ class RabbitCheck:
 
         max_workers = min(5, len(urls_with_info))
 
+        if self.debug:
+            print(f"🔧 [RABBIT_DEBUG] Starting cluster check with {max_workers} workers")
+
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             future_to_info = {
                 executor.submit(self._check_single_node, display_name, connect_host, url):
@@ -189,10 +232,20 @@ class RabbitCheck:
                     if node_result['reachable']:
                         status['reachable_nodes'].append(display_name)
                         status['node_details'][display_name] = node_result['details']
+                        if self.debug:
+                            print(f"🔧 [RABBIT_DEBUG] ✓ {display_name} is reachable")
                     else:
                         status['unreachable_nodes'].append(display_name)
-                except Exception:
+                        if self.debug:
+                            print(f"🔧 [RABBIT_DEBUG] ✗ {display_name} is unreachable")
+                except Exception as e:
                     status['unreachable_nodes'].append(display_name)
+                    if self.debug:
+                        print(f"🔧 [RABBIT_DEBUG] ✗ {display_name} failed with exception: {str(e)}")
+
+        if self.debug:
+            print(
+                f"🔧 [RABBIT_DEBUG] Cluster check completed: {len(status['reachable_nodes'])} reachable, {len(status['unreachable_nodes'])} unreachable")
 
         return status
 
@@ -202,3 +255,5 @@ class RabbitCheck:
             session.close()
         self.sessions.clear()
 
+        if self.debug:
+            print(f"🔧 [RABBIT_DEBUG] Closed all sessions")

@@ -21,7 +21,8 @@ from services.mariadb import MariaDBCheck
 class Pulse:
     """OpenStack Pulse - Lightweight diagnostic tool"""
 
-    def __init__(self, inventory_path=None, config_path=None):
+    def __init__(self, inventory_path=None, config_path=None, debug=False):
+        self.debug = debug
         self.inventory_path = inventory_path
         self.config_path = config_path
         self.config = Config(inventory_path=self.inventory_path, config_path=self.config_path)
@@ -46,7 +47,10 @@ class Pulse:
             if service_name in service_map:
                 try:
                     # All services now receive config object
-                    self.service_checks[service_name] = service_map[service_name](self.config)
+                    self.service_checks[service_name] = service_map[service_name](
+                        self.config,
+                        debug=self.debug
+                    )
                     self.service_ready_events[service_name] = threading.Event()
                     print(f"🔷 {service_name} initialized")
                 except Exception as e:
