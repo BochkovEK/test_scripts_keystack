@@ -45,9 +45,9 @@ class Pulse:
                     # All services now receive config object
                     self.service_checks[service_name] = service_map[service_name](self.config)
                     self.service_ready_events[service_name] = threading.Event()
-                    print(f"✅ {service_name} initialized")
+                    print(f"🔷 {service_name} initialized")
                 except Exception as e:
-                    print(f"⚠️  Failed to initialize {service_name}: {e}")
+                    print(f"❌️  Failed to initialize {service_name}: {e}")
             else:
                 print(f"⚠️  Service '{service_name}' not supported")
 
@@ -184,17 +184,19 @@ class Pulse:
         total_nodes = rabbit_data['total_nodes']
         reachable_nodes = rabbit_data['reachable_nodes']
 
-        print(f"  🟩 Nodes: {reachable_nodes}/{total_nodes} reachable")
+        # Determine group status icon
+        group_icon = "🟩" if reachable_nodes == total_nodes else "⚠️"
+        print(f"{group_icon} Nodes: {reachable_nodes}/{total_nodes} reachable")
 
         # Display each source node's perspective
         for source_hostname, details in cluster['node_details'].items():
             response_time = details.get('response_time', '?')
 
-            print(f"    🟢 ({response_time}s) {source_hostname}:")
+            print(f"  🟢 ({response_time}s) {source_hostname}:")
 
             # Display queues from THIS source's perspective
             queues = details.get('queues', {})
-            print(f"      📊 Queues: {queues.get('total', 0)} total, "
+            print(f"    📊 Queues: {queues.get('total', 0)} total, "
                   f"{queues.get('messages', 0)} messages "
                   f"({queues.get('messages_ready', 0)} ready, "
                   f"{queues.get('messages_unacknowledged', 0)} unacked)")
@@ -214,7 +216,7 @@ class Pulse:
                     proc_total = resources.get('proc_total', 0)
                     mem_used_mb = resources.get('mem_used', 0) // 1024 // 1024
                     mem_limit_mb = resources.get('mem_limit', 0) // 1024 // 1024
-                    print(f"        📈 Resources: {proc_used}/{proc_total} procs, "
+                    print(f"      📈 Resources: {proc_used}/{proc_total} procs, "
                           f"{mem_used_mb}MB/{mem_limit_mb}MB memory")
 
                 # Display alarms
