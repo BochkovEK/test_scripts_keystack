@@ -160,7 +160,8 @@ class Pulse:
             'keystone': self._display_keystone_details,
             'neutron': self._display_neutron_details,
             'rabbitmq': self._display_rabbitmq_details,
-            'galera': self._display_mariadb_details
+            'galera': self._display_mariadb_details,
+            'cinder': self._display_cinder_details
         }
 
         if status == 'OK' and service_name in display_methods:
