@@ -240,20 +240,22 @@ class Pulse:
 
     def _display_cinder_details(self, cinder_data):
         """Display Cinder-specific details"""
-        services = cinder_data['services']
-        backends = cinder_data['backends']
+        print(f"  DEBUG: cinder_data keys: {list(cinder_data.keys())}")  # ← ДОБАВЬТЕ ЭТУ СТРОКУ
 
-        print(f"  Services: {services['up']}/{services['total']} up")
+        services = cinder_data.get('services', {})
+        backends = cinder_data.get('backends', {})
+
+        print(f"  Services: {services.get('up', 0)}/{services.get('total', 0)} up")
 
         # Display services by type
-        for binary, stats in services['by_binary'].items():
+        for binary, stats in services.get('by_binary', {}).items():
             if stats['total'] > 0:
                 status_icon = "✅" if stats['down'] == 0 else "⚠️"
                 print(f"    {status_icon} {binary}: {stats['up']}/{stats['total']} up")
 
         # Display storage backends
-        if backends['details']:
-            print(f"  Storage Backends: {backends['total']} backends")
+        if backends.get('details'):
+            print(f"  Storage Backends: {backends.get('total', 0)} backends")
             for backend in backends['details']:
                 state_icon = "✅" if backend['state'] == 'up' else "❌"
                 print(f"    {state_icon} 🗄️ {backend['backend']} ({backend['vendor']}) - {backend['state']}")
