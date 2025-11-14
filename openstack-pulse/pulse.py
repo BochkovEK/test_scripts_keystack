@@ -216,7 +216,7 @@ class Pulse:
                     proc_total = resources.get('proc_total', 0)
                     mem_used_mb = resources.get('mem_used', 0) // 1024 // 1024
                     mem_limit_mb = resources.get('mem_limit', 0) // 1024 // 1024
-                    print(f"      📈 Resources: {proc_used}/{proc_total} procs, "
+                    print(f"        📈 Resources: {proc_used}/{proc_total} procs, "
                           f"{mem_used_mb}MB/{mem_limit_mb}MB memory")
 
                 # Display alarms
