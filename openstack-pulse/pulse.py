@@ -251,18 +251,12 @@ class Pulse:
                 status_icon = "✅" if stats['down'] == 0 else "⚠️"
                 print(f"    {status_icon} {binary}: {stats['up']}/{stats['total']} up")
 
-                # Show problematic services
-                for detail in stats['details']:
-                    if detail['state'] != 'up':
-                        print(f"      ❌ {detail['host']} ({detail['state']})")
-
         # Display storage backends
         if backends['details']:
             print(f"  Storage Backends: {backends['total']} backends")
             for backend in backends['details']:
-                vendor_icon = "🟦" if backend['vendor'] == 'Huawei Dorado' else "⚪"
                 state_icon = "✅" if backend['state'] == 'up' else "❌"
-                print(f"    {state_icon} {vendor_icon} {backend['backend']} ({backend['vendor']}) - {backend['state']}")
+                print(f"    {state_icon} 🗄️ {backend['backend']} ({backend['vendor']}) - {backend['state']}")
 
     def _display_neutron_details(self, neutron_data):
         """Display Neutron-specific details"""
