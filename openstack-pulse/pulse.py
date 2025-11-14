@@ -377,10 +377,11 @@ def get_launch_args():
     """Parse command line arguments"""
     parser = argparse.ArgumentParser(description='OpenStack Pulse Monitoring')
     parser.add_argument('--inventory', '-i', help='Path to inventory file')
-    parser.add_argument('--config', '-c', help='Path to config.yml file')  # ← НОВЫЙ АРГУМЕНТ
+    parser.add_argument('--config', '-c', help='Path to config.yml file')
+    parser.add_argument('--debug', '-d', action='store_true', help='Enable debug mode')
     return parser.parse_args()
 
 if __name__ == "__main__":
     args = get_launch_args()
-    pulse = Pulse(inventory_path=args.inventory, config_path=args.config)
+    pulse = Pulse(inventory_path=args.inventory, config_path=args.config, debug=args.debug)
     pulse.run()
