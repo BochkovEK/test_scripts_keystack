@@ -4,7 +4,7 @@ from config.config import ServiceType
 
 
 class KeystoneCheck:
-    def __init__(self, config):
+    def __init__(self, config, debug=False):
         """
         Initialize Keystone health check
 

@@ -4,7 +4,7 @@ from config.config import ServiceType
 
 
 class NeutronCheck:
-    def __init__(self, config):
+    def __init__(self, config, debug=False):
         """
         Initialize Neutron health check
 

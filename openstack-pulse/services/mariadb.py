@@ -8,7 +8,7 @@ from config.config import ServiceType
 class MariaDBCheck:
     """MariaDB/Galera cluster health monitoring"""
 
-    def __init__(self, config):
+    def __init__(self, config, debug=False):
         self.config = config
         auth_params = config.get_service_auth(ServiceType.MARIADB)
 

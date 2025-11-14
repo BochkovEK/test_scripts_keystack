@@ -10,7 +10,7 @@ from config.config import ServiceType
 
 
 class CinderCheck:
-    def __init__(self, config):
+    def __init__(self, config, debug=False):
         """
         Initialize Cinder health check
 
