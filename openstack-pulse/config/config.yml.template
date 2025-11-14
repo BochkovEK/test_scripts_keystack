@@ -1,17 +1,18 @@
 # config/config.yml
-# Список сервисов для диагностики
+# Services list for diagnostics
 check_services:
   - nova
-  - keystone
+  - cinder
   - neutron
+  - keystone
   - rabbitmq
-#    - galera
+  - galera
 
-  # Временные параметры
+# Timing parameters
 intervals:
-  check_interval: 5          # Промежуток между проверками (сек)
-  collection_window: 300      # Время сбора данных (сек) - 5 минут
-#  snapshot_retention: 10      # Хранить 30 срезов (5 мин / 10 сек)
+  check_interval: 5          # Interval between checks (seconds)
+  collection_window: 300      # Data collection window (seconds) - 5 minutes
+#  snapshot_retention: 10      # Store 30 snapshots (5 min / 10 sec)
 
 endpoints:
   rabbitmq_port: 15672

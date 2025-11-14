@@ -10,6 +10,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'config'))
 
 from config.config import Config
 from services.nova import NovaCheck
+from services.cinder import CinderCheck
 from services.keystone import KeystoneCheck
 from services.neutron import NeutronCheck
 from services.rabbitmq import RabbitCheck
@@ -31,8 +32,9 @@ class Pulse:
         """Initialize service check instances"""
         service_map = {
             'nova': NovaCheck,
-            'keystone': KeystoneCheck,
+            'cinder': CinderCheck,
             'neutron': NeutronCheck,
+            'keystone': KeystoneCheck,
             'rabbitmq': RabbitCheck,
             'galera': MariaDBCheck,
         }
@@ -235,6 +237,31 @@ class Pulse:
             'syncing': '🔄'
         }
         return emoji_map.get(node_status, '⚪')
+
+    def _display_cinder_details(self, cinder_data):
+        """Display Cinder-specific details"""
+        services = cinder_data['services']
+        pools = cinder_data['storage_pools']
+
+        print(f"  Services: {services['up']}/{services['total']} up")
+
+        # Display services by type
+        for binary, stats in services['by_binary'].items():
+            if stats['total'] > 0:
+                status_icon = "✅" if stats['down'] == 0 else "⚠️"
+                print(f"    {status_icon} {binary}: {stats['up']}/{stats['total']} up")
+
+                # Show problematic services
+                for detail in stats['details']:
+                    if detail['state'] != 'up':
+                        print(f"      ❌ {detail['host']} ({detail['state']})")
+
+        # Display storage pools
+        if pools['details']:
+            print(f"  Storage Pools: {pools['total']} backends")
+            for pool in pools['details']:
+                vendor_icon = "🟦" if pool['vendor'] == 'Huawei Dorado' else "⚪"
+                print(f"    {vendor_icon} {pool['name']} ({pool['vendor']})")
 
     def _display_neutron_details(self, neutron_data):
         """Display Neutron-specific details"""
