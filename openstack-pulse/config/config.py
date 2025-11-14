@@ -1,10 +1,10 @@
 import os
 import yaml
-from dotenv import load_dotenv
 import sys
+# import argparse
+from dotenv import load_dotenv
 from typing import Dict, Any, Tuple, List
 from enum import Enum
-
 
 class ServiceType(Enum):
     """Service types for authentication"""
@@ -27,8 +27,10 @@ class DotDict:
 class Config:
     """Central configuration provider for all services"""
 
-    def __init__(self):
+    def __init__(self, inventory_path=None, config_path=None):
         load_dotenv()
+        self.inventory_path = inventory_path
+        self.config_path = config_path
         self.project_root = self._get_project_root()
         self.auth = self._load_auth_credentials()
         self._validate_config_files()
@@ -122,12 +124,18 @@ class Config:
 
     def _load_yaml_config(self) -> DotDict:
         """Load and parse YAML configuration file"""
-        config_path = os.path.join(self.project_root, 'config', 'config.yml')
+        config_path = self.config_path or os.path.join(self.project_root, 'config', 'config.yml')
         with open(config_path) as f:
             return DotDict(yaml.safe_load(f))
 
     def _load_inventory(self) -> Dict[str, List[Tuple[str, str]]]:
         """Load node inventory from Ansible inventory file"""
+        if self.inventory_path:
+            if os.path.exists(self.inventory_path):
+                return self._parse_inventory(self.inventory_path)
+            else:
+                self._exit_with_file_error('inventory', self.inventory_path)
+
         inventory_files = ['inventory.ini', 'inventory']
 
         for filename in inventory_files:

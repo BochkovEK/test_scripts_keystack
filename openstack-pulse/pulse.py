@@ -2,6 +2,7 @@ import time
 import sys
 import os
 import threading
+import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Add project directories to Python path
@@ -20,8 +21,10 @@ from services.mariadb import MariaDBCheck
 class Pulse:
     """OpenStack Pulse - Lightweight diagnostic tool"""
 
-    def __init__(self):
-        self.config = Config()
+    def __init__(self, inventory_path=None, config_path=None):
+        self.inventory_path = inventory_path
+        self.config_path = config_path
+        self.config = Config(inventory_path=self.inventory_path, config_path=self.config_path)
         self.service_checks = {}
         self.latest_results = {}  # Store latest service results
         self.service_ready_events = {}  # Track service readiness
@@ -366,7 +369,14 @@ class Pulse:
         else:
             return '⚠️'  # Degraded or error state
 
+def get_launch_args():
+    """Parse command line arguments"""
+    parser = argparse.ArgumentParser(description='OpenStack Pulse Monitoring')
+    parser.add_argument('--inventory', '-i', help='Path to inventory file')
+    parser.add_argument('--config', '-c', help='Path to config.yml file')  # ← НОВЫЙ АРГУМЕНТ
+    return parser.parse_args()
 
 if __name__ == "__main__":
-    pulse = Pulse()
+    args = get_launch_args()
+    pulse = Pulse(inventory_path=args.inventory, config_path=args.config)
     pulse.run()
