@@ -336,10 +336,8 @@ class Pulse:
             response_time = details.get('response_time', '?')
             metrics = details.get('metrics', {})
 
-            # Status emoji based on node health
-            status_emoji = self._get_mariadb_status_emoji(metrics)
-
-            print(f"    {status_emoji} ({response_time}s) {node_name}:")
+            # Use green circle for all reachable nodes
+            print(f"    🟢 ({response_time}s) {node_name}:")
 
             # Display Galera metrics
             if metrics:
@@ -351,7 +349,7 @@ class Pulse:
 
         # Display unreachable nodes
         for node_name in cluster['unreachable_nodes']:
-            print(f"    ⚠️ (timeout) {node_name}:")
+            print(f"    🔴 (timeout) {node_name}:")
             print(f"      Status: Unknown - Connection failed")
 
     def _get_mariadb_status_emoji(self, metrics):
@@ -367,11 +365,11 @@ class Pulse:
         )
 
         if is_healthy:
-            return '✅'  # Healthy node
+            return '🟢'  # Healthy node - green circle
         elif metrics.get('local_state') in ['Donor', 'Joiner']:
-            return '🔄'  # Syncing state
+            return '🟡'  # Syncing state - yellow circle
         else:
-            return '⚠️'  # Degraded or error state
+            return '🔴'  # Degraded or error state - red circle
 
 def get_launch_args():
     """Parse command line arguments"""
