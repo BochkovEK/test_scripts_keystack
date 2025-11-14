@@ -246,11 +246,11 @@ class Pulse:
 
         print(f"  Services: {services['up']}/{services['total']} up")
 
-        # Display all services with status
+        # Display all services with binary type
         for binary, stats in services['by_binary'].items():
             for detail in stats['details']:
                 status_icon = "🟢" if detail['state'] == 'up' else "🔴"
-                print(f"    {status_icon} {detail['host']} ({detail['zone']}) - {detail['state']}")
+                print(f"    {status_icon} {binary} on {detail['host']} - {detail['state']}")
 
         # Display storage backends
         if backends['details']:
