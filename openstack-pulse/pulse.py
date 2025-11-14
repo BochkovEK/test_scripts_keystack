@@ -186,17 +186,17 @@ class Pulse:
 
         # Determine group status icon
         group_icon = "🟩" if reachable_nodes == total_nodes else "⚠️"
-        print(f"{group_icon} Nodes: {reachable_nodes}/{total_nodes} reachable")
+        print(f"  {group_icon} Nodes: {reachable_nodes}/{total_nodes} reachable")
 
         # Display each source node's perspective
         for source_hostname, details in cluster['node_details'].items():
             response_time = details.get('response_time', '?')
 
-            print(f"  🟢 ({response_time}s) {source_hostname}:")
+            print(f"    🟢 ({response_time}s) {source_hostname}:")
 
             # Display queues from THIS source's perspective
             queues = details.get('queues', {})
-            print(f"    📊 Queues: {queues.get('total', 0)} total, "
+            print(f"      📊 Queues: {queues.get('total', 0)} total, "
                   f"{queues.get('messages', 0)} messages "
                   f"({queues.get('messages_ready', 0)} ready, "
                   f"{queues.get('messages_unacknowledged', 0)} unacked)")
@@ -207,7 +207,7 @@ class Pulse:
                 node_status = node_info.get('status', 'unknown')
                 status_emoji = "🟢" if node_status == 'running' else "🔴"
 
-                print(f"    {status_emoji} {target_hostname} ({node_status}):")
+                print(f"      {status_emoji} {target_hostname} ({node_status}):")
 
                 # Display resources
                 resources = node_info.get('resources', {})
