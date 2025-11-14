@@ -241,7 +241,7 @@ class Pulse:
     def _display_cinder_details(self, cinder_data):
         """Display Cinder-specific details"""
         services = cinder_data['services']
-        pools = cinder_data['storage_pools']
+        backends = cinder_data['backends']
 
         print(f"  Services: {services['up']}/{services['total']} up")
 
@@ -256,12 +256,13 @@ class Pulse:
                     if detail['state'] != 'up':
                         print(f"      ❌ {detail['host']} ({detail['state']})")
 
-        # Display storage pools
-        if pools['details']:
-            print(f"  Storage Pools: {pools['total']} backends")
-            for pool in pools['details']:
-                vendor_icon = "🟦" if pool['vendor'] == 'Huawei Dorado' else "⚪"
-                print(f"    {vendor_icon} {pool['name']} ({pool['vendor']})")
+        # Display storage backends
+        if backends['details']:
+            print(f"  Storage Backends: {backends['total']} backends")
+            for backend in backends['details']:
+                vendor_icon = "🟦" if backend['vendor'] == 'Huawei Dorado' else "⚪"
+                state_icon = "✅" if backend['state'] == 'up' else "❌"
+                print(f"    {state_icon} {vendor_icon} {backend['backend']} ({backend['vendor']}) - {backend['state']}")
 
     def _display_neutron_details(self, neutron_data):
         """Display Neutron-specific details"""

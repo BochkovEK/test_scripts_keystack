@@ -31,15 +31,14 @@ class CinderCheck:
             services = list(self.conn.block_storage.services())
             service_stats = self._analyze_services(services)
 
-            # Get storage pools (backends)
-            pools = self._get_storage_pools()
-            pool_stats = self._analyze_pools(pools)
+            # Get storage backends via service list
+            backend_stats = self._analyze_backends(services)
 
             return {
                 'status': 'OK',
                 'response_time': round(time.time() - start_time, 2),
                 'services': service_stats,
-                'storage_pools': pool_stats
+                'backends': backend_stats
             }
 
         except Exception as e:
@@ -99,73 +98,70 @@ class CinderCheck:
 
         return stats
 
-    def _get_storage_pools(self) -> List[Any]:
+    def _analyze_backends(self, services) -> Dict[str, Any]:
         """
-        Get storage pools information
-
-        Returns:
-            List of storage pool objects
-        """
-        try:
-            # Try to get pools via block storage API
-            return list(self.conn.block_storage.pools())
-        except Exception as e:
-            print(f"⚠️  Could not retrieve storage pools: {e}")
-            return []
-
-    def _analyze_pools(self, pools) -> Dict[str, Any]:
-        """
-        Analyze storage pools status
+        Analyze storage backends from cinder-volume services
 
         Args:
-            pools: List of storage pool objects
+            services: List of Cinder service objects
 
         Returns:
-            Dictionary with pool statistics
+            Dictionary with backend statistics
         """
         stats = {
-            'total': len(pools),
+            'total': 0,
             'details': []
         }
 
-        for pool in pools:
-            pool_info = {
-                'name': getattr(pool, 'name', 'unknown'),
-                'backend': getattr(pool, 'backend', 'unknown'),
-                'vendor': self._detect_vendor(getattr(pool, 'name', '')),
-                'status': 'available'
+        # Extract backends from cinder-volume services
+        volume_services = [s for s in services if s.binary == 'cinder-volume']
+        stats['total'] = len(volume_services)
+
+        for service in volume_services:
+            backend_info = {
+                'host': service.host,
+                'backend': self._extract_backend_name(service.host),
+                'vendor': self._detect_vendor(service.host),
+                'state': service.state,
+                'status': service.status,
+                'zone': getattr(service, 'zone', 'unknown')
             }
-
-            # Add capacity info if available
-            if hasattr(pool, 'capabilities'):
-                caps = pool.capabilities
-                pool_info.update({
-                    'total_capacity_gb': caps.get('total_capacity_gb', 0),
-                    'free_capacity_gb': caps.get('free_capacity_gb', 0),
-                    'provisioned_capacity_gb': caps.get('provisioned_capacity_gb', 0)
-                })
-
-            stats['details'].append(pool_info)
+            stats['details'].append(backend_info)
 
         return stats
 
-    def _detect_vendor(self, pool_name: str) -> str:
+    def _extract_backend_name(self, hostname: str) -> str:
         """
-        Detect storage vendor from pool name
+        Extract backend name from host string
 
         Args:
-            pool_name: Storage pool name
+            hostname: Service host string
+
+        Returns:
+            Backend name
+        """
+        # Example: "huawei@huawei_storage_high" -> "huawei_storage_high"
+        if '@' in hostname:
+            return hostname.split('@')[1]
+        return hostname
+
+    def _detect_vendor(self, hostname: str) -> str:
+        """
+        Detect storage vendor from hostname
+
+        Args:
+            hostname: Service hostname
 
         Returns:
             Vendor name
         """
-        name_lower = pool_name.lower()
+        hostname_lower = hostname.lower()
 
-        if 'huawei' in name_lower or 'dorado' in name_lower:
+        if 'huawei' in hostname_lower or 'dorado' in hostname_lower:
             return 'Huawei Dorado'
-        elif 'lvm' in name_lower:
+        elif 'lvm' in hostname_lower:
             return 'LVM'
-        elif 'ceph' in name_lower:
+        elif 'ceph' in hostname_lower:
             return 'Ceph'
         else:
             return 'Unknown'
