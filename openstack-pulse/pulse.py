@@ -62,7 +62,7 @@ class Pulse:
             )
             thread.daemon = True
             thread.start()
-            print(f"  ♾️{service_name} check started")
+            print(f"  ♾️ {service_name} check started")
 
     def _run_service_continuously(self, service_name, check):
         """Run service checks continuously in background"""
