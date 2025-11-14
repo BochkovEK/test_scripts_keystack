@@ -320,7 +320,9 @@ class Pulse:
         total_nodes = mariadb_data['total_nodes']
         reachable_nodes = mariadb_data['reachable_nodes']
 
-        print(f"  Nodes: {reachable_nodes}/{total_nodes} reachable")
+        # Determine group status icon
+        group_icon = "🟩" if reachable_nodes == total_nodes else "⚠️"
+        print(f"  {group_icon} Nodes: {reachable_nodes}/{total_nodes} reachable")
 
         # Display each node's status and metrics
         for node_name, details in cluster['node_details'].items():
