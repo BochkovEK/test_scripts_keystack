@@ -4,6 +4,8 @@ import os
 import re
 import threading
 import argparse
+import io
+from contextlib import redirect_stdout
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Add project directories to Python path
@@ -56,10 +58,13 @@ class Pulse:
                     )
                     self.service_ready_events[service_name] = threading.Event()
                     print(f"🔷 {service_name} initialized")
+                    self._write_log(f"🔷 {service_name} initialized")
                 except Exception as e:
                     print(f"❌️  Failed to initialize {service_name}: {e}")
+                    self._write_log(f"❌️ Failed to initialize {service_name}: {e}")
             else:
                 print(f"⚠️  Service '{service_name}' not supported")
+                self._write_log(f"⚠️  Service '{service_name}' not supported")
 
     def find_next_number(self, directory, date_str):
         """
@@ -172,6 +177,7 @@ class Pulse:
             thread.daemon = True
             thread.start()
             print(f"  ♾️ {service_name} check started")
+            self._write_log(f"♾️ {service_name} check started")
 
     def _run_service_continuously(self, service_name, check):
         """Run service checks continuously in background"""
@@ -184,6 +190,7 @@ class Pulse:
                 error_result = {'status': 'ERROR', 'error': str(e), 'response_time': 0}
                 self.latest_results[service_name] = error_result
                 self.service_ready_events[service_name].set()
+                self._write_log(f"❌ {service_name} check error: {e}")
 
             # Use heartbeat interval for service polling
             heartbeat_interval = getattr(self.config.settings, 'heartbeat_requests_services', 4)
@@ -277,17 +284,69 @@ class Pulse:
                 check.close_sessions()
                 print(f"🔒 Closed sessions for {service_name}")
 
-    def _display_snapshot(self, snapshot, current_cycle, total_cycles):
-        """Display current snapshot to console"""
-        timestamp = time.ctime(snapshot['timestamp'])
-        print("=" * 45)
-        print(f"  Cycle {current_cycle}/{total_cycles} - {timestamp}")
-        print("=" * 45)
+    # def _format_service_details(self, service_name, service_data):
+    #     """Format service-specific details for output"""
+    #     lines = []
+    #
+    #     format_methods = {
+    #         'nova': self._format_nova_details,
+    #         'keystone': self._format_keystone_details,
+    #         'neutron': self._format_neutron_details,
+    #         'rabbitmq': self._format_rabbitmq_details,
+    #         'galera': self._format_mariadb_details,
+    #         'cinder': self._format_cinder_details
+    #     }
+    #
+    #     if service_name in format_methods:
+    #         lines.extend(format_methods[service_name](service_data))
+    #
+    #     return lines
 
-        for service_name in self.config.settings.check_services:
-            if service_name in snapshot:
-                service_data = snapshot[service_name]
-                self._display_service_status(service_name, service_data)
+    # def _display_snapshot(self, snapshot, current_cycle, total_cycles):
+    #     """Display current snapshot to console"""
+    #     output_lines = []
+    #
+    #     timestamp = time.ctime(snapshot['timestamp'])
+    #     output_lines.append("=" * 45)
+    #     output_lines.append(f"  Cycle {current_cycle}/{total_cycles} - {timestamp}")
+    #     output_lines.append("=" * 45)
+    #
+    #     for service_name in self.config.settings.check_services:
+    #         if service_name in snapshot:
+    #             service_data = snapshot[service_name]
+    #             self._display_service_status(service_name, service_data)
+    #             output_lines.extend(self._format_service_output(service_name, service_data))
+    #
+    #     for line in output_lines:
+    #         print(line)
+    #
+    #     if self.log_handle:
+    #         for line in output_lines:
+    #             self._write_log(line)
+    def _display_snapshot(self, snapshot, current_cycle, total_cycles):
+        """Display current snapshot to console AND log"""
+
+        output_buffer = io.StringIO()
+
+        with redirect_stdout(output_buffer):
+            timestamp = time.ctime(snapshot['timestamp'])
+            print("=" * 45)
+            print(f"  Cycle {current_cycle}/{total_cycles} - {timestamp}")
+            print("=" * 45)
+
+            for service_name in self.config.settings.check_services:
+                if service_name in snapshot:
+                    service_data = snapshot[service_name]
+                    self._display_service_status(service_name, service_data)
+
+        output_text = output_buffer.getvalue()
+
+        print(output_text, end='')
+
+        if self.log_handle:
+            for line in output_text.strip().split('\n'):
+                if line.strip():
+                    self._write_log(line)
 
     def _display_service_status(self, service_name, service_data):
         """Display individual service status"""
