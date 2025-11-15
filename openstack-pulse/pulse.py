@@ -103,8 +103,13 @@ class Pulse:
         try:
             enable_log = getattr(self.config.settings.log, 'enable_log', False) if hasattr(self.config.settings,
                                                                                            'log') else False
+            if self.debug:
+                print(f"🔧 [PULSE_DEBUG] enable_log from config: {enable_log}")
+
             if not enable_log:
                 self.log_file = None
+                if self.debug:
+                    print(f"🔧 [PULSE_DEBUG] Logging disabled by config")
                 print("📝 Logging: disabled")
                 return
 
@@ -112,6 +117,11 @@ class Pulse:
                 log_config_path = getattr(self.config.settings.log, 'path', None) if hasattr(self.config.settings,
                                                                                              'log') else None
                 output_path = log_config_path or "/tmp"
+
+            if self.debug:
+                print(f"🔧 [PULSE_DEBUG] Final output_path: {output_path}")
+                print(f"🔧 [PULSE_DEBUG] Path is directory: {os.path.isdir(output_path)}")
+
         except:
             pass
 
@@ -125,14 +135,30 @@ class Pulse:
         if os.path.isdir(output_path):
             # Generate filename using class method
             date_str = time.strftime("%d_%m_%y")
+            if self.debug:
+                print(f"🔧 [PULSE_DEBUG] Date string: {date_str}")
+
             number = self.find_next_number(output_path, date_str)
+            if self.debug:
+                print(f"🔧 [PULSE_DEBUG] Next file number: {number:03d}")
+
             filename = f"openstack_pulse_{date_str}_{number:03d}.log"
             log_file = os.path.join(output_path, filename)
+            if self.debug:
+                print(f"🔧 [PULSE_DEBUG] Generated filename: {filename}")
+
         else:
             # Use specified file directly
             log_file = output_path
+            if self.debug:
+                print(f"🔧 [PULSE_DEBUG] Using direct file path: {log_file}")
 
-        return log_file
+        self.log_file = log_file
+
+        if self.debug:
+            print(f"🔧 [PULSE_DEBUG] Final log_file path: {self.log_file}")
+
+        print(f"📝 Logging: enabled → {self.log_file}")
 
     def _start_continuous_checks(self):
         """Start continuous monitoring for each service in separate threads"""

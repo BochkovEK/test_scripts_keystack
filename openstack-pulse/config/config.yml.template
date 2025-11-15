@@ -4,7 +4,7 @@
 # logging
 log:
   enable_log: True                  # False by default
-  path: "/var/log/openstack-pulse"  # /tmp by default
+#  path: "/var/log/openstack-pulse"  # /tmp by default
 
 # Check services
 check_services:
