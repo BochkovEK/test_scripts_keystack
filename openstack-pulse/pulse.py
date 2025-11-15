@@ -27,13 +27,13 @@ class Pulse:
         self.inventory_path = inventory_path
         self.config_path = config_path
         self.config = Config(inventory_path=self.inventory_path, config_path=self.config_path)
-        self.log_file = self.setup_logging(output_path)
-        # self.log_handle = None
+        self.log_handle = None
         self.service_checks = {}
         self.latest_results = {}  # Store latest service results
         self.service_ready_events = {}  # Track service readiness
         self._init_service_checks()
         self._start_continuous_checks()
+        self._setup_logging(output_path)
 
     def _init_service_checks(self):
         """Initialize service check instances"""
@@ -91,7 +91,7 @@ class Pulse:
         except Exception:
             return 1  # Fallback to first number on error
 
-    def setup_logging(self, output_path=None):
+    def _setup_logging(self, output_path=None):
         """
         Setup log file with automatic naming
         Format: openstack_pulse_dd_mm_yy_NUMBER.log
