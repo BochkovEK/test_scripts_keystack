@@ -110,7 +110,7 @@ class Pulse:
                 self.log_file = None
                 if self.debug:
                     print(f"🔧 [PULSE_DEBUG] Logging disabled by config")
-                print("📝 Logging: disabled")
+                print("📝 Logging: ⚠️ disabled")
                 return
 
             if output_path is None:
