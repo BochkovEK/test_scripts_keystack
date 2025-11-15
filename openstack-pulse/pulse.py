@@ -103,8 +103,15 @@ class Pulse:
         try:
             enable_log = getattr(self.config.settings.log, 'enable_log', False) if hasattr(self.config.settings,
                                                                                            'log') else False
-            log_config_path = getattr(self.config.settings.log, 'path', None) if hasattr(self.config.settings,
-                                                                                         'log') else None
+            if not enable_log:
+                self.log_file = None
+                print("📝 Logging: disabled")
+                return
+
+            if output_path is None:
+                log_config_path = getattr(self.config.settings.log, 'path', None) if hasattr(self.config.settings,
+                                                                                             'log') else None
+                output_path = log_config_path or "/tmp"
         except:
             pass
 
