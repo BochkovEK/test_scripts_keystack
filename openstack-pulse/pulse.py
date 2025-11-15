@@ -202,10 +202,27 @@ class Pulse:
         snapshot.update(self.latest_results.copy())
         return snapshot
 
+    def _write_log(self, message):
+        """Write message to log file"""
+        if self.log_handle:
+            self.log_handle.write(f"{time.ctime()}: {message}\n")
+            self.log_handle.flush()
+
     def run(self):
         """Main monitoring loop - collects snapshots periodically"""
         print("Starting OpenStack Pulse monitoring...")
         print(f"Enabled checks: {', '.join(self.config.settings.check_services)}")
+
+        # Open log file if logging enabled
+        if self.log_file:
+            try:
+                self.log_handle = open(self.log_file, 'a')
+                self._write_log("🚀 OpenStack Pulse started")
+                print(f"💾 Log file opened: {self.log_file}")
+            except Exception as e:
+                print(f"❌ Failed to open log file: {e}")
+                self.log_file = None
+                self.log_handle = None
 
         total_iterations = (self.config.settings.intervals.collection_window //
                             self.config.settings.intervals.check_interval)
@@ -221,6 +238,10 @@ class Pulse:
                 # Display snapshot
                 self._display_snapshot(snapshot, cycle + 1, total_iterations)
 
+                # Log snapshot collection
+                if self.log_handle:
+                    self._write_log(f"📸 Snapshot {cycle + 1}/{total_iterations} collected")
+
                 cycle_work_time = time.time() - cycle_start
                 print(f"📸 Snapshot {cycle + 1} collection time: {cycle_work_time:.1f}s")
 
@@ -231,10 +252,22 @@ class Pulse:
                     time.sleep(interval)
 
             print(f"\n🎉 Collection completed. Total snapshots: {total_iterations}")
+            if self.log_handle:
+                self._write_log(f"🎉 Collection completed. Total snapshots: {total_iterations}")
 
         except KeyboardInterrupt:
             print("\n🛑 Monitoring stopped by user")
+            if self.log_handle:
+                self._write_log("🛑 Monitoring stopped by user")
+        except Exception as e:
+            print(f"\n❌ Monitoring error: {e}")
+            if self.log_handle:
+                self._write_log(f"❌ Monitoring error: {e}")
         finally:
+            if self.log_handle:
+                self._write_log("🛑 OpenStack Pulse stopped")
+                self.log_handle.close()
+                print(f"💾 Log file closed: {self.log_file}")
             self._close_sessions()
 
     def _close_sessions(self):
