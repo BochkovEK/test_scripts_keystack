@@ -1,5 +1,12 @@
 # config/config.yml
 # Services list for diagnostics
+
+# logging
+log:
+  enable_log: True                  # False by default
+  path: "/var/log/openstack-pulse"  # /tmp by default
+
+# Check services
 check_services:
   - nova
   - cinder
@@ -10,12 +17,13 @@ check_services:
 
 # Timing parameters
 intervals:
-  check_interval: 5          # Interval between checks (seconds)
+  check_interval: 5           # Interval between checks (seconds)
   collection_window: 300      # Data collection window (seconds) - 5 minutes
-#  snapshot_retention: 10      # Store 30 snapshots (5 min / 10 sec)
 
+# Endpoints
 endpoints:
   rabbitmq_port: 15672
   mariadb_port: 3306
 
+# Pulse settings
 heartbeat_requests_services: 4

@@ -1,6 +1,7 @@
 import time
 import sys
 import os
+import re
 import threading
 import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -21,11 +22,13 @@ from services.mariadb import MariaDBCheck
 class Pulse:
     """OpenStack Pulse - Lightweight diagnostic tool"""
 
-    def __init__(self, inventory_path=None, config_path=None, debug=False):
+    def __init__(self, inventory_path=None, config_path=None, debug=False, output_path=None):
         self.debug = debug
         self.inventory_path = inventory_path
         self.config_path = config_path
         self.config = Config(inventory_path=self.inventory_path, config_path=self.config_path)
+        self.log_file = self.setup_logging(output_path)
+        # self.log_handle = None
         self.service_checks = {}
         self.latest_results = {}  # Store latest service results
         self.service_ready_events = {}  # Track service readiness
@@ -57,6 +60,72 @@ class Pulse:
                     print(f"❌️  Failed to initialize {service_name}: {e}")
             else:
                 print(f"⚠️  Service '{service_name}' not supported")
+
+    def find_next_number(self, directory, date_str):
+        """
+        Find the next available log file number for the given date
+
+        Args:
+            directory: Path to log directory
+            date_str: Date string in format dd_mm_yy (14_11_25)
+
+        Returns:
+            Next available number (starting from 001)
+        """
+        pattern = f"openstack_pulse_{date_str}_(\\d+)\\.log"
+        max_number = 0
+
+        try:
+            if not os.path.exists(directory):
+                return 1  # First file if directory doesn't exist
+
+            for filename in os.listdir(directory):
+                match = re.match(pattern, filename)
+                if match:
+                    number = int(match.group(1))
+                    if number > max_number:
+                        max_number = number
+
+            return max_number + 1
+
+        except Exception:
+            return 1  # Fallback to first number on error
+
+    def setup_logging(self, output_path=None):
+        """
+        Setup log file with automatic naming
+        Format: openstack_pulse_dd_mm_yy_NUMBER.log
+        Priority: CLI argument → config.yml → /tmp
+        """
+        enable_log = False
+        log_config_path = None
+
+        try:
+            enable_log = getattr(self.config.settings.log, 'enable_log', False) if hasattr(self.config.settings,
+                                                                                           'log') else False
+            log_config_path = getattr(self.config.settings.log, 'path', None) if hasattr(self.config.settings,
+                                                                                         'log') else None
+        except:
+            pass
+
+        if not enable_log:
+            return None
+
+        # Determine output path (CLI → config → /tmp)
+        if output_path is None:
+            output_path = log_config_path or "/tmp"
+
+        if os.path.isdir(output_path):
+            # Generate filename using class method
+            date_str = time.strftime("%d_%m_%y")
+            number = self.find_next_number(output_path, date_str)
+            filename = f"openstack_pulse_{date_str}_{number:03d}.log"
+            log_file = os.path.join(output_path, filename)
+        else:
+            # Use specified file directly
+            log_file = output_path
+
+        return log_file
 
     def _start_continuous_checks(self):
         """Start continuous monitoring for each service in separate threads"""
@@ -371,15 +440,19 @@ class Pulse:
         else:
             return '🔴'  # Degraded or error state - red circle
 
+
 def get_launch_args():
     """Parse command line arguments"""
     parser = argparse.ArgumentParser(description='OpenStack Pulse Monitoring')
     parser.add_argument('--inventory', '-i', help='Path to inventory file')
     parser.add_argument('--config', '-c', help='Path to config.yml file')
+    parser.add_argument('--output', '-o', help='Path to output file')
     parser.add_argument('--debug', '-d', action='store_true', help='Enable debug mode')
     return parser.parse_args()
 
+
 if __name__ == "__main__":
     args = get_launch_args()
-    pulse = Pulse(inventory_path=args.inventory, config_path=args.config, debug=args.debug)
+    pulse = Pulse(inventory_path=args.inventory, config_path=args.config, debug=args.debug, output_path=args.output)
     pulse.run()
+
