@@ -16,11 +16,54 @@ class CinderCheck:
 
         Args:
             config: Config object providing service authentication
+            debug: Enable debug output
         """
+        self.config = config
+        self.debug = debug
         auth_params = config.get_service_auth(ServiceType.OPENSTACK)
-        self.conn = openstack.connection.Connection(
-            **auth_params
-        )
+        self.conn = openstack.connection.Connection(**auth_params)
+
+        if self.debug:
+            print(f"🔧 [CINDER_DEBUG] Initialized with auth_url: {auth_params['auth_url']}")
+
+    def display_details(self, data):
+        """Display Cinder-specific details"""
+        services = data['services']
+        backends = data['backends']
+
+        print(f"  Services: {services['up']}/{services['total']} up")
+
+        # Smart display for service types - show details only if problems
+        for binary, stats in services['by_binary'].items():
+            if stats['total'] > 0:
+                up_count = stats['up']
+                down_count = stats['down']
+
+                if down_count == 0:
+                    # All services up - show compact
+                    print(f"    🟢 {binary}: {up_count} up")
+                else:
+                    # Some services down - show detailed breakdown
+                    print(f"    ⚠️ {binary}:")
+                    for detail in stats['details']:
+                        # Determine icon based on state and status
+                        if detail['state'] == 'down':
+                            status_icon = "🔴"
+                        elif detail['status'] == 'disabled':
+                            status_icon = "⚠️"
+                        else:
+                            status_icon = "🟢"
+
+                        # Always show full status for all nodes in problematic service
+                        status_text = f": state - {detail['state']}, status - {detail['status']}"
+                        print(f"      {status_icon} {detail['host']}{status_text}")
+
+        # Display storage backends
+        if backends['details']:
+            print(f"  Storage Backends: {backends['total']} backends")
+            for backend in backends['details']:
+                status_icon = "🟢" if backend['state'] == 'up' else "🔴"
+                print(f"    {status_icon} {backend['backend']} ({backend['vendor']}) - {backend['state']}")
 
     def run_check(self):
         """Execute Cinder services health check"""
@@ -34,19 +77,29 @@ class CinderCheck:
             # Get storage backends via service list
             backend_stats = self._analyze_backends(services)
 
-            return {
+            result = {
                 'status': 'OK',
                 'response_time': round(time.time() - start_time, 2),
                 'services': service_stats,
                 'backends': backend_stats
             }
 
+            if self.debug:
+                print(f"🔧 [CINDER_DEBUG] Check completed: {len(services)} services, {backend_stats['total']} backends")
+
+            return result
+
         except Exception as e:
-            return {
+            error_result = {
                 'status': 'ERROR',
                 'response_time': round(time.time() - start_time, 2),
                 'error': str(e)
             }
+
+            if self.debug:
+                print(f"🔧 [CINDER_DEBUG] Check failed: {error_result}")
+
+            return error_result
 
     def _analyze_services(self, services) -> Dict[str, Any]:
         """
@@ -170,3 +223,6 @@ class CinderCheck:
         """Close OpenStack connection sessions"""
         if hasattr(self, 'conn'):
             self.conn.close()
+            if self.debug:
+                print(f"🔧 [CINDER_DEBUG] Connections closed")
+
