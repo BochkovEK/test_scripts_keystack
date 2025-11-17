@@ -32,6 +32,12 @@ class KeystoneCheck:
         try:
             # Check token validation
             token_info = self.conn.auth_token
+
+            if self.debug:
+                print(f"🔧 [KEYSTONE_DEBUG] Token info: {token_info}")
+                if token_info:
+                    print(f"🔧 [KEYSTONE_DEBUG] Token expires_at: {getattr(token_info, 'expires_at', 'NO_ATTR')}")
+
             token_valid = bool(token_info and hasattr(token_info, 'expires_at'))
 
             # Check service catalog
@@ -64,6 +70,9 @@ class KeystoneCheck:
 
     def display_details(self, data):
         """Display Keystone-specific details"""
+        if self.debug:
+            print(f"🔧 [KEYSTONE_DEBUG] display_details data: {data}")
+
         if data.get('token_valid'):
             print("  Token: ✅ valid")
         else:
