@@ -68,44 +68,55 @@ class NovaCheck:
         services = data['services']
         hypervisors = data['hypervisors']
 
+        # Services summary
         print(f"  Services: {services['up']}/{services['total']} up")
-        print(f"  Hypervisors: {hypervisors['up']}/{hypervisors['total']} up")
 
-        # Display critical services status
-        if services['critical_services']:
-            print("  Critical Services:")
-            for service_type, instances in services['critical_services'].items():
-                up_count = len([i for i in instances if i['state'] == 'up'])
-                down_count = len([i for i in instances if i['state'] == 'down'])
+        # Smart display for critical services - show details only if problems
+        for service_type, instances in services['critical_services'].items():
+            up_count = len([i for i in instances if i['state'] == 'up'])
+            down_count = len([i for i in instances if i['state'] == 'down'])
+            disabled_count = len([i for i in instances if i['status'] == 'disabled'])
 
-                if down_count == 0:
-                    status_icon = "🟢"
-                    status_text = f"{up_count} up"
-                elif up_count == 0:
-                    status_icon = "🔴"
-                    status_text = f"{down_count} down"
-                else:
-                    status_icon = "🟡"
-                    status_text = f"{up_count} up, {down_count} down"
-
-                print(f"    {status_icon} {service_type}: {status_text}")
-
-        # Display hypervisors with instance counts
-        if hypervisors['details']:
-            print("  Hypervisors:")
-            for hv in hypervisors['details']:
-                if hv['state'] == 'up':
-                    if hv['instances_count'] > 0:
-                        status_icon = "🟢"
-                        instances_info = f" 📦{hv['instances_count']} VM"
+            # Show detailed breakdown if any services are down or disabled
+            if down_count > 0 or disabled_count > 0:
+                print(f"    ⚠️ {service_type}:")
+                for instance in instances:
+                    # Determine icon based on state and status
+                    if instance['state'] == 'down':
+                        status_icon = "🔴"
+                    elif instance['status'] == 'disabled':
+                        status_icon = "⚠️"
                     else:
-                        status_icon = "🔵"
-                        instances_info = " (no VMs)"
-                else:
-                    status_icon = "🔴"
-                    instances_info = " (down)"
+                        status_icon = "🟢"
 
-                print(f"    {status_icon} {hv['name']}{instances_info}")
+                    # Build status text
+                    status_parts = []
+                    if instance['state'] != 'up':
+                        status_parts.append(f"state - {instance['state']}")
+                    if instance['status'] != 'enabled':
+                        status_parts.append(f"status - {instance['status']}")
+
+                    status_text = f": {', '.join(status_parts)}" if status_parts else ""
+                    print(f"      {status_icon} {instance['host']}{status_text}")
+            else:
+                # All services up and enabled - show compact
+                print(f"    🟢 {service_type}: {up_count} up")
+
+        # Hypervisors summary and details
+        print(f"  Hypervisors: {hypervisors['up']}/{hypervisors['total']} up")
+        for hv in hypervisors['details']:
+            if hv['state'] == 'up':
+                if hv['instances_count'] > 0:
+                    status_icon = "🟢"
+                    instances_info = f" 📦{hv['instances_count']} VM"
+                else:
+                    status_icon = "🔵"
+                    instances_info = ""
+            else:
+                status_icon = "🔴"
+                instances_info = ""
+
+            print(f"    {status_icon} {hv['name']}{instances_info}")
 
     def _analyze_services(self, services):
         """
