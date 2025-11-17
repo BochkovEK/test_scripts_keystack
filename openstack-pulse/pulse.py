@@ -227,14 +227,6 @@ class Pulse:
         print("Starting OpenStack Pulse monitoring...")
         print(f"Enabled checks: {', '.join(self.config.settings.check_services)}")
 
-        if hasattr(self, 'single_mode') and self.single_mode:
-            total_iterations = 1
-            print("🔍 Single-shot mode: collecting one snapshot")
-        else:
-            total_iterations = (self.config.settings.intervals.collection_window //
-                                self.config.settings.intervals.check_interval)
-            print(f"Collection: {total_iterations} snapshots")
-
         # Open log file if logging enabled
         if self.log_file:
             try:
@@ -243,11 +235,18 @@ class Pulse:
                 print(f"💾 Log file opened: {self.log_file}")
             except Exception as e:
                 print(f"❌ Failed to open log file: {e}")
-                self.log_file = None
+                # self.log_file = None
                 self.log_handle = None
 
-        total_iterations = (self.config.settings.intervals.collection_window //
-                            self.config.settings.intervals.check_interval)
+        if hasattr(self, 'single_mode') and self.single_mode:
+            total_iterations = 1
+            print("🔍 Single-shot mode: collecting one snapshot")
+        else:
+            total_iterations = (self.config.settings.intervals.collection_window //
+                                self.config.settings.intervals.check_interval)
+            print(f"Collection: {total_iterations} snapshots")
+        # total_iterations = (self.config.settings.intervals.collection_window //
+        #                     self.config.settings.intervals.check_interval)
         print(f"Collection: {total_iterations} snapshots")
 
         try:
