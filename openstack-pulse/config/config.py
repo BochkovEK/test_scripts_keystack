@@ -109,21 +109,31 @@ class Config:
         }
 
     def _validate_config_files(self):
-        """Validate that all required configuration files exist"""
-        config_path = os.path.join(self.project_root, 'config', 'config.yml')
-        if not self.inventory_path:
-            inventory_paths = [
-                os.path.join(self.project_root, 'inventory.ini'),
-                os.path.join(self.project_root, 'inventory')
-            ]
-        else:
-            inventory_paths = self.inventory_path
+        config_path = self.config_path or os.path.join(self.project_root, 'config', 'config.yml')
 
+        # Всегда проверяем config
         if not os.path.exists(config_path):
             self._exit_with_file_error('config.yml', config_path)
 
-        if not any(os.path.exists(path) for path in inventory_paths):
-            self._exit_with_file_error('inventory', inventory_paths[0])
+        # Проверяем inventory
+        inventory_found = False
+
+        if self.inventory_path:
+            # Проверяем только переданный путь
+            if os.path.exists(self.inventory_path):
+                inventory_found = True
+            else:
+                self._exit_with_file_error('inventory', self.inventory_path)
+        else:
+            # Проверяем оба дефолтных файла
+            for filename in ['inventory.ini', 'inventory']:
+                default_path = os.path.join(self.project_root, filename)
+                if os.path.exists(default_path):
+                    inventory_found = True
+                    break
+
+        if not inventory_found:
+            self._exit_with_file_error('inventory', 'inventory or inventory.ini in project root')
 
     def _load_yaml_config(self) -> DotDict:
         """Load and parse YAML configuration file"""
