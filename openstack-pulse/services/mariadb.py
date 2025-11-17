@@ -1,8 +1,12 @@
+"""
+MariaDB/Galera Cluster monitoring
+Checks cluster health, node synchronization and replication status
+"""
+
 import mysql.connector
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from config.config import ServiceType
-# from mysql.connector import Error
 
 
 class MariaDBCheck:
@@ -25,6 +29,37 @@ class MariaDBCheck:
             'connect_timeout': 3
         }
         self.nodes = auth_params['nodes']  # [display_name, connect_host]
+
+    def display_details(self, data):
+        """Display MariaDB/Galera cluster health details"""
+        cluster = data['cluster']
+        total_nodes = data['total_nodes']
+        reachable_nodes = data['reachable_nodes']
+
+        # Determine group status icon
+        group_icon = "🟩" if reachable_nodes == total_nodes else "⚠️"
+        print(f"  {group_icon} Nodes: {reachable_nodes}/{total_nodes} reachable")
+
+        # Display each node's status and metrics
+        for node_name, details in cluster['node_details'].items():
+            response_time = details.get('response_time', '?')
+            metrics = details.get('metrics', {})
+
+            # Use green circle for all reachable nodes
+            print(f"    🟢 ({response_time}s) {node_name}:")
+
+            # Display Galera metrics
+            if metrics:
+                print(f"      Status: {metrics.get('local_state', 'Unknown')}, "
+                      f"Cluster: {metrics.get('cluster_status', 'Unknown')} "
+                      f"({metrics.get('cluster_size', 0)} nodes), "
+                      f"Ready: {'ON' if metrics.get('node_ready') else 'OFF'}, "
+                      f"Connected: {'ON' if metrics.get('connected') else 'OFF'}")
+
+        # Display unreachable nodes
+        for node_name in cluster['unreachable_nodes']:
+            print(f"    🔴 (timeout) {node_name}:")
+            print(f"      Status: Unknown - Connection failed")
 
     def run_check(self):
         """Execute MariaDB/Galera cluster health check"""
@@ -128,8 +163,7 @@ class MariaDBCheck:
                     else:
                         status['unreachable_nodes'].append(display_name)
                         if self.debug:
-                            print(
-                                f"🔧 [MARIADB_DEBUG] ✗ {display_name} is unreachable: {node_result.get('error', 'Unknown error')}")
+                            print(f"🔧 [MARIADB_DEBUG] ✗ {display_name} is unreachable: {node_result.get('error', 'Unknown error')}")
 
                 except Exception as e:
                     status['unreachable_nodes'].append(display_name)
@@ -137,8 +171,7 @@ class MariaDBCheck:
                         print(f"🔧 [MARIADB_DEBUG] ✗ {display_name} failed with exception: {str(e)}")
 
         if self.debug:
-            print(
-                f"🔧 [MARIADB_DEBUG] Cluster check completed: {len(status['reachable_nodes'])} reachable, {len(status['unreachable_nodes'])} unreachable")
+            print(f"🔧 [MARIADB_DEBUG] Cluster check completed: {len(status['reachable_nodes'])} reachable, {len(status['unreachable_nodes'])} unreachable")
 
         return status
 
@@ -270,7 +303,14 @@ class MariaDBCheck:
         quorum_healthy = healthy_nodes >= (expected_cluster_size // 2 + 1)
 
         if self.debug:
-            print(
-                f"🔧 [MARIADB_DEBUG] Cluster health: {healthy_nodes}/{len(reachable_nodes)} healthy nodes, quorum: {quorum_healthy}")
+            print(f"🔧 [MARIADB_DEBUG] Cluster health: {healthy_nodes}/{len(reachable_nodes)} healthy nodes, quorum: {quorum_healthy}")
 
         return quorum_healthy
+
+    def close_sessions(self):
+        """Close database connections"""
+        # MySQL connector connections are closed after each query
+        # No persistent sessions to close
+        if self.debug:
+            print(f"🔧 [MARIADB_DEBUG] No persistent sessions to close")
+
