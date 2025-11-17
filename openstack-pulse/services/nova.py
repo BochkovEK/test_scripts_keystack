@@ -128,3 +128,12 @@ class NovaCheck:
             print(f"⚠️  Failed to get VM count for {hypervisor.name}: {e}")
 
         return 0
+
+    def close_sessions(self):
+        """Close all sessions to free resources"""
+        for session in self.sessions.values():
+            session.close()
+        self.sessions.clear()
+
+        if self.debug:
+            print(f"🔧 [NOVA_DEBUG] Closed all sessions")

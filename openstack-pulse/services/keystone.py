@@ -1,3 +1,8 @@
+"""
+Keystone Identity Service monitoring
+Checks token validation and service catalog
+"""
+
 import openstack
 import time
 from config.config import ServiceType
@@ -10,40 +15,66 @@ class KeystoneCheck:
 
         Args:
             config: Config object providing service authentication
+            debug: Enable debug output
         """
+        self.config = config
+        self.debug = debug
         auth_params = config.get_service_auth(ServiceType.OPENSTACK)
-        self.conn = openstack.connection.Connection(
-            **auth_params,
-            identity_api_version='3'
-        )
+        self.conn = openstack.connection.Connection(**auth_params)
+
+        if self.debug:
+            print(f"🔧 [KEYSTONE_DEBUG] Initialized with auth_url: {auth_params['auth_url']}")
 
     def run_check(self):
-        """Execute Keystone API health check"""
+        """Execute Keystone health check"""
         start_time = time.time()
 
         try:
-            # Authentication check (automatically performed during Connection creation)
-            current_user = self.conn.current_user_id
-            token_valid = bool(current_user)
+            # Check token validation
+            token_info = self.conn.auth_token
+            token_valid = bool(token_info and hasattr(token_info, 'expires_at'))
 
-            # Get services via OpenStackSDK
+            # Check service catalog
             services = list(self.conn.identity.services())
+            services_count = len(services)
 
-            # Get endpoints
-            endpoints = list(self.conn.identity.endpoints())
-
-            return {
+            result = {
                 'status': 'OK',
                 'response_time': round(time.time() - start_time, 2),
                 'token_valid': token_valid,
-                'current_user_id': current_user,
-                'services_count': len(services),
-                'endpoints_count': len(endpoints)
+                'services_count': services_count
             }
 
+            if self.debug:
+                print(f"🔧 [KEYSTONE_DEBUG] Check completed: {result}")
+
+            return result
+
         except Exception as e:
-            return {
+            error_result = {
                 'status': 'ERROR',
                 'response_time': round(time.time() - start_time, 2),
                 'error': str(e)
             }
+
+            if self.debug:
+                print(f"🔧 [KEYSTONE_DEBUG] Check failed: {error_result}")
+
+            return error_result
+
+    def display_details(self, data):
+        """Display Keystone-specific details"""
+        if data.get('token_valid'):
+            print("  Token: ✅ valid")
+        else:
+            print("  Token: ❌ invalid")
+
+        if data.get('services_count'):
+            print(f"  Services: {data['services_count']} available")
+
+    def close_sessions(self):
+        """Close OpenStack connection sessions"""
+        if hasattr(self, 'conn'):
+            self.conn.close()
+            if self.debug:
+                print(f"🔧 [KEYSTONE_DEBUG] Connections closed")
