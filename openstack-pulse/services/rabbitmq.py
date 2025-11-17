@@ -1,3 +1,8 @@
+"""
+RabbitMQ Message Queue monitoring
+Checks cluster health, nodes status, queues and resources
+"""
+
 import requests
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -29,6 +34,57 @@ class RabbitCheck:
 
         self.sessions = {}
         self._init_sessions()
+
+    def display_details(self, data):
+        """Display RabbitMQ-specific details"""
+        cluster = data['cluster']
+        total_nodes = data['total_nodes']
+        reachable_nodes = data['reachable_nodes']
+
+        # Determine group status icon
+        group_icon = "🟩" if reachable_nodes == total_nodes else "⚠️"
+        print(f"  {group_icon} Nodes: {reachable_nodes}/{total_nodes} reachable")
+
+        # Display each source node's perspective
+        for source_hostname, details in cluster['node_details'].items():
+            response_time = details.get('response_time', '?')
+
+            print(f"    🟢 ({response_time}s) {source_hostname}:")
+
+            # Display queues from THIS source's perspective
+            queues = details.get('queues', {})
+            print(f"      📊 Queues: {queues.get('total', 0)} total, "
+                  f"{queues.get('messages', 0)} messages "
+                  f"({queues.get('messages_ready', 0)} ready, "
+                  f"{queues.get('messages_unacknowledged', 0)} unacked)")
+
+            # Display ALL nodes from this source's perspective
+            all_nodes = details.get('all_nodes', {})
+            for target_hostname, node_info in all_nodes.items():
+                node_status = node_info.get('status', 'unknown')
+                status_emoji = "🟢" if node_status == 'running' else "🔴"
+
+                print(f"      {status_emoji} {target_hostname} ({node_status}):")
+
+                # Display resources
+                resources = node_info.get('resources', {})
+                if resources:
+                    proc_used = resources.get('proc_used', 0)
+                    proc_total = resources.get('proc_total', 0)
+                    mem_used_mb = resources.get('mem_used', 0) // 1024 // 1024
+                    mem_limit_mb = resources.get('mem_limit', 0) // 1024 // 1024
+                    print(f"        📈 Resources: {proc_used}/{proc_total} procs, "
+                          f"{mem_used_mb}MB/{mem_limit_mb}MB memory")
+
+                # Display alarms
+                alarms = []
+                if resources.get('mem_alarm'):
+                    alarms.append("🚨 Memory alarm")
+                if resources.get('disk_free_alarm'):
+                    alarms.append("🚨 Disk alarm")
+
+                if alarms:
+                    print(f"        {' | '.join(alarms)}")
 
     def _init_sessions(self):
         """Initialize separate sessions for each node"""
@@ -244,8 +300,7 @@ class RabbitCheck:
                         print(f"🔧 [RABBIT_DEBUG] ✗ {display_name} failed with exception: {str(e)}")
 
         if self.debug:
-            print(
-                f"🔧 [RABBIT_DEBUG] Cluster check completed: {len(status['reachable_nodes'])} reachable, {len(status['unreachable_nodes'])} unreachable")
+            print(f"🔧 [RABBIT_DEBUG] Cluster check completed: {len(status['reachable_nodes'])} reachable, {len(status['unreachable_nodes'])} unreachable")
 
         return status
 
