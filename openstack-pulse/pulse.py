@@ -24,7 +24,14 @@ from services.mariadb import MariaDBCheck
 class Pulse:
     """OpenStack Pulse - Lightweight diagnostic tool"""
 
-    def __init__(self, inventory_path=None, config_path=None, debug=False, output_path=None):
+    def __init__(
+            self,
+            inventory_path=None,
+            config_path=None,
+            debug=False,
+            single_mode=False,
+            output_path=None):
+        self.single_mode = single_mode
         self.debug = debug
         self.inventory_path = inventory_path
         self.config_path = config_path
@@ -219,6 +226,14 @@ class Pulse:
         """Main monitoring loop - collects snapshots periodically"""
         print("Starting OpenStack Pulse monitoring...")
         print(f"Enabled checks: {', '.join(self.config.settings.check_services)}")
+
+        if hasattr(self, 'single_mode') and self.single_mode:
+            total_iterations = 1
+            print("🔍 Single-shot mode: collecting one snapshot")
+        else:
+            total_iterations = (self.config.settings.intervals.collection_window //
+                                self.config.settings.intervals.check_interval)
+            print(f"Collection: {total_iterations} snapshots")
 
         # Open log file if logging enabled
         if self.log_file:
@@ -573,11 +588,18 @@ def get_launch_args():
     parser.add_argument('--config', '-c', help='Path to config.yml file')
     parser.add_argument('--output', '-o', help='Path to output file')
     parser.add_argument('--debug', '-d', action='store_true', help='Enable debug mode')
+    parser.add_argument('--single', action='store_true', help='Run once and exit')
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = get_launch_args()
-    pulse = Pulse(inventory_path=args.inventory, config_path=args.config, debug=args.debug, output_path=args.output)
+    pulse = Pulse(
+        inventory_path=args.inventory,
+        config_path=args.config,
+        debug=args.debug,
+        output_path=args.output,
+        single_mode=args.single
+    )
     pulse.run()
 
