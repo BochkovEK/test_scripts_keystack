@@ -89,14 +89,8 @@ class NovaCheck:
                     else:
                         status_icon = "🟢"
 
-                    # Build status text
-                    status_parts = []
-                    if instance['state'] != 'up':
-                        status_parts.append(f"state - {instance['state']}")
-                    if instance['status'] != 'enabled':
-                        status_parts.append(f"status - {instance['status']}")
-
-                    status_text = f": {', '.join(status_parts)}" if status_parts else ""
+                    # Always show full status for all nodes in problematic service
+                    status_text = f": state - {instance['state']}, status - {instance['status']}"
                     print(f"      {status_icon} {instance['host']}{status_text}")
             else:
                 # All services up and enabled - show compact
