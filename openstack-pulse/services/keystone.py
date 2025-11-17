@@ -30,35 +30,18 @@ class KeystoneCheck:
         start_time = time.time()
 
         try:
-            # Check token validation - более надежная проверка
-            try:
-                token_info = self.conn.auth_token
+            # Getting a token (just for debugging)
+            token_info = self.conn.auth_token
 
-                if self.debug:
-                    print(f"🔧 [KEYSTONE_DEBUG] Token type: {type(token_info)}")
-                    print(f"🔧 [KEYSTONE_DEBUG] Token attributes: {dir(token_info) if token_info else 'None'}")
+            if self.debug:
+                print(f"🔧 [KEYSTONE_DEBUG] Token type: {type(token_info)}")
 
-                # Проверяем что токен существует и не просрочен разными способами
-                token_valid = False
-                if token_info:
-                    # Способ 1: проверка атрибута expires_at
-                    if hasattr(token_info, 'expires_at') and token_info.expires_at:
-                        token_valid = True
-                    # Способ 2: проверка что мы можем получить сервисы (токен рабочий)
-                    elif self.conn.identity.services():
-                        token_valid = True
-                    # Способ 3: простое существование токена
-                    else:
-                        token_valid = True
-
-            except Exception as token_error:
-                if self.debug:
-                    print(f"🔧 [KEYSTONE_DEBUG] Token check error: {token_error}")
-                token_valid = False
-
-            # Check service catalog
+            # Get services
             services = list(self.conn.identity.services())
             services_count = len(services)
+
+            # The token is 100% valid
+            token_valid = True
 
             result = {
                 'status': 'OK',
