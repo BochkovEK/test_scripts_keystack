@@ -247,7 +247,7 @@ class Pulse:
             print(f"Collection: {total_iterations} snapshots")
         # total_iterations = (self.config.settings.intervals.collection_window //
         #                     self.config.settings.intervals.check_interval)
-        print(f"Collection: {total_iterations} snapshots")
+        # print(f"Collection: {total_iterations} snapshots")
 
         try:
             for cycle in range(total_iterations):
