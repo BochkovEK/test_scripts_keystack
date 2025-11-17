@@ -111,10 +111,13 @@ class Config:
     def _validate_config_files(self):
         """Validate that all required configuration files exist"""
         config_path = os.path.join(self.project_root, 'config', 'config.yml')
-        inventory_paths = [
-            os.path.join(self.project_root, 'inventory.ini'),
-            os.path.join(self.project_root, 'inventory')
-        ]
+        if not self.inventory_path:
+            inventory_paths = [
+                os.path.join(self.project_root, 'inventory.ini'),
+                os.path.join(self.project_root, 'inventory')
+            ]
+        else:
+            inventory_paths = self.inventory_path
 
         if not os.path.exists(config_path):
             self._exit_with_file_error('config.yml', config_path)
