@@ -742,21 +742,28 @@ get_image_name() {
 
 # Check and set image
 check_image() {
-    echo "Check for exist image: \"$IMAGE\""
+    echo "Checking for image existence: \"$IMAGE\""
 
     [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] IMAGE: $IMAGE"
 
+    # Get image name and check return code
+    # If get_image_name fails (returns non-zero), image was not found
     if ! IMAGE_NAME=$(get_image_name "$IMAGE"); then
+        # This code executes when image is NOT found
         case "$IMAGE" in
             ubuntu|cirros)
                 warning_output "Image \"$IMAGE\" not found in project \"$PROJECT\""
+                # Ask for confirmation to create image unless DONT_ASK is true
                 if [[ ! $DONT_ASK = "true" ]] && confirm_action "Create $IMAGE image?"; then
+                    # Create the appropriate image based on requested type
                     if [ "$IMAGE" = "ubuntu" ]; then
                         create_image "$UBUNTU_IMAGE_NAME"
                     else
                         create_image "$CIRROS_IMAGE_NAME"
                     fi
-                    if IMAGE_NAME=$(get_image_name "$IMAGE"); then
+                    # After creation, try to get the image name again
+                    IMAGE_NAME=$(get_image_name "$IMAGE")
+                    if [ -n "$IMAGE_NAME" ]; then
                         echo -e "${green}Using image: $IMAGE_NAME${normal}"
                         return 0
                     else
@@ -767,10 +774,12 @@ check_image() {
                 fi
                 ;;
             *)
+                # For any other image type that doesn't exist, show error
                 error_output "Image \"$IMAGE\" not found in project \"$PROJECT\""
                 ;;
         esac
     else
+        # This code executes when image IS found
         echo -e "${green}Using image: $IMAGE_NAME${normal}"
     fi
 }
