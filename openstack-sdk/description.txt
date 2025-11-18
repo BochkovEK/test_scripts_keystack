@@ -1,65 +1,101 @@
-pip install openstacksdk tabulate
+О скрипте
+OpenStack Live Migration Test Script - инструмент для тестирования производительности live-миграции виртуальных машин между гипервизорами в OpenStack.
 
-migration_tester.py
-├── 📁 Импорты и конфигурация
-│   ├── Импорт библиотек
-│   ├── Константы
-│   └── Логирование
-│
-├── 📁 Классы данных
-│   └── MigrationStats (dataclass)
-│
-├── 📁 Основной класс MigrationTester
-│   ├── __init__() - инициализация
-│   ├── parse_arguments() - парсинг аргументов
-│   ├── setup_logging() - настройка логирования
-│   ├── validate_environment() - проверка окружения
-│   ├── discover_initial_vms() - поиск ВМ
-│   ├── live_migrate_vm() - миграция одной ВМ
-│   ├── monitor_migration() - мониторинг статуса
-│   ├── run_single_cycle() - один цикл миграций
-│   ├── run_test() - основной цикл теста
-│   ├── calculate_statistics() - сбор статистики
-│   ├── generate_report() - генерация отчета
-│   └── cleanup() - очистка ресурсов
-│
-├── 📁 Вспомогательные функции
-│   ├── format_duration() - форматирование времени
-│   ├── save_results() - сохранение результатов
-│   └── load_config() - загрузка конфигурации
-│
-└── 📁 Точка входа
-    └── main() - основной поток выполнения
+Основные ключи запуска
+    Конфигурация миграции
+    --hypervisors - список гипервизоров через запятую для циклической миграции (обязательный)
+
+    --max-parallel - максимальное количество параллельных миграций (-1 = без ограничений)
+
+    Параметры выполнения
+    --duration - общая длительность теста в секундах
+
+    --migration-timeout - таймаут для одной миграции в секундах
+
+    Конфигурация OpenStack
+    --cloud - имя облака из clouds.yaml
+
+    --interface - интерфейс эндпоинтов OpenStack
+
+    Повторные попытки
+    --retry-attempts - количество попыток для неудачных миграций
+
+    --retry-delay - задержка между попытками в секундах
+
+    Вывод и логирование
+    --log-level - уровень логирования (DEBUG, INFO, WARNING, ERROR)
+
+    --output-format - формат вывода результатов (table, json, text)
+
+    --results-file - файл для сохранения результатов
+
+Альтернатива: переменные окружения
+    Все параметры можно задать через переменные окружения:
+
+    MIGRATION_TEST_HYPERVISORS - вместо --hypervisors
+
+    MIGRATION_TEST_DURATION - вместо --duration
+
+    И другие с префиксом MIGRATION_TEST_
+
+Примеры использования
+
+Создать ВМ:
+    CLI:
+    openstack volume create   --image cirros-0.6.3-x86_64-disk   --size 1   --type huawei_storage   boot_volume_from_image
+    openstack server create   --volume boot_volume_from_image   --flavor m1.tiny   --network pub_net   migration_test_bfv
+
+    !!! config_drive = true приводит к
+    00:31:37 - ERROR - ❌ SDK error: BadRequestException: 400: Client Error for url: https://fqdn:8774/v2.1/servers/3ff79277-1fb4-4f07-90d3-94f8046bcd20/action, cmpt-01 is not on shared storage: Shared storage live-migration requires either shared storage or boot-from-volume with no local disks.
+
+    config drive:
+    Временный диск для передачи metadata/user-data ВМ
+    Создается как local disk на гипервизоре
+    Ломает shared storage migration
+
+    Ломает shared storage migration
+
+    Terraform:
+    VMs = {
+        migration_test = {
+            vm_qty       = 4
+    #        config_drive = true
+            az_hint      = "nova:cdm-bl-pca10"
+        }
+    }
 
 Запуск:
+    # Базовый запуск
+python ./migration_test.py --hypervisors hypervisor1,hypervisor2,hypervisor3
 
-openstack volume create   --image cirros-0.6.3-x86_64-disk   --size 1   --type huawei_storage   boot_volume_from_image
-openstack server create   --volume boot_volume_from_image   --flavor m1.tiny   --network pub_net   migration_test_bfv
+    # С параллельными миграциями
+python ./migration_test.py --hypervisors hv1,hv2 --max-parallel 3 --duration 7200
 
-!!! config_drive = true приводит к
-00:31:37 - ERROR - ❌ SDK error: BadRequestException: 400: Client Error for url: https://fqdn:8774/v2.1/servers/3ff79277-1fb4-4f07-90d3-94f8046bcd20/action, cmpt-01 is not on shared storage: Shared storage live-migration requires either shared storage or boot-from-volume with no local disks.
+    # С подробным логированием
+python ./migration_test.py --hypervisors hv1,hv2 --log-level DEBUG --output-format json
 
-config drive:
-Временный диск для передачи metadata/user-data ВМ
-Создается как local disk на гипервизоре
-Ломает shared storage migration
+    # Короткий тест (5 минут) с 2 гипервизорами
+python migration_tester.py \
+    --hypervisors "compute01,compute02" \
+    --duration 300 \
+    --migration-timeout 120 \
+    --max-parallel 1 \
+    --log-level INFO \
+    --output-format table
 
-Ломает shared storage migration
+    # Для отладки без реальных миграций:
+python migration_tester.py --output-format json
 
-VMs = {
-    migration_test = {
-        vm_qty       = 4
-#        config_drive = true
-        az_hint      = "nova:cdm-bl-pca10"
-    }
-}
+    Примечание:
+        --max-parallel 2 (значение по умолчанию) Империческим путем установлено что число 2 является оптимальным
 
-!!! --max-parallel 2 Империческим путем установлено что число 2 является оптимальным
+# Примеры переменных окружения
+    export MIGRATION_TEST_HYPERVISORS="compute01,compute02"
+    export MIGRATION_TEST_DURATION=300
+    export MIGRATION_TEST_LOG_LEVEL=DEBUG
 
-1) Параллельная миграци
-python ~/test_scripts_keystack/openstacksdk/migration_tester.py --hypervisors "cmpt-01,cmpt-02,cmpt-03" --duration 60
-
-метрики для ВМ с одним диском 5 ГБ
+Примеры запуска:
+1) метрики для ВМ с одним диском 5 ГБ
 
 ============================================================
 📊 OPENSTACK LIVE MIGRATION TEST REPORT
@@ -377,40 +413,12 @@ python ~/test_scripts_keystack/openstacksdk/migration_tester.py --hypervisors "c
 | Avg Cycle Time     | 90.83s |
 +--------------------+--------+
 
+Среднее время миграции (Avg Migration Time) - ключевой показатель
+5 ГБ: 37.74s
+10 ГБ: 37.8s (разница +0.06s — статистически незначима)
+50 ГБ (прогон 1): 39.85s
+50 ГБ (прогон 2): 37.33s
+50 ГБ (прогон 3): 37.34s
+100 ГБ: 38.73s
 
-bash
-# Короткий тест (5 минут) с 2 гипервизорами
-python migration_tester.py \
-    --hypervisors "compute01,compute02" \
-    --duration 300 \
-    --migration-timeout 120 \
-    --max-parallel 1 \
-    --log-level INFO \
-    --output-format table
-
-# Или через переменные окружения
-export MIGRATION_TEST_HYPERVISORS="compute01,compute02"
-export MIGRATION_TEST_DURATION=300
-export MIGRATION_TEST_LOG_LEVEL=DEBUG
-
-python migration_tester.py --output-format json
-Для отладки без реальных миграций:
-
-bash
-# Тест только валидации окружения
-python migration_tester.py \
-    --hypervisors "compute01,compute02" \
-    --duration 60 \
-    --log-level DEBUG
-Стресс-тест:
-
-bash
-# Максимальная нагрузка (если поддерживается)
-python migration_tester.py \
-    --hypervisors "compute01,compute02,compute03" \
-    --duration 1800 \
-    --max-parallel -1 \
-    --migration-timeout 600 \
-    --output-format json \
-    --results-file stress_test.json
-
+Принимаем за оптимальный размер диска 10GB
