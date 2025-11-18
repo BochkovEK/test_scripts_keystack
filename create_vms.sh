@@ -12,8 +12,8 @@ yellow=$(tput setaf 3)
 # Default constants
 default_flavor="4c-4r"
 default_key_name="key_test"
-default_project="admin"
-default_test_user="admin"
+#default_project="admin"
+#default_test_user="admin"
 default_role="admin"
 default_api_version="2.74"
 default_network="pub_net"
@@ -27,11 +27,11 @@ utils_dir=$script_dir/utils
 yes_no_answer_script="yes_no_answer.sh"
 check_openrc_script="check_openrc.sh"
 create_pub_network_script="openstack/create_pub_network.sh"
-create_image_script_script="openstack/create_image.sh"
 check_ssh_connectivity_script="check_ssh_connectivity.sh"
 get_nodes_list_script="get_nodes_list.sh"
 config_file=".vm_creation_config.env"
 cleanup_file=".vm_cleanup_state.env"
+#create_image_script_script="openstack/create_image.sh"
 
 # External scripts array
 external_scripts=(
@@ -53,13 +53,13 @@ CIRROS_IMAGE_NAME="cirros-0.6.3-x86_64-disk.img"
 [[ -z $NO_KEY ]] && NO_KEY="false"
 [[ -z $KEY_NAME ]] && KEY_NAME="$default_key_name"
 [[ -z $HYPERVISOR_HOSTNAME ]] && HYPERVISOR_HOSTNAME=""
-[[ -z $PROJECT ]] && PROJECT="$default_project"
+[[ -z $PROJECT ]] && PROJECT=""
 [[ -z $API_VERSION ]] && API_VERSION="$default_api_version"
 [[ -z $NETWORK ]] && NETWORK="$default_network"
 [[ -z $SECURITY_GR ]] && SECURITY_GR="$default_security_group_name"
 [[ -z $VOLUME_SIZE ]] && VOLUME_SIZE="$default_volume_size"
 [[ -z $VM_BASE_NAME ]] && VM_BASE_NAME="$default_vm_base_name"
-[[ -z $TEST_USER ]] && TEST_USER="$default_test_user"
+[[ -z $TEST_USER ]] && TEST_USER=""
 [[ -z $ROLE ]] && ROLE="$default_role"
 [[ -z $ADD_KEY ]] && ADD_KEY=""
 [[ -z $BATCH ]] && BATCH="false"
@@ -92,6 +92,7 @@ show_help() {
       -n,           -name           <vm_base_name>
       -p,           -project        <project_id>
       -t                            <time_out_between_VM_create>
+      -u            -user           <user_name>
       -dont_check_osc               disable check openstack cli (without parameter)
       -dont_check                   disable resource availability checks (without value)
       -da,          -dont_ask       all actions will be performed automatically (without value)
@@ -154,6 +155,9 @@ parse_arguments() {
                 shift;;
             -k|-key) key_name="$2"
                 echo "Found the -key_name option with value $key_name"
+                shift;;
+            -u|-user) user_name="$2"
+                echo "Found the -user option with value $user_name"
                 shift;;
             -nk|no_key) no_key="true"
                 echo "Found the -no_name option"
@@ -386,6 +390,7 @@ assign_vars_from_startup_keys () {
     [[ -n $image ]] && IMAGE=$image
     [[ -n $flavor ]] && FLAVOR=$flavor
     [[ -n $key_name ]] && KEY_NAME=$key_name
+    [[ -n $user_name ]] && TEST_USER=$user_name
     [[ -n $no_key ]] && NO_KEY=$no_key
     [[ -n $hyper_name ]] && HYPERVISOR_HOSTNAME=$hyper_name
     [[ -n $project ]] && PROJECT=$project
@@ -446,6 +451,26 @@ check_and_source_openrc_file () {
         return 0
     fi
     exit 1
+}
+
+# Set project and user from openrc if not predefined
+set_project_user_from_openrc() {
+    if [[ -z "$PROJECT" ]]; then
+        if [[ -n "$OS_PROJECT_NAME" ]]; then
+            PROJECT="$OS_PROJECT_NAME"
+            echo "Using project from openrc: $PROJECT"
+        elif [[ -n "$OS_TENANT_NAME" ]]; then
+            PROJECT="$OS_TENANT_NAME"
+            echo "Using project from openrc: $PROJECT"
+        fi
+    fi
+
+    if [[ -z "$TEST_USER" ]]; then
+        if [[ -n "$OS_USERNAME" ]]; then
+            TEST_USER="$OS_USERNAME"
+            echo "Using user from openrc: $TEST_USER"
+        fi
+    fi
 }
 
 # Check command availability
@@ -1024,6 +1049,10 @@ main() {
 
     parse_arguments "$@"
     load_external_scripts
+
+    check_and_source_openrc_file
+    set_project_user_from_openrc
+
     assign_vars_from_startup_keys
     output_of_initial_parameters
 
@@ -1031,12 +1060,9 @@ main() {
     write_config_file
     init_cleanup_state_file
 
-    # Check OpenStack CLI
     if [[ $CHECK_OPENSTACK = "true" ]]; then
         check_openstack_cli
     fi
-
-    check_and_source_openrc_file
 
     # Resource checks and creation
     if [[ ! $DONT_CHECK = "true" ]]; then

@@ -18,3 +18,4 @@ foo.yml
 /tmp/
 /ansible-openstack-diag/tmp/
 /dnsmasq/tmp/
+/openstack-pulse/scripts/
