@@ -568,6 +568,7 @@ check_hv() {
     fi
 }
 
+# Get project
 get_project() {
     echo "Setting project context: \"$PROJECT\""
 
@@ -729,7 +730,14 @@ check_network () {
 get_image_name() {
     local requested_image="${1:-$IMAGE}"
 
-    openstack image list -c Name -f value | grep -i "$requested_image" | head -1
+    local image_name=$(openstack image list -c Name -f value | awk -v pattern="^${requested_image}$" 'tolower($0) ~ tolower(pattern)' | head -1)
+
+    if [ -n "$image_name" ]; then
+        echo "$image_name"
+        return 0
+    fi
+
+    return 1
 }
 
 # Check and set image
@@ -809,7 +817,6 @@ create_flavor() {
     fi
 }
 
-# Check and add flavor
 # Check and add flavor
 check_flavor() {
     echo "Check for exist flavor: \"$FLAVOR\""
