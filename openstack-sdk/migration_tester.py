@@ -118,7 +118,7 @@ def get_config(args: argparse.Namespace) -> dict:
         'migration_timeout': args.migration_timeout or int(os.getenv('MIGRATION_TEST_MIGRATION_TIMEOUT', 300)),
 
         # Parallel execution settings (define by vms qty)
-        'max_parallel': args.max_parallel or int(os.getenv('MIGRATION_TEST_MAX_PARALLEL_MIGRATIONS', -1)),
+        'max_parallel': args.max_parallel or int(os.getenv('MIGRATION_TEST_MAX_PARALLEL_MIGRATIONS', 2)),
 
         # Retry configuration
         'retry_attempts': args.retry_attempts or int(os.getenv('MIGRATION_TEST_RETRY_ATTEMPTS', 3)),
