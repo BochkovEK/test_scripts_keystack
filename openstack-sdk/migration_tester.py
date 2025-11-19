@@ -53,7 +53,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         '--max-parallel',
         type=int,
-        help='Maximum parallel migrations (-1 for unlimited, default: 1)'
+        help='Maximum parallel migrations (-1 for unlimited, default: 2)'
     )
 
     # Retry configuration
@@ -88,6 +88,12 @@ def parse_arguments() -> argparse.Namespace:
         '--interface',
         choices=['public', 'internal', 'admin'],
         help='OpenStack endpoint interface (default: public)'
+    )
+
+    parser.add_argument(
+        '--dry-run',
+        action='store_true',
+        help='Validate environment without actual migration'
     )
 
     args = parser.parse_args()
@@ -536,6 +542,27 @@ class MigrationTester:
             # Current host not in target list, start from first
             return hypervisors[0]
 
+    def dry_run(self):
+        """
+        Simple dry-run - only basic validation steps
+        """
+        try:
+            logging.info("🔍 DRY-RUN: Starting basic validation")
+
+            self.connect_openstack()
+            self.validate_environment()
+            self.vms = self.discover_initial_vms()
+
+            logging.info("✅ DRY-RUN: All checks passed - migration should be possible")
+            logging.info(f"📊 Summary: {len(self.vms)} VMs found on {self.config['hypervisors'][0]}")
+            logging.info("💡 Use without --dry-run to start actual migration test")
+
+            return True
+
+        except Exception as e:
+            logging.error(f"❌ DRY-RUN: Validation failed - {e}")
+            return False
+
     def run_test(self):
         """
         Main test execution loop - runs migration cycles for specified duration.
@@ -796,9 +823,16 @@ def main():
         # Setup logging
         setup_logging(config['log_level'])
 
-        # Create and run tester
+        # Create tester
         tester = MigrationTester(config)
-        tester.run_test()
+
+        # Dry-run mode
+        if args.dry_run:
+            success = tester.dry_run()
+            sys.exit(0 if success else 1)
+        else:
+            # Normal test execution
+            tester.run_test()
 
     except KeyboardInterrupt:
         logging.info("Test interrupted by user")
@@ -810,3 +844,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
