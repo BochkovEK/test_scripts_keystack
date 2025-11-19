@@ -10,7 +10,7 @@ def main():
         conn = openstack.connect()
         print("✅ Authentication successful")
 
-        # 1. Получаем ресурсные провайдеры через Placement API
+        # 1. Get resource providers
         print("\n" + "=" * 80)
         print("📊 RESOURCE PROVIDERS")
         print("=" * 80)
@@ -22,7 +22,6 @@ def main():
         rp_table.field_names = ["Name", "UUID", "Generation"]
 
         for provider in rps:
-            # Используем правильные атрибуты как в официальном примере
             rp_table.add_row([
                 provider.name,
                 provider.id,
@@ -31,24 +30,16 @@ def main():
 
         print(rp_table)
 
-        # 2. Ищем проблемный ресурсный провайдер
+        # 2. Analyze problematic resource provider
         print("\n" + "=" * 80)
         print("🔍 PROBLEMATIC RESOURCE PROVIDER ANALYSIS")
         print("=" * 80)
 
-        # Способ 1: Ищем в списке
         problematic_provider = None
         for provider in rps:
             if provider.name == 'cdm-bl-pca11':
                 problematic_provider = provider
                 break
-
-        # Способ 2: Используем find_resource_provider (как в официальном примере)
-        if not problematic_provider:
-            try:
-                problematic_provider = conn.placement.find_resource_provider('cdm-bl-pca11')
-            except Exception as e:
-                print(f"❌ Error finding resource provider: {e}")
 
         if problematic_provider:
             print(f"📋 Found problematic resource provider:")
@@ -56,7 +47,7 @@ def main():
             print(f"   UUID: {problematic_provider.id}")
             print(f"   Generation: {problematic_provider.generation}")
 
-            # Проверяем соответствие UUID
+            # UUID comparison
             expected_uuid = "2a61c6dd-d045-408a-b4e6-9b0358f0a13a"
             print(f"\n🔍 UUID Comparison:")
             print(f"   Current UUID in Placement: {problematic_provider.id}")
@@ -68,25 +59,44 @@ def main():
             else:
                 print(f"   ✅ UUID matches")
 
-            # Пробуем получить дополнительную информацию
+            # Get inventory using correct method
+            print(f"\n📦 Getting inventory...")
             try:
-                print(f"\n📦 Getting inventory...")
-                inventory = conn.placement.get_resource_provider_inventory(problematic_provider.id)
-                print(f"   Inventory: {inventory}")
+                # Correct way to get inventory
+                inventory = conn.placement.get(f"/resource_providers/{problematic_provider.id}/inventories")
+                if inventory:
+                    print("   Inventory found:")
+                    for res_class, res_data in inventory['inventories'].items():
+                        print(f"     {res_class}: total={res_data.get('total')}, used={res_data.get('allocated')}")
+                else:
+                    print("   No inventory found")
             except Exception as e:
                 print(f"   Inventory error: {e}")
 
+            # Get allocations using correct method
+            print(f"\n🔗 Getting allocations...")
             try:
-                print(f"\n🔗 Getting allocations...")
-                allocations = conn.placement.get_resource_provider_allocations(problematic_provider.id)
-                print(f"   Allocations: {allocations}")
+                # Correct way to get allocations
+                allocations = conn.placement.get(f"/resource_providers/{problematic_provider.id}/allocations")
+                if allocations and 'allocations' in allocations:
+                    alloc_data = allocations['allocations']
+                    if alloc_data:
+                        print(f"   Found {len(alloc_data)} allocation(s):")
+                        for consumer_id, alloc in alloc_data.items():
+                            print(f"     Consumer: {consumer_id}")
+                            for resource, amount in alloc.get('resources', {}).items():
+                                print(f"       {resource}: {amount}")
+                    else:
+                        print("   No allocations found")
+                else:
+                    print("   No allocations data")
             except Exception as e:
                 print(f"   Allocations error: {e}")
 
         else:
-            print("❌ Resource provider 'cdm-bl-pca11' not found in placement")
+            print("❌ Resource provider 'cdm-bl-pca11' not found")
 
-        # 3. Проверяем compute services
+        # 3. Check compute services
         print("\n" + "=" * 80)
         print("🖥️ COMPUTE SERVICES")
         print("=" * 80)
