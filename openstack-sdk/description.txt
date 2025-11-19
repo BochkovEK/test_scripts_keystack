@@ -66,7 +66,7 @@ OpenStack Live Migration Test Script - инструмент для тестир�
 
 Запуск:
     # Базовый запуск
-python ./migration_test.py --hypervisors hypervisor1,hypervisor2,hypervisor3
+python ./migration_test.py --hypervisors "hypervisor1,hypervisor2,hypervisor3" --duration 60
 
     # С параллельными миграциями
 python ./migration_test.py --hypervisors hv1,hv2 --max-parallel 3 --duration 7200
@@ -421,4 +421,4 @@ python ~/test_scripts_keystack/openstacksdk/migration_tester.py --hypervisors "c
 50 ГБ (прогон 3): 37.34s
 100 ГБ: 38.73s
 
-Принимаем за оптимальный размер диска 10GB
+Принимаем за оптимальный размер диска 10GB и количесво ВМ 4
