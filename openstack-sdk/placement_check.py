@@ -20,10 +20,14 @@ def main():
         print(f"✅ Found resource providers: {len(rps)}")
 
         rp_table = PrettyTable()
-        rp_table.field_names = ["Name", "UUID", "Generation", "Root Provider"]
+        rp_table.field_names = ["Name", "UUID", "Generation"]
 
         for rp in rps:
-            rp_table.add_row([rp['name'], rp['uuid'], rp['generation'], rp['root_provider']])
+            rp_table.add_row([
+                rp.get('name', 'N/A'),
+                rp.get('uuid', 'N/A'),
+                rp.get('generation', 'N/A')
+            ])
 
         print(rp_table)
 
@@ -36,19 +40,24 @@ def main():
         inventory_table.field_names = ["Provider Name", "Resource Class", "Total", "Reserved", "Allocated", "Step Size"]
 
         for rp in rps:
+            rp_uuid = rp.get('uuid')
+            rp_name = rp.get('name', 'N/A')
             try:
-                inventory = conn.placement.get_resource_provider_inventory(rp['uuid'])
-                for res_class, res_data in inventory.items():
-                    inventory_table.add_row([
-                        rp['name'],
-                        res_class,
-                        res_data.get('total', 0),
-                        res_data.get('reserved', 0),
-                        res_data.get('allocated', 0),
-                        res_data.get('step_size', 1)
-                    ])
+                inventory = conn.placement.get_resource_provider_inventory(rp_uuid)
+                if inventory:
+                    for res_class, res_data in inventory.items():
+                        inventory_table.add_row([
+                            rp_name,
+                            res_class,
+                            res_data.get('total', 0),
+                            res_data.get('reserved', 0),
+                            res_data.get('allocated', 0),
+                            res_data.get('step_size', 1)
+                        ])
+                else:
+                    inventory_table.add_row([rp_name, "No inventory", "", "", "", ""])
             except Exception as e:
-                inventory_table.add_row([rp['name'], f"ERROR: {e}", "", "", "", ""])
+                inventory_table.add_row([rp_name, f"ERROR: {str(e)[:50]}...", "", "", "", ""])
 
         print(inventory_table)
 
@@ -60,23 +69,35 @@ def main():
         allocations_table = PrettyTable()
         allocations_table.field_names = ["Consumer UUID", "Provider Name", "Resource Class", "Used"]
 
+        allocation_found = False
         for rp in rps:
+            rp_uuid = rp.get('uuid')
+            rp_name = rp.get('name', 'N/A')
             try:
-                allocations = conn.placement.get_resource_provider_allocations(rp['uuid'])
+                allocations = conn.placement.get_resource_provider_allocations(rp_uuid)
                 if allocations:
                     for consumer_uuid, alloc_data in allocations.items():
                         resources = alloc_data.get('resources', {})
                         for res_class, amount in resources.items():
                             allocations_table.add_row([
-                                consumer_uuid[:8] + "...",
-                                rp['name'],
+                                consumer_uuid[:8] + "..." if len(consumer_uuid) > 8 else consumer_uuid,
+                                rp_name,
                                 res_class,
                                 amount
                             ])
+                            allocation_found = True
             except Exception as e:
-                allocations_table.add_row([f"ERROR: {e}", rp['name'], "", ""])
+                allocations_table.add_row([
+                    f"ERROR: {str(e)[:30]}...",
+                    rp_name,
+                    "",
+                    ""
+                ])
 
-        print(allocations_table)
+        if allocation_found:
+            print(allocations_table)
+        else:
+            print("No resource allocations found")
 
         # 4. Check compute services
         print("\n" + "=" * 80)
@@ -97,21 +118,34 @@ def main():
 
         print(services_table)
 
-        # 5. Find name/UUID conflicts
+        # 5. Find specific problematic resource provider
         print("\n" + "=" * 80)
-        print("⚠️ POTENTIAL CONFLICTS")
+        print("🔍 PROBLEMATIC RESOURCE PROVIDER ANALYSIS")
         print("=" * 80)
 
-        conflicts_found = False
+        problematic_rp = None
         for rp in rps:
-            # Find compute service with same host name
-            matching_services = [s for s in services if s.host == rp['name']]
-            if not matching_services:
-                print(f"❌ Resource provider '{rp['name']}' has no matching compute service")
-                conflicts_found = True
+            if rp.get('name') == 'cdm-bl-pca11':
+                problematic_rp = rp
+                break
 
-        if not conflicts_found:
-            print("✅ No conflicts detected")
+        if problematic_rp:
+            print(f"🚨 Found problematic resource provider:")
+            print(f"   Name: {problematic_rp.get('name')}")
+            print(f"   UUID: {problematic_rp.get('uuid')}")
+            print(f"   Generation: {problematic_rp.get('generation')}")
+
+            # Check if this UUID matches what nova-compute expects
+            print(f"\n📋 Checking if this matches the error UUID from logs...")
+            print(f"   Current UUID: {problematic_rp.get('uuid')}")
+            print(f"   Expected UUID in error: 2a61c6dd-d045-408a-b4e6-9b0358f0a13a")
+
+            if problematic_rp.get('uuid') != '2a61c6dd-d045-408a-b4e6-9b0358f0a13a':
+                print(f"   ❌ UUID MISMATCH - This is the conflict!")
+            else:
+                print(f"   ✅ UUID matches")
+        else:
+            print("❌ Resource provider 'cdm-bl-pca11' not found in placement")
 
     except Exception as e:
         print(f"❌ Error: {e}")
