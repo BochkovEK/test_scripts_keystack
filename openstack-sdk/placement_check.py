@@ -30,117 +30,136 @@ def main():
 
         print(rp_table)
 
-        # 2. Analyze ALL resource providers in detail
+        # 2. Detailed analysis for ALL resource providers
         print("\n" + "=" * 80)
         print("🔍 DETAILED RESOURCE PROVIDER ANALYSIS")
         print("=" * 80)
 
-        for provider in rps:
-            print(f"\n📋 Resource Provider: {provider.name}")
-            print(f"   UUID: {provider.id}")
-            print(f"   Generation: {provider.generation}")
-
-            # Get inventory using direct API call with proper endpoint
-            try:
-                # Correct endpoint for inventory
-                inventory = conn.placement.get(
-                    f"/resource_providers/{provider.id}/inventories",
-                    microversion='1.14'  # Use stable microversion
-                )
-
-                if inventory and isinstance(inventory, dict) and 'inventories' in inventory:
-                    inv_data = inventory['inventories']
-                    print("   📦 Inventory:")
-                    for res_class, res_data in inv_data.items():
-                        total = res_data.get('total', 0)
-                        allocated = res_data.get('allocated', 0)
-                        reserved = res_data.get('reserved', 0)
-                        allocation_ratio = res_data.get('allocation_ratio', 1.0)
-
-                        status = "🟢" if allocated == 0 else "🟡" if allocated < total else "🔴"
-                        print(f"     {res_class}:")
-                        print(f"       Total: {total}, Allocated: {allocated}, Reserved: {reserved}")
-                        print(f"       Allocation Ratio: {allocation_ratio}")
-                        print(f"       Status: {status} {allocated}/{total}")
-
-                else:
-                    print("   📦 No inventory data in response")
-
-            except Exception as e:
-                print(f"   📦 Inventory error: {e}")
-
-            # Get allocations with proper endpoint
-            try:
-                allocations = conn.placement.get(
-                    f"/resource_providers/{provider.id}/allocations",
-                    microversion='1.14'
-                )
-
-                if allocations and isinstance(allocations, dict) and allocations.get('allocations'):
-                    alloc_data = allocations['allocations']
-                    print(f"   🔗 Allocations ({len(alloc_data)}):")
-
-                    for consumer_id, alloc_info in alloc_data.items():
-                        resources = alloc_info.get('resources', {})
-                        print(f"     Consumer UUID: {consumer_id}")
-
-                        if resources:
-                            for resource, amount in resources.items():
-                                print(f"       {resource}: {amount}")
-                        else:
-                            print(f"       No resources allocated")
-
-                else:
-                    print("   🔗 No allocations found")
-
-            except Exception as e:
-                print(f"   🔗 Allocations error: {e}")
-
-        # 3. Check for the specific problematic case - used resources without VMs
-        print("\n" + "=" * 80)
-        print("🔎 SPECIFIC PROBLEM ANALYSIS: Used Resources without VMs")
-        print("=" * 80)
-
-        # Get all VMs to cross-reference
+        # Get all VMs for cross-reference
         try:
             servers = list(conn.compute.servers(all_projects=True))
-            active_vms = [server for server in servers if server.status in ['ACTIVE', 'BUILD']]
-            print(f"📊 Found {len(servers)} total VMs, {len(active_vms)} active VMs")
-
-            # Check each provider for resource usage vs actual VMs
-            for provider in rps:
-                print(f"\n🔍 Checking {provider.name}:")
-
-                # Get inventory to see used resources
-                try:
-                    inventory = conn.placement.get(
-                        f"/resource_providers/{provider.id}/inventories",
-                        microversion='1.14'
-                    )
-
-                    if inventory and 'inventories' in inventory:
-                        total_used = 0
-                        for res_class, res_data in inventory['inventories'].items():
-                            used = res_data.get('allocated', 0)
-                            if used > 0:
-                                total_used += used
-                                print(f"   ⚠️  {res_class}: {used} allocated")
-
-                        # Check if there are VMs on this host
-                        vms_on_host = [vm for vm in servers if getattr(vm, 'host', None) == provider.name]
-                        print(f"   🖥️  VMs on host: {len(vms_on_host)}")
-
-                        if total_used > 0 and len(vms_on_host) == 0:
-                            print(f"   🚨 CRITICAL: Resources allocated but NO VMs on this host!")
-                            print(f"   💡 This indicates orphaned allocations that need cleanup")
-
-                except Exception as e:
-                    print(f"   Error checking {provider.name}: {e}")
-
+            print(f"📋 Found {len(servers)} VMs in Nova for cross-reference")
         except Exception as e:
-            print(f"Error getting VMs: {e}")
+            print(f"❌ Error getting VMs: {e}")
+            servers = []
 
-        # 4. Check compute services status
+        for provider in rps:
+            print(f"\n🎯 Analyzing: {provider.name} ({provider.id})")
+            print("-" * 60)
+
+            # Get inventory using direct API call (like Gemini)
+            try:
+                inventory_resp = conn.placement.get(f'/resource_providers/{provider.id}/inventories')
+                inventory_data = inventory_resp.json()
+                inventories = inventory_data.get('inventories', {})
+
+                if inventories:
+                    print("📦 INVENTORY:")
+                    inventory_table = PrettyTable()
+                    inventory_table.field_names = ["Resource Class", "Total", "Allocated", "Reserved",
+                                                   "Allocation Ratio"]
+
+                    for res_class, res_data in inventories.items():
+                        inventory_table.add_row([
+                            res_class,
+                            res_data.get('total', 0),
+                            res_data.get('allocated', 0),
+                            res_data.get('reserved', 0),
+                            res_data.get('allocation_ratio', 1.0)
+                        ])
+
+                    print(inventory_table)
+                else:
+                    print("📦 No inventory found")
+
+            except Exception as e:
+                print(f"📦 Inventory error: {e}")
+
+            # Get allocations using direct API call (like Gemini)
+            try:
+                allocations_resp = conn.placement.get(f'/resource_providers/{provider.id}/allocations')
+                allocations_data = allocations_resp.json()
+                allocations = allocations_data.get('allocations', {})
+
+                if allocations:
+                    print(f"🔗 ALLOCATIONS ({len(allocations)} consumers):")
+
+                    orphaned_count = 0
+                    valid_count = 0
+
+                    for consumer_uuid, alloc_data in allocations.items():
+                        resources = alloc_data.get('resources', {})
+
+                        print(f"\n   Consumer: {consumer_uuid}")
+                        print(f"   Resources: {', '.join([f'{k}={v}' for k, v in resources.items()])}")
+
+                        # Cross-reference with Nova (like Gemini)
+                        try:
+                            server = conn.compute.find_server(consumer_uuid, ignore_missing=True)
+                            if server:
+                                print(f"   ✅ STATUS: Valid VM - {server.name} (Status: {server.status})")
+                                valid_count += 1
+                            else:
+                                print(f"   ❌ STATUS: ORPHANED - No VM found in Nova")
+                                orphaned_count += 1
+
+                        except Exception as e:
+                            print(f"   ⚠️  STATUS: Error checking VM - {e}")
+                            orphaned_count += 1
+
+                    # Summary for this provider
+                    print(f"\n   📊 SUMMARY for {provider.name}:")
+                    print(f"      Valid allocations: {valid_count}")
+                    print(f"      Orphaned allocations: {orphaned_count}")
+
+                    if orphaned_count > 0:
+                        print(f"      🚨 ACTION NEEDED: Cleanup {orphaned_count} orphaned allocations")
+
+                else:
+                    print("🔗 No allocations found")
+
+            except Exception as e:
+                print(f"🔗 Allocations error: {e}")
+
+        # 3. Summary across all providers
+        print("\n" + "=" * 80)
+        print("📈 CLUSTER-WIDE SUMMARY")
+        print("=" * 80)
+
+        total_orphaned = 0
+        total_consumers = 0
+
+        for provider in rps:
+            try:
+                allocations_resp = conn.placement.get(f'/resource_providers/{provider.id}/allocations')
+                allocations_data = allocations_resp.json()
+                allocations = allocations_data.get('allocations', {})
+
+                provider_orphaned = 0
+                for consumer_uuid in allocations.keys():
+                    try:
+                        server = conn.compute.find_server(consumer_uuid, ignore_missing=True)
+                        if not server:
+                            provider_orphaned += 1
+                            total_orphaned += 1
+                    except:
+                        provider_orphaned += 1
+                        total_orphaned += 1
+
+                total_consumers += len(allocations)
+
+                status = "✅ CLEAN" if provider_orphaned == 0 else f"🚨 {provider_orphaned} ORPHANED"
+                print(f"   {provider.name}: {len(allocations)} consumers - {status}")
+
+            except Exception as e:
+                print(f"   {provider.name}: Error - {e}")
+
+        print(f"\n📊 TOTAL: {total_consumers} consumers, {total_orphaned} orphaned allocations")
+
+        if total_orphaned > 0:
+            print(f"🚨 CLUSTER ACTION NEEDED: Cleanup {total_orphaned} orphaned allocations")
+
+        # 4. Compute services status
         print("\n" + "=" * 80)
         print("🖥️ COMPUTE SERVICES STATUS")
         print("=" * 80)
