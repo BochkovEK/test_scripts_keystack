@@ -43,7 +43,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         '--duration',
         type=int,
-        help='Total test duration in seconds (default: 3600)'
+        help='Total test duration in seconds (default: 60)'
     )
     parser.add_argument(
         '--migration-timeout',
@@ -120,7 +120,7 @@ def get_config(args: argparse.Namespace) -> dict:
 
         # Core test parameters
         'hypervisors': (args.hypervisors or os.getenv('MIGRATION_TEST_HYPERVISORS')).split(','),
-        'duration': args.duration or int(os.getenv('MIGRATION_TEST_DURATION', 3600)),
+        'duration': args.duration or int(os.getenv('MIGRATION_TEST_DURATION', 60)),
         'migration_timeout': args.migration_timeout or int(os.getenv('MIGRATION_TEST_MIGRATION_TIMEOUT', 300)),
 
         # Parallel execution settings (define by vms qty)
@@ -662,8 +662,8 @@ class MigrationTester:
 
             # Performance metrics
             if self.stats.total_duration > 0:
-                self.stats.migrations_per_hour = (total_migrations / self.stats.total_duration) * 3600
-                self.stats.cycles_per_hour = (self.stats.total_cycles / self.stats.total_duration) * 3600
+                self.stats.migrations_per_hour = (total_migrations / self.stats.total_duration) * 60
+                self.stats.cycles_per_hour = (self.stats.total_cycles / self.stats.total_duration) * 60
             else:
                 self.stats.migrations_per_hour = 0.0
                 self.stats.cycles_per_hour = 0.0
