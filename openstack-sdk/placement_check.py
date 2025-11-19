@@ -30,80 +30,94 @@ def main():
 
         print(rp_table)
 
-        # 2. Analyze problematic resource provider
+        # 2. Analyze ALL resource providers in detail
         print("\n" + "=" * 80)
-        print("🔍 PROBLEMATIC RESOURCE PROVIDER ANALYSIS")
+        print("🔍 DETAILED RESOURCE PROVIDER ANALYSIS")
         print("=" * 80)
 
-        problematic_provider = None
         for provider in rps:
-            if provider.name == 'cdm-bl-pca11':
-                problematic_provider = provider
-                break
+            print(f"\n📋 Resource Provider: {provider.name}")
+            print(f"   UUID: {provider.id}")
+            print(f"   Generation: {provider.generation}")
 
-        if problematic_provider:
-            print(f"📋 Found problematic resource provider:")
-            print(f"   Name: {problematic_provider.name}")
-            print(f"   UUID: {problematic_provider.id}")
-            print(f"   Generation: {problematic_provider.generation}")
-
-            # UUID comparison
-            expected_uuid = "2a61c6dd-d045-408a-b4e6-9b0358f0a13a"
-            print(f"\n🔍 UUID Comparison:")
-            print(f"   Current UUID in Placement: {problematic_provider.id}")
-            print(f"   Expected UUID from error:  {expected_uuid}")
-
-            if problematic_provider.id != expected_uuid:
-                print(f"   ❌ UUID MISMATCH DETECTED!")
-                print(f"   💡 This is the root cause of the conflict")
-            else:
-                print(f"   ✅ UUID matches")
-
-            # Get inventory using correct method
-            print(f"\n📦 Getting inventory...")
+            # Get inventory
             try:
-                # Correct way to get inventory
-                inventory = conn.placement.get(f"/resource_providers/{problematic_provider.id}/inventories")
-                if inventory:
-                    print("   Inventory found:")
-                    for res_class, res_data in inventory['inventories'].items():
-                        print(f"     {res_class}: total={res_data.get('total')}, used={res_data.get('allocated')}")
+                inventory = conn.placement.get(f"/resource_providers/{provider.id}/inventories")
+                if inventory and 'inventories' in inventory:
+                    print("   📦 Inventory:")
+                    inv_data = inventory['inventories']
+                    for res_class, res_data in inv_data.items():
+                        used = res_data.get('allocated', 0)
+                        total = res_data.get('total', 0)
+                        status = "🟢 OK" if used == 0 else "🟡 USED" if used < total else "🔴 FULL"
+                        print(f"     {res_class}: {used}/{total} {status}")
+
+                        # Check for anomalies (used resources but no VMs)
+                        if used > 0:
+                            print(f"       ⚠️  Resource consumption detected!")
                 else:
-                    print("   No inventory found")
+                    print("   📦 No inventory found")
             except Exception as e:
-                print(f"   Inventory error: {e}")
+                print(f"   📦 Inventory error: {e}")
 
-            # Get allocations using correct method
-            print(f"\n🔗 Getting allocations...")
+            # Get allocations to see WHAT is consuming resources
             try:
-                # Correct way to get allocations
-                allocations = conn.placement.get(f"/resource_providers/{problematic_provider.id}/allocations")
+                allocations = conn.placement.get(f"/resource_providers/{provider.id}/allocations")
                 if allocations and 'allocations' in allocations:
                     alloc_data = allocations['allocations']
                     if alloc_data:
-                        print(f"   Found {len(alloc_data)} allocation(s):")
+                        print(f"   🔗 Allocations ({len(alloc_data)}):")
                         for consumer_id, alloc in alloc_data.items():
+                            resources = alloc.get('resources', {})
                             print(f"     Consumer: {consumer_id}")
-                            for resource, amount in alloc.get('resources', {}).items():
+                            for resource, amount in resources.items():
                                 print(f"       {resource}: {amount}")
+
+                            # Try to get consumer info (VM, etc.)
+                            try:
+                                # Check if it's a server
+                                server = conn.compute.find_server(consumer_id)
+                                if server:
+                                    print(f"       🖥️  VM: {server.name} (Status: {server.status})")
+                                else:
+                                    print(f"       🔍 Consumer not found as VM - may be orphaned allocation")
+                            except:
+                                print(f"       🔍 Could not identify consumer")
                     else:
-                        print("   No allocations found")
+                        print("   🔗 No allocations found")
                 else:
-                    print("   No allocations data")
+                    print("   🔗 No allocations data")
             except Exception as e:
-                print(f"   Allocations error: {e}")
+                print(f"   🔗 Allocations error: {e}")
 
-        else:
-            print("❌ Resource provider 'cdm-bl-pca11' not found")
-
-        # 3. Check compute services
+        # 3. Check compute services and cross-reference with VMs
         print("\n" + "=" * 80)
-        print("🖥️ COMPUTE SERVICES")
+        print("🖥️ COMPUTE SERVICES & VM CROSS-REFERENCE")
         print("=" * 80)
 
         services = list(conn.compute.services(binary='nova-compute'))
         services_table = PrettyTable()
         services_table.field_names = ["Host", "Status", "State", "Disabled Reason"]
+
+        # Get all VMs to see where they're running
+        print("\n📋 Checking VM distribution across hosts...")
+        try:
+            servers = list(conn.compute.servers(all_projects=True))
+            host_vm_count = {}
+
+            for server in servers:
+                host = getattr(server, 'host', 'Unknown')
+                host_vm_count[host] = host_vm_count.get(host, 0) + 1
+
+            print("   VM distribution:")
+            for host, count in host_vm_count.items():
+                print(f"     {host}: {count} VMs")
+
+            if not servers:
+                print("   ℹ️  No VMs found in the cluster")
+
+        except Exception as e:
+            print(f"   Error getting VMs: {e}")
 
         for service in services:
             services_table.add_row([
@@ -114,6 +128,28 @@ def main():
             ])
 
         print(services_table)
+
+        # 4. Summary of anomalies
+        print("\n" + "=" * 80)
+        print("⚠️  ANOMALY SUMMARY")
+        print("=" * 80)
+
+        anomalies_found = False
+        for provider in rps:
+            try:
+                inventory = conn.placement.get(f"/resource_providers/{provider.id}/inventories")
+                if inventory and 'inventories' in inventory:
+                    inv_data = inventory['inventories']
+                    for res_class, res_data in inv_data.items():
+                        used = res_data.get('allocated', 0)
+                        if used > 0:
+                            print(f"❌ {provider.name}: {used} {res_class} allocated but need to check VMs")
+                            anomalies_found = True
+            except:
+                pass
+
+        if not anomalies_found:
+            print("✅ No resource allocation anomalies detected")
 
     except Exception as e:
         print(f"❌ Error: {e}")
