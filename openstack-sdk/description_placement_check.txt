@@ -1,0 +1,65 @@
+Скрипт диагностики hypervisor placement:
+
+python ~/test_scripts_keystack/openstack-sdk/placement_check.py
+
+Ожидаемый вывод:
+🎯 Analyzing: cdm-bl-pca10 (8e187f04-39f1-4f44-af11-ef2e382e5305)
+------------------------------------------------------------
+📦 INVENTORY:
++----------------+--------+-----------+----------+------------------+
+| Resource Class | Total  | Allocated | Reserved | Allocation Ratio |
++----------------+--------+-----------+----------+------------------+
+|      VCPU      |   56   |     0     |    0     |       4.0        |
+|   MEMORY_MB    | 128290 |     0     |  20480   |       0.95       |
+|    DISK_GB     |  419   |     0     |    0     |       1.0        |
++----------------+--------+-----------+----------+------------------+
+🔗 ALLOCATIONS (3 consumers):
+
+   Consumer: f7e7fedb-5a13-4266-bb7f-06132041d31b
+   Resources: MEMORY_MB=2048, VCPU=1
+   ✅ STATUS: Valid VM - che-vm1 (Status: SHUTOFF)
+
+   Consumer: 77a53015-3451-4a6f-a345-3799b42c9d3d
+   Resources: MEMORY_MB=2048, VCPU=2
+   ✅ STATUS: Valid VM - test_VM_net_failure_on_ctrl-01 (Status: ACTIVE)
+
+   Consumer: 60e1f1d7-4986-4d98-9f8a-2ca56bb56042
+   Resources: MEMORY_MB=2048, VCPU=2
+   ✅ STATUS: Valid VM - test_VM_net_failure_on_ctrl-02 (Status: ERROR)
+
+   📊 SUMMARY for cdm-bl-pca10:
+      Valid allocations: 3
+      Orphaned allocations: 0
+
+Проблемный вывод:
+🎯 Analyzing: cdm-bl-pca11 (426f7356-81b7-4278-a6b1-db5c4cfc246b)
+------------------------------------------------------------
+📦 INVENTORY:
++----------------+--------+-----------+----------+------------------+
+| Resource Class | Total  | Allocated | Reserved | Allocation Ratio |
++----------------+--------+-----------+----------+------------------+
+|      VCPU      |   56   |     0     |    0     |       4.0        |
+|   MEMORY_MB    | 128287 |     0     |  20480   |       0.95       |
+|    DISK_GB     |  418   |     0     |    0     |       1.0        |
++----------------+--------+-----------+----------+------------------+
+🔗 ALLOCATIONS (1 consumers):
+
+   Consumer: febacbf7-a1c2-4e4f-95c0-8feb271c3600
+   Resources: VCPU=2, MEMORY_MB=2048
+   ❌ STATUS: ORPHANED - No VM found in Nova
+
+   📊 SUMMARY for cdm-bl-pca11:
+      Valid allocations: 0
+      Orphaned allocations: 1
+      🚨 ACTION NEEDED: Cleanup 1 orphaned allocations
+
+!!! ВМ на гипере cdm-bl-pca11 нет, консумер есть
+
+Решение:
+openstack resource provider allocation delete febacbf7-a1c2-4e4f-95c0-8feb271c3600
+openstack resource provider list -> ID
+openstack resource provider delete 426f7356-81b7-4278-a6b1-db5c4cfc246b
+openstack compute service list -> ID
+openstack compute service delete 11922a41-9ccd-4234-9e99-ccbad2ac11a8
+
+deploy KOLLA_ARGS: --limit compute

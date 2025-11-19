@@ -10,15 +10,21 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Add project directories to Python path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'services'))
+sys.path.append(os.path.join(os.path.dirname(__file__), 'single_check_services'))
 sys.path.append(os.path.join(os.path.dirname(__file__), 'config'))
 
 from config.config import Config, ServiceType
+
+# Check services
 from services.nova import NovaCheck
 from services.cinder import CinderCheck
 from services.keystone import KeystoneCheck
 from services.neutron import NeutronCheck
 from services.rabbitmq import RabbitCheck
 from services.mariadb import MariaDBCheck
+
+# Single check services
+from single_check_services.placement import PlacementCheck
 
 
 class Pulse:
@@ -32,6 +38,10 @@ class Pulse:
         'neutron': {'type': ServiceType.OPENSTACK, 'class': NeutronCheck},
         'rabbitmq': {'type': ServiceType.RABBITMQ, 'class': RabbitCheck},
         'galera': {'type': ServiceType.MARIADB, 'class': MariaDBCheck},
+    }
+
+    SINGLE_CHECK_SERVICE_REGISTRY = {
+        'placement': {'type': ServiceType.OPENSTACK, 'class': PlacementCheck},
     }
 
     def __init__(self, inventory_path=None, config_path=None, debug=False, output_path=None, single_mode=False):
@@ -85,6 +95,29 @@ class Pulse:
                     print(f"  ❌ Failed to initialize {service_name}: {e}")
             else:
                 print(f"  ⚠️ Service '{service_name}' not found in registry")
+
+    def _init_single_mode_checks(self):
+        """Initialize single-mode check instances"""
+        single_checks = {}
+
+        if not self.single_mode:
+            return single_checks
+
+        print("🔍 Initializing single-mode checks...")
+
+        for check_name in self.config.settings.single_mode_checks:
+            if check_name in self.SINGLE_CHECK_SERVICE_REGISTRY:
+                try:
+                    service_info = self.SINGLE_CHECK_SERVICE_REGISTRY[check_name]
+                    check_instance = service_info['class'](self.config, debug=self.debug)
+                    single_checks[check_name] = check_instance
+                    print(f"  ✅ {check_name} initialized")
+                except Exception as e:
+                    print(f"  ❌ Failed to initialize {check_name}: {e}")
+            else:
+                print(f"  ⚠️ Single-mode check '{check_name}' not found in registry")
+
+        return single_checks
 
     def _setup_logging(self, output_path=None):
         """
@@ -289,6 +322,42 @@ class Pulse:
                 check.display_details(service_data)
         elif status == 'ERROR':
             error_message = service_data.get('error', 'Unknown error')
+            print(f"  Error: {error_message}")
+
+    def run_single_mode_checks(self):
+        """Execute additional single-mode checks"""
+        if not self.single_mode:
+            return
+
+        print("\n" + "=" * 50)
+        print("🔍 SINGLE-MODE CHECKS")
+        print("=" * 50)
+
+        single_checks = self._init_single_mode_checks()
+
+        for check_name, check_instance in single_checks.items():
+            try:
+                # Execute single check (one-time)
+                result = check_instance.run_single_check()
+
+                # Display results
+                self._display_single_check_result(check_name, result, check_instance)
+
+            except Exception as e:
+                print(f"❌ {check_name.upper()}: ERROR - {str(e)}")
+
+    def _display_single_check_result(self, check_name, result, check_instance):
+        """Display single check result with proper formatting"""
+        status = result.get('status', 'UNKNOWN')
+        response_time = result.get('response_time', 0)
+
+        status_icon = "✅" if status == 'OK' else "❌"
+        print(f"{status_icon} {check_name.upper()}: {status} ({response_time}s)")
+
+        if status == 'OK' and hasattr(check_instance, 'display_placement_report'):
+            check_instance.display_placement_report(result)
+        elif status == 'ERROR':
+            error_message = result.get('error', 'Unknown error')
             print(f"  Error: {error_message}")
 
     def _cleanup(self):

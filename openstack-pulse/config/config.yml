@@ -15,6 +15,10 @@ check_services:
   - rabbitmq
   - galera
 
+# Single check services
+single_mode_checks:
+  - placement
+
 # Timing parameters
 intervals:
   check_interval: 5           # Interval between checks (seconds)
