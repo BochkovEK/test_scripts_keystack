@@ -413,7 +413,8 @@ def main():
         config_path=args.config,
         debug=args.debug,
         output_path=args.output,
-        single_mode=args.single
+        single_mode=args.single,
+        duration=args.duration
     )
 
     # Always run main monitoring
