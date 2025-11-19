@@ -44,7 +44,12 @@ class Pulse:
         'placement': {'type': ServiceType.OPENSTACK, 'class': PlacementCheck},
     }
 
-    def __init__(self, inventory_path=None, config_path=None, debug=False, output_path=None, single_mode=False):
+    def __init__(self, inventory_path=None,
+                 config_path=None,
+                 debug=False,
+                 output_path=None,
+                 duration=None,
+                 single_mode=False):
         """
         Initialize Pulse monitor
 
@@ -54,9 +59,11 @@ class Pulse:
             debug: Enable debug output
             output_path: Path for log output
             single_mode: Run once and exit
+            duration: duration (seconds)
         """
         self.debug = debug
         self.single_mode = single_mode
+        self.duration = duration
         self.inventory_path = inventory_path
         self.config_path = config_path
 
@@ -243,9 +250,15 @@ class Pulse:
             total_iterations = 1
             print("🔍 Single-shot mode: collecting one snapshot")
         else:
-            total_iterations = (self.config.settings.intervals.collection_window //
-                                self.config.settings.intervals.check_interval)
-            print(f"⏱️ Collection: {total_iterations} snapshots")
+            duration = (self.duration
+                        if self.duration is not None
+                        else self.config.settings.intervals.duration)
+            check_interval = self.config.settings.intervals.check_interval
+
+            total_iterations = duration // check_interval
+
+            source = "CLI argument" if self.duration is not None else "config"
+            print(f"⏱️ Collection: {total_iterations} snapshots over {duration}s (from {source})")
 
         try:
             for cycle in range(total_iterations):
@@ -386,6 +399,7 @@ def get_launch_args():
     parser.add_argument('--output', '-o', help='Path to output file')
     parser.add_argument('--debug', '-d', action='store_true', help='Enable debug mode')
     parser.add_argument('--single', action='store_true', help='Run once and exit')
+    parser.add_argument('--duration', type=int, help='Duration in seconds')
     return parser.parse_args()
 
 

@@ -3,7 +3,7 @@
 
 # logging
 log:
-  enable_log: True                  # False by default
+  enable_log: True                   # False by default
 #  path: "/var/log/openstack-pulse"  # /tmp by default
 
 # Check services
@@ -21,8 +21,8 @@ single_mode_checks:
 
 # Timing parameters
 intervals:
-  check_interval: 5           # Interval between checks (seconds)
-  collection_window: 300      # Data collection window (seconds) - 5 minutes
+  check_interval: 5   # Interval between checks (seconds)
+  duration: 300       # Data collection window (seconds) - 5 minutes
 
 # Endpoints
 endpoints:
