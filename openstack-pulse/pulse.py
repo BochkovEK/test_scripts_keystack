@@ -389,8 +389,11 @@ def get_launch_args():
     return parser.parse_args()
 
 
-if __name__ == "__main__":
+def main():
+    """Main entry point for OpenStack Pulse"""
     args = get_launch_args()
+
+    # Create Pulse instance
     pulse = Pulse(
         inventory_path=args.inventory,
         config_path=args.config,
@@ -398,4 +401,14 @@ if __name__ == "__main__":
         output_path=args.output,
         single_mode=args.single
     )
+
+    # Always run main monitoring
     pulse.run()
+
+    # Run single-mode checks only if requested
+    pulse.run_single_mode_checks()
+
+
+if __name__ == "__main__":
+    main()
+
