@@ -30,6 +30,7 @@ get_vms_list_script="get_vms_list.sh"
 [[ -z $PROJECT ]] && PROJECT=""
 [[ -z $DONT_ASK ]] && DONT_ASK="true"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
+[[ -z $SSH_BY_PASS ]] && SSH_BY_PASS="false"
 [[ -z $VMS ]] && VMS=""
 [[ -z $TS_SSH_TIMEOUT ]] && TS_SSH_TIMEOUT="$default_ssh_timeout"
 
@@ -52,6 +53,7 @@ show_help() {
       -v, -debug              Enable debug output
       -check                  Only check SSH access without executing commands
       -t, -timeout <seconds>  SSH connection timeout (default: 5)
+      -ssh_by_pass            Enable ssh by password
       --help                  Show this help message
 
     Examples:
@@ -94,6 +96,11 @@ parse_arguments() {
                 KEY_PATH="$2"
                 echo "Using SSH key: $KEY_PATH"
                 shift 2
+                ;;
+            -ssh_by_pass)
+                SSH_BY_PASS="true"
+                echo "Enable SSH by password: SSH_BY_PASS: $SSH_BY_PASS"
+                shift
                 ;;
             -t|-timeout)
                 TS_SSH_TIMEOUT="$2"
@@ -198,7 +205,7 @@ get_vms_ips() {
 }
 
 # Function to check host connectivity
-check_host_connectivity() {
+check_vm_connectivity() {
     local ip="$1"
 
     if ping -c 2 -W 1 "$ip" &> /dev/null; then
@@ -218,8 +225,7 @@ check_ssh_connectivity() {
 
     ssh_output=$(ssh -o StrictHostKeyChecking=no \
         -o ConnectTimeout="$TS_SSH_TIMEOUT" \
-        -o BatchMode=yes \
-        -i "$KEY_PATH" \
+        -o BatchMode=yes "$KEY_STRING" \
         "$VM_USER@$ip" \
         "echo 'SSH_OK'" 2>&1)
     exit_code=$?
@@ -241,8 +247,7 @@ execute_on_vm() {
     echo -e "${yellow}Command: $COMMAND_STR${normal}"
 
     ssh -t -o StrictHostKeyChecking=no \
-        -o ConnectTimeout="$TS_SSH_TIMEOUT" \
-        -i "$KEY_PATH" \
+        -o ConnectTimeout="$TS_SSH_TIMEOUT" "$KEY_STRING" \
         "$VM_USER@$ip" \
         "$COMMAND_STR"
 
@@ -290,6 +295,7 @@ batch_run_commands() {
       VMS: $VMS
       KEY_PATH: $KEY_PATH
       VM_USER: $VM_USER
+      SSH_BY_PASS: $SSH_BY_PASS
       TS_SSH_TIMEOUT: $TS_SSH_TIMEOUT
     "
 
@@ -310,15 +316,17 @@ batch_run_commands() {
         [ "$TS_DEBUG" = "true" ] &&
         echo -e "
     [DEBUG] Configuration:
-      VM_USER:    $VM_USER
-      KEY_PATH:   $KEY_PATH
-      vm_name:    $vm_name
-      vm_status:  $vm_status
-      vm_ip:      $vm_ip
+      VM_USER:     $VM_USER
+      KEY_PATH:    $KEY_PATH
+      SSH_BY_PASS: $SSH_BY_PASS
+      KEY_STRING:  $KEY_STRING
+      vm_name:     $vm_name
+      vm_status:   $vm_status
+      vm_ip:       $vm_ip
       "
 
         # Check ping connectivity
-        if ! check_host_connectivity "$vm_ip"; then
+        if ! check_vm_connectivity "$vm_ip"; then
             at_least_one_failure=true
             #continue
         fi
@@ -357,7 +365,10 @@ main() {
     echo "Starting $script_name script..."
 
     parse_arguments "$@"
-    validate_ssh_key
+    if [ "$SSH_BY_PASS" != "true" ]; then
+        KEY_STRING="-i $KEY_PATH"
+        validate_ssh_key
+    fi
     batch_run_commands
 
     local exit_code=$?
