@@ -43,7 +43,7 @@ show_help() {
 
     Options:
       -hv <name>              Hypervisor name
-      -u, -user <username>    VM OS username (default: ubuntu)
+      -u, -user <username>    SSH user (default: ubuntu)
       -c, -command <command>  Command to execute on VMs
       -k, -key <path>         SSH private key file path
       -ping                   Only perform ping check
