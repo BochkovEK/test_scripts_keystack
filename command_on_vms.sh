@@ -255,12 +255,12 @@ execute_on_vm() {
     echo -e "${blue}Executing command on $ip...${normal}"
     echo -e "${yellow}Command: $COMMAND_STR${normal}"
 
-#    [ "$TS_DEBUG" = "true" ] && {
-#    echo "ssh -t -o StrictHostKeyChecking=no \
-#        -o ConnectTimeout=\"$TS_SSH_TIMEOUT\" \
-#        \"$KEY_STRING\" \
-#        \"$VM_USER@$ip\" \
-#        \"$COMMAND_STR\"";}
+    [ "$TS_DEBUG" = "true" ] && {
+    echo "ssh -t -o StrictHostKeyChecking=no \
+               -o ConnectTimeout=\"$TS_SSH_TIMEOUT\" \
+               ${KEY_STRING:+\"$KEY_STRING\"} \
+               \"$VM_USER@$ip\" \
+               \"$COMMAND_STR\"";}
 
     ssh -t -o StrictHostKeyChecking=no \
     -o ConnectTimeout="$TS_SSH_TIMEOUT" \
