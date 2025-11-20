@@ -687,8 +687,8 @@ class MigrationTester:
 
             # Performance metrics
             if self.stats.total_duration > 0:
-                self.stats.migrations_per_hour = (total_migrations / self.stats.total_duration) * 3600
-                self.stats.cycles_per_hour = (self.stats.total_cycles / self.stats.total_duration) * 3600
+                self.stats.migrations_per_hour = (total_migrations * 3600) / self.stats.total_duration
+                self.stats.cycles_per_hour = (self.stats.total_cycles * 3600) / self.stats.total_duration
             else:
                 self.stats.migrations_per_hour = 0.0
                 self.stats.cycles_per_hour = 0.0
