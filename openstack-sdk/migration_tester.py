@@ -570,15 +570,10 @@ class MigrationTester:
 
     def run_test(self):
         """
-        Main test execution loop - runs migration cycles for specified duration.
-
-        Coordinates the entire migration test process from start to finish.
+        Main test execution loop - runs migration cycles based on configured mode.
         """
         try:
             logging.info("🎬 Starting OpenStack Live Migration Test")
-            logging.info(f"⏱️  Test duration: {self.config['duration']} seconds")
-            logging.info(f"🎯 Target hypervisors: {', '.join(self.config['hypervisors'])}")
-            logging.info(f"📊 Max parallel migrations: {self.config['max_parallel']}")
 
             # Setup phase
             self.connect_openstack()
@@ -589,34 +584,59 @@ class MigrationTester:
             test_start_time = time.time()
             self.stats.start_time = test_start_time
 
-            logging.info(f"🔁 Starting migration cycles for {len(self.vms)} VMs")
+            # Determine test mode and execute accordingly
+            if self.config['test_mode'] == 'circle':
+                # Calculate total cycles needed for complete circles
+                target_cycles = self.config['full_circle'] * len(self.config['hypervisors'])
+                logging.info(f"🔄 FULL-CIRCLE mode: {self.config['full_circle']} complete circles")
+                logging.info(f"📊 Target migration cycles: {target_cycles}")
+                logging.info(f"🎯 Target hypervisors: {', '.join(self.config['hypervisors'])}")
+                logging.info(f"📊 Max parallel migrations: {self.config['max_parallel']}")
 
-            # Main test loop
-            while time.time() - test_start_time < self.config['duration']:
-                cycle_success = self.run_test_cycle()
+                # Execute fixed number of migration cycles
+                while self.stats.total_cycles < target_cycles:
+                    cycle_success = self.run_test_cycle()
 
-                # Check if we should continue
-                if not cycle_success and self.config['retry_attempts'] == 0:
-                    logging.warning("⚠️  Cycle failed and no retries configured - stopping test")
-                    break
+                    # Stop test if cycle failed and no retries configured
+                    if not cycle_success and self.config['retry_attempts'] == 0:
+                        logging.warning("⚠️ Cycle failed and no retries configured - stopping test")
+                        break
 
-                # Brief pause between cycles to avoid system overload
-                time.sleep(5)
+                    # Brief pause between cycles if more remain
+                    if self.stats.total_cycles < target_cycles:
+                        time.sleep(5)
 
-            # Record test end time
+            else:
+                # Original duration-based test execution
+                logging.info(f"⏱️ DURATION mode: {self.config['duration']} seconds")
+                logging.info(f"🎯 Target hypervisors: {', '.join(self.config['hypervisors'])}")
+                logging.info(f"📊 Max parallel migrations: {self.config['max_parallel']}")
+
+                # Execute migration cycles until time duration elapsed
+                while time.time() - test_start_time < self.config['duration']:
+                    cycle_success = self.run_test_cycle()
+
+                    # Stop test if cycle failed and no retries configured
+                    if not cycle_success and self.config['retry_attempts'] == 0:
+                        logging.warning("⚠️ Cycle failed and no retries configured - stopping test")
+                        break
+
+                    # Brief pause between cycles to avoid system overload
+                    time.sleep(5)
+
+            # Record test completion time and generate report
             self.stats.end_time = time.time()
             self.stats.total_duration = self.stats.end_time - self.stats.start_time
-
-            # Generate final report
             self.calculate_statistics()
             self.generate_report()
 
             logging.info("🏁 Migration test completed successfully")
 
         except KeyboardInterrupt:
-            logging.info("⏹️  Test interrupted by user")
+            logging.info("⏹️ Test interrupted by user")
             self.stats.end_time = time.time()
-            self.stats.total_duration = self.stats.end_time - self.stats.start_time
+            if self.stats.start_time:
+                self.stats.total_duration = self.stats.end_time - self.stats.start_time
             self.generate_report()
             raise
 
