@@ -223,15 +223,19 @@ check_ssh_connectivity() {
     local ssh_output
     local exit_code
 
+    [ "$TS_DEBUG" = "true" ] && {
     echo "ssh_output=\$(ssh -o StrictHostKeyChecking=no \
         -o ConnectTimeout=\"$TS_SSH_TIMEOUT\" \
-        -o BatchMode=yes \"$KEY_STRING\" \
+        -o BatchMode=yes \
+        -i \"$KEY_PATH\" \
         \"$VM_USER@$ip\" \
-        \"echo \'SSH_OK\'\" 2>&1)"
+        \"echo \'SSH_OK\'\" 2>&1)";
+    }
 
     ssh_output=$(ssh -o StrictHostKeyChecking=no \
         -o ConnectTimeout="$TS_SSH_TIMEOUT" \
-        -o BatchMode=yes "$KEY_STRING" \
+        -o BatchMode=yes \
+        -i "$KEY_PATH" \
         "$VM_USER@$ip" \
         "echo 'SSH_OK'" 2>&1)
     exit_code=$?
@@ -342,10 +346,12 @@ batch_run_commands() {
             continue
         fi
 
-        # Check SSH connectivity
-        if ! check_ssh_connectivity "$vm_ip"; then
-            at_least_one_failure=true
-            continue
+        if [ "$SSH_BY_PASS" != "true" ]; then
+          # Check SSH connectivity
+          if ! check_ssh_connectivity "$vm_ip"; then
+              at_least_one_failure=true
+              continue
+          fi
         fi
 
         # Execute command if not only checking
