@@ -258,13 +258,13 @@ execute_on_vm() {
     [ "$TS_DEBUG" = "true" ] && {
     echo "ssh -t -o StrictHostKeyChecking=no \
                -o ConnectTimeout=\"$TS_SSH_TIMEOUT\" \
-               ${KEY_STRING:+\"$KEY_STRING\"} \
+               $KEY_STRING \
                \"$VM_USER@$ip\" \
                \"$COMMAND_STR\"";}
 
     ssh -t -o StrictHostKeyChecking=no \
     -o ConnectTimeout="$TS_SSH_TIMEOUT" \
-    ${KEY_STRING:+"$KEY_STRING"} \
+    $KEY_STRING \
     "$VM_USER@$ip" \
     "$COMMAND_STR"
 
