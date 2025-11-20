@@ -455,97 +455,66 @@ class MigrationTester:
             logging.error(f"❌ {error_msg}")
             return False, error_msg
 
-    def run_test(self):
+    def run_test_cycle(self):
         """
-        Main test execution loop - runs migration cycles based on configured mode.
+        Execute one complete migration cycle for all VMs in parallel.
+        """
+        cycle_start = time.time()
+        cycle_success = True
 
-        Circle mode: Fixed number of complete migration cycles
-        Duration mode: Time-based test execution (original logic)
-        """
         try:
-            # Setup logging and connection
-            logging.info("🎬 Starting OpenStack Live Migration Test")
+            logging.info(f"🚀 Starting migration cycle {self.stats.total_cycles + 1}")
 
-            # Establish OpenStack connection
-            self.connect_openstack()
-
-            # Validate environment prerequisites
-            self.validate_environment()
-
-            # Discover VMs located only on the first hypervisor
-            self.vms = self.discover_initial_vms()
-
-            # Record test start time for statistics
-            test_start_time = time.time()
-            self.stats.start_time = test_start_time
-
-            # Determine test mode and execute accordingly
-            if self.config['test_mode'] == 'circle':
-                # Calculate total cycles needed for complete circles
-                target_cycles = self.config['full_circle'] * len(self.config['hypervisors'])
-                logging.info(f"🔄 FULL-CIRCLE mode: {self.config['full_circle']} complete circles")
-                logging.info(
-                    f"📊 Target migration cycles: {target_cycles} ({len(self.config['hypervisors'])} hypervisors × {self.config['full_circle']} circles)")
-
-                # Execute fixed number of migration cycles
-                while self.stats.total_cycles < target_cycles:
-                    # Execute one migration cycle for all VMs
-                    cycle_success = self.run_test_cycle()
-
-                    # Stop test if cycle failed and no retries configured
-                    if not cycle_success and self.config['retry_attempts'] == 0:
-                        logging.warning("⚠️ Cycle failed and no retries configured - stopping test")
-                        break
-
-                    # Brief pause between cycles if more remain
-                    if self.stats.total_cycles < target_cycles:
-                        time.sleep(5)
-
+            # Calculate number of parallel workers
+            if self.config['max_parallel'] == -1:
+                workers = len(self.vms)  # Unlimited - all VMs in parallel
             else:
-                # Original duration-based test execution
-                logging.info(f"⏱️ DURATION mode: {self.config['duration']} seconds")
-                logging.info(f"🎯 Target hypervisors: {', '.join(self.config['hypervisors'])}")
+                workers = min(self.config['max_parallel'], len(self.vms))  # Limited
 
-                # Execute migration cycles until time duration elapsed
-                while time.time() - test_start_time < self.config['duration']:
-                    # Execute one migration cycle for all VMs
-                    cycle_success = self.run_test_cycle()
+            logging.info(f"🔀 Executing {len(self.vms)} migrations with {workers} parallel workers")
 
-                    # Stop test if cycle failed and no retries configured
-                    if not cycle_success and self.config['retry_attempts'] == 0:
-                        logging.warning("⚠️ Cycle failed and no retries configured - stopping test")
-                        break
+            # Execute migrations in parallel
+            with ThreadPoolExecutor(max_workers=workers) as executor:
+                # Submit all migration tasks
+                future_to_vm = {
+                    executor.submit(self._migrate_single_vm, vm): vm
+                    for vm in self.vms
+                }
 
-                    # Brief pause between cycles to avoid system overload
-                    time.sleep(5)
+                # Collect results
+                for future in as_completed(future_to_vm):
+                    vm = future_to_vm[future]
+                    try:
+                        success, migration_time, error_msg = future.result()
+                        if success:
+                            self.stats.successful_migrations += 1
+                            self.stats.migration_times.append(migration_time)
+                            logging.info(f"✅ {vm.name} migrated in {migration_time:.2f}s")
+                        else:
+                            self.stats.failed_migrations += 1
+                            cycle_success = False
+                            logging.error(f"❌ {vm.name} failed: {error_msg}")
+                    except Exception as e:
+                        self.stats.failed_migrations += 1
+                        cycle_success = False
+                        logging.error(f"❌ {vm.name} failed with exception: {e}")
 
-            # Record test completion time
-            self.stats.end_time = time.time()
-            self.stats.total_duration = self.stats.end_time - self.stats.start_time
+            # Refresh all VMs data after migrations
+            self.vms = [self.conn.compute.get_server(vm.id) for vm in self.vms]
 
-            # Generate final test statistics and report
-            self.calculate_statistics()
-            self.generate_report()
+            # Update cycle statistics
+            cycle_duration = time.time() - cycle_start
+            self.stats.cycle_times.append(cycle_duration)
+            self.stats.total_cycles += 1
 
-            logging.info("🏁 Migration test completed successfully")
-
-        except KeyboardInterrupt:
-            # Handle user interruption gracefully
-            logging.info("⏹️ Test interrupted by user")
-            self.stats.end_time = time.time()
-            if self.stats.start_time:
-                self.stats.total_duration = self.stats.end_time - self.stats.start_time
-            self.generate_report()
-            raise
+            logging.info(
+                f"🏁 Cycle {self.stats.total_cycles} completed in {cycle_duration:.2f}s - Success: {cycle_success}")
+            return cycle_success
 
         except Exception as e:
-            # Handle test execution failures
-            logging.error(f"💥 Test execution failed: {e}")
-            self.stats.end_time = time.time()
-            if self.stats.start_time:
-                self.stats.total_duration = self.stats.end_time - self.stats.start_time
-            self.generate_report()
-            raise
+            logging.error(f"❌ Cycle execution failed: {e}")
+            self.stats.failed_migrations += len(self.vms)
+            return False
 
     def _migrate_single_vm(self, vm):
         """
