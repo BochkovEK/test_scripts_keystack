@@ -143,7 +143,7 @@ class Config:
 
     def _load_inventory(self) -> Dict[str, List[Tuple[str, str]]]:
         """Load node inventory from Ansible inventory file"""
-        print(f"[DEBUG]: self.inventory_pat: {self.inventory_path}")
+        # print(f"[DEBUG]: self.inventory_pat: {self.inventory_path}")
         if self.inventory_path:
             if os.path.exists(self.inventory_path):
                 return self._parse_inventory(self.inventory_path)

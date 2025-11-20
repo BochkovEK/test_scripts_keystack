@@ -251,7 +251,7 @@ class MigrationTester:
             if len(self.config['hypervisors']) < 2:
                 raise Exception("At least 2 hypervisors required for migration testing")
 
-            logging.info("✅ Environment validation completed successfully")
+            # logging.info("✅ Environment validation completed successfully")
 
         except Exception as e:
             logging.error(f"❌ Environment validation failed: {e}")
