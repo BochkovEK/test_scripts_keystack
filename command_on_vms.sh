@@ -84,7 +84,7 @@ parse_arguments() {
                 ;;
             -u|-user)
                 VM_USER="$2"
-                echo "Using VM user: $VM_USER"
+                echo "SSH user: $VM_USER"
                 shift 2
                 ;;
             -c|-command)
@@ -257,13 +257,14 @@ execute_on_vm() {
 
     [ "$TS_DEBUG" = "true" ] && {
     echo "ssh -t -o StrictHostKeyChecking=no \
-        -o ConnectTimeout=\"$TS_SSH_TIMEOUT\" ${KEY_STRING:+"$KEY_STRING"} \ \
+        -o ConnectTimeout=\"$TS_SSH_TIMEOUT\" \
+        ${"$KEY_STRING"} \
         \"$VM_USER@$ip\" \
         \"$COMMAND_STR\"";}
 
     ssh -t -o StrictHostKeyChecking=no \
         -o ConnectTimeout="$TS_SSH_TIMEOUT" \
-        ${KEY_STRING:+"$KEY_STRING"} \
+        ${"$KEY_STRING"} \
         "$VM_USER@$ip" \
         "$COMMAND_STR"
 
