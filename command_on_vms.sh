@@ -229,8 +229,7 @@ check_ssh_connectivity() {
         -o BatchMode=yes \
         -i \"$KEY_PATH\" \
         \"$VM_USER@$ip\" \
-        \"echo \'SSH_OK\'\" 2>&1)";
-    }
+        \"echo \'SSH_OK\'\" 2>&1)";}
 
     ssh_output=$(ssh -o StrictHostKeyChecking=no \
         -o ConnectTimeout="$TS_SSH_TIMEOUT" \
@@ -258,13 +257,13 @@ execute_on_vm() {
 
     [ "$TS_DEBUG" = "true" ] && {
     echo "ssh -t -o StrictHostKeyChecking=no \
-        -o ConnectTimeout=\"$TS_SSH_TIMEOUT\" \"$KEY_STRING\" \
+        -o ConnectTimeout=\"$TS_SSH_TIMEOUT\" ${KEY_STRING:+"$KEY_STRING"} \ \
         \"$VM_USER@$ip\" \
-        \"$COMMAND_STR\"
-    ";}
+        \"$COMMAND_STR\"";}
 
     ssh -t -o StrictHostKeyChecking=no \
-        -o ConnectTimeout="$TS_SSH_TIMEOUT" "$KEY_STRING" \
+        -o ConnectTimeout="$TS_SSH_TIMEOUT" \
+        ${KEY_STRING:+"$KEY_STRING"} \
         "$VM_USER@$ip" \
         "$COMMAND_STR"
 
