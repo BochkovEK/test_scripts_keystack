@@ -223,6 +223,12 @@ check_ssh_connectivity() {
     local ssh_output
     local exit_code
 
+    echo "ssh_output=\$(ssh -o StrictHostKeyChecking=no \
+        -o ConnectTimeout=\"$TS_SSH_TIMEOUT\" \
+        -o BatchMode=yes \"$KEY_STRING\" \
+        \"$VM_USER@$ip\" \
+        \"echo \'SSH_OK\'\" 2>&1)"
+
     ssh_output=$(ssh -o StrictHostKeyChecking=no \
         -o ConnectTimeout="$TS_SSH_TIMEOUT" \
         -o BatchMode=yes "$KEY_STRING" \
