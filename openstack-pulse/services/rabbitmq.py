@@ -42,17 +42,19 @@ class RabbitCheck:
         total_nodes = data['total_nodes']
         reachable_nodes = data['reachable_nodes']
 
-        # Determine group status icon
-        group_icon = "🟩" if reachable_nodes == total_nodes else "⚠️"
-        print(f"  {group_icon} Nodes: {reachable_nodes}/{total_nodes} reachable")
+        # Always show nodes summary without emoji
+        print(f"  Nodes: {reachable_nodes}/{total_nodes} reachable")
 
-        # Show aggregated cluster errors if any
+        # Show unreachable nodes first with detailed errors
         if cluster.get('cluster_errors'):
-            print(f"  🔴 Cluster issues:")
             for error in cluster['cluster_errors']:
-                print(f"    ❌ {error}")
+                # Extract node name from error message (format: "node_name: error")
+                node_name = error.split(':')[0] if ':' in error else error
+                error_message = error.split(':', 1)[1] if ':' in error else error
+                print(f"    ❌ {node_name}: {error_message.strip()}")
+                print(f"      Status: Unknown")
 
-        # Display each source node's perspective
+        # Display each reachable source node's perspective
         for source_hostname, details in cluster['node_details'].items():
             response_time = details.get('response_time', '?')
 
@@ -75,23 +77,26 @@ class RabbitCheck:
 
                 # Display resources
                 resources = node_info.get('resources', {})
-                if resources:
+                if resources and node_status == 'running':
                     proc_used = resources.get('proc_used', 0)
                     proc_total = resources.get('proc_total', 0)
                     mem_used_mb = resources.get('mem_used', 0) // 1024 // 1024
                     mem_limit_mb = resources.get('mem_limit', 0) // 1024 // 1024
                     print(f"        📈 Resources: {proc_used}/{proc_total} procs, "
                           f"{mem_used_mb}MB/{mem_limit_mb}MB memory")
+                else:
+                    print(f"        📈 Resources: Unknown")
 
-                # Display alarms
-                alarms = []
-                if resources.get('mem_alarm'):
-                    alarms.append("🚨 Memory alarm")
-                if resources.get('disk_free_alarm'):
-                    alarms.append("🚨 Disk alarm")
+                # Display alarms only for running nodes
+                if node_status == 'running':
+                    alarms = []
+                    if resources.get('mem_alarm'):
+                        alarms.append("🚨 Memory alarm")
+                    if resources.get('disk_free_alarm'):
+                        alarms.append("🚨 Disk alarm")
 
-                if alarms:
-                    print(f"        {' | '.join(alarms)}")
+                    if alarms:
+                        print(f"        {' | '.join(alarms)}")
 
     def _init_sessions(self):
         """Initialize separate sessions for each node"""

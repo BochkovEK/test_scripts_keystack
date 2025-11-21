@@ -330,7 +330,7 @@ class Pulse:
             status_icon = "✅"
             display_status = 'OK'
         elif status == 'DEGRADED':
-            status_icon = "🟡"
+            status_icon = "⚠️"
             display_status = 'DEGRADED'
         else:
             status_icon = "❌"
@@ -338,39 +338,14 @@ class Pulse:
 
         print(f"{status_icon} {service_name.upper()}: {display_status} ({response_time}s)")
 
-        if status == 'OK':
-            # Delegate details to service itself
-            check = self.service_checks[service_name]
-            if hasattr(check, 'display_details'):
-                check.display_details(service_data)
-        elif status == 'DEGRADED':
-            # Show degradation summary for DEGRADED status
-            reachable_nodes = service_data.get('reachable_nodes', 0)
-            total_nodes = service_data.get('total_nodes', 0)
-            print(f"  ⚠️  Cluster degraded: {reachable_nodes}/{total_nodes} nodes reachable")
-
-            # Show cluster errors if available
-            cluster = service_data.get('cluster', {})
-            if cluster.get('cluster_errors'):
-                print(f"  🔴 Unreachable nodes:")
-                for error in cluster['cluster_errors']:
-                    print(f"    ❌ {error}")
-
-            # Still show details from reachable nodes
-            check = self.service_checks[service_name]
-            if hasattr(check, 'display_details'):
-                check.display_details(service_data)
-
+        # ALWAYS delegate details to service itself, regardless of status
+        check = self.service_checks[service_name]
+        if hasattr(check, 'display_details'):
+            check.display_details(service_data)
         elif status == 'ERROR':
-            error_message = service_data.get('error', '')
+            # Fallback for services without display_details
+            error_message = service_data.get('error', 'Unknown error')
             print(f"  Error: {error_message}")
-
-            # Also show cluster errors if available
-            cluster = service_data.get('cluster', {})
-            if cluster.get('cluster_errors'):
-                print(f"  🔴 Cluster issues:")
-                for error in cluster['cluster_errors']:
-                    print(f"    ❌ {error}")
 
     def run_single_mode_checks(self):
         """Execute additional single-mode checks"""
