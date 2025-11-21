@@ -8,7 +8,7 @@ green=$(tput setaf 2)
 
 # Default values
 default_interface_name="eth0"
-default_number_of_cycle=60
+default_number_of_cycle=35
 default_sleep_time=5
 
 # Set parameters from environment or use defaults
