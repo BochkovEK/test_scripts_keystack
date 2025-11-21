@@ -121,8 +121,21 @@ class RabbitCheck:
 
             if self.debug:
                 print(f"🔧 [RABBIT_DEBUG] Cluster status: {reachable_count}/{total_count} nodes reachable")
-                print(f"🔧 [RABBIT_DEBUG] Reachable: {cluster_status['reachable_nodes']}")
-                print(f"🔧 [RABBIT_DEBUG] Unreachable: {cluster_status['unreachable_nodes']}")
+
+            # If all nodes are unreachable, use the first error as main error
+            if reachable_count == 0 and cluster_status.get('cluster_errors'):
+                main_error = cluster_status['cluster_errors'][0]
+                if self.debug:
+                    print(f"🔧 [RABBIT_DEBUG] All nodes unreachable, using error: {main_error}")
+
+                return {
+                    'status': 'ERROR',
+                    'response_time': round(time.time() - start_time, 2),
+                    'error': main_error,
+                    'cluster': cluster_status,
+                    'reachable_nodes': reachable_count,
+                    'total_nodes': total_count
+                }
 
             if reachable_count == total_count:
                 status = 'OK'

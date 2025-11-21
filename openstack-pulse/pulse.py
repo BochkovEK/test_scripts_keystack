@@ -326,7 +326,17 @@ class Pulse:
         response_time = service_data.get('response_time', 0)
 
         status_icon = "✅" if status == 'OK' else "❌"
-        print(f"{status_icon} {service_name.upper()}: {status} ({response_time}s)")
+
+        # Special handling for authentication errors
+        error_message = service_data.get('error', '')
+        if 'unauthorized' in error_message.lower() or '401' in error_message.lower():
+            display_status = 'NOT AUTHORIZED'
+        elif 'timeout' in error_message.lower():
+            display_status = 'TIMEOUT'
+        else:
+            display_status = status
+
+        print(f"{status_icon} {service_name.upper()}: {display_status} ({response_time}s)")
 
         if status == 'OK':
             # Delegate details to service itself
@@ -334,8 +344,14 @@ class Pulse:
             if hasattr(check, 'display_details'):
                 check.display_details(service_data)
         elif status == 'ERROR':
-            error_message = service_data.get('error', 'Unknown error')
             print(f"  Error: {error_message}")
+
+            # Also show cluster errors if available
+            cluster = service_data.get('cluster', {})
+            if cluster.get('cluster_errors'):
+                print(f"  🔴 Cluster issues:")
+                for error in cluster['cluster_errors']:
+                    print(f"    ❌ {error}")
 
     def run_single_mode_checks(self):
         """Execute additional single-mode checks"""
