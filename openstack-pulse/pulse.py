@@ -325,15 +325,15 @@ class Pulse:
         status = service_data.get('status', 'UNKNOWN')
         response_time = service_data.get('response_time', 0)
 
-        status_icon = "✅" if status == 'OK' else "❌"
-
-        # Special handling for authentication errors
-        error_message = service_data.get('error', '')
-        if 'unauthorized' in error_message.lower() or '401' in error_message.lower():
-            display_status = 'NOT AUTHORIZED'
-        elif 'timeout' in error_message.lower():
-            display_status = 'TIMEOUT'
+        # Special icon and status for DEGRADED
+        if status == 'OK':
+            status_icon = "✅"
+            display_status = 'OK'
+        elif status == 'DEGRADED':
+            status_icon = "🟡"
+            display_status = 'DEGRADED'
         else:
+            status_icon = "❌"
             display_status = status
 
         print(f"{status_icon} {service_name.upper()}: {display_status} ({response_time}s)")
@@ -343,7 +343,26 @@ class Pulse:
             check = self.service_checks[service_name]
             if hasattr(check, 'display_details'):
                 check.display_details(service_data)
+        elif status == 'DEGRADED':
+            # Show degradation summary for DEGRADED status
+            reachable_nodes = service_data.get('reachable_nodes', 0)
+            total_nodes = service_data.get('total_nodes', 0)
+            print(f"  ⚠️  Cluster degraded: {reachable_nodes}/{total_nodes} nodes reachable")
+
+            # Show cluster errors if available
+            cluster = service_data.get('cluster', {})
+            if cluster.get('cluster_errors'):
+                print(f"  🔴 Unreachable nodes:")
+                for error in cluster['cluster_errors']:
+                    print(f"    ❌ {error}")
+
+            # Still show details from reachable nodes
+            check = self.service_checks[service_name]
+            if hasattr(check, 'display_details'):
+                check.display_details(service_data)
+
         elif status == 'ERROR':
+            error_message = service_data.get('error', '')
             print(f"  Error: {error_message}")
 
             # Also show cluster errors if available
