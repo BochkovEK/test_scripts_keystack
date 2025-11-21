@@ -8,7 +8,9 @@ green=$(tput setaf 2)
 
 # Default values
 default_interface_name="eth0"
-default_number_of_cycle=60
+# In each cycle, shutdown and startup are performed with TWO time_sleep pauses
+# The final downtime is calculated using the formula: TS_NUMBER_OF_CYCLES * TS_SLEEP_TIME * 2 (sec)
+default_number_of_cycle=35
 default_sleep_time=5
 
 # Set parameters from environment or use defaults
