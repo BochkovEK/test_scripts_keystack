@@ -27,10 +27,11 @@ class RabbitCheck:
         self.auth = (auth_params['username'], auth_params['password'])
         self.port = auth_params['port']
         self.nodes = auth_params['nodes']
+        self.timeout = 3  # Request timeout in seconds
 
         if self.debug:
             print(f"🔧 [RABBIT_DEBUG] Initialized with {len(self.nodes)} nodes: {[node[0] for node in self.nodes]}")
-            print(f"🔧 [RABBIT_DEBUG] Auth: user={auth_params['username']}, port={self.port}")
+            print(f"🔧 [RABBIT_DEBUG] Auth: user={auth_params['username']}, port={self.port}, timeout={self.timeout}s")
 
         self.sessions = {}
         self._init_sessions()
@@ -44,6 +45,12 @@ class RabbitCheck:
         # Determine group status icon
         group_icon = "🟩" if reachable_nodes == total_nodes else "⚠️"
         print(f"  {group_icon} Nodes: {reachable_nodes}/{total_nodes} reachable")
+
+        # Show aggregated cluster errors if any
+        if cluster.get('cluster_errors'):
+            print(f"  🔴 Cluster issues:")
+            for error in cluster['cluster_errors']:
+                print(f"    ❌ {error}")
 
         # Display each source node's perspective
         for source_hostname, details in cluster['node_details'].items():
@@ -102,7 +109,7 @@ class RabbitCheck:
         start_time = time.time()
 
         if self.debug:
-            print(f"🔧 [RABBIT_DEBUG] Starting cluster health check")
+            print(f"🔧 [RABBIT_DEBUG] Starting cluster health check with timeout={self.timeout}s")
 
         try:
             urls = self._get_rabbitmq_urls()
@@ -138,12 +145,21 @@ class RabbitCheck:
             return result
 
         except Exception as e:
+            error_message = str(e)
+
+            # Detect authentication errors
+            if "401" in error_message or "unauthorized" in error_message.lower():
+                error_message = f"Not authorized - check RabbitMQ credentials (timeout: {self.timeout}s)"
+            elif "timeout" in error_message.lower():
+                error_message = f"Global timeout after {self.timeout}s - check network connectivity"
+
             if self.debug:
-                print(f"🔧 [RABBIT_DEBUG] Check failed with error: {str(e)}")
+                print(f"🔧 [RABBIT_DEBUG] Check failed with error: {error_message}")
+
             return {
                 'status': 'ERROR',
                 'response_time': round(time.time() - start_time, 2),
-                'error': str(e)
+                'error': error_message
             }
 
     def _check_single_node(self, display_name, connect_host, url):
@@ -154,17 +170,28 @@ class RabbitCheck:
         if not session:
             if self.debug:
                 print(f"🔧 [RABBIT_DEBUG] No session found for {display_name}")
-            return {'reachable': False}
+            return {'reachable': False, 'error': 'No session available'}
 
         try:
             if self.debug:
-                print(f"🔧 [RABBIT_DEBUG] Checking node {display_name} at {url}")
+                print(f"🔧 [RABBIT_DEBUG] Checking node {display_name} at {url} (timeout: {self.timeout}s)")
 
             start_time = time.time()
 
-            overview_response = session.get(f"{url}/api/overview", timeout=3)
-            nodes_response = session.get(f"{url}/api/nodes", timeout=3)
-            queues_response = session.get(f"{url}/api/queues", timeout=3)
+            overview_response = session.get(f"{url}/api/overview", timeout=self.timeout)
+
+            # Check for specific HTTP errors
+            if overview_response.status_code == 401:
+                return {'reachable': False, 'error': f'401 Unauthorized - check credentials (timeout: {self.timeout}s)'}
+            elif overview_response.status_code == 403:
+                return {'reachable': False, 'error': f'403 Forbidden - insufficient permissions (timeout: {self.timeout}s)'}
+            elif overview_response.status_code == 404:
+                return {'reachable': False, 'error': f'404 Not Found - API endpoint unavailable (timeout: {self.timeout}s)'}
+            elif overview_response.status_code >= 500:
+                return {'reachable': False, 'error': f'HTTP {overview_response.status_code} - Server error (timeout: {self.timeout}s)'}
+
+            nodes_response = session.get(f"{url}/api/nodes", timeout=self.timeout)
+            queues_response = session.get(f"{url}/api/queues", timeout=self.timeout)
 
             response_time = time.time() - start_time
 
@@ -189,14 +216,23 @@ class RabbitCheck:
                     }
                 }
             else:
-                if self.debug:
-                    print(f"🔧 [RABBIT_DEBUG] {display_name} returned status {overview_response.status_code}")
+                return {
+                    'reachable': False,
+                    'error': f'HTTP {overview_response.status_code} - API request failed (timeout: {self.timeout}s)'
+                }
 
+        except requests.exceptions.ConnectTimeout:
+            return {'reachable': False, 'error': f'Connection timeout after {self.timeout}s - node unreachable'}
+        except requests.exceptions.ConnectionError:
+            return {'reachable': False, 'error': f'Connection refused - check host/port (timeout: {self.timeout}s)'}
+        except requests.exceptions.HTTPError as e:
+            return {'reachable': False, 'error': f'HTTP error: {str(e)} (timeout: {self.timeout}s)'}
+        except requests.exceptions.Timeout:
+            return {'reachable': False, 'error': f'Request timeout after {self.timeout}s - node slow to respond'}
         except Exception as e:
-            if self.debug:
-                print(f"🔧 [RABBIT_DEBUG] {display_name} check failed: {str(e)}")
-
-        return {'reachable': False}
+            # Fallback for any other unexpected errors
+            error_type = type(e).__name__
+            return {'reachable': False, 'error': f'{error_type}: {str(e)} (timeout: {self.timeout}s)'}
 
     def _extract_all_nodes_details(self, nodes_data):
         """Extract status and resources for ALL nodes from /api/nodes response"""
@@ -249,9 +285,6 @@ class RabbitCheck:
             }
         }
 
-    def _extract_queues_details(self, queues_data):
-        pass
-
     def _get_rabbitmq_urls(self):
         """Generate RabbitMQ API URLs with hostnames"""
         urls_with_info = []
@@ -265,13 +298,14 @@ class RabbitCheck:
         status = {
             'reachable_nodes': [],
             'unreachable_nodes': [],
-            'node_details': {}
+            'node_details': {},
+            'cluster_errors': []  # Collect all errors for aggregated display
         }
 
         max_workers = min(5, len(urls_with_info))
 
         if self.debug:
-            print(f"🔧 [RABBIT_DEBUG] Starting cluster check with {max_workers} workers")
+            print(f"🔧 [RABBIT_DEBUG] Starting cluster check with {max_workers} workers, timeout={self.timeout}s")
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             future_to_info = {
@@ -292,12 +326,16 @@ class RabbitCheck:
                             print(f"🔧 [RABBIT_DEBUG] ✓ {display_name} is reachable")
                     else:
                         status['unreachable_nodes'].append(display_name)
+                        error_msg = node_result.get('error', 'Unknown error')
+                        status['cluster_errors'].append(f"{display_name}: {error_msg}")
                         if self.debug:
-                            print(f"🔧 [RABBIT_DEBUG] ✗ {display_name} is unreachable")
+                            print(f"🔧 [RABBIT_DEBUG] ✗ {display_name} is unreachable: {error_msg}")
                 except Exception as e:
                     status['unreachable_nodes'].append(display_name)
+                    error_msg = f"Exception: {str(e)} (timeout: {self.timeout}s)"
+                    status['cluster_errors'].append(f"{display_name}: {error_msg}")
                     if self.debug:
-                        print(f"🔧 [RABBIT_DEBUG] ✗ {display_name} failed with exception: {str(e)}")
+                        print(f"🔧 [RABBIT_DEBUG] ✗ {display_name} failed with exception: {error_msg}")
 
         if self.debug:
             print(f"🔧 [RABBIT_DEBUG] Cluster check completed: {len(status['reachable_nodes'])} reachable, {len(status['unreachable_nodes'])} unreachable")
