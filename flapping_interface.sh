@@ -8,7 +8,7 @@ green=$(tput setaf 2)
 
 # Default values
 default_interface_name="eth0"
-default_number_of_cycle=20
+default_number_of_cycle=60
 default_sleep_time=5
 
 # Set parameters from environment or use defaults
@@ -143,6 +143,39 @@ wait_confirmation_and_start_logging() {
     echo "======================================="
 }
 
+# Delayed execution with nohup for background operation
+delayed_nohup_execution() {
+    local interface="$1"
+    local cycles="$2"
+    local sleep_time="$3"
+
+    echo -e "\n${yellow}=== ATTENTION: Starting in nohup mode ===${normal}"
+    echo "Script will start in background mode after 10 seconds."
+    echo "Press Ctrl+C to cancel execution"
+    echo ""
+    echo "After background startup:"
+    echo "  - Script will continue running if SSH connection is lost"
+    echo "  - Logs will be written to: $LOG_FILE"
+    echo "  - To monitor progress: tail -f $LOG_FILE"
+    echo "  - To stop execution: pkill -f \"flapping_interface.sh $interface\""
+    echo ""
+    echo -e "${yellow}Press Ctrl+C within 10 seconds to cancel...${normal}"
+
+    # Countdown timer
+    for i in {10..1}; do
+        echo -n "${i}.. "
+        sleep 1
+    done
+
+    echo -e "\n${green}Starting in background mode...${normal}"
+
+    # Restart script in nohup mode
+    exec nohup bash "$0" "$interface" --nohup-mode > "$LOG_FILE" 2>&1 &
+    echo "Background process started with PID: $!"
+    echo "Log file: $LOG_FILE"
+    exit 0
+}
+
 # Main flapping loop
 run_flapping_test() {
     local interface="$1"
@@ -171,13 +204,26 @@ main() {
     echo "Start flapping interface test script..."
     echo -e "${yellow}[WARNING]: This script must be executed on the node where the interface is being disabled(flapping).${normal}"
 
+    # Check if we are in nohup mode
+    if [[ "$2" == "--nohup-mode" ]]; then
+        echo "=== Running in nohup mode ==="
+        # Skip interactive confirmation in nohup mode
+        exec > >(tee -a "$LOG_FILE")
+        exec 2>&1
+        # Run main test without confirmation
+        run_flapping_test "$TS_INTERFACE_NAME" "$TS_NUMBER_OF_CYCLES" "$TS_SLEEP_TIME"
+        echo "=== Flapping Interface Test Finished ==="
+        echo "Timestamp: $(date)"
+        exit 0
+    fi
+
     # Setup logging
     setup_logging
 
     # Set interface name
     TS_INTERFACE_NAME=$(set_interface_name "$1")
 
-    # Validate interface exists - direct check
+    # Validate interface exists
     if ! validate_interface "$TS_INTERFACE_NAME"; then
         exit 1
     fi
@@ -185,12 +231,30 @@ main() {
     # Show initial interface state
     check_interface_state "$TS_INTERFACE_NAME"
 
-    # Display parameters and wait for confirmation
+    # Display parameters
     show_parameters
-    wait_confirmation_and_start_logging
 
-    # Run the main flapping test
-    run_flapping_test "$TS_INTERFACE_NAME" "$TS_NUMBER_OF_CYCLES" "$TS_SLEEP_TIME"
+    # Execution mode selection
+    echo -e "\n${yellow}=== Execution Mode Selection ===${normal}"
+    echo "1) Interactive mode - will terminate if terminal is closed"
+    echo "2) Background mode - will continue running after SSH disconnect"
+    read -p "Select mode (1/2) [2]: " mode
+
+    case "${mode:-2}" in
+        1)
+            # Original interactive mode
+            wait_confirmation_and_start_logging
+            run_flapping_test "$TS_INTERFACE_NAME" "$TS_NUMBER_OF_CYCLES" "$TS_SLEEP_TIME"
+            ;;
+        2)
+            # Delayed nohup execution
+            delayed_nohup_execution "$TS_INTERFACE_NAME" "$TS_NUMBER_OF_CYCLES" "$TS_SLEEP_TIME"
+            ;;
+        *)
+            echo "Invalid selection, using background mode"
+            delayed_nohup_execution "$TS_INTERFACE_NAME" "$TS_NUMBER_OF_CYCLES" "$TS_SLEEP_TIME"
+            ;;
+    esac
 
     echo "=== Flapping Interface Test Finished ==="
     echo "Timestamp: $(date)"
