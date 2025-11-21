@@ -40,6 +40,12 @@ class MariaDBCheck:
         group_icon = "🟩" if reachable_nodes == total_nodes else "⚠️"
         print(f"  {group_icon} Nodes: {reachable_nodes}/{total_nodes} reachable")
 
+        # Show cluster errors if any
+        if cluster.get('cluster_errors'):
+            print(f"  🔴 Cluster issues:")
+            for error in cluster['cluster_errors']:
+                print(f"    ❌ {error}")
+
         # Display each node's status and metrics
         for node_name, details in cluster['node_details'].items():
             response_time = details.get('response_time', '?')
@@ -81,6 +87,21 @@ class MariaDBCheck:
                 print(f"🔧 [MARIADB_DEBUG] Reachable: {cluster_status['reachable_nodes']}")
                 print(f"🔧 [MARIADB_DEBUG] Unreachable: {cluster_status['unreachable_nodes']}")
 
+            # If all nodes are unreachable, use the first error as main error
+            if reachable_count == 0 and cluster_status.get('cluster_errors'):
+                main_error = cluster_status['cluster_errors'][0]
+                if self.debug:
+                    print(f"🔧 [MARIADB_DEBUG] All nodes unreachable, using error: {main_error}")
+
+                return {
+                    'status': 'ERROR',
+                    'response_time': round(time.time() - start_time, 2),
+                    'error': main_error,
+                    'cluster': cluster_status,
+                    'reachable_nodes': reachable_count,
+                    'total_nodes': total_count
+                }
+
             # 3. Determine overall status
             if reachable_count == total_count:
                 cluster_healthy = self._determine_cluster_status(cluster_status)
@@ -110,12 +131,23 @@ class MariaDBCheck:
             return result
 
         except Exception as e:
+            error_message = str(e)
+
+            # Detect common MySQL connection errors
+            if "access denied" in error_message.lower() or "1045" in error_message:
+                error_message = "Access denied - check MySQL credentials"
+            elif "can't connect" in error_message.lower() or "2003" in error_message:
+                error_message = "Connection refused - check host/port"
+            elif "timeout" in error_message.lower():
+                error_message = "Connection timeout - check network connectivity"
+
             if self.debug:
-                print(f"🔧 [MARIADB_DEBUG] Check failed with error: {str(e)}")
+                print(f"🔧 [MARIADB_DEBUG] Check failed with error: {error_message}")
+
             return {
                 'status': 'ERROR',
                 'response_time': round(time.time() - start_time, 2),
-                'error': str(e)
+                'error': error_message
             }
 
     def _check_galera_cluster(self):
@@ -123,7 +155,8 @@ class MariaDBCheck:
         status = {
             'reachable_nodes': [],
             'unreachable_nodes': [],
-            'node_details': {}
+            'node_details': {},
+            'cluster_errors': []  # Collect all errors for aggregated display
         }
 
         # 1. Create list of node checking tasks
@@ -162,13 +195,17 @@ class MariaDBCheck:
                             print(f"🔧 [MARIADB_DEBUG] ✓ {display_name} is reachable")
                     else:
                         status['unreachable_nodes'].append(display_name)
+                        error_msg = node_result.get('error', 'Unknown error')
+                        status['cluster_errors'].append(f"{display_name}: {error_msg}")
                         if self.debug:
-                            print(f"🔧 [MARIADB_DEBUG] ✗ {display_name} is unreachable: {node_result.get('error', 'Unknown error')}")
+                            print(f"🔧 [MARIADB_DEBUG] ✗ {display_name} is unreachable: {error_msg}")
 
                 except Exception as e:
                     status['unreachable_nodes'].append(display_name)
+                    error_msg = f"Exception: {str(e)}"
+                    status['cluster_errors'].append(f"{display_name}: {error_msg}")
                     if self.debug:
-                        print(f"🔧 [MARIADB_DEBUG] ✗ {display_name} failed with exception: {str(e)}")
+                        print(f"🔧 [MARIADB_DEBUG] ✗ {display_name} failed with exception: {error_msg}")
 
         if self.debug:
             print(f"🔧 [MARIADB_DEBUG] Cluster check completed: {len(status['reachable_nodes'])} reachable, {len(status['unreachable_nodes'])} unreachable")
@@ -218,12 +255,32 @@ class MariaDBCheck:
                 'metrics': metrics
             }
 
-        except Exception as e:
+        except mysql.connector.Error as e:
+            error_msg = str(e)
+            # Detect specific MySQL errors
+            if e.errno == 1045:
+                error_msg = "Access denied for user - check credentials"
+            elif e.errno == 2003:
+                error_msg = "Can't connect to MySQL server - check host/port"
+            elif e.errno == 2006:
+                error_msg = "MySQL server has gone away"
+            elif "timeout" in error_msg.lower():
+                error_msg = "Connection timeout - server not responding"
+
             if self.debug:
-                print(f"🔧 [MARIADB_DEBUG] {display_name} connection failed: {str(e)}")
+                print(f"🔧 [MARIADB_DEBUG] {display_name} connection failed: {error_msg}")
+
             return {
                 'reachable': False,
-                'error': str(e)
+                'error': error_msg
+            }
+        except Exception as e:
+            error_msg = str(e)
+            if self.debug:
+                print(f"🔧 [MARIADB_DEBUG] {display_name} connection failed: {error_msg}")
+            return {
+                'reachable': False,
+                'error': error_msg
             }
 
     def _parse_galera_metrics(self, results):
@@ -313,4 +370,3 @@ class MariaDBCheck:
         # No persistent sessions to close
         if self.debug:
             print(f"🔧 [MARIADB_DEBUG] No persistent sessions to close")
-
