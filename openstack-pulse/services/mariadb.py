@@ -13,6 +13,13 @@ class MariaDBCheck:
     """MariaDB/Galera cluster health monitoring"""
 
     def __init__(self, config, debug=False):
+        """
+        Initialize MariaDB health check
+
+        Args:
+            config: Config object providing service authentication
+            debug: Enable debug output
+        """
         self.config = config
         self.debug = debug
         auth_params = config.get_service_auth(ServiceType.MARIADB)
@@ -36,36 +43,38 @@ class MariaDBCheck:
         total_nodes = data['total_nodes']
         reachable_nodes = data['reachable_nodes']
 
-        # Determine group status icon
-        group_icon = "🟩" if reachable_nodes == total_nodes else "⚠️"
-        print(f"  {group_icon} Nodes: {reachable_nodes}/{total_nodes} reachable")
+        # Always show nodes summary without emoji (как в rabbitmq.py)
+        print(f"  Nodes: {reachable_nodes}/{total_nodes} reachable")
 
-        # Show cluster errors if any
+        # Show unreachable nodes first with detailed errors (как в rabbitmq.py)
         if cluster.get('cluster_errors'):
-            print(f"  🔴 Cluster issues:")
             for error in cluster['cluster_errors']:
-                print(f"    ❌ {error}")
+                # Extract node name from error message (format: "node_name: error")
+                node_name = error.split(':')[0] if ':' in error else error
+                error_message = error.split(':', 1)[1] if ':' in error else error
+                print(f"    ❌ {node_name}: {error_message.strip()}")
+                print(f"      Status: Unknown")
 
-        # Display each node's status and metrics
+        # Display each reachable node's status and metrics
         for node_name, details in cluster['node_details'].items():
             response_time = details.get('response_time', '?')
             metrics = details.get('metrics', {})
 
-            # Use green circle for all reachable nodes
             print(f"    🟢 ({response_time}s) {node_name}:")
 
-            # Display Galera metrics
-            if metrics:
-                print(f"      Status: {metrics.get('local_state', 'Unknown')}, "
-                      f"Cluster: {metrics.get('cluster_status', 'Unknown')} "
-                      f"({metrics.get('cluster_size', 0)} nodes), "
-                      f"Ready: {'ON' if metrics.get('node_ready') else 'OFF'}, "
-                      f"Connected: {'ON' if metrics.get('connected') else 'OFF'}")
+            # Display Galera cluster status
+            cluster_status = metrics.get('cluster_status', 'Unknown')
+            cluster_size = metrics.get('cluster_size', 0)
+            local_state = metrics.get('local_state', 'Unknown')
 
-        # Display unreachable nodes
-        for node_name in cluster['unreachable_nodes']:
-            print(f"    🔴 (timeout) {node_name}:")
-            print(f"      Status: Unknown - Connection failed")
+            print(f"      Status: {local_state}, "
+                  f"Cluster: {cluster_status} "
+                  f"({cluster_size} nodes)")
+
+            # Display node readiness and connectivity
+            node_ready = 'ON' if metrics.get('node_ready') else 'OFF'
+            connected = 'ON' if metrics.get('connected') else 'OFF'
+            print(f"      Ready: {node_ready}, Connected: {connected}")
 
     def run_check(self):
         """Execute MariaDB/Galera cluster health check"""
@@ -75,19 +84,16 @@ class MariaDBCheck:
             print(f"🔧 [MARIADB_DEBUG] Starting cluster health check for {len(self.nodes)} nodes")
 
         try:
-            # 1. Check all nodes in parallel
             cluster_status = self._check_galera_cluster()
 
-            # 2. Calculate reachable nodes count
+            # Calculate reachable nodes count
             reachable_count = len(cluster_status['reachable_nodes'])
             total_count = len(self.nodes)
 
             if self.debug:
-                print(f"🔧 [MARIADB_DEBUG] Nodes: {reachable_count}/{total_count} reachable")
-                print(f"🔧 [MARIADB_DEBUG] Reachable: {cluster_status['reachable_nodes']}")
-                print(f"🔧 [MARIADB_DEBUG] Unreachable: {cluster_status['unreachable_nodes']}")
+                print(f"🔧 [MARIADB_DEBUG] Cluster status: {reachable_count}/{total_count} nodes reachable")
 
-            # If all nodes are unreachable, use the first error as main error
+            # If all nodes are unreachable, use the first error as main error (как в rabbitmq.py)
             if reachable_count == 0 and cluster_status.get('cluster_errors'):
                 main_error = cluster_status['cluster_errors'][0]
                 if self.debug:
@@ -102,19 +108,13 @@ class MariaDBCheck:
                     'total_nodes': total_count
                 }
 
-            # 3. Determine overall status
+            # Determine overall status based on node availability и cluster health
             if reachable_count == total_count:
                 cluster_healthy = self._determine_cluster_status(cluster_status)
-                if self.debug:
-                    print(f"🔧 [MARIADB_DEBUG] All nodes reachable, cluster healthy: {cluster_healthy}")
                 status = 'OK' if cluster_healthy else 'DEGRADED'
             elif reachable_count > 0:
-                if self.debug:
-                    print(f"🔧 [MARIADB_DEBUG] Some nodes unreachable, cluster degraded")
                 status = 'DEGRADED'
             else:
-                if self.debug:
-                    print(f"🔧 [MARIADB_DEBUG] All nodes unreachable, cluster error")
                 status = 'ERROR'
 
             result = {
@@ -159,29 +159,20 @@ class MariaDBCheck:
             'cluster_errors': []  # Collect all errors for aggregated display
         }
 
-        # 1. Create list of node checking tasks
-        node_tasks = [
-            (display_name, connect_host)
-            for display_name, connect_host in self.nodes
-        ]
+        max_workers = min(5, len(self.nodes))
 
         if self.debug:
-            print(f"🔧 [MARIADB_DEBUG] Starting parallel checks for {len(node_tasks)} nodes")
+            print(f"🔧 [MARIADB_DEBUG] Starting cluster check with {max_workers} workers")
 
-        # 2. Execute parallel checks with ThreadPoolExecutor
-        max_workers = min(5, len(node_tasks))
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            # Submit all node checking tasks
-            future_to_node = {
+            future_to_info = {
                 executor.submit(self._check_single_node, display_name, connect_host):
                     (display_name, connect_host)
-                for display_name, connect_host in node_tasks
+                for display_name, connect_host in self.nodes
             }
 
-            # 3. Process results as they complete
-            for future in as_completed(future_to_node):
-                display_name, connect_host = future_to_node[future]
-
+            for future in as_completed(future_to_info):
+                display_name, connect_host = future_to_info[future]
                 try:
                     node_result = future.result()
 
@@ -199,7 +190,6 @@ class MariaDBCheck:
                         status['cluster_errors'].append(f"{display_name}: {error_msg}")
                         if self.debug:
                             print(f"🔧 [MARIADB_DEBUG] ✗ {display_name} is unreachable: {error_msg}")
-
                 except Exception as e:
                     status['unreachable_nodes'].append(display_name)
                     error_msg = f"Exception: {str(e)}"
@@ -216,7 +206,7 @@ class MariaDBCheck:
         """Check health of single MariaDB node"""
         try:
             if self.debug:
-                print(f"🔧 [MARIADB_DEBUG] Connecting to {display_name} at {connect_host}")
+                print(f"🔧 [MARIADB_DEBUG] Checking node {display_name} at {connect_host}")
 
             start_time = time.time()
 
@@ -226,7 +216,7 @@ class MariaDBCheck:
                 connection_timeout=10
             )
 
-            # 2. Execute Galera status query
+            # Execute Galera status query
             with connection.cursor() as cursor:
                 cursor.execute("""
                     SHOW GLOBAL STATUS WHERE Variable_name IN (
@@ -242,11 +232,11 @@ class MariaDBCheck:
             response_time = time.time() - start_time
             connection.close()
 
-            # 3. Parse metrics into structured format
+            # Parse metrics into structured format
             metrics = self._parse_galera_metrics(results)
 
             if self.debug:
-                print(f"🔧 [MARIADB_DEBUG] {display_name} connected successfully in {response_time:.3f}s")
+                print(f"🔧 [MARIADB_DEBUG] {display_name} responded in {response_time:.3f}s")
                 print(f"🔧 [MARIADB_DEBUG] {display_name} metrics: {metrics}")
 
             return {
@@ -340,11 +330,11 @@ class MariaDBCheck:
 
             # Galera health criteria:
             is_healthy = (
-                    metrics.get('cluster_status') == 'Primary' and
-                    metrics.get('node_ready') is True and
-                    metrics.get('connected') is True and
-                    metrics.get('local_state') == 'Synced' and
-                    metrics.get('cluster_size') == expected_cluster_size
+                metrics.get('cluster_status') == 'Primary' and
+                metrics.get('node_ready') is True and
+                metrics.get('connected') is True and
+                metrics.get('local_state') == 'Synced' and
+                metrics.get('cluster_size') == expected_cluster_size
             )
 
             if is_healthy:
