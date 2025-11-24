@@ -91,178 +91,47 @@ class NovaCheck:
 
             return error_result
 
-    # def display_details(self, data):
-    #     """
-    #     Display Nova compute service details in formatted output.
-    #
-    #     Args:
-    #         data: Dictionary containing service and hypervisor statistics
-    #     """
-    #     services = data['services']
-    #     hypervisors = data['hypervisors']
-    #
-    #     # Display service summary and detailed status
-    #     print(f"  Services: {services['up']}/{services['total']} up")
-    #
-    #     # Display critical services with smart formatting
-    #     for service_type, instances in services['critical_services'].items():
-    #         up_count = len([i for i in instances if i['state'] == 'up'])
-    #         down_count = len([i for i in instances if i['state'] == 'down'])
-    #         disabled_count = len([i for i in instances if i['status'] == 'disabled'])
-    #
-    #         # Show detailed breakdown for services with issues
-    #         if down_count > 0 or disabled_count > 0:
-    #             print(f"    ⚠️ {service_type}:")
-    #             for instance in instances:
-    #                 status_icon = self._get_service_status_icon(instance['state'], instance['status'])
-    #                 status_text = f": state - {instance['state']}, status - {instance['status']}"
-    #                 print(f"      {status_icon} {instance['host']}{status_text}")
-    #         else:
-    #             # All services healthy - show compact format
-    #             print(f"    🟢 {service_type}: {up_count} up")
-    #
-    #     # Display hypervisor summary and details
-    #     print(f"  Hypervisors: {hypervisors['up']}/{hypervisors['total']} up")
-    #     for hv in hypervisors['details']:
-    #         status_icon, instances_info = self._get_hypervisor_display_info(hv)
-    #         print(f"    {status_icon} {hv['name']}{instances_info}")
-    # def display_details(self, data):
-    #     """Display Nova-specific details"""
-    #     # Сохраняем исходную логику Nova, но с обновленными эмодзи
-    #     services = data.get('services', {})
-    #     hypervisors = data.get('hypervisors', {})
-    #
-    #     # Services section - сохраняем структуру но обновляем эмодзи
-    #     print(f"  Services: {services.get('up', 0)}/{services.get('total', 0)} up")
-    #
-    #     for service_name, service_info in services.get('details', {}).items():
-    #         # Определяем эмодзи для сервиса на основе состояния нод
-    #         service_nodes = service_info.get('nodes', {})
-    #         up_count = sum(1 for node in service_nodes.values() if node.get('state') == 'up')
-    #         total_count = len(service_nodes)
-    #
-    #         if up_count == total_count:
-    #             service_emoji = "🟢"  # Все ноды работают
-    #         elif up_count == 0:
-    #             service_emoji = "🔴"  # Все ноды не работают
-    #         else:
-    #             service_emoji = "🟡"  # Часть нод работает
-    #
-    #         print(f"    {service_emoji} {service_name}:")
-    #
-    #         # Детали по нодам для этого сервиса
-    #         for node_name, node_status in service_nodes.items():
-    #             state = node_status.get('state', 'unknown')
-    #             status = node_status.get('status', 'unknown')
-    #
-    #             node_emoji = "🟢" if state == 'up' else "🔴"
-    #             print(f"      {node_emoji} {node_name}: state - {state}, status - {status}")
-    #
-    #     # Hypervisors section - сохраняем структуру но обновляем эмодзи
-    #     print(f"  Hypervisors: {hypervisors.get('up', 0)}/{hypervisors.get('total', 0)} up")
-    #
-    #     for hv_name, hv_info in hypervisors.get('details', {}).items():
-    #         state = hv_info.get('state', 'unknown')
-    #         vms = hv_info.get('vms', 0)
-    #
-    #         hv_emoji = "🟢" if state == 'up' else "🔴"
-    #         print(f"    {hv_emoji} {hv_name} 📦{vms} VM")
-    # def display_details(self, data):
-    #     """Display Nova-specific details"""
-    #     services = data.get('services', {})
-    #     hypervisors = data.get('hypervisors', {})
-    #
-    #     # Services section - используем critical_services вместо details
-    #     print(f"  Services: {services.get('up', 0)}/{services.get('total', 0)} up")
-    #
-    #     # Обрабатываем critical_services (это словарь)
-    #     critical_services = services.get('critical_services', {})
-    #     for service_name, service_nodes in critical_services.items():
-    #         # service_nodes - это список словарей
-    #         up_count = sum(1 for node in service_nodes if node.get('state') == 'up')
-    #         total_count = len(service_nodes)
-    #
-    #         if up_count == total_count:
-    #             service_emoji = "🟢"
-    #         elif up_count == 0:
-    #             service_emoji = "🔴"
-    #         else:
-    #             service_emoji = "🟡"
-    #
-    #         print(f"    {service_emoji} {service_name}:")
-    #
-    #         # Выводим детали по нодам этого сервиса
-    #         for node_info in service_nodes:  # ← итерируем по списку
-    #             node_name = node_info.get('host', 'unknown')
-    #             state = node_info.get('state', 'unknown')
-    #             status = node_info.get('status', 'unknown')
-    #
-    #             node_emoji = "🟢" if state == 'up' else "🔴"
-    #             print(f"      {node_emoji} {node_name}: state - {state}, status - {status}")
-    #
-    #     # Hypervisors section - details это список
-    #     print(f"  Hypervisors: {hypervisors.get('up', 0)}/{hypervisors.get('total', 0)} up")
-    #
-    #     # Обрабатываем details как список
-    #     hv_details = hypervisors.get('details', [])
-    #     for hv_info in hv_details:  # ← итерируем по списку
-    #         hv_name = hv_info.get('name', 'unknown')
-    #         state = hv_info.get('state', 'unknown')
-    #         vms = hv_info.get('instances_count', 0)  # ← instances_count, а не vms!
-    #
-    #         hv_emoji = "🟢" if state == 'up' else "🔴"
-    #         print(f"    {hv_emoji} {hv_name} 📦{vms} VM")
-
     def display_details(self, data):
-        """Display Nova-specific details"""
+        """
+        Display Nova compute service details in formatted output.
+
+        Args:
+            data: Dictionary containing service and hypervisor statistics
+        """
         services = data.get('services', {})
         hypervisors = data.get('hypervisors', {})
 
-        # Services section
+        # Display service summary and detailed status
         print(f"  Services: {services.get('up', 0)}/{services.get('total', 0)} up")
 
+        # Display critical services with smart formatting
         critical_services = services.get('critical_services', {})
         for service_name, service_nodes in critical_services.items():
-            # service_nodes - это список словарей
             up_count = sum(1 for node in service_nodes if node.get('state') == 'up')
             total_count = len(service_nodes)
             down_count = total_count - up_count
             disabled_count = sum(1 for node in service_nodes if node.get('status') == 'disabled')
 
-            # Определяем эмодзи для сервиса
-            if up_count == total_count:
-                service_emoji = "🟢"
-            elif up_count == 0:
-                service_emoji = "🔴"
-            else:
-                service_emoji = "🟡"
-
-            # КОМПАКТНЫЙ ФОРМАТ для полностью здоровых сервисов
+            # Smart display: compact for healthy services, detailed for problematic ones
             if down_count == 0 and disabled_count == 0:
-                print(f"    {service_emoji} {service_name}: {up_count} up")
+                # All services healthy - show compact format
+                print(f"    🟢 {service_name}: {up_count} up")
             else:
-                # ДЕТАЛЬНЫЙ ФОРМАТ для сервисов с проблемами
-                print(f"    {service_emoji} {service_name}:")
-
+                # Services with issues - show detailed breakdown
+                print(f"    ⚠️ {service_name}:")
                 for node_info in service_nodes:
-                    node_name = node_info.get('host', 'unknown')
-                    state = node_info.get('state', 'unknown')
-                    status = node_info.get('status', 'unknown')
+                    status_icon = self._get_service_status_icon(
+                        node_info.get('state'),
+                        node_info.get('status')
+                    )
+                    status_text = f": state - {node_info.get('state', 'unknown')}, status - {node_info.get('status', 'unknown')}"
+                    print(f"      {status_icon} {node_info.get('host', 'unknown')}{status_text}")
 
-                    node_emoji = "🟢" if state == 'up' else "🔴"
-                    print(f"      {node_emoji} {node_name}: state - {state}, status - {status}")
-
-        # Hypervisors section
+        # Display hypervisor summary and details
         print(f"  Hypervisors: {hypervisors.get('up', 0)}/{hypervisors.get('total', 0)} up")
-
-        hv_details = hypervisors.get('details', [])
-        for hv_info in hv_details:
-            hv_name = hv_info.get('name', 'unknown')
-            state = hv_info.get('state', 'unknown')
-            vms = hv_info.get('instances_count', 0)
-
-            hv_emoji = "🟢" if state == 'up' else "🔴"
-            print(f"    {hv_emoji} {hv_name} 📦{vms} VM")
+        for hv_info in hypervisors.get('details', []):
+            status_icon, instances_info = self._get_hypervisor_display_info(hv_info)
+            print(f"    {status_icon} {hv_info.get('name', 'unknown')}{instances_info}")
 
     def _get_service_status_icon(self, state: str, status: str) -> str:
         """
@@ -292,9 +161,10 @@ class NovaCheck:
         Returns:
             Tuple of (status_icon, instances_info_string)
         """
-        if hypervisor_info['state'] == 'up':
-            if hypervisor_info['instances_count'] > 0:
-                return "🟢", f" 📦{hypervisor_info['instances_count']} VM"
+        if hypervisor_info.get('state') == 'up':
+            instances_count = hypervisor_info.get('instances_count', 0)
+            if instances_count > 0:
+                return "🟢", f" 📦{instances_count} VM"
             else:
                 return "🔵", ""
         else:
@@ -412,4 +282,3 @@ class NovaCheck:
             self.conn.close()
             if self.debug:
                 print(f"🔧 [NOVA_DEBUG] Connections closed")
-
