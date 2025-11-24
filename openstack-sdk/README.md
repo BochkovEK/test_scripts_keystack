@@ -1,0 +1,148 @@
+# OpenStack SDK
+
+Набор скриптов на основе модуля OpenStack-SDK.
+
+## Скрипты
+- **migration_tester.py** - циклическая миграция ВМ между гипревизорами
+
+## Конфигурация
+
+Конфигурация OpenStack Pulse осуществлятся по средствам переменных окружения и параметров запуска:
+
+### Общие переменные окружения
+Общие переменных окружения отвечают за авторизацию в облаке. Данные переменные определены в файле **openrc**
+
+### Переменные окружения **migration_tester.py**
+<details><summary>📋 Список переменных окружения migration_tester.py</summary>
+
+```bash
+Основные настройки
+Переменная	Описание	Обязательная
+MIGRATION_TEST_HYPERVISORS	Список гипервизоров для миграции (через запятую)	Да (если не указан --hypervisors)
+MIGRATION_TEST_CLOUD_NAME	Имя облака из clouds.yaml	Нет
+OS_REGION_NAME	Регион OpenStack	Нет
+Параметры выполнения теста
+Переменная	Описание	Значение по умолчанию
+MIGRATION_TEST_DURATION	Общая длительность теста в секундах	60
+MIGRATION_TEST_FULL_CIRCLE	Количество полных циклов миграции	0
+MIGRATION_TEST_MIGRATION_TIMEOUT	Таймаут для одной миграции (секунды)	300
+MIGRATION_TEST_MAX_PARALLEL_MIGRATIONS	Максимум параллельных миграций (-1 = без ограничений)	2
+Настройки повторных попыток
+Переменная	Описание	Значение по умолчанию
+MIGRATION_TEST_RETRY_ATTEMPTS	Количество попыток повтора для неудачных миграций	3
+MIGRATION_TEST_RETRY_DELAY	Задержка между повторными попытками (секунды)	10
+Настройки вывода и логирования
+Переменная	Описание	Значение по умолчанию
+MIGRATION_TEST_LOG_LEVEL	Уровень логирования (DEBUG, INFO, WARNING, ERROR)	INFO
+MIGRATION_TEST_OUTPUT_FORMAT	Формат вывода результатов (table, json, text)	table
+MIGRATION_TEST_RESULTS_FILE	Файл для сохранения результатов JSON	migration_results.json
+MIGRATION_TEST_INTERFACE	Интерфейс эндпоинтов OpenStack (public, internal, admin)	internal
+```
+</details>
+
+    - openrc - переменные авторизации в регионе
+    - Переменные авторизации в RabbitMQ API
+        - RABBIT_USER - пользователь
+        - RABBIT_PASS - пароль
+    - Переменные авторизации MySQL/MAriaDB (Galera)
+        - MYSQL_USER - пользователь
+        - MYSQL_PASS - пароль
+2. Подготовка файла **inventory**:
+   <details><summary>📋 Пример inventory</summary>
+     
+     ```ini
+     # inventory
+     # description of the main node groups is enough
+     # like output from vms stage
+          
+     [all:vars]
+     ansible_become=true
+     ansible_ssh_common_args="-o StrictHostKeyChecking=no"
+     ansible_port="22"
+     ansible_user="sberlinux"
+     openrc_public=true
+     kolla_internal_address=10.224.151.195
+     external_floating=10.224.151.196
+     [add_vm]
+     qa-stable-sberlinux-add_vm-01 ansible_host=10.224.151.210
+     [compute]
+     qa-stable-sberlinux-comp-01 ansible_host=10.224.151.207
+     qa-stable-sberlinux-comp-02 ansible_host=10.224.151.220
+     [control]
+     qa-stable-sberlinux-ctrl-01 ansible_host=10.224.151.206
+     qa-stable-sberlinux-ctrl-02 ansible_host=10.224.151.209
+     qa-stable-sberlinux-ctrl-03 ansible_host=10.224.151.201
+     [storage]
+     qa-stable-sberlinux-ctrl-01 ansible_host=10.224.151.206
+     qa-stable-sberlinux-ctrl-02 ansible_host=10.224.151.209
+     qa-stable-sberlinux-ctrl-03 ansible_host=10.224.151.201
+     [ci]
+     qa-stable-sberlinux-lcm-01 ansible_host=10.224.151.215
+     [jump]
+     qa-stable-sberlinux-lcm-01 ansible_host=10.224.151.215
+     ```
+</details>
+
+3. Подготовка файла конфигурации **config.yml**
+   <details><summary>⚙️Пример config.yml</summary>
+        
+   ```yaml
+   # config/config.yml
+   # Services list for diagnostics
+   
+   # logging
+   log:
+    enable_log: True                   
+   #  path: "/var/log/openstack-pulse"  # /tmp by default
+   
+   # Check services
+   check_services:
+    - nova
+    - cinder
+    - neutron
+    - keystone
+    - rabbitmq
+    - galera
+   
+   # Endpoints
+   endpoints:
+    rabbitmq_port: 15672
+    mariadb_port: 3306
+   
+   # Single check services
+   single_mode_checks:
+    - placement
+   
+   # Timing parameters
+   intervals:
+    check_interval: 5   # Interval between checks (seconds)
+    duration: 300       # Data collection window (seconds) - 5 minutes
+   
+   # Pulse settings
+   heartbeat_requests_services: 4
+   ```
+
+## Запуск
+
+### Ключи запуска
+В Openstack pulse предусмотрены следующие ключи запуска:
+```bash
+--inventory, -i - путь к inventory
+--config, -c - путь к config.yml
+--output, -o - путь к файлу логов
+--debug, -d - включение вывода данных отладки
+--single - однократный вывод состояний диагностируемых сервисов (по умолчанию режим непрерывной диагностики в течении заданного времени)
+--duration - длительность работы в секундах (только для непрерывного режима)
+```
+
+### Примеры запуска
+```bash
+# Указание inventory, config.yml файла 
+python ~/test_scripts_keystack/openstack-pulse/pulse.py -i /path/to/inventory --config /path/to/config.yml 
+
+# Запись логов в указанный файл/директорию с указанием времени непрерывной диагностики (сек)
+python ~/test_scripts_keystack/openstack-pulse/pulse.py --output /path/to/logs --duration 600
+
+# Однократный запуск (без непрерывного мониторинга)
+python ~/test_scripts_keystack/openstack-pulse/pulse.py --single
+```
