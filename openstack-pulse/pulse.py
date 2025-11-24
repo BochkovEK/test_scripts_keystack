@@ -6,7 +6,6 @@ import threading
 import argparse
 import io
 from contextlib import redirect_stdout
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Add project directories to Python path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'services'))

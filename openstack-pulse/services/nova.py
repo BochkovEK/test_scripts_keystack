@@ -9,13 +9,23 @@ from config.config import ServiceType
 
 
 class NovaCheck:
+    """
+    Nova Compute Service health monitoring class.
+
+    Provides comprehensive monitoring of Nova compute services including:
+    - Compute service status (nova-compute, nova-scheduler, nova-conductor)
+    - Hypervisor availability and health
+    - Virtual machine instance counts and distribution
+    - Service response time and availability metrics
+    """
+
     def __init__(self, config, debug=False):
         """
-        Initialize Nova health check
+        Initialize Nova health check.
 
         Args:
             config: Config object providing service authentication
-            debug: Enable debug output
+            debug: Enable debug output for troubleshooting
         """
         self.config = config
         self.debug = debug
@@ -29,10 +39,20 @@ class NovaCheck:
             print(f"🔧 [NOVA_DEBUG] Initialized with compute API v2.1")
 
     def run_check(self):
-        """Execute Nova services health check"""
+        """
+        Execute Nova compute services health check.
+
+        Returns:
+            Dictionary containing check results:
+            - status: Overall check status ('OK' or 'ERROR')
+            - response_time: API response time in seconds
+            - services: Compute service statistics
+            - hypervisors: Hypervisor availability and metrics
+        """
         start_time = time.time()
 
         try:
+            # Retrieve compute services and hypervisor information
             services = list(self.conn.compute.services())
             service_stats = self._analyze_services(services)
 
@@ -64,63 +84,86 @@ class NovaCheck:
             return error_result
 
     def display_details(self, data):
-        """Display Nova-specific details"""
+        """
+        Display Nova compute service details in formatted output.
+
+        Args:
+            data: Dictionary containing service and hypervisor statistics
+        """
         services = data['services']
         hypervisors = data['hypervisors']
 
-        # Services summary
+        # Display service summary and detailed status
         print(f"  Services: {services['up']}/{services['total']} up")
 
-        # Smart display for critical services - show details only if problems
+        # Display critical services with smart formatting
         for service_type, instances in services['critical_services'].items():
             up_count = len([i for i in instances if i['state'] == 'up'])
             down_count = len([i for i in instances if i['state'] == 'down'])
             disabled_count = len([i for i in instances if i['status'] == 'disabled'])
 
-            # Show detailed breakdown if any services are down or disabled
+            # Show detailed breakdown for services with issues
             if down_count > 0 or disabled_count > 0:
                 print(f"    ⚠️ {service_type}:")
                 for instance in instances:
-                    # Determine icon based on state and status
-                    if instance['state'] == 'down':
-                        status_icon = "🔴"
-                    elif instance['status'] == 'disabled':
-                        status_icon = "⚠️"
-                    else:
-                        status_icon = "🟢"
-
-                    # Always show full status for all nodes in problematic service
+                    status_icon = self._get_service_status_icon(instance['state'], instance['status'])
                     status_text = f": state - {instance['state']}, status - {instance['status']}"
                     print(f"      {status_icon} {instance['host']}{status_text}")
             else:
-                # All services up and enabled - show compact
+                # All services healthy - show compact format
                 print(f"    🟢 {service_type}: {up_count} up")
 
-        # Hypervisors summary and details
+        # Display hypervisor summary and details
         print(f"  Hypervisors: {hypervisors['up']}/{hypervisors['total']} up")
         for hv in hypervisors['details']:
-            if hv['state'] == 'up':
-                if hv['instances_count'] > 0:
-                    status_icon = "🟢"
-                    instances_info = f" 📦{hv['instances_count']} VM"
-                else:
-                    status_icon = "🔵"
-                    instances_info = ""
-            else:
-                status_icon = "🔴"
-                instances_info = ""
-
+            status_icon, instances_info = self._get_hypervisor_display_info(hv)
             print(f"    {status_icon} {hv['name']}{instances_info}")
+
+    def _get_service_status_icon(self, state: str, status: str) -> str:
+        """
+        Determine appropriate status icon based on service state and status.
+
+        Args:
+            state: Service state ('up', 'down')
+            status: Service status ('enabled', 'disabled')
+
+        Returns:
+            Status icon string
+        """
+        if state == 'down':
+            return "🔴"
+        elif status == 'disabled':
+            return "⚠️"
+        else:
+            return "🟢"
+
+    def _get_hypervisor_display_info(self, hypervisor_info: dict) -> tuple:
+        """
+        Determine display icon and instance information for hypervisor.
+
+        Args:
+            hypervisor_info: Dictionary containing hypervisor state and instance count
+
+        Returns:
+            Tuple of (status_icon, instances_info_string)
+        """
+        if hypervisor_info['state'] == 'up':
+            if hypervisor_info['instances_count'] > 0:
+                return "🟢", f" 📦{hypervisor_info['instances_count']} VM"
+            else:
+                return "🔵", ""
+        else:
+            return "🔴", ""
 
     def _analyze_services(self, services):
         """
-        Analyze Nova service status
+        Analyze Nova service status and categorize critical services.
 
         Args:
-            services: List of Nova service objects
+            services: List of Nova service objects from OpenStack
 
         Returns:
-            Dictionary with service statistics
+            Dictionary containing service statistics organized by critical service types
         """
         stats = {
             'total': len(services),
@@ -129,16 +172,17 @@ class NovaCheck:
             'critical_services': {}
         }
 
+        # Define critical Nova services for compute functionality
         critical_services = ['nova-conductor', 'nova-scheduler', 'nova-compute']
 
         for service in services:
-            # Count services by state
+            # Count overall service availability
             if service.state == 'up':
                 stats['up'] += 1
             else:
                 stats['down'] += 1
 
-            # Track critical services
+            # Track critical services with detailed information
             if service.binary in critical_services:
                 if service.binary not in stats['critical_services']:
                     stats['critical_services'][service.binary] = []
@@ -152,7 +196,15 @@ class NovaCheck:
         return stats
 
     def _analyze_hypervisors(self, hypervisors):
-        """Analyze hypervisors with instance counts"""
+        """
+        Analyze hypervisor availability and instance distribution.
+
+        Args:
+            hypervisors: List of hypervisor objects from OpenStack
+
+        Returns:
+            Dictionary containing hypervisor statistics and detailed information
+        """
         stats = {
             'total': len(hypervisors),
             'up': 0,
@@ -161,7 +213,7 @@ class NovaCheck:
         }
 
         for hv in hypervisors:
-            # Try multiple ways to get running VMs count
+            # Get running VM count using multiple fallback methods
             running_vms = self._get_running_vms_count(hv)
 
             hv_info = {
@@ -171,6 +223,7 @@ class NovaCheck:
             }
             stats['details'].append(hv_info)
 
+            # Count hypervisors by operational state
             if hv.state == 'up':
                 stats['up'] += 1
             else:
@@ -179,18 +232,26 @@ class NovaCheck:
         return stats
 
     def _get_running_vms_count(self, hypervisor):
-        """Get running VMs count using hypervisor statistics"""
+        """
+        Get running VMs count using multiple fallback methods.
+
+        Args:
+            hypervisor: Hypervisor object from OpenStack
+
+        Returns:
+            Number of running virtual machines on the hypervisor
+        """
         try:
-            # Method 1: Try to get detailed hypervisor stats
+            # Method 1: Try to get detailed hypervisor statistics
             hv_details = self.conn.compute.get_hypervisor(hypervisor.id)
             if hasattr(hv_details, 'running_vms') and hv_details.running_vms is not None:
                 return hv_details.running_vms
 
-            # Method 2: Try alternative attribute names
+            # Method 2: Try alternative attribute names on base hypervisor object
             if hasattr(hypervisor, 'running_vms') and hypervisor.running_vms is not None:
                 return hypervisor.running_vms
 
-            # Method 3: Try to get VMs via compute API
+            # Method 3: Fallback to counting VMs via compute API
             servers = list(self.conn.compute.servers(all_projects=True, host=hypervisor.name))
             return len([s for s in servers if s.status == 'ACTIVE'])
 
@@ -201,8 +262,9 @@ class NovaCheck:
         return 0
 
     def close_sessions(self):
-        """Close OpenStack connection sessions"""
+        """Close OpenStack connection sessions to free resources."""
         if hasattr(self, 'conn'):
             self.conn.close()
             if self.debug:
                 print(f"🔧 [NOVA_DEBUG] Connections closed")
+

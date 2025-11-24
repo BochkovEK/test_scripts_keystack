@@ -10,15 +10,24 @@ from config.config import ServiceType
 
 
 class RabbitCheck:
-    """RabbitMQ cluster health monitoring with detailed node information"""
+    """
+    RabbitMQ cluster health monitoring with detailed node information.
+
+    Provides comprehensive monitoring of RabbitMQ clusters including:
+    - Node connectivity and response times
+    - Cluster-wide node status from multiple perspectives
+    - Queue statistics and message counts
+    - Resource utilization (memory, processes, disk alarms)
+    - Parallel health checks across all cluster nodes
+    """
 
     def __init__(self, config, debug=False):
         """
-        Initialize RabbitMQ health check
+        Initialize RabbitMQ health check.
 
         Args:
             config: Config object providing service authentication
-            debug: Enable debug output
+            debug: Enable debug output for troubleshooting
         """
         self.config = config
         self.debug = debug
@@ -37,37 +46,42 @@ class RabbitCheck:
         self._init_sessions()
 
     def display_details(self, data):
-        """Display RabbitMQ-specific details"""
+        """
+        Display RabbitMQ cluster details in formatted output.
+
+        Args:
+            data: Dictionary containing cluster status and node information
+        """
         cluster = data['cluster']
         total_nodes = data['total_nodes']
         reachable_nodes = data['reachable_nodes']
 
-        # Always show nodes summary without emoji
+        # Display node reachability summary
         print(f"  Nodes: {reachable_nodes}/{total_nodes} reachable")
 
-        # Show unreachable nodes first with detailed errors
+        # Display unreachable nodes with detailed error information
         if cluster.get('cluster_errors'):
             for error in cluster['cluster_errors']:
-                # Extract node name from error message (format: "node_name: error")
+                # Extract node name and error message from formatted error string
                 node_name = error.split(':')[0] if ':' in error else error
                 error_message = error.split(':', 1)[1] if ':' in error else error
                 print(f"    ❌ {node_name}: {error_message.strip()}")
                 print(f"      Status: Unknown")
 
-        # Display each reachable source node's perspective
+        # Display detailed status for each reachable node's perspective
         for source_hostname, details in cluster['node_details'].items():
             response_time = details.get('response_time', '?')
 
             print(f"    🟢 ({response_time}s) {source_hostname}:")
 
-            # Display queues from THIS source's perspective
+            # Display queue statistics from this node's perspective
             queues = details.get('queues', {})
             print(f"      📊 Queues: {queues.get('total', 0)} total, "
                   f"{queues.get('messages', 0)} messages "
                   f"({queues.get('messages_ready', 0)} ready, "
                   f"{queues.get('messages_unacknowledged', 0)} unacked)")
 
-            # Display ALL nodes from this source's perspective
+            # Display all nodes in cluster from this node's perspective
             all_nodes = details.get('all_nodes', {})
             for target_hostname, node_info in all_nodes.items():
                 node_status = node_info.get('status', 'unknown')
@@ -75,7 +89,7 @@ class RabbitCheck:
 
                 print(f"      {status_emoji} {target_hostname} ({node_status}):")
 
-                # Display resources
+                # Display resource utilization for running nodes
                 resources = node_info.get('resources', {})
                 if resources and node_status == 'running':
                     proc_used = resources.get('proc_used', 0)
@@ -87,7 +101,7 @@ class RabbitCheck:
                 else:
                     print(f"        📈 Resources: Unknown")
 
-                # Display alarms only for running nodes
+                # Display alarm status for running nodes
                 if node_status == 'running':
                     alarms = []
                     if resources.get('mem_alarm'):
@@ -99,7 +113,7 @@ class RabbitCheck:
                         print(f"        {' | '.join(alarms)}")
 
     def _init_sessions(self):
-        """Initialize separate sessions for each node"""
+        """Initialize separate HTTP sessions for each RabbitMQ node."""
         urls_with_info = self._get_rabbitmq_urls()
         for display_name, connect_host, url in urls_with_info:
             session = requests.Session()
@@ -110,7 +124,17 @@ class RabbitCheck:
                 print(f"🔧 [RABBIT_DEBUG] Created session for {display_name} -> {url}")
 
     def run_check(self):
-        """Execute RabbitMQ cluster health check"""
+        """
+        Execute RabbitMQ cluster health check.
+
+        Returns:
+            Dictionary containing check results:
+            - status: Overall cluster status ('OK', 'DEGRADED', 'ERROR')
+            - response_time: Total check execution time
+            - cluster: Detailed cluster status information
+            - reachable_nodes: Count of reachable nodes
+            - total_nodes: Total number of configured nodes
+        """
         start_time = time.time()
 
         if self.debug:
@@ -120,14 +144,14 @@ class RabbitCheck:
             urls = self._get_rabbitmq_urls()
             cluster_status = self._check_rabbitmq_cluster(urls)
 
-            # Determine overall status based on node availability
+            # Calculate node reachability statistics
             reachable_count = len(cluster_status['reachable_nodes'])
             total_count = len(urls)
 
             if self.debug:
                 print(f"🔧 [RABBIT_DEBUG] Cluster status: {reachable_count}/{total_count} nodes reachable")
 
-            # If all nodes are unreachable, use the first error as main error
+            # Handle complete cluster unreachable scenario
             if reachable_count == 0 and cluster_status.get('cluster_errors'):
                 main_error = cluster_status['cluster_errors'][0]
                 if self.debug:
@@ -142,6 +166,7 @@ class RabbitCheck:
                     'total_nodes': total_count
                 }
 
+            # Determine overall cluster status based on node availability
             if reachable_count == total_count:
                 status = 'OK'
             elif reachable_count > 0:
@@ -165,7 +190,7 @@ class RabbitCheck:
         except Exception as e:
             error_message = str(e)
 
-            # Detect authentication errors
+            # Map common connection errors to user-friendly messages
             if "401" in error_message or "unauthorized" in error_message.lower():
                 error_message = f"Not authorized - check RabbitMQ credentials (timeout: {self.timeout}s)"
             elif "timeout" in error_message.lower():
@@ -182,7 +207,15 @@ class RabbitCheck:
 
     def _check_single_node(self, display_name, connect_host, url):
         """
-        Check health of single RabbitMQ node and collect data about ALL nodes
+        Check health of single RabbitMQ node and collect cluster-wide data.
+
+        Args:
+            display_name: Human-readable node identifier
+            connect_host: Network address for connection
+            url: Base URL for RabbitMQ HTTP API
+
+        Returns:
+            Dictionary containing node reachability and detailed cluster information
         """
         session = self.sessions.get(connect_host)
         if not session:
@@ -196,9 +229,10 @@ class RabbitCheck:
 
             start_time = time.time()
 
+            # Query RabbitMQ management API endpoints
             overview_response = session.get(f"{url}/api/overview", timeout=self.timeout)
 
-            # Check for specific HTTP errors
+            # Handle specific HTTP error responses
             if overview_response.status_code == 401:
                 return {'reachable': False, 'error': f'401 Unauthorized - check credentials (timeout: {self.timeout}s)'}
             elif overview_response.status_code == 403:
@@ -208,6 +242,7 @@ class RabbitCheck:
             elif overview_response.status_code >= 500:
                 return {'reachable': False, 'error': f'HTTP {overview_response.status_code} - Server error (timeout: {self.timeout}s)'}
 
+            # Additional API calls for comprehensive cluster data
             nodes_response = session.get(f"{url}/api/nodes", timeout=self.timeout)
             queues_response = session.get(f"{url}/api/queues", timeout=self.timeout)
 
@@ -217,7 +252,7 @@ class RabbitCheck:
                 print(f"🔧 [RABBIT_DEBUG] {display_name} responded in {response_time:.3f}s")
 
             if overview_response.status_code == 200:
-                # Extract data about ALL nodes from this node's perspective
+                # Extract cluster-wide information from this node's perspective
                 all_nodes_info = self._extract_all_nodes_details(nodes_response.json())
                 overview_info = self._extract_overview_details(overview_response.json())
 
@@ -253,7 +288,15 @@ class RabbitCheck:
             return {'reachable': False, 'error': f'{error_type}: {str(e)} (timeout: {self.timeout}s)'}
 
     def _extract_all_nodes_details(self, nodes_data):
-        """Extract status and resources for ALL nodes from /api/nodes response"""
+        """
+        Extract status and resource information for ALL nodes from /api/nodes response.
+
+        Args:
+            nodes_data: JSON response from RabbitMQ nodes API
+
+        Returns:
+            Dictionary containing node status and resource information
+        """
         all_nodes = {}
 
         for node in nodes_data:
@@ -280,8 +323,15 @@ class RabbitCheck:
 
     def _extract_short_node_name(self, full_node_name):
         """
-        Extract short node name from full RabbitMQ node name
+        Extract short node name from full RabbitMQ node name.
+
         Example: 'rabbit@ctrl1' -> 'ctrl1'
+
+        Args:
+            full_node_name: Full RabbitMQ node name with prefix
+
+        Returns:
+            Short node name without prefix
         """
         if '@' in full_node_name:
             return full_node_name.split('@')[1]
@@ -289,7 +339,13 @@ class RabbitCheck:
 
     def _extract_overview_details(self, overview_data):
         """
-        Extract queue information from /api/overview response
+        Extract queue statistics from /api/overview response.
+
+        Args:
+            overview_data: JSON response from RabbitMQ overview API
+
+        Returns:
+            Dictionary containing queue statistics and message counts
         """
         object_totals = overview_data.get('object_totals', {})
         queue_totals = overview_data.get('queue_totals', {})
@@ -304,7 +360,12 @@ class RabbitCheck:
         }
 
     def _get_rabbitmq_urls(self):
-        """Generate RabbitMQ API URLs with hostnames"""
+        """
+        Generate RabbitMQ API URLs for all configured nodes.
+
+        Returns:
+            List of tuples containing (display_name, connect_host, api_url)
+        """
         urls_with_info = []
         for display_name, connect_host in self.nodes:
             url = f"http://{connect_host}:{self.port}"
@@ -312,7 +373,15 @@ class RabbitCheck:
         return urls_with_info
 
     def _check_rabbitmq_cluster(self, urls_with_info):
-        """Check entire RabbitMQ cluster using thread pool"""
+        """
+        Perform parallel health checks across all RabbitMQ cluster nodes.
+
+        Args:
+            urls_with_info: List of node URLs to check
+
+        Returns:
+            Dictionary containing cluster status and node details
+        """
         status = {
             'reachable_nodes': [],
             'unreachable_nodes': [],
@@ -320,18 +389,21 @@ class RabbitCheck:
             'cluster_errors': []  # Collect all errors for aggregated display
         }
 
+        # Configure thread pool for parallel node checks
         max_workers = min(5, len(urls_with_info))
 
         if self.debug:
             print(f"🔧 [RABBIT_DEBUG] Starting cluster check with {max_workers} workers, timeout={self.timeout}s")
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # Submit node check tasks to thread pool
             future_to_info = {
                 executor.submit(self._check_single_node, display_name, connect_host, url):
                     (display_name, connect_host, url)
                 for display_name, connect_host, url in urls_with_info
             }
 
+            # Process completed node checks as they finish
             for future in as_completed(future_to_info):
                 display_name, connect_host, url = future_to_info[future]
                 try:
@@ -361,10 +433,11 @@ class RabbitCheck:
         return status
 
     def close_sessions(self):
-        """Close all sessions to free resources"""
+        """Close all HTTP sessions to free resources."""
         for session in self.sessions.values():
             session.close()
         self.sessions.clear()
 
         if self.debug:
             print(f"🔧 [RABBIT_DEBUG] Closed all sessions")
+

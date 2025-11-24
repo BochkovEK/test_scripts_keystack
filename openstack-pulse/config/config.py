@@ -1,20 +1,25 @@
 import os
 import yaml
 import sys
-# import argparse
 from dotenv import load_dotenv
 from typing import Dict, Any, Tuple, List
 from enum import Enum
 
+
 class ServiceType(Enum):
-    """Service types for authentication"""
+    """Enumeration of supported service types for authentication"""
     OPENSTACK = "openstack"
     RABBITMQ = "rabbitmq"
     MARIADB = "galera"
 
 
 class DotDict:
-    """Simple dot-notation access to dictionary attributes"""
+    """
+    Wrapper class providing dot-notation access to dictionary attributes.
+
+    Recursively converts nested dictionaries into DotDict instances for
+    convenient attribute-style access.
+    """
 
     def __init__(self, data: Dict):
         for key, value in data.items():
@@ -25,7 +30,12 @@ class DotDict:
 
 
 class Config:
-    """Central configuration provider for all services"""
+    """
+    Central configuration provider for all services.
+
+    Handles loading and validation of configuration files, environment variables,
+    and service-specific authentication parameters.
+    """
 
     def __init__(self, inventory_path=None, config_path=None):
         load_dotenv()
@@ -38,11 +48,17 @@ class Config:
         self.nodes = self._load_inventory()
 
     def _get_project_root(self) -> str:
-        """Get project root directory"""
+        """Determine the project root directory path"""
         return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     def _load_auth_credentials(self) -> Dict[str, str]:
-        """Load authentication credentials from environment variables"""
+        """
+        Load authentication credentials from environment variables.
+
+        Returns:
+            Dictionary containing all required authentication parameters
+            with fallback values for optional parameters.
+        """
         return {
             'username': os.getenv('OS_USERNAME'),
             'password': os.getenv('OS_PASSWORD'),
@@ -58,13 +74,16 @@ class Config:
 
     def get_service_auth(self, service_type: ServiceType) -> Dict[str, Any]:
         """
-        Get authentication parameters for specific service type
+        Get authentication parameters for specific service type.
 
         Args:
-            service_type: Type of service
+            service_type: Type of service to get authentication for
 
         Returns:
-            Dictionary with authentication parameters
+            Dictionary with authentication parameters specific to the service
+
+        Raises:
+            ValueError: If unknown service type is provided
         """
         auth_handlers = {
             ServiceType.OPENSTACK: self._get_openstack_auth,
@@ -79,7 +98,7 @@ class Config:
         raise ValueError(f"Unknown service type: {service_type}")
 
     def _get_openstack_auth(self) -> Dict[str, Any]:
-        """Get OpenStack authentication parameters"""
+        """Get OpenStack specific authentication parameters"""
         return {
             'auth_url': self.auth['auth_url'],
             'username': self.auth['username'],
@@ -91,7 +110,7 @@ class Config:
         }
 
     def _get_rabbitmq_auth(self) -> Dict[str, Any]:
-        """Get RabbitMQ authentication parameters"""
+        """Get RabbitMQ specific authentication parameters"""
         return {
             'username': self.auth['rabbit_user'],
             'password': self.auth['rabbit_pass'],
@@ -100,7 +119,7 @@ class Config:
         }
 
     def _get_mariadb_auth(self) -> Dict[str, Any]:
-        """Get MariaDB authentication parameters"""
+        """Get MariaDB specific authentication parameters"""
         return {
             'username': self.auth['mysql_user'],
             'password': self.auth['mysql_pass'],
@@ -109,23 +128,29 @@ class Config:
         }
 
     def _validate_config_files(self):
+        """
+        Validate existence of required configuration files.
+
+        Checks for config.yml and inventory files, exiting with error
+        if required files are not found.
+        """
         config_path = self.config_path or os.path.join(self.project_root, 'config', 'config.yml')
 
-        # Всегда проверяем config
+        # Always validate config.yml existence
         if not os.path.exists(config_path):
             self._exit_with_file_error('config.yml', config_path)
 
-        # Проверяем inventory
+        # Validate inventory file existence
         inventory_found = False
 
         if self.inventory_path:
-            # Проверяем только переданный путь
+            # Check only the provided inventory path
             if os.path.exists(self.inventory_path):
                 inventory_found = True
             else:
                 self._exit_with_file_error('inventory', self.inventory_path)
         else:
-            # Проверяем оба дефолтных файла
+            # Check both default inventory files
             for filename in ['inventory.ini', 'inventory']:
                 default_path = os.path.join(self.project_root, filename)
                 if os.path.exists(default_path):
@@ -136,20 +161,30 @@ class Config:
             self._exit_with_file_error('inventory', 'inventory or inventory.ini in project root')
 
     def _load_yaml_config(self) -> DotDict:
-        """Load and parse YAML configuration file"""
+        """
+        Load and parse YAML configuration file.
+
+        Returns:
+            DotDict instance providing dot-notation access to configuration
+        """
         config_path = self.config_path or os.path.join(self.project_root, 'config', 'config.yml')
         with open(config_path) as f:
             return DotDict(yaml.safe_load(f))
 
     def _load_inventory(self) -> Dict[str, List[Tuple[str, str]]]:
-        """Load node inventory from Ansible inventory file"""
-        # print(f"[DEBUG]: self.inventory_pat: {self.inventory_path}")
+        """
+        Load node inventory from Ansible inventory file.
+
+        Returns:
+            Dictionary mapping section names to lists of (display_name, connect_host) tuples
+        """
         if self.inventory_path:
             if os.path.exists(self.inventory_path):
                 return self._parse_inventory(self.inventory_path)
             else:
                 self._exit_with_file_error('inventory', self.inventory_path)
 
+        # Try default inventory files
         inventory_files = ['inventory.ini', 'inventory']
 
         for filename in inventory_files:
@@ -162,13 +197,13 @@ class Config:
 
     def _parse_inventory(self, inventory_path: str) -> Dict[str, List[Tuple[str, str]]]:
         """
-        Parse Ansible inventory file with host information
+        Parse Ansible inventory file extracting host information.
 
         Args:
-            inventory_path: Path to inventory file
+            inventory_path: Path to the inventory file
 
         Returns:
-            Dictionary with node information by section
+            Dictionary with node information organized by section
         """
         nodes = {'control': []}
 
@@ -197,11 +232,11 @@ class Config:
 
     def _parse_inventory_line(self, line: str, nodes: Dict[str, List[Tuple[str, str]]]):
         """
-        Parse a single line from inventory file
+        Parse a single line from inventory file and update nodes dictionary.
 
         Args:
-            line: Inventory file line
-            nodes: Nodes dictionary to update
+            line: Inventory file line to parse
+            nodes: Nodes dictionary to update with parsed information
         """
         parts = line.split()
         if not parts:
@@ -213,21 +248,27 @@ class Config:
 
     def _extract_connect_host(self, parts: List[str]) -> str:
         """
-        Extract connection host from inventory parts
+        Extract connection host from inventory line parts.
 
         Args:
             parts: Split inventory line parts
 
         Returns:
-            Connection host (IP or hostname)
+            Connection host (IP address or hostname)
         """
         for part in parts[1:]:
             if part.startswith('ansible_host='):
                 return part.split('=')[1]
-        return parts[0]  # Default to display name
+        return parts[0]  # Fall back to display name
 
     def _exit_with_file_error(self, file_type: str, expected_path: str):
-        """Exit with descriptive error message for missing files"""
+        """
+        Exit application with descriptive error message for missing files.
+
+        Args:
+            file_type: Type of file that was not found
+            expected_path: Expected path where file should be located
+        """
         print(f"❌ CRITICAL: {file_type} not found!")
         print(f"📂 Expected: {expected_path}")
         print("")
@@ -238,4 +279,3 @@ class Config:
             print("💡 Inventory file must be 'inventory' or 'inventory.ini'")
 
         sys.exit(1)
-

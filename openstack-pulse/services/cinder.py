@@ -5,18 +5,28 @@ Checks volume services, scheduler services and storage backends
 
 import openstack
 import time
-from typing import Dict, List, Any
+from typing import Dict, Any
 from config.config import ServiceType
 
 
 class CinderCheck:
+    """
+    Cinder Block Storage service health monitoring class.
+
+    Provides comprehensive monitoring of Cinder services including:
+    - Volume services (cinder-volume)
+    - Scheduler services (cinder-scheduler)
+    - Backup services (cinder-backup)
+    - Storage backends health and status
+    """
+
     def __init__(self, config, debug=False):
         """
-        Initialize Cinder health check
+        Initialize Cinder health check.
 
         Args:
             config: Config object providing service authentication
-            debug: Enable debug output
+            debug: Enable debug output for troubleshooting
         """
         self.config = config
         self.debug = debug
@@ -27,54 +37,76 @@ class CinderCheck:
             print(f"🔧 [CINDER_DEBUG] Initialized with auth_url: {auth_params['auth_url']}")
 
     def display_details(self, data):
-        """Display Cinder-specific details"""
+        """
+        Display Cinder service details in a formatted output.
+
+        Args:
+            data: Dictionary containing service and backend statistics
+        """
         services = data['services']
         backends = data['backends']
 
         print(f"  Services: {services['up']}/{services['total']} up")
 
-        # Smart display for service types - show details only if problems
+        # Display service status with smart formatting
         for binary, stats in services['by_binary'].items():
             if stats['total'] > 0:
                 up_count = stats['up']
                 down_count = stats['down']
 
                 if down_count == 0:
-                    # All services up - show compact
+                    # All services healthy - show compact format
                     print(f"    🟢 {binary}: {up_count} up")
                 else:
-                    # Some services down - show detailed breakdown
+                    # Services with issues - show detailed breakdown
                     print(f"    ⚠️ {binary}:")
                     for detail in stats['details']:
-                        # Determine icon based on state and status
-                        if detail['state'] == 'down':
-                            status_icon = "🔴"
-                        elif detail['status'] == 'disabled':
-                            status_icon = "⚠️"
-                        else:
-                            status_icon = "🟢"
-
-                        # Always show full status for all nodes in problematic service
+                        status_icon = self._get_service_status_icon(detail['state'], detail['status'])
                         status_text = f": state - {detail['state']}, status - {detail['status']}"
                         print(f"      {status_icon} {detail['host']}{status_text}")
 
-        # Display storage backends
+        # Display storage backend information
         if backends['details']:
             print(f"  Storage Backends: {backends['total']} backends")
             for backend in backends['details']:
                 status_icon = "🟢" if backend['state'] == 'up' else "🔴"
                 print(f"    {status_icon} {backend['backend']} ({backend['vendor']}) - {backend['state']}")
 
+    def _get_service_status_icon(self, state: str, status: str) -> str:
+        """
+        Determine appropriate status icon based on service state and status.
+
+        Args:
+            state: Service state ('up', 'down')
+            status: Service status ('enabled', 'disabled')
+
+        Returns:
+            Status icon string
+        """
+        if state == 'down':
+            return "🔴"
+        elif status == 'disabled':
+            return "⚠️"
+        else:
+            return "🟢"
+
     def run_check(self):
-        """Execute Cinder services health check"""
+        """
+        Execute comprehensive Cinder services health check.
+
+        Returns:
+            Dictionary containing check results including:
+            - Overall status
+            - Response time
+            - Service statistics
+            - Backend statistics
+        """
         start_time = time.time()
 
         try:
-            # Get all Cinder services
+            # Retrieve all Cinder services from OpenStack
             services = list(self.conn.block_storage.services())
             service_stats = self._analyze_services(services)
-
-            # Get storage backends via service list
             backend_stats = self._analyze_backends(services)
 
             result = {
@@ -103,13 +135,13 @@ class CinderCheck:
 
     def _analyze_services(self, services) -> Dict[str, Any]:
         """
-        Analyze Cinder service status
+        Analyze Cinder service status and generate statistics.
 
         Args:
-            services: List of Cinder service objects
+            services: List of Cinder service objects from OpenStack
 
         Returns:
-            Dictionary with service statistics
+            Dictionary containing service statistics organized by binary type
         """
         stats = {
             'total': len(services),
@@ -128,13 +160,13 @@ class CinderCheck:
             state = service.state
             status = service.status
 
-            # Count overall stats
+            # Update overall service statistics
             if state == 'up':
                 stats['up'] += 1
             else:
                 stats['down'] += 1
 
-            # Count by binary type
+            # Update statistics by service type
             if binary in stats['by_binary']:
                 stats['by_binary'][binary]['total'] += 1
                 if state == 'up':
@@ -153,20 +185,20 @@ class CinderCheck:
 
     def _analyze_backends(self, services) -> Dict[str, Any]:
         """
-        Analyze storage backends from cinder-volume services
+        Analyze storage backends from cinder-volume services.
 
         Args:
             services: List of Cinder service objects
 
         Returns:
-            Dictionary with backend statistics
+            Dictionary containing backend statistics and details
         """
         stats = {
             'total': 0,
             'details': []
         }
 
-        # Extract backends from cinder-volume services
+        # Filter and process only cinder-volume services (storage backends)
         volume_services = [s for s in services if s.binary == 'cinder-volume']
         stats['total'] = len(volume_services)
 
@@ -185,28 +217,30 @@ class CinderCheck:
 
     def _extract_backend_name(self, hostname: str) -> str:
         """
-        Extract backend name from host string
+        Extract backend name from host string.
+
+        Handles backend naming conventions like "vendor@backend_name".
 
         Args:
-            hostname: Service host string
+            hostname: Service host string from OpenStack
 
         Returns:
-            Backend name
+            Extracted backend name
         """
-        # Example: "huawei@huawei_storage_high" -> "huawei_storage_high"
+        # Handle vendor@backend naming convention
         if '@' in hostname:
             return hostname.split('@')[1]
         return hostname
 
     def _detect_vendor(self, hostname: str) -> str:
         """
-        Detect storage vendor from hostname
+        Detect storage vendor from hostname patterns.
 
         Args:
-            hostname: Service hostname
+            hostname: Service hostname string
 
         Returns:
-            Vendor name
+            Detected vendor name
         """
         hostname_lower = hostname.lower()
 
@@ -220,7 +254,7 @@ class CinderCheck:
             return 'Unknown'
 
     def close_sessions(self):
-        """Close OpenStack connection sessions"""
+        """Close OpenStack connection sessions to free resources."""
         if hasattr(self, 'conn'):
             self.conn.close()
             if self.debug:

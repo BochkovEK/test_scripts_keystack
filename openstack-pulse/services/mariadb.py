@@ -10,15 +10,24 @@ from config.config import ServiceType
 
 
 class MariaDBCheck:
-    """MariaDB/Galera cluster health monitoring"""
+    """
+    MariaDB/Galera Cluster health monitoring class.
+
+    Provides comprehensive monitoring of MariaDB Galera clusters including:
+    - Node connectivity and response times
+    - Cluster synchronization status
+    - Node readiness and connectivity
+    - Quorum and cluster health determination
+    - Parallel health checks across all cluster nodes
+    """
 
     def __init__(self, config, debug=False):
         """
-        Initialize MariaDB health check
+        Initialize MariaDB health check.
 
         Args:
             config: Config object providing service authentication
-            debug: Enable debug output
+            debug: Enable debug output for troubleshooting
         """
         self.config = config
         self.debug = debug
@@ -38,31 +47,36 @@ class MariaDBCheck:
         self.nodes = auth_params['nodes']  # [display_name, connect_host]
 
     def display_details(self, data):
-        """Display MariaDB/Galera cluster health details"""
+        """
+        Display MariaDB/Galera cluster health details in formatted output.
+
+        Args:
+            data: Dictionary containing cluster status and node information
+        """
         cluster = data['cluster']
         total_nodes = data['total_nodes']
         reachable_nodes = data['reachable_nodes']
 
-        # Always show nodes summary without emoji (как в rabbitmq.py)
+        # Display nodes summary
         print(f"  Nodes: {reachable_nodes}/{total_nodes} reachable")
 
-        # Show unreachable nodes first with detailed errors (как в rabbitmq.py)
+        # Display unreachable nodes with detailed error information
         if cluster.get('cluster_errors'):
             for error in cluster['cluster_errors']:
-                # Extract node name from error message (format: "node_name: error")
+                # Extract node name and error message from formatted error string
                 node_name = error.split(':')[0] if ':' in error else error
                 error_message = error.split(':', 1)[1] if ':' in error else error
                 print(f"    ❌ {node_name}: {error_message.strip()}")
                 print(f"      Status: Unknown")
 
-        # Display each reachable node's status and metrics
+        # Display detailed status for each reachable node
         for node_name, details in cluster['node_details'].items():
             response_time = details.get('response_time', '?')
             metrics = details.get('metrics', {})
 
             print(f"    🟢 ({response_time}s) {node_name}:")
 
-            # Display Galera cluster status
+            # Display Galera cluster specific metrics
             cluster_status = metrics.get('cluster_status', 'Unknown')
             cluster_size = metrics.get('cluster_size', 0)
             local_state = metrics.get('local_state', 'Unknown')
@@ -71,13 +85,23 @@ class MariaDBCheck:
                   f"Cluster: {cluster_status} "
                   f"({cluster_size} nodes)")
 
-            # Display node readiness and connectivity
+            # Display node operational status
             node_ready = 'ON' if metrics.get('node_ready') else 'OFF'
             connected = 'ON' if metrics.get('connected') else 'OFF'
             print(f"      Ready: {node_ready}, Connected: {connected}")
 
     def run_check(self):
-        """Execute MariaDB/Galera cluster health check"""
+        """
+        Execute comprehensive MariaDB/Galera cluster health check.
+
+        Returns:
+            Dictionary containing:
+            - status: Overall cluster status ('OK', 'DEGRADED', 'ERROR')
+            - response_time: Total check execution time
+            - cluster: Detailed cluster status information
+            - reachable_nodes: Count of reachable nodes
+            - total_nodes: Total number of configured nodes
+        """
         start_time = time.time()
 
         if self.debug:
@@ -86,14 +110,14 @@ class MariaDBCheck:
         try:
             cluster_status = self._check_galera_cluster()
 
-            # Calculate reachable nodes count
+            # Calculate node reachability statistics
             reachable_count = len(cluster_status['reachable_nodes'])
             total_count = len(self.nodes)
 
             if self.debug:
                 print(f"🔧 [MARIADB_DEBUG] Cluster status: {reachable_count}/{total_count} nodes reachable")
 
-            # If all nodes are unreachable, use the first error as main error (как в rabbitmq.py)
+            # Handle complete cluster unreachable scenario
             if reachable_count == 0 and cluster_status.get('cluster_errors'):
                 main_error = cluster_status['cluster_errors'][0]
                 if self.debug:
@@ -108,7 +132,7 @@ class MariaDBCheck:
                     'total_nodes': total_count
                 }
 
-            # Determine overall status based on node availability и cluster health
+            # Determine overall cluster status based on node availability and health
             if reachable_count == total_count:
                 cluster_healthy = self._determine_cluster_status(cluster_status)
                 status = 'OK' if cluster_healthy else 'DEGRADED'
@@ -133,7 +157,7 @@ class MariaDBCheck:
         except Exception as e:
             error_message = str(e)
 
-            # Detect common MySQL connection errors
+            # Map common MySQL connection errors to user-friendly messages
             if "access denied" in error_message.lower() or "1045" in error_message:
                 error_message = "Access denied - check MySQL credentials"
             elif "can't connect" in error_message.lower() or "2003" in error_message:
@@ -151,7 +175,16 @@ class MariaDBCheck:
             }
 
     def _check_galera_cluster(self):
-        """Check entire Galera cluster using parallel connections"""
+        """
+        Perform parallel health checks across all Galera cluster nodes.
+
+        Returns:
+            Dictionary containing:
+            - reachable_nodes: List of reachable node names
+            - unreachable_nodes: List of unreachable node names
+            - node_details: Detailed metrics for each reachable node
+            - cluster_errors: Aggregated error messages for unreachable nodes
+        """
         status = {
             'reachable_nodes': [],
             'unreachable_nodes': [],
@@ -159,18 +192,21 @@ class MariaDBCheck:
             'cluster_errors': []  # Collect all errors for aggregated display
         }
 
+        # Configure thread pool for parallel node checks
         max_workers = min(5, len(self.nodes))
 
         if self.debug:
             print(f"🔧 [MARIADB_DEBUG] Starting cluster check with {max_workers} workers")
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # Submit node check tasks to thread pool
             future_to_info = {
                 executor.submit(self._check_single_node, display_name, connect_host):
                     (display_name, connect_host)
                 for display_name, connect_host in self.nodes
             }
 
+            # Process completed node checks as they finish
             for future in as_completed(future_to_info):
                 display_name, connect_host = future_to_info[future]
                 try:
@@ -203,13 +239,23 @@ class MariaDBCheck:
         return status
 
     def _check_single_node(self, display_name, connect_host):
-        """Check health of single MariaDB node"""
+        """
+        Perform health check on a single MariaDB node.
+
+        Args:
+            display_name: Human-readable node identifier
+            connect_host: Network address for connection
+
+        Returns:
+            Dictionary containing reachability status and node metrics
+        """
         try:
             if self.debug:
                 print(f"🔧 [MARIADB_DEBUG] Checking node {display_name} at {connect_host}")
 
             start_time = time.time()
 
+            # Establish database connection
             connection = mysql.connector.connect(
                 host=connect_host,
                 **self.db_config,
@@ -232,7 +278,7 @@ class MariaDBCheck:
             response_time = time.time() - start_time
             connection.close()
 
-            # Parse metrics into structured format
+            # Parse query results into structured metrics
             metrics = self._parse_galera_metrics(results)
 
             if self.debug:
@@ -247,7 +293,7 @@ class MariaDBCheck:
 
         except mysql.connector.Error as e:
             error_msg = str(e)
-            # Detect specific MySQL errors
+            # Map MySQL error codes to descriptive messages
             if e.errno == 1045:
                 error_msg = "Access denied for user - check credentials"
             elif e.errno == 2003:
@@ -275,13 +321,13 @@ class MariaDBCheck:
 
     def _parse_galera_metrics(self, results):
         """
-        Parse SHOW GLOBAL STATUS results into structured Galera metrics
+        Parse SHOW GLOBAL STATUS results into structured Galera metrics.
 
         Args:
             results: List of tuples from cursor.fetchall() - [('Variable_name', 'Value'), ...]
 
         Returns:
-            Dictionary with parsed Galera metrics
+            Dictionary with parsed Galera cluster metrics
         """
         # Convert list of tuples to dictionary for easy lookup
         metrics_dict = {row[0]: row[1] for row in results}
@@ -301,13 +347,16 @@ class MariaDBCheck:
 
     def _determine_cluster_status(self, cluster_status):
         """
-        Determine overall cluster health based on Galera-specific criteria
+        Determine overall cluster health based on Galera-specific criteria.
+
+        Implements quorum-based health determination requiring majority of nodes
+        to be healthy for cluster to be considered operational.
 
         Args:
             cluster_status: Result from _check_galera_cluster()
 
         Returns:
-            Boolean - True if cluster is healthy, False if degraded
+            Boolean - True if cluster meets quorum and health criteria, False otherwise
         """
         reachable_nodes = cluster_status['reachable_nodes']
 
@@ -321,14 +370,14 @@ class MariaDBCheck:
         if self.debug:
             print(f"🔧 [MARIADB_DEBUG] Checking cluster health, expected size: {expected_cluster_size}")
 
-        # Check each reachable node for Galera health criteria
+        # Evaluate each reachable node against Galera health criteria
         healthy_nodes = 0
 
         for node_name in reachable_nodes:
             node_details = cluster_status['node_details'][node_name]
             metrics = node_details['metrics']
 
-            # Galera health criteria:
+            # Galera health criteria for a node:
             is_healthy = (
                 metrics.get('cluster_status') == 'Primary' and
                 metrics.get('node_ready') is True and
@@ -345,8 +394,7 @@ class MariaDBCheck:
                 if self.debug:
                     print(f"🔧 [MARIADB_DEBUG] ✗ {node_name} is unhealthy: {metrics}")
 
-        # Cluster is healthy if majority of nodes are healthy
-        # (Galera requires quorum - typically majority of nodes)
+        # Galera requires quorum - typically majority of nodes must be healthy
         quorum_healthy = healthy_nodes >= (expected_cluster_size // 2 + 1)
 
         if self.debug:
@@ -355,8 +403,9 @@ class MariaDBCheck:
         return quorum_healthy
 
     def close_sessions(self):
-        """Close database connections"""
+        """Close database connections and cleanup resources."""
         # MySQL connector connections are closed after each query
-        # No persistent sessions to close
+        # No persistent sessions to close in this implementation
         if self.debug:
             print(f"🔧 [MARIADB_DEBUG] No persistent sessions to close")
+
