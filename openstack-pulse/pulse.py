@@ -324,7 +324,6 @@ class Pulse:
         status = service_data.get('status', 'UNKNOWN')
         response_time = service_data.get('response_time', 0)
 
-        # Special icon and status for DEGRADED
         if status == 'OK':
             status_icon = "✅"
             display_status = 'OK'
@@ -337,12 +336,10 @@ class Pulse:
 
         print(f"{status_icon} {service_name.upper()}: {display_status} ({response_time}s)")
 
-        # ALWAYS delegate details to service itself, regardless of status
         check = self.service_checks[service_name]
-        if hasattr(check, 'display_details'):
+        if hasattr(check, 'display_details') and status != 'ERROR':
             check.display_details(service_data)
         elif status == 'ERROR':
-            # Fallback for services without display_details
             error_message = service_data.get('error', 'Unknown error')
             print(f"  Error: {error_message}")
 
