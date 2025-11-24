@@ -83,41 +83,82 @@ class NovaCheck:
 
             return error_result
 
+    # def display_details(self, data):
+    #     """
+    #     Display Nova compute service details in formatted output.
+    #
+    #     Args:
+    #         data: Dictionary containing service and hypervisor statistics
+    #     """
+    #     services = data['services']
+    #     hypervisors = data['hypervisors']
+    #
+    #     # Display service summary and detailed status
+    #     print(f"  Services: {services['up']}/{services['total']} up")
+    #
+    #     # Display critical services with smart formatting
+    #     for service_type, instances in services['critical_services'].items():
+    #         up_count = len([i for i in instances if i['state'] == 'up'])
+    #         down_count = len([i for i in instances if i['state'] == 'down'])
+    #         disabled_count = len([i for i in instances if i['status'] == 'disabled'])
+    #
+    #         # Show detailed breakdown for services with issues
+    #         if down_count > 0 or disabled_count > 0:
+    #             print(f"    ⚠️ {service_type}:")
+    #             for instance in instances:
+    #                 status_icon = self._get_service_status_icon(instance['state'], instance['status'])
+    #                 status_text = f": state - {instance['state']}, status - {instance['status']}"
+    #                 print(f"      {status_icon} {instance['host']}{status_text}")
+    #         else:
+    #             # All services healthy - show compact format
+    #             print(f"    🟢 {service_type}: {up_count} up")
+    #
+    #     # Display hypervisor summary and details
+    #     print(f"  Hypervisors: {hypervisors['up']}/{hypervisors['total']} up")
+    #     for hv in hypervisors['details']:
+    #         status_icon, instances_info = self._get_hypervisor_display_info(hv)
+    #         print(f"    {status_icon} {hv['name']}{instances_info}")
     def display_details(self, data):
-        """
-        Display Nova compute service details in formatted output.
+        """Display Nova-specific details"""
+        # Сохраняем исходную логику Nova, но с обновленными эмодзи
+        services = data.get('services', {})
+        hypervisors = data.get('hypervisors', {})
 
-        Args:
-            data: Dictionary containing service and hypervisor statistics
-        """
-        services = data['services']
-        hypervisors = data['hypervisors']
+        # Services section - сохраняем структуру но обновляем эмодзи
+        print(f"  Services: {services.get('up', 0)}/{services.get('total', 0)} up")
 
-        # Display service summary and detailed status
-        print(f"  Services: {services['up']}/{services['total']} up")
+        for service_name, service_info in services.get('details', {}).items():
+            # Определяем эмодзи для сервиса на основе состояния нод
+            service_nodes = service_info.get('nodes', {})
+            up_count = sum(1 for node in service_nodes.values() if node.get('state') == 'up')
+            total_count = len(service_nodes)
 
-        # Display critical services with smart formatting
-        for service_type, instances in services['critical_services'].items():
-            up_count = len([i for i in instances if i['state'] == 'up'])
-            down_count = len([i for i in instances if i['state'] == 'down'])
-            disabled_count = len([i for i in instances if i['status'] == 'disabled'])
-
-            # Show detailed breakdown for services with issues
-            if down_count > 0 or disabled_count > 0:
-                print(f"    ⚠️ {service_type}:")
-                for instance in instances:
-                    status_icon = self._get_service_status_icon(instance['state'], instance['status'])
-                    status_text = f": state - {instance['state']}, status - {instance['status']}"
-                    print(f"      {status_icon} {instance['host']}{status_text}")
+            if up_count == total_count:
+                service_emoji = "🟢"  # Все ноды работают
+            elif up_count == 0:
+                service_emoji = "🔴"  # Все ноды не работают
             else:
-                # All services healthy - show compact format
-                print(f"    🟢 {service_type}: {up_count} up")
+                service_emoji = "🟡"  # Часть нод работает
 
-        # Display hypervisor summary and details
-        print(f"  Hypervisors: {hypervisors['up']}/{hypervisors['total']} up")
-        for hv in hypervisors['details']:
-            status_icon, instances_info = self._get_hypervisor_display_info(hv)
-            print(f"    {status_icon} {hv['name']}{instances_info}")
+            print(f"    {service_emoji} {service_name}:")
+
+            # Детали по нодам для этого сервиса
+            for node_name, node_status in service_nodes.items():
+                state = node_status.get('state', 'unknown')
+                status = node_status.get('status', 'unknown')
+
+                node_emoji = "🟢" if state == 'up' else "🔴"
+                print(f"      {node_emoji} {node_name}: state - {state}, status - {status}")
+
+        # Hypervisors section - сохраняем структуру но обновляем эмодзи
+        print(f"  Hypervisors: {hypervisors.get('up', 0)}/{hypervisors.get('total', 0)} up")
+
+        for hv_name, hv_info in hypervisors.get('details', {}).items():
+            state = hv_info.get('state', 'unknown')
+            vms = hv_info.get('vms', 0)
+
+            hv_emoji = "🟢" if state == 'up' else "🔴"
+            print(f"    {hv_emoji} {hv_name} 📦{vms} VM")
 
     def _get_service_status_icon(self, state: str, status: str) -> str:
         """
