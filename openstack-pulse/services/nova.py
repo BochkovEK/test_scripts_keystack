@@ -52,15 +52,23 @@ class NovaCheck:
         start_time = time.time()
 
         try:
-            # Retrieve compute services and hypervisor information
             services = list(self.conn.compute.services())
             service_stats = self._analyze_services(services)
 
             hypervisors = list(self.conn.compute.hypervisors())
             hypervisor_stats = self._analyze_hypervisors(hypervisors)
 
+            if service_stats['up'] < service_stats['total']:
+                status = 'DEGRADED'
+            elif any(service.status == 'disabled' for service in services):
+                status = 'DEGRADED'
+            elif hypervisor_stats['up'] < hypervisor_stats['total']:
+                status = 'DEGRADED'
+            else:
+                status = 'OK'
+
             result = {
-                'status': 'OK',
+                'status': status,
                 'response_time': round(time.time() - start_time, 2),
                 'services': service_stats,
                 'hypervisors': hypervisor_stats
