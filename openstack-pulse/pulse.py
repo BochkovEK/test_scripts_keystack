@@ -83,7 +83,7 @@ class Pulse:
 
     def _init_service_checks(self):
         """Initialize service check instances from registry"""
-        print("🔧 Initializing services...")
+        print("⚙️ Initializing services...")
 
         for service_name in self.config.settings.check_services:
             if service_name in self.SERVICE_REGISTRY:
