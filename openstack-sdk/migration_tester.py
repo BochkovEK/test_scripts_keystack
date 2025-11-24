@@ -118,7 +118,6 @@ def get_config(args: argparse.Namespace) -> dict:
         # OpenStack connection settings (cloud_name can be None)
         'cloud_name': args.cloud or os.getenv('MIGRATION_TEST_CLOUD_NAME'),
         'region_name': os.getenv('OS_REGION_NAME'),
-        # 'interface': args.interface or os.getenv('MIGRATION_TEST_INTERFACE', 'internal'),
 
         # Core test parameters
         'hypervisors': (args.hypervisors or os.getenv('MIGRATION_TEST_HYPERVISORS')).split(','),
