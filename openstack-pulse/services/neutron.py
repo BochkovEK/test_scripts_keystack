@@ -49,28 +49,28 @@ class NeutronCheck:
 
         print(f"  Agents: {agents['up']}/{agents['total']} up")
 
-        # Display critical agent types with smart formatting
-        if 'critical_agents' in agents:
-            for agent_type, stats in agents['critical_agents'].items():
+        if 'by_type' in agents:
+            for agent_type, stats in agents['by_type'].items():
                 up_count = stats['up']
                 down_count = stats['down']
 
                 if down_count == 0:
-                    # All agents healthy - show compact format
-                    print(f"    🟢 {agent_type}: {up_count} up")
+                    agent_emoji = "🟢"
+                    print(f"    {agent_emoji} {agent_type}: {up_count} up")
+                elif up_count == 0:
+                    agent_emoji = "🔴"
+                    print(f"    {agent_emoji} {agent_type}:")
                 else:
-                    # Agents with issues - show detailed breakdown
-                    print(f"    ⚠️ {agent_type}:")
+                    agent_emoji = "🟡"
+                    print(f"    {agent_emoji} {agent_type}:")
 
-                    # Retrieve actual agent objects for detailed status
+                if down_count > 0:
                     all_agents = list(self.conn.network.agents())
                     type_agents = [agent for agent in all_agents if agent.agent_type == agent_type]
 
                     for agent in type_agents:
                         status_icon = "🟢" if agent.is_alive else "🔴"
                         status_text = "" if agent.is_alive else ": down"
-
-                        # Display host information and status
                         host_info = agent.host
                         print(f"      {status_icon} {host_info}{status_text}")
 
@@ -88,14 +88,16 @@ class NeutronCheck:
         start_time = time.time()
 
         try:
-            # Retrieve all Neutron agents from OpenStack
             agents = list(self.conn.network.agents())
-
-            # Analyze agent status and generate statistics
             agent_stats = self._analyze_agents(agents)
 
+            if agent_stats['up'] < agent_stats['total']:
+                status = 'DEGRADED'
+            else:
+                status = 'OK'
+
             result = {
-                'status': 'OK',
+                'status': status,
                 'response_time': round(time.time() - start_time, 2),
                 'agents': agent_stats,
                 'total_agents': len(agents)
