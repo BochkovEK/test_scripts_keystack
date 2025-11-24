@@ -15,14 +15,14 @@ check_services:
   - rabbitmq
   - galera
 
+# Single check services
+single_mode_checks:
+  - placement
+
 # Endpoints
 endpoints:
   rabbitmq_port: 15672
   mariadb_port: 3306
-
-# Single check services
-single_mode_checks:
-  - placement
 
 # Timing parameters
 intervals:
@@ -31,5 +31,3 @@ intervals:
 
 # Pulse settings
 heartbeat_requests_services: 4
-
-

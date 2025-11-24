@@ -279,3 +279,4 @@ class Config:
             print("💡 Inventory file must be 'inventory' or 'inventory.ini'")
 
         sys.exit(1)
+
