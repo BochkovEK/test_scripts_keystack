@@ -48,47 +48,35 @@ class CinderCheck:
 
         print(f"  Services: {services['up']}/{services['total']} up")
 
-        # Display service status with smart formatting
         for binary, stats in services['by_binary'].items():
             if stats['total'] > 0:
                 up_count = stats['up']
                 down_count = stats['down']
 
                 if down_count == 0:
-                    # All services healthy - show compact format
-                    print(f"    🟢 {binary}: {up_count} up")
+                    service_emoji = "🟢"
+                    print(f"    {service_emoji} {binary}: {up_count} up")
+                elif up_count == 0:
+                    service_emoji = "🔴"
+                    print(f"    {service_emoji} {binary}:")
                 else:
-                    # Services with issues - show detailed breakdown
-                    print(f"    ⚠️ {binary}:")
-                    for detail in stats['details']:
-                        status_icon = self._get_service_status_icon(detail['state'], detail['status'])
-                        status_text = f": state - {detail['state']}, status - {detail['status']}"
-                        print(f"      {status_icon} {detail['host']}{status_text}")
+                    service_emoji = "🟡"
+                    print(f"    {service_emoji} {binary}:")
 
-        # Display storage backend information
+                if down_count > 0:
+                    for detail in stats['details']:
+                        state = detail['state']
+                        status = detail['status']
+
+                        node_emoji = "🟢" if state == 'up' else "🔴"
+                        status_text = f": state - {state}, status - {status}"
+                        print(f"      {node_emoji} {detail['host']}{status_text}")
+
         if backends['details']:
             print(f"  Storage Backends: {backends['total']} backends")
             for backend in backends['details']:
                 status_icon = "🟢" if backend['state'] == 'up' else "🔴"
                 print(f"    {status_icon} {backend['backend']} ({backend['vendor']}) - {backend['state']}")
-
-    def _get_service_status_icon(self, state: str, status: str) -> str:
-        """
-        Determine appropriate status icon based on service state and status.
-
-        Args:
-            state: Service state ('up', 'down')
-            status: Service status ('enabled', 'disabled')
-
-        Returns:
-            Status icon string
-        """
-        if state == 'down':
-            return "🔴"
-        elif status == 'disabled':
-            return "⚠️"
-        else:
-            return "🟢"
 
     def run_check(self):
         """
@@ -104,13 +92,17 @@ class CinderCheck:
         start_time = time.time()
 
         try:
-            # Retrieve all Cinder services from OpenStack
             services = list(self.conn.block_storage.services())
             service_stats = self._analyze_services(services)
             backend_stats = self._analyze_backends(services)
 
+            if service_stats['up'] < service_stats['total']:
+                status = 'DEGRADED'
+            else:
+                status = 'OK'
+
             result = {
-                'status': 'OK',
+                'status': status,
                 'response_time': round(time.time() - start_time, 2),
                 'services': service_stats,
                 'backends': backend_stats
