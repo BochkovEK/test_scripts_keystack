@@ -159,21 +159,69 @@ class NovaCheck:
     #
     #         hv_emoji = "🟢" if state == 'up' else "🔴"
     #         print(f"    {hv_emoji} {hv_name} 📦{vms} VM")
+    # def display_details(self, data):
+    #     """Display Nova-specific details"""
+    #     services = data.get('services', {})
+    #     hypervisors = data.get('hypervisors', {})
+    #
+    #     # Services section - используем critical_services вместо details
+    #     print(f"  Services: {services.get('up', 0)}/{services.get('total', 0)} up")
+    #
+    #     # Обрабатываем critical_services (это словарь)
+    #     critical_services = services.get('critical_services', {})
+    #     for service_name, service_nodes in critical_services.items():
+    #         # service_nodes - это список словарей
+    #         up_count = sum(1 for node in service_nodes if node.get('state') == 'up')
+    #         total_count = len(service_nodes)
+    #
+    #         if up_count == total_count:
+    #             service_emoji = "🟢"
+    #         elif up_count == 0:
+    #             service_emoji = "🔴"
+    #         else:
+    #             service_emoji = "🟡"
+    #
+    #         print(f"    {service_emoji} {service_name}:")
+    #
+    #         # Выводим детали по нодам этого сервиса
+    #         for node_info in service_nodes:  # ← итерируем по списку
+    #             node_name = node_info.get('host', 'unknown')
+    #             state = node_info.get('state', 'unknown')
+    #             status = node_info.get('status', 'unknown')
+    #
+    #             node_emoji = "🟢" if state == 'up' else "🔴"
+    #             print(f"      {node_emoji} {node_name}: state - {state}, status - {status}")
+    #
+    #     # Hypervisors section - details это список
+    #     print(f"  Hypervisors: {hypervisors.get('up', 0)}/{hypervisors.get('total', 0)} up")
+    #
+    #     # Обрабатываем details как список
+    #     hv_details = hypervisors.get('details', [])
+    #     for hv_info in hv_details:  # ← итерируем по списку
+    #         hv_name = hv_info.get('name', 'unknown')
+    #         state = hv_info.get('state', 'unknown')
+    #         vms = hv_info.get('instances_count', 0)  # ← instances_count, а не vms!
+    #
+    #         hv_emoji = "🟢" if state == 'up' else "🔴"
+    #         print(f"    {hv_emoji} {hv_name} 📦{vms} VM")
+
     def display_details(self, data):
         """Display Nova-specific details"""
         services = data.get('services', {})
         hypervisors = data.get('hypervisors', {})
 
-        # Services section - используем critical_services вместо details
+        # Services section
         print(f"  Services: {services.get('up', 0)}/{services.get('total', 0)} up")
 
-        # Обрабатываем critical_services (это словарь)
         critical_services = services.get('critical_services', {})
         for service_name, service_nodes in critical_services.items():
             # service_nodes - это список словарей
             up_count = sum(1 for node in service_nodes if node.get('state') == 'up')
             total_count = len(service_nodes)
+            down_count = total_count - up_count
+            disabled_count = sum(1 for node in service_nodes if node.get('status') == 'disabled')
 
+            # Определяем эмодзи для сервиса
             if up_count == total_count:
                 service_emoji = "🟢"
             elif up_count == 0:
@@ -181,26 +229,29 @@ class NovaCheck:
             else:
                 service_emoji = "🟡"
 
-            print(f"    {service_emoji} {service_name}:")
+            # КОМПАКТНЫЙ ФОРМАТ для полностью здоровых сервисов
+            if down_count == 0 and disabled_count == 0:
+                print(f"    {service_emoji} {service_name}: {up_count} up")
+            else:
+                # ДЕТАЛЬНЫЙ ФОРМАТ для сервисов с проблемами
+                print(f"    {service_emoji} {service_name}:")
 
-            # Выводим детали по нодам этого сервиса
-            for node_info in service_nodes:  # ← итерируем по списку
-                node_name = node_info.get('host', 'unknown')
-                state = node_info.get('state', 'unknown')
-                status = node_info.get('status', 'unknown')
+                for node_info in service_nodes:
+                    node_name = node_info.get('host', 'unknown')
+                    state = node_info.get('state', 'unknown')
+                    status = node_info.get('status', 'unknown')
 
-                node_emoji = "🟢" if state == 'up' else "🔴"
-                print(f"      {node_emoji} {node_name}: state - {state}, status - {status}")
+                    node_emoji = "🟢" if state == 'up' else "🔴"
+                    print(f"      {node_emoji} {node_name}: state - {state}, status - {status}")
 
-        # Hypervisors section - details это список
+        # Hypervisors section
         print(f"  Hypervisors: {hypervisors.get('up', 0)}/{hypervisors.get('total', 0)} up")
 
-        # Обрабатываем details как список
         hv_details = hypervisors.get('details', [])
-        for hv_info in hv_details:  # ← итерируем по списку
+        for hv_info in hv_details:
             hv_name = hv_info.get('name', 'unknown')
             state = hv_info.get('state', 'unknown')
-            vms = hv_info.get('instances_count', 0)  # ← instances_count, а не vms!
+            vms = hv_info.get('instances_count', 0)
 
             hv_emoji = "🟢" if state == 'up' else "🔴"
             print(f"    {hv_emoji} {hv_name} 📦{vms} VM")
