@@ -1,59 +1,122 @@
-openstack_pulse/
-├── pulse.py              # Основной скрипт (запуск + логика сбора)
-├── region.yml            # Конфигурация региона
-├── logger.py             # Логирование и сохранение отчетов
-├── .env                  # Секретные данные (в .gitignore)
-├── .env-template         # Шаблон для .env с примерами
-├── services/               # Модули проверок
-│   ├── keystone.py
-│   ├── nova.py
-│   ├── neutron.py
-│   ├── rabbitmq.py
-│   └── galera.py
-└── config/               # Конфигурация
-    ├── config.py         # Загрузчик конфигов
-    └── config.yml        # Базовые настройки
+# OpenStack Pulse
 
-RabbitCheck
-├── run_check()
-├── _get_rabbitmq_urls()           # использует 'control'
-├── _check_rabbitmq_cluster()      # параллельная версия
-├── _check_single_node()           # + queues_count, messages
-├── _check_replication_quorum()    # единая логика репликации
-└── _analyze_node_health()         # инкрементальный анализ
+Легковесный инструмент непрерывной (heartbeat) диагоностики мониторинга ключевых сервисов OpenStack
 
-Для зауска необходимо:
-    1) Наличие переменных окружения согласно .env-template
-        cp .env.template .env
-        vi .env
-    2) Назначить переменные окружения
-        source .env
-    3) Файл inventory в корне проекта openstack-pulse (описание узлов стенда)
-    4) Настроить параметры диагностики
-        сp ./config/config.yml.template ./config/config.yml
-        vi ./config/config.yml
-    4) Запустить скрипт
-        python ./openstack_pulse.py
+## Диагностируемые сервисы
+- **Nova**: nova compute, гипервизоры, виртуальные машины (Openstack SDK)
+- **Cinder**: volume service (Openstack SDK)
+- **Neutron**: neutron agents, connectivity (Openstack SDK)
+- **Keystone**: валидация токенов, сервисный каталог (Openstack SDK)
+- **RabbitMQ**: кластер, ноды, очереди, ресурсы (RabbitMQ API)
+- **MariaDB**: кластер, репликация, синхронизация (SQL requests)
 
-rabbitqm.py
-Проблема:
+## Конфигурация
 
-Скрипт делает параллельные запросы ко всем узлам RabbitMQ
-Каждый узел в ответе возвращает данные по ВСЕМ узлам кластера
-Но текущий код в _extract_node_details() ищет только "свой" узел (по display_name) в каждом ответе
-Это неэффективно, так как теряется информация о других узлах
+Конфигурация OpenStack Pulse осуществлятся в три этапа:
+1. Подготовка переменных окружения:
+    - openrc - переменные авторизации в регионе
+    - Переменные авторизации в RabbitMQ API
+        - RABBIT_USER - пользователь
+        - RABBIT_PASS - пароль
+    - Переменные авторизации MySQL/MAriaDB (Galera)
+        - MYSQL_USER - пользователь
+        - MYSQL_PASS - пароль
+2. Подготовка файла **inventory**:
+   <details><summary>📋 Пример inventory</summary>
+     
+     ```ini
+     # inventory
+     # description of the main node groups is enough
+     # like output from vms stage
+          
+     [all:vars]
+     ansible_become=true
+     ansible_ssh_common_args="-o StrictHostKeyChecking=no"
+     ansible_port="22"
+     ansible_user="sberlinux"
+     openrc_public=true
+     kolla_internal_address=10.224.151.195
+     external_floating=10.224.151.196
+     [add_vm]
+     qa-stable-sberlinux-add_vm-01 ansible_host=10.224.151.210
+     [compute]
+     qa-stable-sberlinux-comp-01 ansible_host=10.224.151.207
+     qa-stable-sberlinux-comp-02 ansible_host=10.224.151.220
+     [control]
+     qa-stable-sberlinux-ctrl-01 ansible_host=10.224.151.206
+     qa-stable-sberlinux-ctrl-02 ansible_host=10.224.151.209
+     qa-stable-sberlinux-ctrl-03 ansible_host=10.224.151.201
+     [storage]
+     qa-stable-sberlinux-ctrl-01 ansible_host=10.224.151.206
+     qa-stable-sberlinux-ctrl-02 ansible_host=10.224.151.209
+     qa-stable-sberlinux-ctrl-03 ansible_host=10.224.151.201
+     [ci]
+     qa-stable-sberlinux-lcm-01 ansible_host=10.224.151.215
+     [jump]
+     qa-stable-sberlinux-lcm-01 ansible_host=10.224.151.215
+     ```
+</details>
 
-Что происходит:
+3. Подготовка файла конфигурации **config.yml**
+   <details><summary>⚙️Пример config.yml</summary>
+        
+   ```yaml
+   # config/config.yml
+   # Services list for diagnostics
+   
+   # logging
+   log:
+    enable_log: True                   
+   #  path: "/var/log/openstack-pulse"  # /tmp by default
+   
+   # Check services
+   check_services:
+    - nova
+    - cinder
+    - neutron
+    - keystone
+    - rabbitmq
+    - galera
+   
+   # Endpoints
+   endpoints:
+    rabbitmq_port: 15672
+    mariadb_port: 3306
+   
+   # Single check services
+   single_mode_checks:
+    - placement
+   
+   # Timing parameters
+   intervals:
+    check_interval: 5   # Interval between checks (seconds)
+    duration: 300       # Data collection window (seconds) - 5 minutes
+   
+   # Pulse settings
+   heartbeat_requests_services: 4
+   ```
 
-Узел A возвращает данные об узлах A, B, C
+## Запуск
 
-Узел B возвращает данные об узлах A, B, C
+### Ключи запуска
+В Openstack pulse предусмотрены следующие ключи запуска:
+```bash
+--inventory, -i - путь к inventory
+--config, -c - путь к config.yml
+--output, -o - путь к файлу логов
+--debug, -d - включение вывода данных отладки
+--single - однократный вывод состояний диагностируемых сервисов (по умолчанию режим непрерывной диагностики в течении заданного времени)
+--duration - длительность работы в секундах (только для непрерывного режима)
+```
 
-Узел C возвращает данные об узлах A, B, C
+### Примеры запуска
+```bash
+# Указание inventory, config.yml файла 
+python ~/test_scripts_keystack/openstack-pulse/pulse.py -i /path/to/inventory --config /path/to/config.yml 
 
-Но код из каждого ответа извлекает только данные того узла, к которому был сделан запрос
+# Запись логов в указанный файл/директорию с указанием времени непрерывной диагностики (сек)
+python ~/test_scripts_keystack/openstack-pulse/pulse.py --output /path/to/logs --duration 600
 
-Потенциальное улучшение:
-Можно собирать данные по всем узлам из всех ответов
-Объединять информацию из разных источников
-Или выбрать один "главный" узел для получения полной информации о кластере
+# Однократный запуск (без непрерывного мониторинга)
+python ~/test_scripts_keystack/openstack-pulse/pulse.py --single
+```

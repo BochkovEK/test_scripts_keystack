@@ -3,7 +3,7 @@
 
 # logging
 log:
-  enable_log: True                   # False by default
+  enable_log: True
 #  path: "/var/log/openstack-pulse"  # /tmp by default
 
 # Check services
@@ -15,6 +15,11 @@ check_services:
   - rabbitmq
   - galera
 
+# Endpoints
+endpoints:
+  rabbitmq_port: 15672
+  mariadb_port: 3306
+
 # Single check services
 single_mode_checks:
   - placement
@@ -24,10 +29,7 @@ intervals:
   check_interval: 5   # Interval between checks (seconds)
   duration: 300       # Data collection window (seconds) - 5 minutes
 
-# Endpoints
-endpoints:
-  rabbitmq_port: 15672
-  mariadb_port: 3306
-
 # Pulse settings
 heartbeat_requests_services: 4
+
+
