@@ -370,7 +370,9 @@ push_conf() {
 
             scp -o StrictHostKeyChecking=no "$temp_file" "$SSH_USER@$node_ip:/tmp/$CONF_NAME"
             ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
-                "sudo mv /tmp/$CONF_NAME $conf_dir/$CONF_NAME && sudo chcon $selinux_context_default $conf_dir/$CONF_NAME"
+                "sudo mv /tmp/$CONF_NAME $conf_dir/$CONF_NAME && \
+                sudo chown root:root $conf_dir/$CONF_NAME && \
+                sudo chcon $selinux_context_default $conf_dir/$CONF_NAME"
 
             rm -f "$temp_file"
             echo -e "${green}Configuration pushed to $node_name${normal}"
