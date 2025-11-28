@@ -96,7 +96,7 @@ show_help() {
     Usage: $0 [OPTIONS]
 
     Options:
-      -nt, -type_of_nodes <type>    Node type: 'all', 'ctrl', 'comp', 'net', 'awn'
+      -nt, -type_of_nodes <type>    Node type: 'all', 'ctrl', 'comp', 'net', 'strg'
       -nn, -node_name <names>       Space-separated node names
       -u, -user <username>          SSH username
       -ce, -container_engine <engine>  Container engine: docker or podman

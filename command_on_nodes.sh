@@ -41,7 +41,7 @@ show_help() {
 
     Options:
       -c, -command <command>          Command to execute on nodes
-      -nt, -type_of_nodes <type>      Node type: 'ctrl', 'comp', 'net', 'all'
+      -nt, -type_of_nodes <type>      Node type: 'lcm', 'ctrl', 'comp', 'net', 'strg', 'all'
       -nn, -node_name <names>         Specific node names (space-separated)
       -u, -user <username>            SSH username
       -check_conn                     Check connection before executing commands
