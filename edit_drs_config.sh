@@ -18,6 +18,7 @@ get_nodes_list_script="get_nodes_list.sh"
 get_ssh_user_script="get_ssh_user.sh"
 default_container_engine="docker"
 default_ssh_user="root"
+selinux_context_default="system_u:object_r:etc_t:s0"
 
 # Service and path configuration
 service_name="drs"
@@ -324,7 +325,9 @@ push_conf() {
             # Copy file to remote node
             scp -o StrictHostKeyChecking=no "$temp_file" "$SSH_USER@$node_ip:/tmp/$CONF_NAME"
             ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
-                "sudo mv /tmp/$CONF_NAME $conf_dir/$CONF_NAME && sudo chown root:root $conf_dir/$CONF_NAME"
+                "sudo mv /tmp/$CONF_NAME $conf_dir/$CONF_NAME && \
+                sudo chown root:root $conf_dir/$CONF_NAME && \
+                sudo chcon $selinux_context_default $conf_dir/$CONF_NAME"
 
             # Clean up temporary file
             rm -f "$temp_file"
