@@ -1,6 +1,6 @@
 # OpenStack Pulse
 
-Легковесный инструмент непрерывной (heartbeat) диагоностики мониторинга ключевых сервисов OpenStack
+Легковесный инструмент непрерывной (heartbeat) диагоностики ключевых сервисов OpenStack
 
 ## Диагностируемые сервисы
 - **Nova**: nova compute, гипервизоры, виртуальные машины (Openstack SDK)
@@ -18,7 +18,7 @@
     - Переменные авторизации в RabbitMQ API
         - RABBIT_USER - пользователь
         - RABBIT_PASS - пароль
-    - Переменные авторизации MySQL/MAriaDB (Galera)
+    - Переменные авторизации MySQL/MariaDB (Galera)
         - MYSQL_USER - пользователь
         - MYSQL_PASS - пароль
 2. Подготовка файла **inventory**:
