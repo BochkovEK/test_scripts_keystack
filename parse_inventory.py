@@ -24,6 +24,7 @@ hosts_by_group = {
     'control': [],
     'network': [],
     'compute': [],
+    'storage': [],
     'other': []
 }
 
@@ -31,7 +32,8 @@ hosts_by_group = {
 group_prefixes = {
     'control': 'ctrl',
     'network': 'net',
-    'compute': 'comp'
+    'compute': 'comp',
+    'storage': 'strg'
 }
 
 
@@ -176,7 +178,6 @@ def is_network_subset_of_control():
     # Если network пустой или полностью содержится в control
     return not network_hosts or network_hosts.issubset(control_hosts)
 
-
 def write_file(path_to_file, strings):
     """Write host entries to output file with simplified hostnames"""
     with open(path_to_file, "w") as file:
@@ -184,8 +185,9 @@ def write_file(path_to_file, strings):
         control_entries = [s for s in strings if 'ctrl-' in s]
         network_entries = [s for s in strings if 'net-' in s]
         compute_entries = [s for s in strings if 'comp-' in s]
+        storage_entries = [s for s in strings if 'strg-' in s]
         lcm_entries = [s for s in strings if 'lcm-' in s]
-        other_entries = [s for s in strings if not any(x in s for x in ['ctrl-', 'net-', 'comp-', 'lcm-'])]
+        # other_entries = [s for s in strings if not any(x in s for x in ['ctrl-', 'net-', 'comp-', 'strg-', 'lcm-'])]
 
         # Check if network group is a subset of control group
         network_subset_of_control = is_network_subset_of_control()
@@ -212,6 +214,12 @@ def write_file(path_to_file, strings):
         if compute_entries:
             file.write("# Compute nodes\n")
             for entry in compute_entries:
+                file.write(entry + "\n")
+            file.write("\n")
+
+        if storage_entries:
+            file.write("# Storage nodes\n")
+            for entry in storage_entries:
                 file.write(entry + "\n")
             file.write("\n")
 
@@ -256,6 +264,86 @@ def write_file(path_to_file, strings):
                 file.write(line + "\n")
 
             written_ips.add(line_ip)
+
+# def write_file(path_to_file, strings):
+#     """Write host entries to output file with simplified hostnames"""
+#     with open(path_to_file, "w") as file:
+#         # First write group-based entries
+#         control_entries = [s for s in strings if 'ctrl-' in s]
+#         network_entries = [s for s in strings if 'net-' in s]
+#         compute_entries = [s for s in strings if 'comp-' in s]
+#         lcm_entries = [s for s in strings if 'lcm-' in s]
+#         other_entries = [s for s in strings if not any(x in s for x in ['ctrl-', 'net-', 'comp-', 'lcm-'])]
+#
+#         # Check if network group is a subset of control group
+#         network_subset_of_control = is_network_subset_of_control()
+#
+#         if network_subset_of_control and network_entries:
+#             print("Network group hosts are subset of control group - skipping network section")
+#         elif network_entries:
+#             print("Network group has unique hosts - including network section")
+#
+#         # Write group entries with separation
+#         if control_entries:
+#             file.write("# Control nodes\n")
+#             for entry in control_entries:
+#                 file.write(entry + "\n")
+#             file.write("\n")
+#
+#         # Only write network section if it has unique hosts (not subset of control)
+#         if network_entries and not network_subset_of_control:
+#             file.write("# Network nodes\n")
+#             for entry in network_entries:
+#                 file.write(entry + "\n")
+#             file.write("\n")
+#
+#         if compute_entries:
+#             file.write("# Compute nodes\n")
+#             for entry in compute_entries:
+#                 file.write(entry + "\n")
+#             file.write("\n")
+#
+#         if lcm_entries:
+#             file.write("# LCM nodes\n")
+#             for entry in lcm_entries:
+#                 file.write(entry + "\n")
+#             file.write("\n")
+#
+#         # Then write variable-based entries (only non-duplicates)
+#         file.write("# Additional strings\n")
+#         written_ips = set()
+#
+#         # Track IPs from group entries to avoid duplicates
+#         for entry in strings:
+#             ip = entry.split()[0]
+#             written_ips.add(ip)
+#
+#         for line in hosts_string:
+#             line_ip = line.split()[0]
+#
+#             # Skip entries that are already in group-based output
+#             if line_ip in written_ips:
+#                 print(f"Skipping duplicate entry: {line}")
+#                 continue
+#
+#             last_word = line.split()[-1]
+#             is_node_string = re.search(node_pattern, last_word)
+#
+#             if is_node_string:
+#                 is_lcm_node = re.search(lcm_pattern, last_word)
+#                 if is_lcm_node:
+#                     # Extract simple hostname for LCM node and add service names
+#                     short_name = f"{last_word.split('-')[-2]}-{last_word.split('-')[-1]}"
+#                     file.write(
+#                         line + f" {short_name} lcm-nexus.{region}.{domain} netbox.{region}.{domain} {gitlab_short_name}.{region}.{domain} vault.{region}.{domain}\n")
+#                 else:
+#                     # Extract simple hostname for other nodes
+#                     short_name = f"{last_word.split('-')[-2]}-{last_word.split('-')[-1]}"
+#                     file.write(line + f" {short_name}\n")
+#             else:
+#                 file.write(line + "\n")
+#
+#             written_ips.add(line_ip)
 
 
 # Main execution logic
