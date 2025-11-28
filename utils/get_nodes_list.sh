@@ -11,6 +11,8 @@ lcm_pattern="lcm\-..(\s|$)"
 comp_pattern="comp\-..(\s|$)"
 ctrl_pattern="ctrl\-..(\s|$)"
 net_pattern="net\-..(\s|$)"
+strg_pattern="strg\-..(\s|$)"
+storage_pattern="storage\-..(\s|$)"
 #rmi_pattern="-$default_rmi_suffix\..(\s|$)"
 
 # Colors
@@ -46,7 +48,7 @@ while [ -n "$1" ]; do
       Node IPs and names must be defined in hosts file (default: $default_hosts_path)
 
       Options:
-        -nt, -type_of_nodes <type>    Node type: 'lcm', 'ctrl', 'comp', 'net', 'all', 'rmi'
+        -nt, -type_of_nodes <type>    Node type: 'lcm', 'ctrl', 'comp', 'net', 'strg', 'all', 'rmi'
           NOTE: If you are using the node_type rmi, specify -suffix <suffix> (the default suffix is $default_rmi_suffix)
         -suffix <suffix>              RMI suffix (example: -suffix rmi)
         -nn, -nodes_name <names>      Specific node names (space-separated)
@@ -187,6 +189,11 @@ nodes_list_by_type() {
             [ "$TS_UTILS_DEBUG" = true ] && echo -e "Looking for network nodes"
             parse_hosts
             ;;
+        strg|storage)
+            nodes_to_find="$strg_pattern|$storage_pattern"
+            [ "$TS_UTILS_DEBUG" = true ] && echo -e "Looking for storage nodes"
+            parse_hosts
+            ;;
 
         rmi)
             nodes_to_find="$RMI_SUFFIX"
@@ -222,6 +229,9 @@ return_type() {
             ;;
         *comp*|*cmpt*)
             echo "comp"
+            ;;
+        *strg*|*storage*)
+            echo "strg"
             ;;
         *net*)
             echo "net"
