@@ -202,13 +202,13 @@ nodes_list_by_type() {
             ;;
 
         all)
-            nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern|$lcm_pattern"
+            nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern|$lcm_pattern|$strg_pattern"
             [ "$TS_UTILS_DEBUG" = true ] && echo -e "Looking for all node types"
             parse_hosts
             ;;
 
         *)
-            echo "${red}Unknown node type '$node_type'. Use: ctrl, comp, net, or all${normal}" >&2
+            echo "${red}Unknown node type '$node_type'. Use: ctrl, comp, net, strg or all${normal}" >&2
             exit 1
             ;;
     esac
