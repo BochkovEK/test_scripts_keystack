@@ -49,10 +49,23 @@
 ## Установка необходимых модулей pip
 
 ```bash
+# из kolla-toolbox ks2025.2.2
 pip install python-cinderclient==9.5.0
 pip install python-novaclient==18.6.0
 pip install python-openstackclient==6.6.1 
 pip install drsclient==2.2.1.dev48
+
+# [WARNING] This list return empty for:
+# openstack server list --all-projects --host <host_name> --long -c Name -c Flavor -c Status -c 'Power State' -c Host -c ID -c Networks
+
+pip install python-cinderclient
+pip install python-novaclient
+pip install python-openstackclient
+pip install drsclient==2.2.1.dev48 --no-deps
+
+# [WARNING] pip install drsclient==2.2.1.dev48
+# ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+# python-cinderclient 9.7.0 requires keystoneauth1>=5.9.0, but you have keystoneauth1 5.6.1 which is incompatible.
 ```
 
 ---
