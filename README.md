@@ -46,6 +46,141 @@
 
 # Подготовка окружения
 
+## Создать каталог с конфигами стенда
+
+```bash
+stand_name=<stand_name>
+mkdir $stand_name 
+```
+
+Для каждого стенда необходимо создать следующие конфиги:
+- inventory
+- hosts
+- clouds.yml
+- openrc
+- .env
+
+### inventory
+
+**inventory** - файл inventory из репозитория региона (достатчно описания групп узлов)
+
+### hosts
+
+```bash
+bash ~/test_scripts_keystack/inventory_to_hosts.sh -i ./$stand_name/inventory -o ./$stand_name/hosts
+```
+
+### clouds.yml
+
+**clouds.yml** - файл с данными авторизации для работы с terraform
+
+```bash
+clouds:
+  openstack:
+    auth:
+      auth_url: $OS_AUTH_URL # https://fc-lab1.lab.itkey.com:5000/v3
+      username: "$OS_USERNAME"
+      user_domain_name: "Default"
+      password: $OS_PASSWORD
+      project_id: $test_project_id
+    region_name: "$OS_REGION_NAME"
+    interface: "public"
+    identity_api_version: 3
+    cacert: "$OS_CACERT"
+```
+
+### openrc
+
+**openrc** - файл с переменными окружения для работы скриптов тестирования на основе Openstack CLI
+
+### .env
+
+**.env** - файл с переменными для работы тестирования
+
+```bash
+STAND_DIR_ENV="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+export STAND_DIR_ENV=$STAND_DIR_ENV
+
+export OPENRC_PATH="$STAND_DIR_ENV/openrc"
+export CREATE_VMS_ENVS_FOLDER="$STAND_DIR_ENV"
+export TS_HOSTS_PATH="$STAND_DIR_ENV/hosts"
+
+source "$OPENRC_PATH"
+export OS_CLIENT_CONFIG_FILE="$STAND_DIR_ENV/clouds.yml"
+
+export SSH_USER="kolla"
+export CONTAINER_ENGINE="podman"
+alias tf='terraform'
+```
+
+
+
+
+## Создать VirtualENV (VENV) окружение
+
+### Создать каталог venv
+
+```bash
+venv_folder_name=<stand_name_venv>
+mkdir $venv_folder_name
+pip install virtualenv
+python3 -m venv ./$venv_folder_name
+```
+
+### Активировать виртуальное окружение
+
+```bash
+source /path/to/$venv_folder_name/bin/activate
+```
+
+### Добавить гибкий выбор переменных окружения для тестируемых стендов
+
+```bash
+cat <<-EOF >> $VIRTUAL_ENV/bin/activate
+
+# Stand environments
+stand_envs_folder_list=(
+    "/path/to/first_stand_envs"
+    "/path/to/second_stand_envs" 
+    "/path/to/third_stand_envs"
+)
+
+echo "Select environment:"
+echo "0) Skip"
+for i in "${!stand_envs_folder_list[@]}"; do
+    echo "$((i+1))) ${stand_envs_folder_list[i]}"
+done
+
+read -p "Enter choice: " choice
+
+if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "${#stand_envs_folder_list[@]}" ]; then
+    env_path="${stand_envs_folder_list[$((choice-1))]}"
+    if [ -f "$env_path/.env" ]; then
+        source "$env_path/.env"
+        echo "Loaded: $env_path/.env"
+    else
+        echo "Error: .env not found in $env_path"
+    fi
+elif [ "$choice" -ne 0 ]; then
+    echo "Invalid selection"
+fi
+EOF
+```
+
+## Создать pip конфиг добавив репозиторий repo.itkey.com
+
+```bash
+vi ./pip.conf
+
+# Example
+[global]
+disable-pip-version-check = true
+index-url = https://repo.itkey.com/repository/k-pip/simple
+trusted-host = repo.itkey.com
+extra-index-url = https://repo.itkey.com/repository/keystack-pip/simple
+```
+
 ## Установка необходимых модулей pip
 
 ```bash
