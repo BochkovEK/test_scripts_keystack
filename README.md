@@ -44,6 +44,17 @@
 - `start_stress.sh` - запуск стресс-теста на ВМ
 - `remove_drs_job_config_list.sh` - удаление конфигурации заданий DRS
 
+# Подготовка окружения
+
+## Установка необходимых модулей pip
+
+```bash
+pip install python-cinderclient==9.5.0
+pip install python-novaclient==18.6.0
+pip install python-openstackclient==6.6.1 
+pip install drsclient==2.2.1.dev48
+```
+
 ---
 
 # Модуль Terraform
