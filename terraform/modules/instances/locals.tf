@@ -5,7 +5,7 @@ locals {
     for instance_key, instance in var.VMs : [
       for iter in range(1, try(instance.vm_qty, 1) + 1) : {
         base_name                         = instance_key
-        name                              = format("%s-%02d", instance_key, iter)
+        name                              = instance.vm_qty == 1 ? instance_key : format("%s-%02d", instance_key, iter)
         image_name                        = try(instance.image_name, var.default_image_name)
         metadata                          = try(instance.metadata, var.default_metadata)
         flavor_name                       = try(instance.flavor_name, var.default_flavor_name)
