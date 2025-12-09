@@ -218,9 +218,16 @@ check_and_source_openrc_file() {
 get_vms_info() {
     echo "DEBUG: Starting get_vms_info function" >&2
 
-    # Get all VMs in JSON
+    local project_string=""
+    if [[ -n "$PROJECT" ]]; then
+        project_string="--project $PROJECT"
+    else
+        project_string="--all-projects"
+    fi
+
+    # Get all VMs in JSON with only needed columns
     local raw_json
-    raw_json=$(openstack server list --all-projects -f json 2>&1)
+    raw_json=$(openstack server list $project_string -f json -c Name -c Status -c Networks 2>&1)
 
     if [[ $? -ne 0 ]]; then
         echo "ERROR: Failed to get VM list" >&2
@@ -235,14 +242,14 @@ get_vms_info() {
 
     echo "DEBUG: Processing JSON with jq" >&2
 
-    # Extract Name, Status, and first IP from pub_net
+    # Extract Name, Status, and first IP from pub_net, use "None" if no IP
     local processed_output
     processed_output=$(echo "$raw_json" | jq -r '
         .[] |
         .Name as $name |
         .Status as $status |
         (.Networks["pub_net"]? // [])[0] as $ip |
-        "\($name):\($status):\($ip // "")"
+        if $ip then "\($name):\($status):\($ip)" else "\($name):\($status):None" end
     ')
 
     if [[ $? -ne 0 ]]; then
