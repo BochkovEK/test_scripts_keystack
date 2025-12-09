@@ -227,7 +227,7 @@ get_vms_info() {
 
     # Get all VMs in JSON with only needed columns
     local raw_json
-    raw_json=$(openstack server list $project_string -f json -c Name -c Status -c Networks 2>&1)
+    raw_json=$(openstack server list $project_string --long -f json -c Name -c Status -c Networks -c Host 2>&1)
 
     if [[ $? -ne 0 ]]; then
         echo "ERROR: Failed to get VM list" >&2
