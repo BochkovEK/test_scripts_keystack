@@ -367,6 +367,7 @@ check_container_status() {
             -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
             -e 's/\(.*Exited.*\)/\o033[31m\1\o033[39m/' \
             -e 's/\(.*second.*\)/\o033[33m\1\o033[39m/' \
+            -e 's/\(.*a minute.*\)/\o033[33m\1\o033[39m/' \
             -e 's/\(.*Less than.*\)/\o033[33m\1\o033[39m/' \
             -e 's/\(.*(healthy).*\)/\o033[92m\1\o033[39m/' \
             -e 's/\(.*days.*\)/\o033[92m\1\o033[39m/' \

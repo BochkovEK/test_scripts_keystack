@@ -112,6 +112,8 @@ export OS_CLIENT_CONFIG_FILE="$STAND_DIR_ENV/clouds.yml"
 export SSH_USER="kolla"
 export CONTAINER_ENGINE="podman"
 alias tf='terraform'
+
+cd ~
 ```
 
 
