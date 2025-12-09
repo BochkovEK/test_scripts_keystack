@@ -218,26 +218,39 @@ check_and_source_openrc_file() {
 get_vms_info() {
     echo "DEBUG: Starting get_vms_info function" >&2
 
-    # Просто получаем все ВМ в JSON и выводим сырые данные
+    # Get all VMs in JSON
     local raw_json
     raw_json=$(openstack server list --all-projects -f json 2>&1)
 
     if [[ $? -ne 0 ]]; then
         echo "ERROR: Failed to get VM list" >&2
-        echo "Output: $raw_json" >&2
         return 1
     fi
 
-    echo "DEBUG: Raw JSON length: ${#raw_json}" >&2
-
+    # Check if we have data
     if [[ -z "$raw_json" ]] || [[ "$raw_json" == "[]" ]]; then
-        echo "DEBUG: Empty JSON array" >&2
+        echo "DEBUG: No VMs found" >&2
         return 1
     fi
 
-    # Просто выводим сырой JSON через jq для форматирования
-    echo "$raw_json" | jq '.'
+    echo "DEBUG: Processing JSON with jq" >&2
 
+    # Extract Name, Status, and first IP from pub_net
+    local processed_output
+    processed_output=$(echo "$raw_json" | jq -r '
+        .[] |
+        .Name as $name |
+        .Status as $status |
+        (.Networks["pub_net"]? // [])[0] as $ip |
+        "\($name):\($status):\($ip // "")"
+    ')
+
+    if [[ $? -ne 0 ]]; then
+        echo "ERROR: Failed to process JSON with jq" >&2
+        return 1
+    fi
+
+    echo "$processed_output"
     return 0
 }
 
