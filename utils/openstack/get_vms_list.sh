@@ -8,7 +8,6 @@ green=$(tput setaf 2)
 red=$(tput setaf 1)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
-#violet=$(tput setaf 5)
 
 # Script paths
 script_file_path=$(realpath "$0")
@@ -19,8 +18,6 @@ check_openrc_script="check_openrc.sh"
 default_network_mask="10\.224\.[0-9]{1,3}\.[0-9]{1,3}"
 
 # Default values
-#TS_DEBUG="${TS_DEBUG:-false}"
-#PROJECT="${PROJECT:-admin}"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $PROJECT ]] && PROJECT=""
 [[ -z $VMS ]] && VMS=""
@@ -35,7 +32,7 @@ show_help() {
     Options:
       -hv, -hypervisor <name>    Filter by hypervisor name
       -vms <names\ip>      Filter by VM names (space-separated)
-      -p, -project <project>     OpenStack project name (default: $PROJECT)
+      -p, -project <project>     OpenStack project name (default: all projects)
       -debug                     Enable debug output
       --help                     Show this help message
 
@@ -106,26 +103,23 @@ check_and_source_openrc_file() {
 # Function to get VMs information in required format
 get_vms_info() {
     local project_string=""
-#    local host_string=""
     local vm_name_pattern=""
     local vm_list=""
-#    local name_filter_string=""
-
-    # Build filter strings
-    [[ -n "$HYPERVISOR_NAME" ]] && host_string="--host $HYPERVISOR_NAME"
-
-    if [[ -n "$PROJECT" ]]; then
-        project_string="--project $PROJECT"
-    else
-        project_string="--all-project"
-    fi
+    local grep_pattern=""
 
     [ "$TS_DEBUG" = "true" ] && echo -e "
     [DEBUG]
         PROJECT:          $PROJECT
         HYPERVISOR_NAME:  $HYPERVISOR_NAME
-        VMS:         $VMS
+        VMS:              $VMS
     "
+
+    # Build project filter
+    if [[ -n "$PROJECT" ]]; then
+        project_string="--project $PROJECT"
+    else
+        project_string="--all-projects"
+    fi
 
     # Convert VM names to filter string if provided
     if [[ -n "$VMS" ]]; then
@@ -134,20 +128,8 @@ get_vms_info() {
     fi
 
     # Get VM list with name, status, and networks
-
     if [[ -n "$VMS" ]]; then
-        # Use grep for multiple name filtering
-#        [ "$TS_DEBUG" = "true" ] && echo -e "
-#    [DEBUG]:
-#        Command: openstack server list $project_string $host_string --long -f value -c Name -c Status -c Networks 2>/dev/null | \
-#            grep -E \"$vm_name_pattern\"
-#    "
-#        vm_list=$(openstack server list $project_string $host_string --long -f value -c Name -c Status -c Networks 2>/dev/null | \
-#            grep -E "${vm_name_pattern}")
-
-
-#        vm_list=$(openstack server list --long -f value -c Name -c Status -c Networks 2>/dev/null | \
-#            grep -E "${vm_name_pattern}")
+        # Filter by VM names
         [ "$TS_DEBUG" = "true" ] && echo -e "
     [DEBUG]:
         Command: openstack server list $project_string --long -f value -c Name -c Status -c Networks -c Host 2>/dev/null | \
@@ -156,51 +138,48 @@ get_vms_info() {
         vm_list=$(openstack server list $project_string --long -f value -c Name -c Status -c Networks -c Host 2>/dev/null | \
             grep -E "${vm_name_pattern}")
 
-    else
-#        [ "$TS_DEBUG" = "true" ] && echo -e "
-#    [DEBUG]:
-#        Command: openstack server list $project_string $host_string --long -f value -c Name -c Status -c Networks 2>/dev/null)
-#    "
-#        vm_list=$(openstack server list $project_string $host_string --long -f value -c Name -c Status -c Networks 2>/dev/null)
-         [ "$TS_DEBUG" = "true" ] && echo -e "
+    elif [[ -n "$HYPERVISOR_NAME" ]]; then
+        # Filter by hypervisor only
+        [ "$TS_DEBUG" = "true" ] && echo -e "
     [DEBUG]:
-        Command: openstack server list $project_string --long -f value -c Name -c Status -c Networks -c Host | \
-                    grep "$HYPERVISOR_NAME" 2>/dev/null)
+        Command: openstack server list $project_string --long -f value -c Name -c Status -c Networks -c Host 2>/dev/null | \
+            grep \"$HYPERVISOR_NAME\"
     "
-        vm_list=$(openstack server list $project_string --long -f value -c Name -c Status -c Networks -c Host | \
-            grep "$HYPERVISOR_NAME" 2>/dev/null)
+        vm_list=$(openstack server list $project_string --long -f value -c Name -c Status -c Networks -c Host 2>/dev/null | \
+            grep "$HYPERVISOR_NAME")
+
+    else
+        # Get all VMs (no filtering)
+        [ "$TS_DEBUG" = "true" ] && echo -e "
+    [DEBUG]:
+        Command: openstack server list $project_string --long -f value -c Name -c Status -c Networks -c Host 2>/dev/null
+    "
+        vm_list=$(openstack server list $project_string --long -f value -c Name -c Status -c Networks -c Host 2>/dev/null)
     fi
 
     [ "$TS_DEBUG" = "true" ] && echo -e "
     [DEBUG]:
-        vm_list: $vm_list
+        Raw VM list count: $(echo "$vm_list" | wc -l)
     "
-#    exit 0
-
-#    if [[ -z "$vm_list" ]]; then
-#        # Fallback to alternative method if first attempt fails
-#        [ "$TS_DEBUG" = true ] && echo "Trying alternative method to get VM list"
-#        vm_list=$(openstack server list $project_string --long -f value -c Name -c Status -c Networks | \
-#            grep "$HYPERVISOR_NAME" 2>/dev/null)
-#    fi
-#
-#    if [[ -z "$vm_list" ]]; then
-#        # Fallback to alternative method if first attempt fails
-#        [ "$TS_DEBUG" = true ] && echo "Trying alternative method to get VM list"
-#        vm_list=$(openstack server list $project_string --long -f value -c Name -c Status -c Networks | \
-#            grep "$HYPERVISOR_NAME" 2>/dev/null)
-#    fi
 
     if [[ -z "$vm_list" ]]; then
         echo -e "${red}No VMs found matching criteria${normal}" >&2
-        echo -e "${yellow}Project: $PROJECT${normal}" >&2
+        echo -e "${yellow}Project: ${PROJECT:-all projects}${normal}" >&2
         echo -e "${yellow}Hypervisor: ${HYPERVISOR_NAME:-any}${normal}" >&2
         echo -e "${yellow}VM names: ${VMS:-any}${normal}" >&2
-        exit 1
+        return 1
     fi
 
     # Process each VM
-    echo "$vm_list" | while read -r vm_name status networks; do
+    echo "$vm_list" | while IFS= read -r line; do
+        # Extract fields from the line
+        local vm_name status networks host
+        vm_name=$(echo "$line" | awk '{print $1}')
+        status=$(echo "$line" | awk '{print $2}')
+        # Networks field might contain spaces, so we need to handle it carefully
+        # Get everything from position 3 to the end
+        networks=$(echo "$line" | awk '{for(i=3;i<=NF-1;i++) printf $i " "; print ""}' | sed 's/ $//')
+
         # Extract IP address from networks field
         local ip_address
         ip_address=$(echo "$networks" | grep -oE "$IP_REGEX" | head -1)
@@ -208,8 +187,8 @@ get_vms_info() {
         if [[ -n "$ip_address" ]]; then
             echo "${vm_name}:${status}:${ip_address}"
         else
-            [ "$TS_DEBUG" = true ] && \
-                echo -e "${yellow}Warning: No IP found for VM $vm_name${normal}" >&2
+            [ "$TS_DEBUG" = "true" ] && \
+                echo -e "${yellow}Warning: No IP found for VM $vm_name (status: $status)${normal}" >&2
         fi
     done
 }
@@ -218,6 +197,11 @@ get_vms_info() {
 validate_output() {
     local output="$1"
     local valid_count=0
+
+    if [[ -z "$output" ]]; then
+        echo -e "${red}No output generated${normal}" >&2
+        return 1
+    fi
 
     while IFS= read -r line; do
         if [[ "$line" =~ ^[^:]+:[^:]+:[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -241,10 +225,11 @@ main() {
     local output
     output=$(get_vms_info)
 
-    if [[ $? -eq 0 ]]; then
+    if [[ $? -eq 0 ]] && [[ -n "$output" ]]; then
         if [[ "$TS_DEBUG" = "true" ]]; then
             echo -e "${green}Found VMs:${normal}"
             echo "$output"
+            echo -e "${green}Total: $(echo "$output" | wc -l) VMs${normal}"
         else
             # Validate and output results
             if validate_output "$output"; then
