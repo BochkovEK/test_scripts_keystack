@@ -379,7 +379,7 @@ get_vms_info() {
 
     [ "$TS_DEBUG" = "true" ] && echo "DEBUG: Processed output lines: $(echo "$processed_output" | wc -l)" >&2
     [ "$TS_DEBUG" = "true" ] && echo "DEBUG: First few lines:" >&2
-    [ "$TS_DEBUG" = "true" ]] && echo "$processed_output" | head -3 >&2
+    [ "$TS_DEBUG" = "true" ] && echo "$processed_output" | head -3 >&2
 
     echo "$processed_output"
     return 0
