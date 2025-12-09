@@ -279,6 +279,7 @@ get_vms_info() {
     # Get all VMs in JSON with only needed columns
     local raw_json
     raw_json=$(openstack server list $project_string --long -f json -c Name -c Status -c Networks -c Host 2>&1)
+    echo "$raw_json" | jq -r '.[] | select(.Name|test("ElVictimo"; "i")) | .Name'
 
     if [[ $? -ne 0 ]]; then
         echo "ERROR: Failed to get VM list from OpenStack" >&2
@@ -351,18 +352,23 @@ get_vms_info() {
 
     # Process JSON with jq
     local processed_output
-    processed_output=$(echo "$raw_json" | jq -r --arg ip_regex "$IP_REGEX" "
-        .[] |
-        select($jq_filter) |
-        .Name as \$name |
-        .Status as \$status |
-        (.Networks[\"pub_net\"]? // [])[0] as \$ip |
-        if \$ip and (\$ip | test(\$ip_regex)) then
-            \"\(\$name):\(\$status):\(\$ip)\"
-        else
-            \"\(\$name):\(\$status):None\"
-        end
-    " 2>&1)
+#    processed_output=$(echo "$raw_json" | jq -r --arg ip_regex "$IP_REGEX" "
+#        .[] |
+#        select($jq_filter) |
+#        .Name as \$name |
+#        .Status as \$status |
+#        (.Networks[\"pub_net\"]? // [])[0] as \$ip |
+#        if \$ip and (\$ip | test(\$ip_regex)) then
+#            \"\(\$name):\(\$status):\(\$ip)\"
+#        else
+#            \"\(\$name):\(\$status):None\"
+#        end
+#    " 2>&1)
+    processed_output=$(echo "$raw_json" | jq -r "
+    .[] |
+    select($jq_filter) |
+    \"NAME: \\(.Name) STATUS: \\(.Status) NETWORKS: \\(.Networks)\"
+" 2>&1)
 
     local jq_exit_code=$?
 
