@@ -8,7 +8,6 @@ green=$(tput setaf 2)
 red=$(tput setaf 1)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
-#violet=$(tput setaf 5)
 
 # Script paths
 script_file_path=$(realpath "$0")
@@ -19,13 +18,12 @@ check_openrc_script="check_openrc.sh"
 default_network_mask="10\.224\.[0-9]{1,3}\.[0-9]{1,3}"
 
 # Default values
-#TS_DEBUG="${TS_DEBUG:-false}"
-#PROJECT="${PROJECT:-admin}"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $PROJECT ]] && PROJECT=""
 [[ -z $VMS ]] && VMS=""
 [[ -z $HYPERVISOR_NAME ]] && HYPERVISOR_NAME=""
 [[ -z $IP_REGEX ]] && IP_REGEX=$default_network_mask
+[[ -z $ANY_STATUS ]] && ANY_STATUS="false"
 
 # Function to display help information
 show_help() {
@@ -34,8 +32,9 @@ show_help() {
 
     Options:
       -hv, -hypervisor <name>    Filter by hypervisor name
-      -vms <names\ip>      Filter by VM names (space-separated)
-      -p, -project <project>     OpenStack project name (default: $PROJECT)
+      -vms <names>               Filter by VM names or IPs (space-separated)
+      -p, -project <project>     OpenStack project name (default: all projects)
+      -as, --any-status          Show VMs with any status (default: only ACTIVE)
       -debug                     Enable debug output
       --help                     Show this help message
 
@@ -44,49 +43,64 @@ show_help() {
     NOTE: Only network addresses of the type $IP_REGEX are returned as IP
 
     Example:
-      $0 -hv compute-01 -n \"vm1 vm2\" -p myproject
+      $0 -hv compute-01 -vms \"vm1 vm2\" -p myproject
     "
 }
 
 # Parse command line arguments
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        -hv|-hypervisor)
-            HYPERVISOR_NAME="$2"
-            [ "$TS_DEBUG" = "true" ] && echo "Filtering by hypervisor: $HYPERVISOR_NAME"
-            shift 2
-            ;;
-        -vms)
-            VMS="$2"
-            [ "$TS_DEBUG" = "true" ] && echo "Filtering by VM: $VMS"
-            shift 2
-            ;;
-        -p|-project)
-            PROJECT="$2"
-            [ "$TS_DEBUG" = "true" ] && echo "Using project: $PROJECT"
-            shift 2
-            ;;
-        -debug)
-            TS_DEBUG="true"
-            [ "$TS_DEBUG" = "true" ] && echo "Debug mode enabled"
-            shift
-            ;;
-        --help)
-            show_help
-            exit 0
-            ;;
-        *)
-            [ "$TS_DEBUG" = "true" ] && echo "Unknown parameter: $1"
-            show_help
-            exit 1
-            ;;
-    esac
-done
+parse_arguments() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -hv|-hypervisor)
+                HYPERVISOR_NAME="$2"
+                [ "$TS_DEBUG" = "true" ] && echo "Filtering by hypervisor: $HYPERVISOR_NAME"
+                shift 2
+                ;;
+            -vms)
+                VMS="$2"
+                [ "$TS_DEBUG" = "true" ] && echo "Filtering by VM: $VMS"
+                shift 2
+                ;;
+            -p|-project)
+                PROJECT="$2"
+                [ "$TS_DEBUG" = "true" ] && echo "Using project: $PROJECT"
+                shift 2
+                ;;
+            -as|--any-status)
+                ANY_STATUS="true"
+                [ "$TS_DEBUG" = "true" ] && echo "Showing VMs with any status"
+                shift
+                ;;
+            -debug)
+                TS_DEBUG="true"
+                [ "$TS_DEBUG" = "true" ] && echo "Debug mode enabled"
+                shift
+                ;;
+            --help)
+                show_help
+                exit 0
+                ;;
+            *)
+                [ "$TS_DEBUG" = "true" ] && echo "Unknown parameter: $1"
+                show_help
+                exit 1
+                ;;
+        esac
+    done
+}
 
-# Check OpenStack CLI
-check_openstack_cli () {
+# Check OpenStack CLI exists
+check_openstack_cli() {
     if ! command -v openstack &> /dev/null; then
-        echo -e "${red}OpenStack CLI not found${normal}"
+        echo -e "${red}OpenStack CLI not found${normal}" >&2
+        exit 1
+    fi
+}
+
+# Check jq exists
+check_jq() {
+    if ! command -v jq &> /dev/null; then
+        echo -e "${red}jq not found. Please install jq (apt-get install jq / yum install jq)${normal}" >&2
         exit 1
     fi
 }
@@ -103,164 +117,30 @@ check_and_source_openrc_file() {
     fi
 }
 
+# Filter only ACTIVE VMs unless --any-status is specified
+filter_active_vms() {
+    local input="$1"
 
-#get_vms_info() {
-#    local project_string=""
-#    local vm_name_pattern=""
-#    local raw_list=""
-#
-#    # Build project filter
-#    if [[ -n "$PROJECT" ]]; then
-#        project_string="--project $PROJECT"
-#    else
-#        project_string="--all-projects"
-#    fi
-#
-#    # Convert VM names to regex pattern
-#    if [[ -n "$VMS" ]]; then
-#        vm_name_pattern=$(echo "$VMS" | tr ' ' '|')
-#    fi
-#
-#    # Get and process VM list
-#    if [[ -n "$VMS" ]]; then
-#        raw_list=$(openstack server list $project_string -f json 2>/dev/null | \
-#            jq -r --arg pattern "$vm_name_pattern" '
-#                .[] | select(.Name|test($pattern)) |
-#                "\(.Name):\(.Status):\(.Networks)"')
-#
-#    elif [[ -n "$HYPERVISOR_NAME" ]]; then
-#        raw_list=$(openstack server list $project_string -f json 2>/dev/null | \
-#            jq -r --arg hv "$HYPERVISOR_NAME" '
-#                .[] | select(.Host==$hv) |
-#                "\(.Name):\(.Status):\(.Networks)"')
-#
-#    else
-#        raw_list=$(openstack server list $project_string -f json 2>/dev/null | \
-#            jq -r '.[] | "\(.Name):\(.Status):\(.Networks)"')
-#    fi
-#
-#    # Если список пустой
-#    if [[ -z "$raw_list" ]]; then
-#        echo -e "${red}No VMs found${normal}" >&2
-#        return 1
-#    fi
-#
-#    # Обрабатываем каждую строку: Name:Status:Networks
-#    while IFS= read -r line; do
-#        [[ -z "$line" ]] && continue
-#
-#        local vm_name=$(echo "$line" | cut -d: -f1)
-#        local status=$(echo "$line" | cut -d: -f2)
-#        local networks=$(echo "$line" | cut -d: -f3-)
-#
-#        # Извлекаем IP из Networks
-#        local ip_address=""
-#
-#        # Пробуем разные форматы Networks
-#        # 1. Если это JSON объект (начинается с {)
-#        if [[ "$networks" == {* ]]; then
-#            ip_address=$(echo "$networks" | jq -r '.[] | .[]' 2>/dev/null | \
-#                grep -oE "$IP_REGEX" | head -1)
-#        # 2. Если это строка с IP (прямой IP)
-#        elif [[ "$networks" =~ [0-9]+\.[0-9]+\.[0-9]+\.[0-9]+ ]]; then
-#            ip_address=$(echo "$networks" | grep -oE "$IP_REGEX" | head -1)
-#        # 3. Если это строка формата net=IP
-#        else
-#            ip_address=$(echo "$networks" | grep -oE "$IP_REGEX" | head -1)
-#        fi
-#
-#        if [[ -n "$ip_address" ]]; then
-#            echo "${vm_name}:${status}:${ip_address}"
-#        else
-#            [ "$TS_DEBUG" = "true" ] && \
-#                echo -e "${yellow}No IP found for $vm_name${normal}" >&2
-#        fi
-#    done <<< "$raw_list"
-#}
-#
-## Function to validate output
-#validate_output() {
-#    local output="$1"
-#    local valid_count=0
-#
-#    while IFS= read -r line; do
-#        if [[ "$line" =~ ^[^:]+:[^:]+:[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-#            ((valid_count++))
-#        else
-#            echo -e "${red}Invalid output format: $line${normal}" >&2
-#        fi
-#    done <<< "$output"
-#
-#    if [[ $valid_count -eq 0 ]]; then
-#        echo -e "${red}No valid VM entries found${normal}" >&2
-#        return 1
-#    fi
-#}
-#
-## Main execution
-#main() {
-#    check_openstack_cli
-#    check_jq  # Новая проверка
-#    check_and_source_openrc_file
-#
-#    local output
-#    output=$(get_vms_info)
-#
-#    if [[ $? -eq 0 ]] && [[ -n "$output" ]]; then
-#        # Просто выводим результат
-#        echo "$output"
-#    else
-#        exit 1
-#    fi
-#}
-#
+    if [[ "$ANY_STATUS" = "true" ]]; then
+        # Return all VMs
+        echo "$input"
+        return 0
+    else
+        # Filter only ACTIVE
+        local active_vms
+        active_vms=$(echo "$input" | grep ":ACTIVE:")
 
-#get_vms_info() {
-#    echo "DEBUG: Starting get_vms_info function" >&2
-#
-#    local project_string=""
-#    if [[ -n "$PROJECT" ]]; then
-#        project_string="--project $PROJECT"
-#    else
-#        project_string="--all-projects"
-#    fi
-#
-#    # Get all VMs in JSON with only needed columns
-#    local raw_json
-#    raw_json=$(openstack server list $project_string --long -f json -c Name -c Status -c Networks -c Host 2>&1)
-#
-#    if [[ $? -ne 0 ]]; then
-#        echo "ERROR: Failed to get VM list" >&2
-#        return 1
-#    fi
-#
-#    # Check if we have data
-#    if [[ -z "$raw_json" ]] || [[ "$raw_json" == "[]" ]]; then
-#        echo "DEBUG: No VMs found" >&2
-#        return 1
-#    fi
-#
-#    echo "DEBUG: Processing JSON with jq" >&2
-#
-#    # Extract Name, Status, and first IP from pub_net, use "None" if no IP
-#    local processed_output
-#    processed_output=$(echo "$raw_json" | jq -r '
-#        .[] |
-#        .Name as $name |
-#        .Status as $status |
-#        (.Networks["pub_net"]? // [])[0] as $ip |
-#        if $ip then "\($name):\($status):\($ip)" else "\($name):\($status):None" end
-#    ')
-#
-#    if [[ $? -ne 0 ]]; then
-#        echo "ERROR: Failed to process JSON with jq" >&2
-#        return 1
-#    fi
-#
-#    echo "$processed_output"
-#    return 0
-#}
+        if [[ -z "$active_vms" ]]; then
+            echo -e "${yellow}No ACTIVE VMs found${normal}" >&2
+            return 1
+        fi
 
+        echo "$active_vms"
+        return 0
+    fi
+}
+
+# Main function to get VMs information
 get_vms_info() {
     [ "$TS_DEBUG" = "true" ] && echo "DEBUG: Starting get_vms_info function" >&2
 
@@ -281,7 +161,7 @@ get_vms_info() {
     raw_json=$(openstack server list $project_string --long -f json -c Name -c Status -c Networks -c Host 2>&1)
 
     if [[ $? -ne 0 ]]; then
-        echo "ERROR: Failed to get VM list from OpenStack" >&2
+        echo -e "${red}ERROR: Failed to get VM list from OpenStack${normal}" >&2
         [ "$TS_DEBUG" = "true" ] && echo "DEBUG: Command output: $raw_json" >&2
         return 1
     fi
@@ -372,7 +252,7 @@ get_vms_info() {
     local jq_exit_code=$?
 
     if [[ $jq_exit_code -ne 0 ]]; then
-        echo "ERROR: Failed to process JSON with jq" >&2
+        echo -e "${red}ERROR: Failed to process JSON with jq${normal}" >&2
         [ "$TS_DEBUG" = "true" ] && echo "DEBUG: jq output: $processed_output" >&2
         return 1
     fi
@@ -386,16 +266,44 @@ get_vms_info() {
     fi
 
     [ "$TS_DEBUG" = "true" ] && echo "DEBUG: Processed output lines: $(echo "$processed_output" | wc -l)" >&2
-    [ "$TS_DEBUG" = "true" ] && echo "DEBUG: Output:" >&2
-    [ "$TS_DEBUG" = "true" ] && echo "$processed_output" | while read line; do echo "  $line" >&2; done
 
     echo "$processed_output"
     return 0
 }
 
-main () {
-  get_vms_info
+# Main execution function
+main() {
+    # Parse command line arguments
+    parse_arguments "$@"
+
+    # Check dependencies
+    check_openstack_cli
+    check_jq
+
+    # Source OpenRC file
+    check_and_source_openrc_file
+
+    # Get VM information
+    local output
+    output=$(get_vms_info)
+    local get_info_exit_code=$?
+
+    if [[ $get_info_exit_code -ne 0 ]] || [[ -z "$output" ]]; then
+        exit 1
+    fi
+
+    # Filter for ACTIVE VMs unless --any-status is specified
+    local filtered_output
+    filtered_output=$(filter_active_vms "$output")
+    local filter_exit_code=$?
+
+    if [[ $filter_exit_code -ne 0 ]] || [[ -z "$filtered_output" ]]; then
+        exit 1
+    fi
+
+    # Output the result
+    echo "$filtered_output"
 }
 
 # Run main function
-main
+main "$@"
