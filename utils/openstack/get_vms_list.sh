@@ -262,7 +262,7 @@ check_and_source_openrc_file() {
 #}
 
 get_vms_info() {
-    echo "DEBUG: Starting get_vms_info function" >&2
+    [ "$TS_DEBUG" = "true" ] && echo "DEBUG: Starting get_vms_info function" >&2
 
     local project_string=""
     if [[ -n "$PROJECT" ]]; then
@@ -279,17 +279,16 @@ get_vms_info() {
     # Get all VMs in JSON with only needed columns
     local raw_json
     raw_json=$(openstack server list $project_string --long -f json -c Name -c Status -c Networks -c Host 2>&1)
-    echo "$raw_json" | jq -r '.[] | select(.Name|test("ElVictimo"; "i")) | .Name'
 
     if [[ $? -ne 0 ]]; then
         echo "ERROR: Failed to get VM list from OpenStack" >&2
-        echo "Command output: $raw_json" >&2
+        [ "$TS_DEBUG" = "true" ] && echo "DEBUG: Command output: $raw_json" >&2
         return 1
     fi
 
     # Check if we have data
     if [[ -z "$raw_json" ]] || [[ "$raw_json" == "[]" ]]; then
-        echo "DEBUG: No VMs found in project" >&2
+        [ "$TS_DEBUG" = "true" ] && echo "DEBUG: No VMs found in project" >&2
         return 1
     fi
 
@@ -308,7 +307,6 @@ get_vms_info() {
         local vms_filter=""
 
         # Convert VMS string to array
-        # Using read -a to properly handle spaces
         local vms_array
         read -ra vms_array <<< "$VMS"
 
@@ -317,20 +315,20 @@ get_vms_info() {
         for item in "${vms_array[@]}"; do
             # Check if item looks like an IP address
             if [[ $item =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-                # IP address - search in Networks
-                vms_filter+=" or (.Networks[]?|.[]?|select(.==\"$item\"))"
+                # IP address - search in Networks using any() to avoid duplicates
+                vms_filter+=" or any(.Networks[]?[]?; .==\"$item\")"
                 [ "$TS_DEBUG" = "true" ] && echo "DEBUG: Adding IP filter for: $item" >&2
             else
-                # VM name - substring search
+                # VM name - substring search (case insensitive)
                 # Escape special regex characters
                 local escaped_item
                 escaped_item=$(echo "$item" | sed 's/[][\.*^$()+?{}|]/\\&/g')
-                vms_filter+=" or (.Name|test(\"$escaped_item\"))"
+                vms_filter+=" or (.Name|test(\"$escaped_item\"; \"i\"))"
                 [ "$TS_DEBUG" = "true" ] && echo "DEBUG: Adding name filter for: $item (escaped: $escaped_item)" >&2
             fi
         done
 
-        # Remove leading " or "
+        # Remove leading " or " and wrap in parentheses
         if [[ -n "$vms_filter" ]]; then
             vms_filter="(${vms_filter# or })"
 
@@ -350,42 +348,46 @@ get_vms_info() {
 
     [ "$TS_DEBUG" = "true" ] && echo "DEBUG: Final jq filter: $jq_filter" >&2
 
-    # Process JSON with jq
+    # Debug: show what jq selects
+    if [ "$TS_DEBUG" = "true" ]; then
+        echo "DEBUG: Testing jq filter - selected VMs:" >&2
+        echo "$raw_json" | jq -r ".[] | select($jq_filter) | \"  - \(.Name) (status: \(.Status))\"" >&2
+    fi
+
+    # Process JSON with jq to get final output
     local processed_output
-#    processed_output=$(echo "$raw_json" | jq -r --arg ip_regex "$IP_REGEX" "
-#        .[] |
-#        select($jq_filter) |
-#        .Name as \$name |
-#        .Status as \$status |
-#        (.Networks[\"pub_net\"]? // [])[0] as \$ip |
-#        if \$ip and (\$ip | test(\$ip_regex)) then
-#            \"\(\$name):\(\$status):\(\$ip)\"
-#        else
-#            \"\(\$name):\(\$status):None\"
-#        end
-#    " 2>&1)
-    processed_output=$(echo "$raw_json" | jq -r "
-    .[] |
-    select($jq_filter) |
-    \"NAME: \\(.Name) STATUS: \\(.Status) NETWORKS: \\(.Networks)\"
-" 2>&1)
+    processed_output=$(echo "$raw_json" | jq -r --arg ip_regex "$IP_REGEX" "
+        .[] |
+        select($jq_filter) |
+        .Name as \$name |
+        .Status as \$status |
+        (.Networks[\"pub_net\"]? // [])[0] as \$ip |
+        if \$ip and (\$ip | test(\$ip_regex)) then
+            \"\(\$name):\(\$status):\(\$ip)\"
+        else
+            \"\(\$name):\(\$status):None\"
+        end
+    " 2>&1)
 
     local jq_exit_code=$?
 
     if [[ $jq_exit_code -ne 0 ]]; then
         echo "ERROR: Failed to process JSON with jq" >&2
-        echo "jq output: $processed_output" >&2
+        [ "$TS_DEBUG" = "true" ] && echo "DEBUG: jq output: $processed_output" >&2
         return 1
     fi
 
+    # Remove empty lines and check if we have output
+    processed_output=$(echo "$processed_output" | grep -v '^$')
+
     if [[ -z "$processed_output" ]]; then
-        echo "DEBUG: No VMs matched the filters" >&2
+        [ "$TS_DEBUG" = "true" ] && echo "DEBUG: No VMs matched the filters after formatting" >&2
         return 1
     fi
 
     [ "$TS_DEBUG" = "true" ] && echo "DEBUG: Processed output lines: $(echo "$processed_output" | wc -l)" >&2
-    [ "$TS_DEBUG" = "true" ] && echo "DEBUG: First few lines:" >&2
-    [ "$TS_DEBUG" = "true" ] && echo "$processed_output" | head -3 >&2
+    [ "$TS_DEBUG" = "true" ] && echo "DEBUG: Output:" >&2
+    [ "$TS_DEBUG" = "true" ] && echo "$processed_output" | while read line; do echo "  $line" >&2; done
 
     echo "$processed_output"
     return 0
