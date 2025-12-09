@@ -121,40 +121,39 @@ get_vms_info() {
         project_string="--all-projects"
     fi
 
-    # Convert VM names to filter string if provided
-    if [[ -n "$VMS" ]]; then
-        # Create regex pattern for multiple names
-        vm_name_pattern=$(echo "$VMS" | tr ' ' '|')
-    fi
+#    # Convert VM names to filter string if provided
+#    if [[ -n "$VMS" ]]; then
+#        # Create regex pattern for multiple names
+#        vm_name_pattern=$(echo "$VMS" | tr ' ' '|')
+#    fi
 
-    # Get VM list with name, status, and networks
+   # Get VM list in JSON format and process immediately
     if [[ -n "$VMS" ]]; then
-        # Filter by VM names
         [ "$TS_DEBUG" = "true" ] && echo -e "
     [DEBUG]:
-        Command: openstack server list $project_string --long -f value -c Name -c Status -c Networks -c Host 2>/dev/null | \
-            grep -E \"$vm_name_pattern\"
-    "
-        vm_list=$(openstack server list $project_string --long -f value -c Name -c Status -c Networks -c Host 2>/dev/null | \
-            grep -E "${vm_name_pattern}")
+        Command: openstack server list $project_string -f json 2>/dev/null | \
+            jq -r --arg pattern \"$vm_name_pattern\" '.[] | select(.Name|test(\$pattern)) | \"\\(.Name):\\(.Status):\\(.Networks)\"'"
+
+        raw_list=$(openstack server list $project_string -f json 2>/dev/null | \
+            jq -r --arg pattern "$vm_name_pattern" '.[] | select(.Name|test($pattern)) | "\(.Name):\(.Status):\(.Networks)"')
 
     elif [[ -n "$HYPERVISOR_NAME" ]]; then
-        # Filter by hypervisor only
         [ "$TS_DEBUG" = "true" ] && echo -e "
     [DEBUG]:
-        Command: openstack server list $project_string --long -f value -c Name -c Status -c Networks -c Host 2>/dev/null | \
-            grep \"$HYPERVISOR_NAME\"
-    "
-        vm_list=$(openstack server list $project_string --long -f value -c Name -c Status -c Networks -c Host 2>/dev/null | \
-            grep "$HYPERVISOR_NAME")
+        Command: openstack server list $project_string -f json 2>/dev/null | \
+            jq -r --arg hv \"$HYPERVISOR_NAME\" '.[] | select(.Host==\$hv) | \"\\(.Name):\\(.Status):\\(.Networks)\"'"
+
+        raw_list=$(openstack server list $project_string -f json 2>/dev/null | \
+            jq -r --arg hv "$HYPERVISOR_NAME" '.[] | select(.Host==$hv) | "\(.Name):\(.Status):\(.Networks)"')
 
     else
-        # Get all VMs (no filtering)
         [ "$TS_DEBUG" = "true" ] && echo -e "
     [DEBUG]:
-        Command: openstack server list $project_string --long -f value -c Name -c Status -c Networks -c Host 2>/dev/null
-    "
-        vm_list=$(openstack server list $project_string --long -f value -c Name -c Status -c Networks -c Host 2>/dev/null)
+        Command: openstack server list $project_string -f json 2>/dev/null | \
+            jq -r '.[] | \"\\(.Name):\\(.Status):\\(.Networks)\"'"
+
+        raw_list=$(openstack server list $project_string -f json 2>/dev/null | \
+            jq -r '.[] | "\(.Name):\(.Status):\(.Networks)"')
     fi
 
     [ "$TS_DEBUG" = "true" ] && echo -e "

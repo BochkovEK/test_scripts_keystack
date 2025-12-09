@@ -2,6 +2,7 @@
 
 # Script to execute commands on VMs via SSH
 # Supports execution on all VMs of a hypervisor or specific VMs by IP/name
+# return string like vms_name:status:ip(pub_net)
 
 # Color definitions
 green=$(tput setaf 2)
