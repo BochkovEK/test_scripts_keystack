@@ -109,7 +109,7 @@ parse_arguments() {
                 fi
                 RAM="$2"
                 TYPE_TEST="ram"
-                echo "RAM stress with $RAM GB"
+                echo "RAM stress with $RAM"
                 shift 2
                 ;;
             -units)
