@@ -130,7 +130,7 @@ get_nodes_list() {
         exit 1
     elif echo "$nodes_result" | grep -q "ERROR"; then
         echo -e "${yellow}Node names could not be determined.${normal}"
-        echo -e "${yellow}Try: bash $utils_dir/$get_nodes_list_script -nt all${normal}"
+        echo -e "${yellow}Try: bash $script_dir/$utils_dir/$get_nodes_list_script -nt all${normal}"
         echo -e "${red}Node names could not be determined - ERROR!${normal}"
         exit 1
     else
@@ -171,7 +171,7 @@ wait_for_ssh_connection () {
 
   local hv_pair
 
-  hv_pair=$(bash "$utils_dir/$get_nodes_list_script" -nn HOST_NAME)
+  hv_pair=$(bash "$script_dir/$utils_dir/$get_nodes_list_script" -nn HOST_NAME)
   if [ -n "$hv_pair" ]; then
       local node_name="${hv_pair%%:*}"
       local node_ip="${hv_pair#*:}"
