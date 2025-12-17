@@ -33,6 +33,7 @@ VMs = {
         network_name                        = "<network_name>" # default "pub_net"
         boot_volume_size                    = <size> # in GB; default 5 GB
         boot_volume_delete_on_termination   = "true\false" # default "true"
+        # additional disks (boot_index [not required]: 1,...,N; boot_index: 0 default bootable disk)
         disks                               = [
           {
             boot_index = <boot_index>

@@ -120,7 +120,7 @@ get_nodes_list() {
 
     local nodes_result=""
 
-    nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
+    nodes_result=$(bash "$script_dir/$utils_dir/$get_nodes_list_script" "$@")
 
 #    [ "$TS_DEBUG" = true ] && echo -e "
 #    [DEBUG] nodes_result: $nodes_result"
