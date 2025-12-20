@@ -13,6 +13,7 @@ blue=$(tput setaf 6)
 
 # Script paths
 script_dir=$(dirname "$0")
+script_name=$(basename "$0")
 utils_dir="$script_dir/utils"
 get_nodes_list_script="get_nodes_list.sh"
 get_ssh_user_script="get_ssh_user.sh"
