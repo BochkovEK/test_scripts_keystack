@@ -43,7 +43,7 @@ external_scripts=(
 [[ -z $GET_CONFIG_PATH ]] && GET_CONFIG_PATH=false
 [[ -z $SSL_CHECK ]] && SSL_CHECK=false
 [[ -z $CONTAINER_ENGINE ]] && CONTAINER_ENGINE=$default_container_engine
-[[ -z $VIRTUAL_ENV ]] && VIRTUAL_ENV="$script_dir"
+[[ -z $STAND_DIR_ENV ]] && STAND_DIR_ENV="$script_dir"
 
 # Function to display help information
 show_help() {
@@ -145,16 +145,16 @@ define_parameters() {
 add_debug_logging() {
     echo "Adding debug logging to Consul configuration..."
 
-    if [ ! -f "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME" ]; then
+    if [ ! -f "$STAND_DIR_ENV/$test_node_conf_dir/$CONF_NAME" ]; then
         echo -e "${yellow}Configuration file not found locally, pulling first...${normal}"
         pull_conf
     fi
 
     # Add debug setting for Consul (пример для ha-config.ini)
-    if grep -q "\[log\]" "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME"; then
-        sed -i 's/\[log\]/\[log\]\nlevel = DEBUG/' "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME"
+    if grep -q "\[log\]" "$STAND_DIR_ENV/$test_node_conf_dir/$CONF_NAME"; then
+        sed -i 's/\[log\]/\[log\]\nlevel = DEBUG/' "$STAND_DIR_ENV/$test_node_conf_dir/$CONF_NAME"
     else
-        echo -e "\n[log]\nlevel = DEBUG" >> "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME"
+        echo -e "\n[log]\nlevel = DEBUG" >> "$STAND_DIR_ENV/$test_node_conf_dir/$CONF_NAME"
     fi
 
     echo -e "${green}Debug logging enabled in local configuration${normal}"
@@ -280,7 +280,7 @@ pull_conf() {
     echo "Pulling $CONF_NAME from controller node..."
 
     # Create directory if needed
-    [ ! -d "$VIRTUAL_ENV/$test_node_conf_dir" ] && mkdir -p "$VIRTUAL_ENV/$test_node_conf_dir"
+    [ ! -d "$STAND_DIR_ENV/$test_node_conf_dir" ] && mkdir -p "$STAND_DIR_ENV/$test_node_conf_dir"
 
     [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG]: nodes: $NODES"
 
@@ -305,7 +305,7 @@ pull_conf() {
     echo "Copying $service_name configuration from $node_name:$conf_dir/$CONF_NAME"
 
     # Use temporary file to avoid partial writes
-    local temp_file="$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}.tmp"
+    local temp_file="$STAND_DIR_ENV/$test_node_conf_dir/${CONF_NAME}.tmp"
 
     if ! ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 "$SSH_USER@$node_ip" \
         "sudo cat $conf_dir/$CONF_NAME" > "$temp_file" 2>/dev/null; then
@@ -319,17 +319,17 @@ pull_conf() {
     fi
 
     # Move temp file to final location
-    mv "$temp_file" "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}"
+    mv "$temp_file" "$STAND_DIR_ENV/$test_node_conf_dir/${CONF_NAME}"
 
     # Check if file is not empty
-    if [ ! -s "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}" ]; then
+    if [ ! -s "$STAND_DIR_ENV/$test_node_conf_dir/${CONF_NAME}" ]; then
         echo -e "${red}Error: Configuration file is empty${normal}" >&2
         return 1
     fi
 
     # Create backup if doesn't exist
-    if [ ! -f "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}_backup" ]; then
-        cp "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}" "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}_backup"
+    if [ ! -f "$STAND_DIR_ENV/$test_node_conf_dir/${CONF_NAME}_backup" ]; then
+        cp "$STAND_DIR_ENV/$test_node_conf_dir/${CONF_NAME}" "$STAND_DIR_ENV/$test_node_conf_dir/${CONF_NAME}_backup"
         echo -e "${green}Backup created: ${CONF_NAME}_backup${normal}"
     fi
 
@@ -337,7 +337,7 @@ pull_conf() {
 
     echo -e "
 To edit the configuration:
-  vi $VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME
+  vi $STAND_DIR_ENV/$test_node_conf_dir/$CONF_NAME
 
 To apply the configuration:
   bash $script_dir/$script_name -push
@@ -349,8 +349,8 @@ To apply the configuration:
 push_conf() {
     echo "Pushing $CONF_NAME to controller nodes..."
 
-    if [ ! -f "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME" ]; then
-        echo -e "${red}Configuration file not found: $VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME${normal}"
+    if [ ! -f "$STAND_DIR_ENV/$test_node_conf_dir/$CONF_NAME" ]; then
+        echo -e "${red}Configuration file not found: $STAND_DIR_ENV/$test_node_conf_dir/$CONF_NAME${normal}"
         exit 1
     fi
 
@@ -366,7 +366,7 @@ push_conf() {
             sed -E "
                 s/\"bind_address\"[[:space:]]*:[[:space:]]*\"[0-9.]+[0-9]+\"/\"bind_address\": \"$node_ip\"/g
                 s/consul_host[[:space:]]*=[[:space:]]*[0-9.]+[0-9]+/consul_host = $node_ip/g
-            " "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME" > "$temp_file"
+            " "$STAND_DIR_ENV/$test_node_conf_dir/$CONF_NAME" > "$temp_file"
 
             scp -o StrictHostKeyChecking=no "$temp_file" "$SSH_USER@$node_ip:/tmp/$CONF_NAME"
             ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
@@ -386,13 +386,13 @@ push_conf() {
 check_bmc_suffix() {
     pull_conf
 
-    if [ ! -f "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME" ]; then
+    if [ ! -f "$STAND_DIR_ENV/$test_node_conf_dir/$CONF_NAME" ]; then
         echo -e "${red}Configuration file not found${normal}"
         exit 1
     fi
 
     local suffix_string_raw
-    suffix_string_raw=$(grep 'suffix' "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME")
+    suffix_string_raw=$(grep 'suffix' "$STAND_DIR_ENV/$test_node_conf_dir/$CONF_NAME")
 
     if [ "$LEGACY_CONF" = true ]; then
         local suffix_string_raw_2="${suffix_string_raw//\"/}"

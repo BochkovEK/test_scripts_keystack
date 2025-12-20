@@ -72,3 +72,8 @@
 --retry-delay         Задержка между попытками в секундах	--retry-delay 15
 ```
 </details>
+
+### Пример команд
+```bash
+python ~/test_scripts_keystack/openstack-sdk/migration_tester.py --hypervisors cdm-bl-pca10,cdm-bl-pca11,cdm-bl-pca12 --max-parallel 5 --full-circle 1
+```

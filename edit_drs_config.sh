@@ -42,7 +42,7 @@ external_scripts=(
 [[ -z $PULL ]] && PULL=false
 [[ -z $CONF_NAME ]] && CONF_NAME="$conf_name"
 [[ -z $CONTAINER_ENGINE ]] && CONTAINER_ENGINE=$default_container_engine
-[[ -z $VIRTUAL_ENV ]] && VIRTUAL_ENV="$script_dir"
+[[ -z $STAND_DIR_ENV ]] && STAND_DIR_ENV="$script_dir"
 
 # Function to display help information
 show_help() {
@@ -234,7 +234,7 @@ pull_conf() {
     echo "Pulling $CONF_NAME from controller node..."
 
     # Create directory if needed
-    [ ! -d "$VIRTUAL_ENV/$test_node_conf_dir" ] && mkdir -p "$VIRTUAL_ENV/$test_node_conf_dir"
+    [ ! -d "$STAND_DIR_ENV/$test_node_conf_dir" ] && mkdir -p "$STAND_DIR_ENV/$test_node_conf_dir"
 
     [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG]: nodes: $NODES"
 
@@ -259,7 +259,7 @@ pull_conf() {
     echo "Copying $service_name configuration from $node_name:$conf_dir/$CONF_NAME"
 
     # Use temporary file to avoid partial writes
-    local temp_file="$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}.tmp"
+    local temp_file="$STAND_DIR_ENV/$test_node_conf_dir/${CONF_NAME}.tmp"
 
     if ! ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 "$SSH_USER@$node_ip" \
         "sudo cat $conf_dir/$CONF_NAME" > "$temp_file" 2>/dev/null; then
@@ -273,17 +273,17 @@ pull_conf() {
     fi
 
     # Move temp file to final location
-    mv "$temp_file" "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}"
+    mv "$temp_file" "$STAND_DIR_ENV/$test_node_conf_dir/${CONF_NAME}"
 
     # Check if file is not empty
-    if [ ! -s "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}" ]; then
+    if [ ! -s "$STAND_DIR_ENV/$test_node_conf_dir/${CONF_NAME}" ]; then
         echo -e "${red}Error: Configuration file is empty${normal}" >&2
         return 1
     fi
 
     # Create backup if doesn't exist
-    if [ ! -f "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}_backup" ]; then
-        cp "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}" "$VIRTUAL_ENV/$test_node_conf_dir/${CONF_NAME}_backup"
+    if [ ! -f "$STAND_DIR_ENV/$test_node_conf_dir/${CONF_NAME}_backup" ]; then
+        cp "$STAND_DIR_ENV/$test_node_conf_dir/${CONF_NAME}" "$STAND_DIR_ENV/$test_node_conf_dir/${CONF_NAME}_backup"
         echo -e "${green}Backup created: ${CONF_NAME}_backup${normal}"
     fi
 
@@ -291,7 +291,7 @@ pull_conf() {
 
     echo -e "
 To edit the configuration:
-  vi $VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME
+  vi $STAND_DIR_ENV/$test_node_conf_dir/$CONF_NAME
 
 To apply the configuration:
   bash $script_dir/$script_name -push
@@ -304,8 +304,8 @@ push_conf() {
     local nodes="$1"
     echo "Pushing $CONF_NAME to controller nodes..."
 
-    if [ ! -f "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME" ]; then
-        echo -e "${red}Configuration file not found: $VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME${normal}"
+    if [ ! -f "$STAND_DIR_ENV/$test_node_conf_dir/$CONF_NAME" ]; then
+        echo -e "${red}Configuration file not found: $STAND_DIR_ENV/$test_node_conf_dir/$CONF_NAME${normal}"
         exit 1
     fi
 
@@ -320,7 +320,7 @@ push_conf() {
             local temp_file
             temp_file=$(mktemp)
 
-            cat "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME" > "$temp_file"
+            cat "$STAND_DIR_ENV/$test_node_conf_dir/$CONF_NAME" > "$temp_file"
 
             # Copy file to remote node
             scp -o StrictHostKeyChecking=no "$temp_file" "$SSH_USER@$node_ip:/tmp/$CONF_NAME"
@@ -343,13 +343,13 @@ push_conf() {
 add_debug_logging() {
     echo "Adding debug logging to DRS configuration..."
 
-    if [ ! -f "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME" ]; then
+    if [ ! -f "$STAND_DIR_ENV/$test_node_conf_dir/$CONF_NAME" ]; then
         echo -e "${yellow}Configuration file not found locally, pulling first...${normal}"
         pull_conf
     fi
 
     # Add debug setting
-    sed -i 's/\[DEFAULT\]/\[DEFAULT\]\ndebug = true/' "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME"
+    sed -i 's/\[DEFAULT\]/\[DEFAULT\]\ndebug = true/' "$STAND_DIR_ENV/$test_node_conf_dir/$CONF_NAME"
     echo -e "${green}Debug logging enabled in local configuration${normal}"
 }
 
@@ -357,13 +357,13 @@ add_debug_logging() {
 add_debug_logging() {
     echo "Adding debug logging to DRS configuration..."
 
-    if [ ! -f "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME" ]; then
+    if [ ! -f "$STAND_DIR_ENV/$test_node_conf_dir/$CONF_NAME" ]; then
         echo -e "${yellow}Configuration file not found locally, pulling first...${normal}"
         pull_conf
     fi
 
     # Add debug setting
-    sed -i 's/\[DEFAULT\]/\[DEFAULT\]\ndebug = true/' "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME"
+    sed -i 's/\[DEFAULT\]/\[DEFAULT\]\ndebug = true/' "$STAND_DIR_ENV/$test_node_conf_dir/$CONF_NAME"
     echo -e "${green}Debug logging enabled in local configuration${normal}"
 }
 
@@ -376,21 +376,21 @@ add_prometheus_alerting() {
         return 1
     fi
 
-    if [ ! -f "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME" ]; then
+    if [ ! -f "$STAND_DIR_ENV/$test_node_conf_dir/$CONF_NAME" ]; then
         echo -e "${yellow}Configuration file not found locally, pulling first...${normal}"
         pull_conf
     fi
 
     # Check if Prometheus settings already exist
     local prom_pass_exists
-    prom_pass_exists=$(grep 'prometheus_alert_manager_password' "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME")
+    prom_pass_exists=$(grep 'prometheus_alert_manager_password' "$STAND_DIR_ENV/$test_node_conf_dir/$CONF_NAME")
 
     if [ -z "$prom_pass_exists" ]; then
         # Add Prometheus alerting settings
         sed -i "
             s/\[alerting\]/\[alerting\]\nenable_prometheus_alert_manager_auth = true\nprometheus_alert_manager_user = admin\nprometheus_alert_manager_password = $PROMETHEUS_PASS/
             s/enable_alerting = false/enable_alerting = true/
-        " "$VIRTUAL_ENV/$test_node_conf_dir/$CONF_NAME"
+        " "$STAND_DIR_ENV/$test_node_conf_dir/$CONF_NAME"
 
         echo -e "${green}Prometheus alerting enabled in local configuration${normal}"
     else
