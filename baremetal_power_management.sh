@@ -171,7 +171,7 @@ wait_for_ssh_connection () {
 
   local hv_pair
 
-  hv_pair=$(bash "$script_dir/$utils_dir/$get_nodes_list_script" -nn HOST_NAME)
+  hv_pair=$(bash "$script_dir/$utils_dir/$get_nodes_list_script" -nn $HOST_NAME)
   if [ -n "$hv_pair" ]; then
       local node_name="${hv_pair%%:*}"
       local node_ip="${hv_pair#*:}"
