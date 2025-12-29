@@ -200,7 +200,7 @@ wait_for_ssh_connection () {
 
   ### Proceed with SSH commands if available ###
   echo "Executing commands via SSH..."
-  ssh $SSH_USER@$HOST_NAME "ls -la"
+  ssh $SSH_USER@$node_ip "ls -la"
 }
 
 start_command () {
