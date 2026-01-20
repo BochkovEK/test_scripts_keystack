@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 
-#project='demo'
-#user_domain='itkey'
-#domain=$user_domain
+read -r -p "Domain name [itkey]: " domain
+domain=${domain:-itkey}
+
+read -r -p "Projcet name [demo]: " project
+project=${project:-demo}
+
+user_domain="$domain"
 
 declare -A group_role_map
 group_role_map=(
@@ -18,14 +22,6 @@ function run() {
         (( DEBUG )) && printf 'Running: %s\n' "$*" >&2
         (( DRY_RUN )) || "$@"
 }
-
-read -r -p "Projcet name [demo]: " project
-project=${project:-demo}
-
-read -r -p "Domain name [itkey]: " domain
-domain=${domain:-itkey}
-
-user_domain="$domain"
 
 declare -A group_id_map
 while mapfile -t -n 2 ary && (( ${#ary[@]} )); do
