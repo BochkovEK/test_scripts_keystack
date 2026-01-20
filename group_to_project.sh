@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env bashр
 
 project='demo'
 user_domain='itkey'
