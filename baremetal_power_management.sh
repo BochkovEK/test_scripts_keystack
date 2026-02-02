@@ -160,8 +160,8 @@ check_module_exist() {
 
 # Function to execute Python Redfish management script
 python_script_execute() {
-    echo "Send command $1 to $BMC_HOST_NAME"
-    python3 $script_dir/redfish_manager.py $BMC_HOST_NAME $1 $IPMI_USER $IPMI_PASSWORD
+    echo "Send command $1 to $BMC_IP"
+    python3 $script_dir/redfish_manager.py $BMC_IP $1 $IPMI_USER $IPMI_PASSWORD
 }
 
 # Function to wait for SSH connection to become available
