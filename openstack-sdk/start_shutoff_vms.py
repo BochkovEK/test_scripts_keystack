@@ -87,7 +87,7 @@ class VMStarter:
             shutoff_vms = self.find_shutoff_vms()
 
             if not shutoff_vms:
-                logging.info("No SHUTOFF VMs found on host")
+                logging.info("⚠️ No SHUTOFF VMs found on host")
                 return True
 
             logging.info(f"Found {len(shutoff_vms)} SHUTOFF VMs on {self.config['host']}")
