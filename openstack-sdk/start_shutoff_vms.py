@@ -292,7 +292,7 @@ class VMStarter:
 
     def dry_run_report(self, vms: List):
         """Show dry-run report."""
-        logging.info("\n" + "=" * 60)
+        logging.info("=" * 60)
         logging.info("DRY RUN - No VMs will be started")
         logging.info("=" * 60)
 
@@ -314,7 +314,7 @@ class VMStarter:
         logging.info("VM START RESULTS")
         logging.info("=" * 60)
 
-        logging.info(f"\nTotal VMs: {len(results)}")
+        logging.info(f"Total VMs: {len(results)}")
         logging.info(f"Successful: {len(successful)}")
         logging.info(f"Failed: {len(failed)}")
 
