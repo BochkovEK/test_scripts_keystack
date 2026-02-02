@@ -451,7 +451,7 @@ class EvacuationTester:
                 server_host = getattr(server, 'hypervisor_hostname', None)
 
                 # Check if VM is on the failed host
-                if server_host != self.config['failed_host']:
+                if not self._is_vm_on_host(server, self.config['failed_host']):
                     continue
 
                 # Apply project filter if specified
@@ -524,6 +524,42 @@ class EvacuationTester:
             logging.error(f"Error checking host state for {host_name}: {e}")
             return None
 
+    @staticmethod
+    def _is_vm_on_host(server, host_name):
+        """
+        Check if VM is on specified host with flexible matching.
+
+        Args:
+            server: Server object
+            host_name: Host name to check against
+
+        Returns:
+            bool: True if VM is on the host
+        """
+        server_host = getattr(server, 'hypervisor_hostname', None)
+
+        if not server_host:
+            return False
+
+        # Exact match
+        if server_host == host_name:
+            return True
+
+        # Case-insensitive match
+        if server_host.lower() == host_name.lower():
+            return True
+
+        # Hostname vs FQDN match (compute-01 vs compute-01.domain.local)
+        if ('.' in server_host and
+                server_host.split('.')[0] == host_name):
+            return True
+
+        # Check host aggregates or other metadata
+        if hasattr(server, 'host') and server.host == host_name:
+            return True
+
+        return False
+
     def _get_hypervisor_by_name(self, host_name: str):
         """
         Get hypervisor by host name (not UUID).
@@ -572,6 +608,32 @@ class EvacuationTester:
         except Exception as e:
             logging.error(f"Error getting services for {host_name}: {e}")
             return []
+
+    def _debug_host_matching(self):
+        """
+        Debug method to help identify host matching issues.
+        """
+        logging.debug("Debugging host matching...")
+
+        all_servers = list(self.conn.compute.servers(all_projects=True, limit=50))
+
+        unique_hosts = set()
+        for server in all_servers:
+            host = getattr(server, 'hypervisor_hostname', None)
+            if host:
+                unique_hosts.add(host)
+
+        logging.debug(f"Found {len(unique_hosts)} unique hypervisor hosts in VMs:")
+        for host in sorted(unique_hosts):
+            logging.debug(f"  - {host}")
+
+        target = self.config['failed_host']
+        similar = [h for h in unique_hosts
+                   if target.lower() in h.lower() or h.lower() in target.lower()]
+
+        if similar:
+            logging.info(f"Similar host names found: {similar}")
+            logging.info(f"Try using one of these names instead of '{target}'")
 
     @staticmethod
     def _is_vm_evacuatable(server) -> bool:
@@ -856,8 +918,12 @@ class EvacuationTester:
 
     def generate_report(self):
         """
-        Generate comprehensive evacuation test report.
+        Generate report only if we have actual data.
         """
+        if self.stats.total_vms_found == 0:
+            logging.warning("No VMs found, skipping report generation")
+            return
+
         try:
             logging.info("Generating evacuation test report...")
 
@@ -1060,6 +1126,17 @@ class EvacuationTester:
                 logging.info("DRY-RUN: Would force host into down state")
 
             self.failed_host_vms = self.discover_vms_on_failed_host()
+
+            if not self.failed_host_vms:
+                logging.warning(f"⚠️ No VMs found on host {self.config['failed_host']}")
+                logging.warning("Possible reasons:")
+                logging.warning("  1. Host name mismatch (FQDN vs short name)")
+                logging.warning("  2. No VMs actually on this host")
+                logging.warning("  3. Hypervisor hostname not set for VMs")
+
+                self._debug_host_matching()
+
+                return False
 
             logging.info("✅ DRY-RUN: All checks passed")
             logging.info(f"📊 Summary: {len(self.failed_host_vms)} VMs would be evacuated")
