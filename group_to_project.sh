@@ -6,7 +6,7 @@ domain=${domain:-itkey}
 read -r -p "Projcet name [demo]: " project
 project=${project:-demo}
 
-user_domain="$domain"
+#user_domain="$domain"
 
 declare -A group_role_map
 group_role_map=(
@@ -35,8 +35,8 @@ for group in "${!group_role_map[@]}"; do
         run openstack role add --project "$project" --group "${group_id_map[$group]}" --user-domain "$user_domain" "${group_role_map[$group]}"
 done
 
-run openstack role add --domain "$domain" --group "${group_id_map[pes_admin]}" --user-domain "$user_domain" --inherited admin
-run openstack role add --system all --group "${group_id_map[pes_admin]}" --user-domain "$user_domain" admin
+run openstack role add --domain "$domain" --group "${group_id_map[pes_admin]}" --inherited admin
+run openstack role add --system all --group "${group_id_map[pes_admin]}" admin
 
-run openstack role add --domain "$domain" --group "${group_id_map[pes_reader]}" --user-domain "$user_domain" --inherited reader
-run openstack role add --system all --group "${group_id_map[pes_reader]}" --user-domain "$user_domain" reader
+run openstack role add --domain "$domain" --group "${group_id_map[pes_reader]}" --inherited reader
+run openstack role add --system all --group "${group_id_map[pes_reader]}" reader

@@ -110,27 +110,67 @@ do
    shift
 done
 
+## Function to get nodes list using external script
+#get_nodes_list() {
+##    [ "$TS_DEBUG" = true ] && echo -e "
+##    [DEBUG]:
+##        Count parameters: $#
+##        Parameters: $*
+##    "
+#
+#    local nodes_result=""
+#
+#    nodes_result=$(bash "$script_dir/$utils_dir/$get_nodes_list_script" "$@")
+#
+##    [ "$TS_DEBUG" = true ] && echo -e "
+##    [DEBUG] nodes_result: $nodes_result"
+#
+#    if [ -z "$nodes_result" ]; then
+#        echo -e "${red}Failed to determine node list - ERROR${normal}"
+#        exit 1
+#    elif echo "$nodes_result" | grep -q "ERROR"; then
+#        echo -e "${yellow}Node names could not be determined.${normal}"
+#        echo -e "${yellow}Try: bash $script_dir/$utils_dir/$get_nodes_list_script -nt all${normal}"
+#        echo -e "${red}Node names could not be determined - ERROR!${normal}"
+#        exit 1
+#    else
+#        echo "$nodes_result"
+#    fi
+#}
+
 # Function to get nodes list using external script
 get_nodes_list() {
-#    [ "$TS_DEBUG" = true ] && echo -e "
-#    [DEBUG]:
-#        Count parameters: $#
-#        Parameters: $*
-#    "
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG]:
+        Count parameters: $#
+        Parameters: $*"
 
     local nodes_result=""
 
-    nodes_result=$(bash "$script_dir/$utils_dir/$get_nodes_list_script" "$@")
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG]:
+      nodes_result=\$(bash \"$utils_dir/$get_nodes_list_script\" \"$*\")"
 
-#    [ "$TS_DEBUG" = true ] && echo -e "
-#    [DEBUG] nodes_result: $nodes_result"
+#    nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@")
 
+    if ! nodes_result=$(bash "$utils_dir/$get_nodes_list_script" "$@" 2>&1); then
+#        exit_code=$?
+        echo -e "${red}ERROR: Node list script failed${normal}" >&2
+        echo -e "${red}Output: $nodes_result${normal}" >&2
+        return 1
+    fi
+
+    [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] nodes_result: $nodes_result
+    "
+
+    # Check for errors in node list
     if [ -z "$nodes_result" ]; then
         echo -e "${red}Failed to determine node list - ERROR${normal}"
         exit 1
     elif echo "$nodes_result" | grep -q "ERROR"; then
         echo -e "${yellow}Node names could not be determined.${normal}"
-        echo -e "${yellow}Try: bash $script_dir/$utils_dir/$get_nodes_list_script -nt all${normal}"
+        echo -e "${yellow}Try: bash $utils_dir/$get_nodes_list_script -nt all${normal}"
         echo -e "${red}Node names could not be determined - ERROR!${normal}"
         exit 1
     else

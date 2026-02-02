@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# Auto-generated settings file
+# Source it later:  source ./settings
+
+export RELEASE=ks2025.3.1-sberlinux
+export LCM_IP=10.224.71.7
+export DOMAIN=fc1.hwlab.itkey.com
+export GITLAB_NAME=ks-lcm
+export VAULT_NAME=vault
+export NETBOX_NAME=netbox
+export NEXUS_NAME=nexus
+export NEXUS_FQDN=nexus.fc1.hwlab.itkey.com
+export INSTALL_DIR=/root/installer
+export BACKUP_HOME=/installer/backup
+export UPDATE_HOME=/installer/update
+export INSTALL_HOME=/installer
+export CFG_HOME=/installer/config
+export CA_HOME=/installer/data/ca
+export GITLAB_HOME=/installer/data/gitlab
+export GITLAB_RUNNER_HOME=/installer/data/gitlab-runner
+export NEXUS_HOME=/installer/data/nexus
+export VAULT_HOME=/installer/data/vault
+export NGINX_HOME=/installer/data/nginx
+export NETBOX_HOME=/installer/data/netbox
+export SSL_CERT_FILE=/installer/data/ca/cert/chain-ca.pem
+export CURL_CA_BUNDLE=/installer/data/ca/cert/chain-ca.pem
+
+export DOMAIN=fc1.hwlab.itkey.com
+
+export GITLAB_PASSWORD=d02jgDd0pWhR9gxPtzyRIY20uVd9iaRdoWBbeBQqjWc=
+
+export GITLAB_NAME="ks-lcm"
+
+export GITLAB_FQDN="ks-lcm.fc1.hwlab.itkey.com"
+
+export LDAP_USE="y"
+
+export LDAP_SERVER_PORT="636"
+
+export LDAP_SERVER_URI="ldaps-lab.slavchenkov-keystack.vm.lab.itkey.com"
+
+export LDAP_BIND_DN="CN=ldap_psi,OU=psi demo,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
+
+export LDAP_BIND_PASSWORD='0$V%r@P#h%I^A&z*f(G)n-k_a!H?'
+
+export LDAP_USER_SEARCH_BASEDN="DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
+
+export LDAP_GROUP_SEARCH_BASEDN="OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
+
+export LDAP_READER_GROUP_DN="CN=pes reader,OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
+
+export LDAP_AUDITOR_GROUP_DN="CN=pes security auditor,OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
+
+export LDAP_ADMIN_GROUP_DN="CN=pes admin,OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
+#export LDAP_OPERATOR_GROUP_DN="CN=preevostack_support_admin,OU=Keystack,OU=Applications,DC=slavchenkov-keystack,DC=vm,DC=lab,DC=itkey,DC=com"
