@@ -1,0 +1,11 @@
+# Проверить и запустить SHUTOFF ВМ
+python start_shutoff_vms.py --host compute-01
+
+# Только проверка (dry-run)
+python start_shutoff_vms.py --host compute-01 --dry-run
+
+# С ограничением по проекту
+python start_shutoff_vms.py --host compute-01 --project-id project-xyz
+
+# Параллельный запуск
+python start_shutoff_vms.py --host compute-01 --max-parallel 4
