@@ -4,7 +4,7 @@
 #  bash baremetal_power_management.sh ebochkov-ks-sber-comp-05 on
 
 
-utils_dir="$script_dir/utils"
+#utils_dir="$script_dir/utils"
 get_nodes_list_script="get_nodes_list.sh"
 edit_ha_config_script="edit_ha_config.sh"
 default_ssh_user="root"
@@ -24,6 +24,7 @@ required_modules=(
 )
 
 script_dir=$(dirname $0)
+utils_dir="$script_dir/utils"
 
 [[ -z $HOST_NAME ]] && HOST_NAME=""
 [[ -z $IPMI_IP ]] && IPMI_IP=""
@@ -221,7 +222,7 @@ wait_for_ssh_connection () {
 
   local hv_pair
 
-  hv_pair=$(bash "$script_dir/$utils_dir/$get_nodes_list_script" -nn $HOST_NAME)
+  hv_pair=$(bash "$utils_dir/$get_nodes_list_script" -nn $HOST_NAME)
   if [ -n "$hv_pair" ]; then
       local node_name="${hv_pair%%:*}"
       local node_ip="${hv_pair#*:}"
