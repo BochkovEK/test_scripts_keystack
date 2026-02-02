@@ -25,7 +25,7 @@ normal=$(tput sgr0)
 [[ -z $TS_UTILS_DEBUG ]] && TS_UTILS_DEBUG="false"
 [[ -z $TS_HOSTS_PATH ]] && TS_HOSTS_PATH="$default_hosts_path"
 [[ -z $RETURN_TYPE_NODE_NAME ]] && RETURN_TYPE_NODE_NAME=""
-[[ -n $RMI_SUFFIX ]] && RMI_SUFFIX=$default_rmi_suffix
+[[ -z $RMI_SUFFIX ]] && RMI_SUFFIX=$default_rmi_suffix
 
 # Parameter counter
 count=1
