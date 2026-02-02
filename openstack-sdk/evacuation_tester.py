@@ -454,7 +454,7 @@ class SimpleEvacuationTester:
 
             # Disable compute service
             self.conn.compute.disable_service(
-                self.config['failed_host'],
+                host=self.config['failed_host'],
                 binary='nova-compute',
                 disabled_reason='Evacuation testing'
             )
