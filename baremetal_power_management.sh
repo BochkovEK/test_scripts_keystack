@@ -293,6 +293,10 @@ start_python_power_management_script () {
       echo "bmc_suffix: $bmc_suffix"
 #      BMC_HOST_NAME=$HOST_NAME$bmc_suffix
 #      echo "BMC_HOST_NAME: $BMC_HOST_NAME"
+      [ "$TS_DEBUG" = true ] && echo -e "
+        [DEBUG]
+        command: \bmc_info=\$(bash "$utils_dir/$get_nodes_list_script" -suffix \"$bmc_suffix\" -nn \"$BMC_HOST_NAME\")
+        "
       bmc_info=$(bash "$utils_dir/$get_nodes_list_script" -suffix "$bmc_suffix" -nn "$BMC_HOST_NAME")
               [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] bmc_info from get_nodes_list: $bmc_info"
 
