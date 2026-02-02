@@ -1,3 +1,12 @@
+Миграция командами CLI
+source_host="";
+target_host="";
+# Migration all VMs from source_host to target_host
+for vm_id in $(openstack server list --all-project --host $source_host --status ACTIVE -c ID -f value); do
+    echo "Migration VM $vm_id to $target_host..."
+    openstack server migrate --live-migration --host $target_host $vm_id
+done
+
 О скрипте
 OpenStack Live Migration Test Script - инструмент для тестирования производительности live-миграции виртуальных машин между гипервизорами в OpenStack.
 
