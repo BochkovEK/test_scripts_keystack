@@ -295,7 +295,7 @@ start_python_power_management_script () {
 
       bmc_list=$(bash "$utils_dir/$get_nodes_list_script" -suffix "$bmc_suffix")
 
-      [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] bmc_list from get_nodes_list: $bmc_info"
+      [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] bmc_list from get_nodes_list: $bmc_list"
 
       for entry in $bmc_list; do
           if [[ "$entry" == "$HOST_NAME:"* ]]; then
