@@ -290,10 +290,10 @@ start_python_power_management_script () {
 
       [ "$TS_DEBUG" = true ] && echo -e "
         [DEBUG] Looking for BMC: $HOST_NAME
-        [DEBUG] Command: bmc_info=\$(bash \"$utils_dir/$get_nodes_list_script\" -suffix \"$bmc_suffix\")
+        [DEBUG] Command: bmc_info=\$(bash \"$utils_dir/$get_nodes_list_script\" -rmi \"$bmc_suffix\")
       "
 
-      bmc_list=$(bash "$utils_dir/$get_nodes_list_script" -suffix "$bmc_suffix")
+      bmc_list=$(bash "$utils_dir/$get_nodes_list_script" -rmi "$bmc_suffix")
 
       [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] bmc_list from get_nodes_list: $bmc_list"
 
