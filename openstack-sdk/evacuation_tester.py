@@ -310,20 +310,30 @@ class EvacuationTester:
         try:
             logging.info("Validating OpenStack environment...")
 
-            # Check if failed host exists
+            # Check if failed host exists (by name)
             try:
-                failed_host = self.conn.compute.get_hypervisor(self.config['failed_host'])
-                logging.info(f"Found failed host: {failed_host.name}")
+                failed_host = self._get_hypervisor_by_name(self.config['failed_host'])
+                logging.info(
+                    f"Found failed host: {failed_host.name} (State: {failed_host.state}, Status: {failed_host.status})")
 
                 # Store original state if we need to restore
                 self.original_host_state = {
                     'state': failed_host.state,
-                    'status': failed_host.status
+                    'status': failed_host.status,
+                    'host': failed_host.name
                 }
 
             except Exception as e:
                 logging.error(f"Failed host {self.config['failed_host']} not found: {e}")
                 raise
+
+            # Check compute service status for failed host
+            failed_host_services = self._get_hypervisor_services(self.config['failed_host'])
+            if not failed_host_services:
+                logging.warning(f"No compute services found for host {self.config['failed_host']}")
+            else:
+                for service in failed_host_services:
+                    logging.info(f"Service state: {service.host}:{service.binary} = {service.state}/{service.status}")
 
             # Check available hosts for evacuation
             hypervisors = list(self.conn.compute.hypervisors())
@@ -340,21 +350,29 @@ class EvacuationTester:
                     if self.config['exclude_hosts'] and hyp.name in self.config['exclude_hosts']:
                         continue
 
-                    available_hosts.append(hyp.name)
+                    # Check if host has active compute service
+                    host_services = self._get_hypervisor_services(hyp.name)
+                    active_services = [s for s in host_services if s.state == 'up' and s.status == 'enabled']
+
+                    if active_services:
+                        available_hosts.append(hyp.name)
+                        logging.debug(f"Available target: {hyp.name} (State: {hyp.state}, Status: {hyp.status})")
+                    else:
+                        logging.debug(f"Skipping {hyp.name}: no active compute service")
 
             if not available_hosts:
-                raise Exception("No available target hosts found for evacuation")
+                raise Exception("No available target hosts with active compute services found for evacuation")
 
-            logging.info(f"Available target hosts: {available_hosts}")
+            logging.info(f"Available target hosts ({len(available_hosts)}): {', '.join(available_hosts)}")
 
-            # Check compute services
+            # Check overall compute service status
             services = list(self.conn.compute.services())
             active_services = [s for s in services if s.state == 'up' and s.status == 'enabled']
 
             if not active_services:
-                raise Exception("No active compute services found")
+                raise Exception("No active compute services found in the cloud")
 
-            logging.info(f"Active compute services: {len(active_services)}")
+            logging.info(f"Active compute services in cloud: {len(active_services)}")
             logging.info("Environment validation completed successfully")
 
         except Exception as e:
@@ -374,7 +392,13 @@ class EvacuationTester:
         try:
             logging.info(f"Forcing host {self.config['failed_host']} into down state...")
 
+            # Get compute service for the host
+            services = self._get_hypervisor_services(self.config['failed_host'])
+            if not services:
+                raise Exception(f"No compute service found for host {self.config['failed_host']}")
+
             # Disable compute service
+            service = services[0]  # Usually there's one compute service per host
             self.conn.compute.disable_service(
                 self.config['failed_host'],
                 'nova-compute',
@@ -456,6 +480,98 @@ class EvacuationTester:
         except Exception as e:
             logging.error(f"VM discovery failed: {e}")
             raise
+
+    def check_host_state(self, host_name: str) -> dict:
+        """
+        Check current state of a host.
+
+        Args:
+            host_name: Host name to check
+
+        Returns:
+            dict: Host state information
+        """
+        try:
+            # Get hypervisor info
+            hyp = self._get_hypervisor_by_name(host_name)
+
+            # Get service info
+            services = self._get_hypervisor_services(host_name)
+            service_state = None
+            service_status = None
+
+            if services:
+                service = services[0]
+                service_state = service.state
+                service_status = service.status
+
+            return {
+                'hypervisor': {
+                    'name': hyp.name,
+                    'state': hyp.state,
+                    'status': hyp.status,
+                    'vcpus': hyp.vcpus,
+                    'memory_mb': hyp.memory_mb,
+                    'local_gb': hyp.local_gb
+                },
+                'service': {
+                    'state': service_state,
+                    'status': service_status
+                } if services else None
+            }
+
+        except Exception as e:
+            logging.error(f"Error checking host state for {host_name}: {e}")
+            return None
+
+    def _get_hypervisor_by_name(self, host_name: str):
+        """
+        Get hypervisor by host name (not UUID).
+
+        Args:
+            host_name: Host name to search for
+
+        Returns:
+            Hypervisor object
+
+        Raises:
+            Exception: If hypervisor not found
+        """
+        try:
+            hypervisors = list(self.conn.compute.hypervisors())
+            for hyp in hypervisors:
+                if hyp.name == host_name:
+                    return hyp
+
+            raise Exception(f"Hypervisor '{host_name}' not found")
+
+        except Exception as e:
+            logging.error(f"Error finding hypervisor {host_name}: {e}")
+            raise
+
+    def _get_hypervisor_services(self, host_name: str):
+        """
+        Get compute services for a specific host.
+
+        Args:
+            host_name: Host name to get services for
+
+        Returns:
+            List of service objects
+        """
+        try:
+            services = list(self.conn.compute.services())
+            host_services = []
+
+            for service in services:
+                if service.host == host_name and service.binary == 'nova-compute':
+                    host_services.append(service)
+
+            return host_services
+
+        except Exception as e:
+            logging.error(f"Error getting services for {host_name}: {e}")
+            return []
 
     @staticmethod
     def _is_vm_evacuatable(server) -> bool:
