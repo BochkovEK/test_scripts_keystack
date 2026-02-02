@@ -179,15 +179,25 @@ get_nodes_list() {
 }
 
 check_connection_to_ipmi () {
-  echo "Check connection to $BMC_HOST_NAME"
-  if ping -c 2 $BMC_HOST_NAME &> /dev/null; then
-    printf "%40s\n" "${green}There is a connection with $BMC_HOST_NAME - success${normal}"
-  else
-    printf "%40s\n" "${red}No connection with $BMC_HOST_NAME - error!${normal}"
-    exit 1
-  fi
-}
+    echo "Check connection to BMC IP: $BMC_IP"
 
+    if [ -z "$BMC_IP" ]; then
+        printf "%40s\n" "${red}BMC IP is empty - error!${normal}"
+        exit 1
+    fi
+
+    if ! [[ $BMC_IP =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        printf "%40s\n" "${red}Invalid BMC IP format: $BMC_IP${normal}"
+        exit 1
+    fi
+
+    if ping -c 2 $BMC_IP &> /dev/null; then
+        printf "%40s\n" "${green}There is a connection with BMC ($BMC_IP) - success${normal}"
+    else
+        printf "%40s\n" "${red}No connection with BMC ($BMC_IP) - error!${normal}"
+        exit 1
+    fi
+}
 check_module_exist () {
   for module in "${required_modules[@]}"; do
     module_exists=$(pip list| grep $module)
@@ -280,8 +290,22 @@ start_python_power_management_script () {
 #      echo "bmc_suffix: $bmc_suffix"
 #      bmc_suffix=$BMC_SUFFIX
       echo "bmc_suffix: $bmc_suffix"
-      BMC_HOST_NAME=$HOST_NAME$bmc_suffix
+#      BMC_HOST_NAME=$HOST_NAME$bmc_suffix
+#      echo "BMC_HOST_NAME: $BMC_HOST_NAME"
+      bmc_info=$(bash "$utils_dir/$get_nodes_list_script" -suffix "$bmc_suffix" -nn "$BMC_HOST_NAME")
+              [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] bmc_info from get_nodes_list: $bmc_info"
+
+      if [[ -z "$bmc_info" ]] || [[ "$bmc_info" == *"unresolved"* ]]; then
+          echo -e "${red}ERROR: Failed to resolve BMC IP for $bmc_hostname${normal}"
+          echo -e "${yellow}Check if $bmc_hostname exists in /etc/hosts${normal}"
+          exit 1
+      fi
+
+      BMC_IP="${bmc_info#*:}"
+      BMC_HOST_NAME="$bmc_hostname"
+
       echo "BMC_HOST_NAME: $BMC_HOST_NAME"
+      echo "BMC_IP: $BMC_IP"
     fi
     check_connection_to_ipmi
     case $POWER_STATE in
