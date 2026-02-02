@@ -438,7 +438,14 @@ class SimpleEvacuationTester:
             )
 
             # Wait for state change
-            time.sleep(5)
+            time.sleep(10)
+
+            # Verify host state changed
+            host = self.get_host_by_name(self.config['failed_host'])
+            if host:
+                logging.info(f"Host state updated: {host.state}/{host.status}")
+            else:
+                logging.warning("Could not verify host state")
 
             logging.info("Host disabled for evacuation testing")
 
@@ -487,14 +494,18 @@ class SimpleEvacuationTester:
         try:
             logging.info(f"Evacuating: {vm.name}")
 
-            # Prepare parameters
             params = {
                 'server': vm.id,
-                'force': self.config['force_host_down'],
             }
 
+            # Add on_shared_storage if specified
             if self.config['on_shared_storage']:
                 params['on_shared_storage'] = True
+
+            # Optional: Specify target host if only one target
+            if len(self.target_hosts) == 1:
+                params['host'] = self.target_hosts[0]
+                logging.info(f"Specifying target host: {self.target_hosts[0]}")
 
             # Execute evacuation
             self.conn.compute.evacuate_server(**params)
@@ -508,7 +519,7 @@ class SimpleEvacuationTester:
             result['target_host'] = target_host
 
             if success:
-                logging.info(f"✓ {vm.name} evacuated to {target_host} "
+                logging.info(f"✅ {vm.name} evacuated to {target_host} "
                              f"({result['evacuation_time']:.1f}s)")
             else:
                 result['error_message'] = "Evacuation failed"
@@ -776,14 +787,27 @@ class SimpleEvacuationTester:
         if not self.validate_target_hosts():
             return False
 
-        # Check if force-host-down is needed
-        if (self.failed_host_info.state == 'up' and
-                not self.config['force_host_down']):
-            logging.error("Host is UP. Use --force-host-down to simulate failure")
-            return False
+        # Check if host is actually down or force is needed
+        if self.failed_host_info.state == 'up':
+            if not self.config['force_host_down']:
+                logging.error("ERROR: Host is UP but --force-host-down not specified")
+                logging.error("Evacuation requires host to be DOWN")
+                logging.error("Either ensure host is actually down or use --force-host-down")
+                return False
+            else:
+                logging.warning("Host is UP, using --force-host-down to simulate failure")
 
         # Force host down if requested
         self.force_host_down()
+
+        # Verify host is now down before proceeding
+        if self.config['force_host_down']:
+            time.sleep(5)  # Wait for state propagation
+            host = self.get_host_by_name(self.config['failed_host'])
+            if host and host.state == 'up':
+                logging.error("Host is still UP after force-host-down attempt")
+                logging.error("Evacuation may fail. Waiting 30 seconds...")
+                time.sleep(30)
 
         # Execute evacuation
         results = self.execute_evacuation()
