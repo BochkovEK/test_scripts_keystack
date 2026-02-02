@@ -298,17 +298,11 @@ class EvacuationTester:
     def validate_environment(self):
         """
         Validate OpenStack environment for evacuation testing.
-
-        Checks:
-        - Failed host exists
-        - Target hosts availability
-        - Compute service status
-
-        Raises:
-            Exception: If validation fails
         """
         try:
             logging.info("Validating OpenStack environment...")
+
+            failed_host = None
 
             # Check if failed host exists (by name)
             try:
@@ -373,6 +367,15 @@ class EvacuationTester:
                 raise Exception("No active compute services found in the cloud")
 
             logging.info(f"Active compute services in cloud: {len(active_services)}")
+
+            if not self.config['dry_run'] and not self.config['force_host_down']:
+                if failed_host.state == 'up':
+                    raise Exception(
+                        f"Cannot evacuate from host that is UP. "
+                        f"Host {failed_host.name} state is '{failed_host.state}'. "
+                        f"Host must be down or use --force-host-down to simulate failure."
+                    )
+
             logging.info("Environment validation completed successfully")
 
         except Exception as e:
@@ -1125,6 +1128,16 @@ class EvacuationTester:
             if self.config['force_host_down']:
                 logging.info("DRY-RUN: Would force host into down state")
 
+            host_info = self.check_host_state(self.config['failed_host'])
+
+            if host_info['hypervisor']['state'] == 'up':
+                logging.warning(f"⚠️ Host {self.config['failed_host']} is UP (not down)")
+                logging.warning("   Evacuation requires host to be DOWN or disabled")
+                logging.warning("   Use --force-host-down to simulate failure")
+
+            if host_info.get('service', {}).get('status') == 'enabled':
+                logging.warning(f"⚠️ Compute service on {self.config['failed_host']} is ENABLED")
+
             self.failed_host_vms = self.discover_vms_on_failed_host()
 
             if not self.failed_host_vms:
@@ -1202,6 +1215,8 @@ class EvacuationTester:
                 self.stats.total_duration = self.stats.end_time - self.stats.start_time
             self.generate_report()
             raise
+
+
 
 
 def main():
