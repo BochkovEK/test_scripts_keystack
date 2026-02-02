@@ -180,22 +180,22 @@ get_nodes_list() {
 }
 
 check_connection_to_ipmi () {
-    echo "Check connection to BMC IP: $BMC_IP"
+    echo "Check connection to BMC IP: $IPMI_IP"
 
-    if [ -z "$BMC_IP" ]; then
+    if [ -z "$IPMI_IP" ]; then
         printf "%40s\n" "${red}BMC IP is empty - error!${normal}"
         exit 1
     fi
 
-    if ! [[ $BMC_IP =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-        printf "%40s\n" "${red}Invalid BMC IP format: $BMC_IP${normal}"
+    if ! [[ $IPMI_IP =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        printf "%40s\n" "${red}Invalid IPMI IP format: $IPMI_IP${normal}"
         exit 1
     fi
 
-    if ping -c 2 $BMC_IP &> /dev/null; then
-        printf "%40s\n" "${green}There is a connection with BMC ($BMC_IP) - success${normal}"
+    if ping -c 2 $IPMI_IP &> /dev/null; then
+        printf "%40s\n" "${green}There is a connection with BMC ($IPMI_IP) - success${normal}"
     else
-        printf "%40s\n" "${red}No connection with BMC ($BMC_IP) - error!${normal}"
+        printf "%40s\n" "${red}No connection with BMC ($IPMI_IP) - error!${normal}"
         exit 1
     fi
 }
@@ -302,11 +302,11 @@ start_python_power_management_script () {
           exit 1
       fi
 
-      BMC_IP="${bmc_info#*:}"
+      IPMI_IP="${bmc_info#*:}"
       BMC_HOST_NAME="$bmc_hostname"
 
       echo "BMC_HOST_NAME: $BMC_HOST_NAME"
-      echo "BMC_IP: $BMC_IP"
+      echo "IPMI_IP: $IPMI_IP"
     fi
     check_connection_to_ipmi
     case $POWER_STATE in
