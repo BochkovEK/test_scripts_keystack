@@ -377,7 +377,7 @@ check_container_status() {
             -e 's/\(.*hours.*\)/\o033[92m\1\o033[39m/' \
             -e 's/\(.*months.*\)/\o033[92m\1\o033[39m/' \
             -e 's/\(.*starting.*\)/\o033[33m\1\o033[39m/' \
-            -e 's/\(.*Stopping.*\)/\o033[33m\1\o033[39m/' \
+            -e 's/\(.*Stopping.*\)/\o033[31m\1\o033[39m/' \
             -e 's/\(.*restarting.*\)/\o033[31m\1\o033[39m/'
 }
 
