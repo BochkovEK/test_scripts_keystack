@@ -273,9 +273,7 @@ start_command () {
 
 start_python_power_management_script () {
     echo "Check power state parameter: $POWER_STATE..."
-    if [ -n "$IPMI_IP" ]; then
-      BMC_HOST_NAME=$IPMI_IP
-    else
+    if [ -z "$IPMI_IP" ]; then
       if [ -z $BMC_SUFFIX ]; then
         echo "Check bmc suffix by script $EDIT_HA_REGION_CONFIG..."
         [ "$TS_DEBUG" = true ] && echo -e "
@@ -290,45 +288,21 @@ start_python_power_management_script () {
 
       echo "bmc_suffix: $bmc_suffix"
 
-      # Формируем полное имя BMC хоста
-      bmc_hostname="${HOST_NAME}${bmc_suffix}"
-
       [ "$TS_DEBUG" = true ] && echo -e "
-        [DEBUG] Looking for BMC: $bmc_hostname
-        [DEBUG] Command: bmc_info=\$(bash \"$utils_dir/$get_nodes_list_script\" -suffix \"$bmc_suffix\" -nn \"$bmc_hostname\")
+        [DEBUG] Looking for BMC: $HOST_NAME
+        [DEBUG] Command: bmc_info=\$(bash \"$utils_dir/$get_nodes_list_script\" -suffix \"$bmc_suffix\")
       "
 
-      # Ищем конкретный BMC хост по имени
-      bmc_info=$(bash "$utils_dir/$get_nodes_list_script" -suffix "$bmc_suffix" -nn "$bmc_hostname")
+      bmc_list=$(bash "$utils_dir/$get_nodes_list_script" -suffix "$bmc_suffix")
 
-      [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] bmc_info from get_nodes_list: $bmc_info"
+      [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] bmc_list from get_nodes_list: $bmc_info"
 
-      # Альтернативный подход: получить все BMC и найти нужный
-      if [[ -z "$bmc_info" ]] || [[ "$bmc_info" == *"unresolved"* ]]; then
-          echo -e "${yellow}Warning: Direct lookup failed, trying alternative method...${normal}"
-
-          # Получаем все BMC хосты
-          all_bmc_info=$(bash "$utils_dir/$get_nodes_list_script" -suffix "$bmc_suffix" -nt rmi)
-          [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] All BMC hosts: $all_bmc_info"
-
-          # Ищем нужный хост в списке
-          bmc_info=""
-          for entry in $all_bmc_info; do
-              if [[ "$entry" == "$bmc_hostname:"* ]]; then
-                  bmc_info="$entry"
-                  break
-              fi
-          done
-
-          if [ -z "$bmc_info" ]; then
-              echo -e "${red}ERROR: Failed to find BMC host '$bmc_hostname' in /etc/hosts${normal}"
-              echo -e "${yellow}Available BMC hosts:${normal}"
-              for entry in $all_bmc_info; do
-                  echo "  $entry"
-              done
-              exit 1
+      for entry in $bmc_list; do
+          if [[ "$entry" == "$HOST_NAME:"* ]]; then
+              bmc_info="$entry"
+              break
           fi
-      fi
+      done
 
       # Извлекаем IP
       IPMI_IP="${bmc_info#*:}"  # Все после двоеточия
@@ -336,10 +310,6 @@ start_python_power_management_script () {
       # Очищаем от возможных пробелов
       IPMI_IP=$(echo "$IPMI_IP" | tr -d '[:space:]')
 
-      # Устанавливаем переменные
-      BMC_HOST_NAME="$bmc_hostname"
-
-      echo "BMC_HOST_NAME: $BMC_HOST_NAME"
       echo "IPMI_IP: $IPMI_IP"
     fi
 
