@@ -364,21 +364,20 @@ check_container_status() {
     ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
         "sudo $CONTAINER_ENGINE ps -a $format_option" 2>/dev/null | \
         sed --unbuffered \
-            -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
-            -e 's/\(.*Exited.*\)/\o033[31m\1\o033[39m/' \
-            -e 's/\(.*second.*\)/\o033[33m\1\o033[39m/' \
-            -e 's/\(.*a minute.*\)/\o033[33m\1\o033[39m/' \
-            -e 's/\(.*Less than.*\)/\o033[33m\1\o033[39m/' \
-            -e 's/\(.*(healthy).*\)/\o033[92m\1\o033[39m/' \
-            -e 's/\(.*days.*\)/\o033[92m\1\o033[39m/' \
-            -e 's/\(.*About an hour.*\)/\o033[92m\1\o033[39m/' \
-            -e 's/\(.*minutes.*\)/\o033[92m\1\o033[39m/' \
-            -e 's/\(.*weeks.*\)/\o033[92m\1\o033[39m/' \
-            -e 's/\(.*hours.*\)/\o033[92m\1\o033[39m/' \
-            -e 's/\(.*months.*\)/\o033[92m\1\o033[39m/' \
-            -e 's/\(.*starting.*\)/\o033[33m\1\o033[39m/' \
-            -e 's/\(.*Stopping.*\)/\o033[31m\1\o033[39m/' \
-            -e 's/\(.*restarting.*\)/\o033[31m\1\o033[39m/'
+          -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
+          -e 's/\(.*Exited.*\)/\o033[31m\1\o033[39m/' \
+          -e 's/\(.*Stopping.*\)/\o033[33m\1\o033[39m/' \
+          -e 's/\(.*restarting.*\)/\o033[33m\1\o033[39m/' \
+          -e 's/\(.*second.*\)/\o033[33m\1\o033[39m/' \
+          -e 's/\(.*a minute.*\)/\o033[33m\1\o033[39m/' \
+          -e 's/\(.*Less than.*\)/\o033[33m\1\o033[39m/' \
+          -e 's/\(.*(healthy).*\)/\o033[92m\1\o033[39m/' \
+          -e 's/\(.*days.*\)/\o033[92m\1\o033[39m/' \
+          -e 's/\(.*About an hour.*\)/\o033[92m\1\o033[39m/' \
+          -e 's/\(.*minutes.*\)/\o033[92m\1\o033[39m/' \
+          -e 's/\(.*weeks.*\)/\o033[92m\1\o033[39m/' \
+          -e 's/\(.*hours.*\)/\o033[92m\1\o033[39m/' \
+          -e 's/\(.*months.*\)/\o033[92m\1\o033[39m/'
 }
 
 # Function to load external scripts
