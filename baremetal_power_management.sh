@@ -274,26 +274,14 @@ start_command () {
 start_python_power_management_script () {
     echo "Check power state parameter: $POWER_STATE..."
     if [ -z "$IPMI_IP" ]; then
-      if [ -z $BMC_SUFFIX ]; then
-        echo "Check bmc suffix by script $EDIT_HA_REGION_CONFIG..."
-        [ "$TS_DEBUG" = true ] && echo -e "
-        [DEBUG]
-        command: \"bash $script_dir/$EDIT_HA_REGION_CONFIG -suffix -u $SSH_USER| tail -n1
-        "
-        bmc_suffix=$(bash $script_dir/$EDIT_HA_REGION_CONFIG -suffix -u $SSH_USER| tail -n1)
-        [[ -z $bmc_suffix ]] && { printf "%40s\n" "${red}variable bmc_suffix id empty${normal}"; exit 1; }
-      else
-        bmc_suffix=$BMC_SUFFIX
-      fi
-
-      echo "bmc_suffix: $bmc_suffix"
+      # Determining the ipmi suffix from VMHA configs is not required as the information is taken from the $STAND_NAME/hosts file
 
       [ "$TS_DEBUG" = true ] && echo -e "
         [DEBUG] Looking for BMC: $HOST_NAME
-        [DEBUG] Command: bmc_info=\$(bash \"$utils_dir/$get_nodes_list_script\" -rmi \"$bmc_suffix\")
+        [DEBUG] Command: bmc_info=\$(bash \"$utils_dir/$get_nodes_list_script\" -nt -rmi \"$bmc_suffix\")
       "
 
-      bmc_list=$(bash "$utils_dir/$get_nodes_list_script" -rmi "$bmc_suffix")
+      bmc_list=$(bash "$utils_dir/$get_nodes_list_script" -rmi)
 
       [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] bmc_list from get_nodes_list: $bmc_list"
 
