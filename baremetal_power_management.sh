@@ -284,34 +284,71 @@ start_python_power_management_script () {
         "
         bmc_suffix=$(bash $script_dir/$EDIT_HA_REGION_CONFIG -suffix -u $SSH_USER| tail -n1)
         [[ -z $bmc_suffix ]] && { printf "%40s\n" "${red}variable bmc_suffix id empty${normal}"; exit 1; }
-#        bmc_suffix=$BMC_SUFFIX
       else
         bmc_suffix=$BMC_SUFFIX
       fi
-#      echo "bmc_suffix: $bmc_suffix"
-#      bmc_suffix=$BMC_SUFFIX
-      echo "bmc_suffix: $bmc_suffix"
-#      BMC_HOST_NAME=$HOST_NAME$bmc_suffix
-#      echo "BMC_HOST_NAME: $BMC_HOST_NAME"
-      [ "$TS_DEBUG" = true ] && echo -e "
-        [DEBUG]
-        command: \bmc_info=\$(bash "$utils_dir/$get_nodes_list_script" -suffix \"$bmc_suffix\" -nn \"$BMC_HOST_NAME\")
-        "
-      bmc_info=$(bash "$utils_dir/$get_nodes_list_script" -suffix "$bmc_suffix" -nn "$BMC_HOST_NAME")
-              [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] bmc_info from get_nodes_list: $bmc_info"
 
+      echo "bmc_suffix: $bmc_suffix"
+
+      # Формируем полное имя BMC хоста
+      bmc_hostname="${HOST_NAME}${bmc_suffix}"
+
+      [ "$TS_DEBUG" = true ] && echo -e "
+        [DEBUG] Looking for BMC: $bmc_hostname
+        [DEBUG] Command: bmc_info=\$(bash \"$utils_dir/$get_nodes_list_script\" -suffix \"$bmc_suffix\" -nn \"$bmc_hostname\")
+      "
+
+      # Ищем конкретный BMC хост по имени
+      bmc_info=$(bash "$utils_dir/$get_nodes_list_script" -suffix "$bmc_suffix" -nn "$bmc_hostname")
+
+      [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] bmc_info from get_nodes_list: $bmc_info"
+
+      # Альтернативный подход: получить все BMC и найти нужный
       if [[ -z "$bmc_info" ]] || [[ "$bmc_info" == *"unresolved"* ]]; then
-          echo -e "${red}ERROR: Failed to resolve BMC IP for $bmc_hostname${normal}"
-          echo -e "${yellow}Check if $bmc_hostname exists in /etc/hosts${normal}"
-          exit 1
+          echo -e "${yellow}Warning: Direct lookup failed, trying alternative method...${normal}"
+
+          # Получаем все BMC хосты
+          all_bmc_info=$(bash "$utils_dir/$get_nodes_list_script" -suffix "$bmc_suffix" -nt rmi)
+          [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] All BMC hosts: $all_bmc_info"
+
+          # Ищем нужный хост в списке
+          bmc_info=""
+          for entry in $all_bmc_info; do
+              if [[ "$entry" == "$bmc_hostname:"* ]]; then
+                  bmc_info="$entry"
+                  break
+              fi
+          done
+
+          if [ -z "$bmc_info" ]; then
+              echo -e "${red}ERROR: Failed to find BMC host '$bmc_hostname' in /etc/hosts${normal}"
+              echo -e "${yellow}Available BMC hosts:${normal}"
+              for entry in $all_bmc_info; do
+                  echo "  $entry"
+              done
+              exit 1
+          fi
       fi
 
-      IPMI_IP="${bmc_info#*:}"
+      # Извлекаем IP
+      IPMI_IP="${bmc_info#*:}"  # Все после двоеточия
+
+      # Очищаем от возможных пробелов
+      IPMI_IP=$(echo "$IPMI_IP" | tr -d '[:space:]')
+
+      # Устанавливаем переменные
       BMC_HOST_NAME="$bmc_hostname"
 
       echo "BMC_HOST_NAME: $BMC_HOST_NAME"
       echo "IPMI_IP: $IPMI_IP"
     fi
+
+    # Проверяем, что IPMI_IP установлен
+    if [ -z "$IPMI_IP" ]; then
+        echo -e "${red}ERROR: IPMI_IP is empty!${normal}"
+        exit 1
+    fi
+
     check_connection_to_ipmi
     case $POWER_STATE in
       check)
@@ -343,6 +380,79 @@ start_python_power_management_script () {
         ;;
     esac
 }
+
+#start_python_power_management_script () {
+#    echo "Check power state parameter: $POWER_STATE..."
+#    if [ -n "$IPMI_IP" ]; then
+#      BMC_HOST_NAME=$IPMI_IP
+#    else
+#      if [ -z $BMC_SUFFIX ]; then
+#        echo "Check bmc suffix by script $EDIT_HA_REGION_CONFIG..."
+#        [ "$TS_DEBUG" = true ] && echo -e "
+#        [DEBUG]
+#        command: \"bash $script_dir/$EDIT_HA_REGION_CONFIG -suffix -u $SSH_USER| tail -n1
+#        "
+#        bmc_suffix=$(bash $script_dir/$EDIT_HA_REGION_CONFIG -suffix -u $SSH_USER| tail -n1)
+#        [[ -z $bmc_suffix ]] && { printf "%40s\n" "${red}variable bmc_suffix id empty${normal}"; exit 1; }
+##        bmc_suffix=$BMC_SUFFIX
+#      else
+#        bmc_suffix=$BMC_SUFFIX
+#      fi
+##      echo "bmc_suffix: $bmc_suffix"
+##      bmc_suffix=$BMC_SUFFIX
+#      echo "bmc_suffix: $bmc_suffix"
+##      BMC_HOST_NAME=$HOST_NAME$bmc_suffix
+##      echo "BMC_HOST_NAME: $BMC_HOST_NAME"
+#      [ "$TS_DEBUG" = true ] && echo -e "
+#        [DEBUG]
+#        command: \bmc_info=\$(bash "$utils_dir/$get_nodes_list_script" -suffix \"$bmc_suffix\" -nn \"$BMC_HOST_NAME\")
+#        "
+#      bmc_info=$(bash "$utils_dir/$get_nodes_list_script" -suffix "$bmc_suffix" -nn "$BMC_HOST_NAME")
+#              [ "$TS_DEBUG" = true ] && echo -e "[DEBUG] bmc_info from get_nodes_list: $bmc_info"
+#
+#      if [[ -z "$bmc_info" ]] || [[ "$bmc_info" == *"unresolved"* ]]; then
+#          echo -e "${red}ERROR: Failed to resolve BMC IP for $bmc_hostname${normal}"
+#          echo -e "${yellow}Check if $bmc_hostname exists in /etc/hosts${normal}"
+#          exit 1
+#      fi
+#
+#      IPMI_IP="${bmc_info#*:}"
+#      BMC_HOST_NAME="$bmc_hostname"
+#
+#      echo "BMC_HOST_NAME: $BMC_HOST_NAME"
+#      echo "IPMI_IP: $IPMI_IP"
+#    fi
+#    check_connection_to_ipmi
+#    case $POWER_STATE in
+#      check)
+#        python_script_execute check
+#        ;;
+#      on|start)
+#        start_command
+#        ;;
+#      off)
+#        actual_power_state=$(python_script_execute check| tail -n1)
+#        echo "Actual ipmi satus: $actual_power_state"
+#        if [ "$actual_power_state" = "PowerState.ON" ]; then
+#          python_script_execute off
+#        fi
+#        ;;
+#      restart)
+#        python_script_execute restart
+#        ;;
+#      shutdown)
+#        actual_power_state=$(python_script_execute check| tail -n1)
+#        echo "Actual ipmi satus: $actual_power_state"
+#        if [ "$actual_power_state" = "PowerState.ON" ]; then
+#          python_script_execute shutdown
+#        fi
+#        ;;
+#      *)
+#        echo "Unknown power state parameter: $POWER_STATE"
+#        return 1
+#        ;;
+#    esac
+#}
 
 # Get ssh user
 get_ssh_user () {
