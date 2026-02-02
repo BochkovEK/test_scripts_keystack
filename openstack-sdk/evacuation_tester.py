@@ -460,20 +460,18 @@ class SimpleEvacuationTester:
             if not services:
                 raise ValueError(f"No nova-compute service found on host {self.config['failed_host']}")
 
-            # Обычно их один, берём первый
-            service = services[0]
+            service = services[0] # We expect one nova-compute service per hypervisor
 
-            # Отключаем
-            self.conn.compute.disable_service(
-                service,  # ← вот этот обязательный аргумент!
-                disabled_reason='Evacuation testing'
-            )
-            # Disable compute service
+            # Status → disabled
             self.conn.compute.disable_service(
                 service,
-                # host=self.config['failed_host'],
-                # binary='nova-compute',
-                disabled_reason='Evacuation testing'
+                disabled_reason='Evacuation testing (forced down)'
+            )
+
+            # State → down
+            self.conn.compute.update_service_forced_down(
+                service,
+                forced=True  # True = down, False = up
             )
 
             # Wait for state change
