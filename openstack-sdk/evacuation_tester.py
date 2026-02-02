@@ -512,13 +512,13 @@ class SimpleEvacuationTester:
                              f"({result['evacuation_time']:.1f}s)")
             else:
                 result['error_message'] = "Evacuation failed"
-                logging.error(f"✗ {vm.name} evacuation failed")
+                logging.error(f"❌ {vm.name} evacuation failed")
 
         except Exception as e:
             result['end_time'] = time.time()
             result['evacuation_time'] = result['end_time'] - result['start_time']
             result['error_message'] = str(e)
-            logging.error(f"✗ {vm.name} error: {e}")
+            logging.error(f"❌ {vm.name} error: {e}")
 
         return result
 
@@ -738,17 +738,17 @@ class SimpleEvacuationTester:
 
         # Validate host
         if not self.validate_host():
-            logging.error("✗ Host validation failed")
+            logging.error("❌ Host validation failed")
             return False
 
         # Validate VMs
         if not self.validate_vms():
-            logging.error("✗ VM validation failed")
+            logging.error("❌ VM validation failed")
             return False
 
         # Validate target hosts
         if not self.validate_target_hosts():
-            logging.error("✗ Target hosts validation failed")
+            logging.error("❌ Target hosts validation failed")
             return False
 
         logging.info("\n✅ DRY-RUN: All checks passed")
@@ -804,7 +804,7 @@ class SimpleEvacuationTester:
             logging.info("✅ Evacuation completed")
             return True
         else:
-            logging.error("✗ Evacuation failed - no VMs were evacuated")
+            logging.error("❌ Evacuation failed - no VMs were evacuated")
             return False
 
     def run(self) -> bool:
