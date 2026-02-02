@@ -197,7 +197,8 @@ nodes_list_by_type() {
 
         rmi)
             nodes_to_find="$RMI_SUFFIX"
-            [ "$TS_UTILS_DEBUG" = true ] && echo -e "Looking for network nodes"
+            [ "$TS_UTILS_DEBUG" = true ] && echo -e "Looking for ipmi nodes"
+            echo $nodes_to_find
             parse_hosts
             ;;
 
