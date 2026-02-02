@@ -15,6 +15,7 @@ import time
 import json
 from typing import List, Optional, Dict, Any
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -399,6 +400,17 @@ class SimpleEvacuationTester:
             for host in self.target_hosts:
                 logging.info(f"  - {host}")
 
+        if self.config['max_parallel'] > 1:
+            if len(self.target_hosts) == 0:
+                logging.error("Parallel evacuation requires target hosts")
+                return False
+
+            if self.config['max_parallel'] > len(self.target_hosts) * 3:
+                logging.warning(
+                    f"High parallelism ({self.config['max_parallel']}) "
+                    f"for {len(self.target_hosts)} target hosts"
+                )
+
         return True
 
     def show_recommendations(self):
@@ -409,13 +421,23 @@ class SimpleEvacuationTester:
         logging.info("\n💡 RECOMMENDATIONS:")
 
         if self.failed_host_info.state == 'up':
-            logging.info("  - Host is UP, use: --force-host-down")
+            logging.info("  - Host is UP, MUST use: --force-host-down")
 
         logging.info(f"  - {len(self.vms)} VMs will be evacuated")
         logging.info(f"  - Target hosts available: {len(self.target_hosts)}")
 
-        if self.config['max_parallel'] > len(self.vms):
-            logging.info(f"  - Consider reducing --max-parallel to {len(self.vms)}")
+        # Parallelism recommendations
+        if self.config['max_parallel'] <= 1:
+            logging.info("  - Using sequential evacuation (max_parallel <= 1)")
+        else:
+            logging.info(f"  - Using parallel evacuation (max_parallel={self.config['max_parallel']})")
+
+            # Warn if too high
+            if self.config['max_parallel'] > len(self.target_hosts) * 3:
+                logging.warning("  ⚠️  High parallelism may overwhelm target hosts")
+
+            if self.config['max_parallel'] > len(self.vms):
+                logging.info(f"  - Note: Only {len(self.vms)} VMs, parallelism limited")
 
     def force_host_down(self):
         """
@@ -572,18 +594,28 @@ class SimpleEvacuationTester:
 
     def execute_evacuation(self) -> List[Dict[str, Any]]:
         """
-        Execute evacuation of all VMs.
+        Execute evacuation of all VMs with parallel support.
 
         Returns:
             List of evacuation results
         """
         logging.info(f"Starting evacuation of {len(self.vms)} VMs")
 
+        if self.config['max_parallel'] <= 1:
+            # Sequential mode (backward compatible)
+            return self._execute_sequential()
+        else:
+            # Parallel mode
+            return self._execute_parallel(self.config['max_parallel'])
+
+    def _execute_sequential(self) -> List[Dict[str, Any]]:
+        """Execute evacuations sequentially."""
+        logging.info("Using sequential evacuation")
+
         results = []
         successful = 0
         failed = 0
 
-        # Simple sequential execution (can be parallelized if needed)
         for vm in self.vms:
             result = self.evacuate_single_vm(vm)
             results.append(result)
@@ -592,6 +624,68 @@ class SimpleEvacuationTester:
                 successful += 1
             else:
                 failed += 1
+
+        logging.info(f"Evacuation completed: {successful} succeeded, {failed} failed")
+        return results
+
+    def _execute_parallel(self, max_workers: int) -> List[Dict[str, Any]]:
+        """
+        Execute evacuations in parallel using ThreadPoolExecutor.
+
+        Args:
+            max_workers: Maximum parallel threads
+
+        Returns:
+            List of evacuation results
+        """
+        logging.info(f"Using parallel evacuation with {max_workers} workers")
+
+        results = []
+        completed = 0
+        successful = 0
+        failed = 0
+        total_vms = len(self.vms)
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # Submit all evacuation tasks
+            future_to_vm = {
+                executor.submit(self.evacuate_single_vm, vm): vm
+                for vm in self.vms
+            }
+
+            # Process results as they complete
+            for future in as_completed(future_to_vm):
+                completed += 1
+                vm = future_to_vm[future]
+
+                try:
+                    result = future.result()
+                    results.append(result)
+
+                    if result['success']:
+                        successful += 1
+                        status = "✓"
+                    else:
+                        failed += 1
+                        status = "✗"
+
+                    # Log progress
+                    progress = (completed / total_vms) * 100
+                    logging.info(
+                        f"{status} {vm.name} "
+                        f"({completed}/{total_vms}, {progress:.1f}%) - "
+                        f"{successful} ✓, {failed} ✗"
+                    )
+
+                except Exception as e:
+                    failed += 1
+                    results.append({
+                        'vm_id': vm.id,
+                        'vm_name': vm.name,
+                        'success': False,
+                        'error_message': str(e)
+                    })
+                    logging.error(f"✗ {vm.name}: Exception - {e}")
 
         logging.info(f"Evacuation completed: {successful} succeeded, {failed} failed")
         return results
@@ -620,7 +714,9 @@ class SimpleEvacuationTester:
                 'total_vms': len(results),
                 'successful': len(successful),
                 'failed': len(failed),
-                'success_rate': (len(successful) / len(results)) * 100 if results else 0
+                'success_rate': (len(successful) / len(results)) * 100 if results else 0,
+                'parallel_mode': 'sequential' if self.config['max_parallel'] <= 1
+                else f'parallel_{self.config["max_parallel"]}'
             },
             'configuration': {
                 'force_host_down': self.config['force_host_down'],
