@@ -470,11 +470,11 @@ class SimpleEvacuationTester:
                 disabled_reason='Evacuation testing (forced down)'
             )
 
-            # State → down
-            self.conn.compute.update_service_forced_down(
-                service,
-                forced=True  # True = down, False = up
-            )
+            # # State → down
+            # self.conn.compute.update_service_forced_down(
+            #     service,
+            #     forced=True  # True = down, False = up
+            # )
 
             # Wait for state change propagation
             logging.info("Waiting for service state change...")
