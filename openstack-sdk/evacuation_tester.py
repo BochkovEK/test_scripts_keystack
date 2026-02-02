@@ -536,22 +536,94 @@ class SimpleEvacuationTester:
             sys.exit(1)
 
     def restore_host(self):
-        """Restore host to original state."""
-        if not self.config['restore_after_test']:
+        """
+        Restore host to original state after evacuation testing.
+
+        This method enables all nova-compute services on the host and removes the forced_down flag.
+        It includes checks to avoid unnecessary API calls and to verify the result.
+
+        Note: This function does not raise critical exceptions by default to allow
+        the test script to continue even if restoration partially fails.
+        """
+        if not self.config.get('restore_after_test', False):
+            logging.info(f"Skipping restore for host {self.config['failed_host']}")
             return
 
         try:
-            logging.info(f"Restoring host {self.config['failed_host']}...")
+            logging.info(f"Restoring host {self.config['failed_host']} to enabled/up state...")
 
-            self.conn.compute.enable_service(
-                self.config['failed_host'],
-                'nova-compute'
-            )
+            # Find all nova-compute services on the host
+            services = list(self.conn.compute.services(
+                host=self.config['failed_host'],
+                binary='nova-compute'
+            ))
 
-            logging.info("Host restored")
+            if not services:
+                logging.warning(
+                    f"No nova-compute services found on host {self.config['failed_host']}. Nothing to restore.")
+                return
+
+            logging.info(f"Found {len(services)} nova-compute service(s)")
+
+            # Process each service
+            for service in services:
+                # Enable only if currently disabled (idempotent)
+                if service.status == 'disabled':
+                    self.conn.compute.enable_service(service)
+                    logging.info(f"Enabled service {service.id}")
+                else:
+                    logging.info(f"Service {service.id} already enabled, skipping enable")
+
+                # Remove forced_down flag (set to False)
+                if hasattr(service, 'forced_down') and service.forced_down:
+                    self.conn.compute.update_service_forced_down(
+                        service,
+                        forced=False
+                    )
+                    logging.info(f"Set forced_down=False for service {service.id}")
+                else:
+                    logging.info(f"Service {service.id} not forced down, skipping update")
+
+            # Give Nova time to propagate changes
+            logging.info("Waiting for service state restoration to propagate...")
+            time.sleep(10)
+
+            # Re-fetch services to verify current state
+            services = list(self.conn.compute.services(
+                host=self.config['failed_host'],
+                binary='nova-compute'
+            ))
+
+            if not services:
+                logging.warning("Services disappeared after restore attempt — check manually")
+                return
+
+            # Check that ALL services are enabled
+            if not all(s.status == 'enabled' for s in services):
+                logging.warning("Not all services are enabled after restore")
+                for s in services:
+                    if s.status != 'enabled':
+                        logging.warning(f"  - Service {s.id}: status={s.status}, state={s.state}")
+
+            # Check forced_down / state
+            forced_up_ok = all(not s.forced_down for s in services if hasattr(s, 'forced_down'))
+            if not forced_up_ok:
+                logging.warning("Some services still show forced_down=True — state may still be propagating")
+
+            # Check hypervisor status as additional validation
+            host = self.get_host_by_name(self.config['failed_host'])
+            if host:
+                logging.info(f"Hypervisor state after restore: {host.state} / status={host.status}")
+                if host.state == 'down':
+                    logging.warning("Hypervisor still shows 'down' — may take time to recover")
+
+            logging.info(f"✅ Host {self.config['failed_host']} restoration completed "
+                         f"({len(services)} service(s) processed)")
 
         except Exception as e:
-            logging.error(f"Failed to restore host: {e}")
+            logging.error(f"Failed to restore host {self.config['failed_host']}: {e}")
+            logging.error("Restoration failed — manual intervention may be required:")
+            logging.error(f"  openstack compute service set --enable {self.config['failed_host']} nova-compute")
 
     def evacuate_single_vm(self, vm) -> Dict[str, Any]:
         """
