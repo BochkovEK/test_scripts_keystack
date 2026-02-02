@@ -444,14 +444,16 @@ class SimpleEvacuationTester:
         Force host into down state.
 
         Raises:
-            Exception: If operation fails
+            Exception: If operation fails or host not properly disabled
         """
         if not self.config['force_host_down']:
+            logging.info(f"Using host {self.config['failed_host']} in current state")
             return
 
         try:
             logging.info(f"Forcing host {self.config['failed_host']} into down state...")
 
+            # Get compute service for the host
             services = list(self.conn.compute.services(
                 host=self.config['failed_host'],
                 binary='nova-compute'
@@ -460,7 +462,7 @@ class SimpleEvacuationTester:
             if not services:
                 raise ValueError(f"No nova-compute service found on host {self.config['failed_host']}")
 
-            service = services[0] # We expect one nova-compute service per hypervisor
+            service = services[0]  # We expect one nova-compute service per hypervisor
 
             # Status → disabled
             self.conn.compute.disable_service(
@@ -474,21 +476,60 @@ class SimpleEvacuationTester:
                 forced=True  # True = down, False = up
             )
 
-            # Wait for state change
-            time.sleep(10)
+            # Wait for state change propagation
+            logging.info("Waiting for service state change...")
+            time.sleep(15)
 
-            # Verify host state changed
+            # Verify service is now disabled
+            services = list(self.conn.compute.services(
+                host=self.config['failed_host'],
+                binary='nova-compute'
+            ))
+
+            if not services:
+                raise ValueError(f"Service disappeared after disable attempt")
+
+            service = services[0]
+            logging.info(f"Service state after disable: {service.state}/{service.status}")
+
+            # CRITICAL: Check if service is actually disabled
+            if service.status != 'disabled':
+                logging.error(f"❌ FAILED: Service not disabled. Current status: {service.status}")
+                logging.error("Possible reasons:")
+                logging.error("  1. Insufficient permissions")
+                logging.error("  2. OpenStack configuration issue")
+                logging.error("  3. Service auto-recovery")
+                logging.error("")
+                logging.error("Evacuation cannot proceed - host is not in down state")
+                logging.error("Manual intervention required:")
+                logging.error(f"  openstack compute service set --disable {self.config['failed_host']} nova-compute")
+                raise Exception(f"Service not disabled after force-host-down attempt. Status: {service.status}")
+
+            # Also check hypervisor state
             host = self.get_host_by_name(self.config['failed_host'])
             if host:
-                logging.info(f"Host state updated: {host.state}/{host.status}")
-            else:
-                logging.warning("Could not verify host state")
+                logging.info(f"Hypervisor state: {host.state}/{host.status}")
 
-            logging.info("Host disabled for evacuation testing")
+                # Warning if hypervisor still shows as up
+                if host.state == 'up':
+                    logging.warning(f"⚠️  Hypervisor state still shows 'up'")
+                    logging.warning("This may take time to update. Waiting additional 30 seconds...")
+                    time.sleep(30)
+
+                    # Re-check after additional wait
+                    host = self.get_host_by_name(self.config['failed_host'])
+                    if host and host.state == 'up':
+                        logging.warning(f"Hypervisor still shows 'up' after extended wait")
+                        logging.warning("Evacuation may fail if host is not properly down")
+
+            logging.info("✅ Host successfully disabled for evacuation testing")
 
         except Exception as e:
             logging.error(f"Failed to disable host: {e}")
-            raise
+            # Don't just raise - provide specific exit
+            logging.error("❌ CRITICAL: Cannot proceed with evacuation")
+            logging.error("Exiting with error code 1")
+            sys.exit(1)
 
     def restore_host(self):
         """Restore host to original state."""
@@ -908,17 +949,14 @@ class SimpleEvacuationTester:
             else:
                 logging.warning("Host is UP, using --force-host-down to simulate failure")
 
-        # Force host down if requested
-        self.force_host_down()
+        try:
+            self.force_host_down()
 
-        # Verify host is now down before proceeding
-        if self.config['force_host_down']:
-            time.sleep(5)  # Wait for state propagation
-            host = self.get_host_by_name(self.config['failed_host'])
-            if host and host.state == 'up':
-                logging.error("Host is still UP after force-host-down attempt")
-                logging.error("Evacuation may fail. Waiting 30 seconds...")
-                time.sleep(30)
+        except SystemExit:
+            raise
+        except Exception as e:
+            logging.error(f"Failed during host disable: {e}")
+            return False
 
         # Execute evacuation
         results = self.execute_evacuation()
