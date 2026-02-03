@@ -1,5 +1,5 @@
 # Запуск ВМ в состоянии шутоф на указанном гипере
-python ~/test_scripts_keystack/openstack-sdk/start_shutoff_vms.py --host cdm-bl-pca08
+python ~/test_scripts_keystack/openstack-sdk/light_migration.py --source_host cdm-bl-pca06 --target_host cdm-bl-pca06
 
 # Миграция CLI
 source_host=""; \
@@ -19,10 +19,7 @@ python ~/test_scripts_keystack/openstack-sdk/evacuation_tester.py \
     --target-hosts cdm-bl-pca06 \
     --max-parallel 5 \
     --force-host-down \
-    --restore-after-test \
-
-
-
+    --restore-after-test
 
 openstack compute service list
 
