@@ -1,0 +1,23 @@
+python ~/test_scripts_keystack/openstack-sdk/start_shutoff_vms.py --host cdm-bl-pca08
+
+# Миграция CLI
+source_host=""; \
+target_host=""; \
+# Migration all VMs from source_host to target_host
+for vm_id in $(openstack server list --all-project --host $source_host --status ACTIVE -c ID -f value); do
+    echo "Migration VM $vm_id to $target_host..."
+    openstack server migrate --live-migration --host $target_host $vm_id
+done
+
+bash ~/test_scripts_keystack/command_on_nodes.sh -nt comp -c "sudo systemctl restart kolla-nova_compute-container.service"
+
+python ~/test_scripts_keystack/openstack-sdk/evacuation_tester.py --force-host-down --failed-host cdm-bl-pca05 --restore-after-test --target-hosts cdm-bl-pca06
+
+openstack server migration list
+
+openstack compute service list
+
+openstack compute service set --up --enable cdm-bl-pca05 nova-compute
+
+bash ~/test_scripts_keystack/command_on_nodes.sh -nn cdm-bl-pca05 -c "container_name=nova_compute; sudo systemctl restart kolla-\${container_name}-container.service"
+

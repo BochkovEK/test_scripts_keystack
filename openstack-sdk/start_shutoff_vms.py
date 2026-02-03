@@ -312,7 +312,7 @@ class VMStarter:
 
         logging.info("\n" + "=" * 60)
         logging.info("VM START RESULTS")
-        logging.info("=" * 60)
+        logging.info("=" * 42)
 
         logging.info(f"Total VMs: {len(results)}")
         logging.info(f"Successful: {len(successful)}")

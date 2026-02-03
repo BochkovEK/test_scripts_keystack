@@ -539,18 +539,72 @@ class SimpleEvacuationTester:
         """
         Restore host to original state after evacuation testing.
 
-        This method enables all nova-compute services on the host and removes the forced_down flag.
+        This method first checks for any pending or incomplete evacuation migrations
+        associated with the host (especially 'done' status records that block force-up).
+        If issues are found, it raises an error with guidance. Then it enables all
+        nova-compute services on the host and removes the forced_down flag.
         It includes checks to avoid unnecessary API calls and to verify the result.
 
-        Note: This function does not raise critical exceptions by default to allow
-        the test script to continue even if restoration partially fails.
+        Note: This function raises exceptions on critical issues (e.g., pending migrations)
+        to prevent unsafe restoration. Manual intervention may be required for cleanup.
         """
         if not self.config.get('restore_after_test', False):
             logging.info(f"Skipping restore for host {self.config['failed_host']}")
             return
 
         try:
-            logging.info(f"Restoring host {self.config['failed_host']} to enabled/up state...")
+            logging.info(f"Preparing to restore host {self.config['failed_host']} to enabled/up state...")
+
+            # Critical safety check: verify migration/evacuation statuses
+            logging.info("Checking for pending or incomplete migrations/evacuations...")
+            migrations = list(self.conn.compute.migrations())
+
+            # Filter migrations related to this host (as source)
+            host_migrations = [
+                mig for mig in migrations
+                if hasattr(mig, 'source_compute') and mig.source_compute == self.config['failed_host']
+            ]
+
+            # Check for blocking 'done' migrations (these prevent force-up)
+            done_migrations = [mig for mig in host_migrations if getattr(mig, 'status', None) == 'done']
+            if done_migrations:
+                logging.error(f"Found {len(done_migrations)} blocking 'done' migrations on host!")
+                for mig in done_migrations:
+                    logging.error(
+                        f"  - Migration ID: {getattr(mig, 'id', 'N/A')}, "
+                        f"Instance: {getattr(mig, 'instance_uuid', 'N/A')}, "
+                        f"Type: {getattr(mig, 'migration_type', 'N/A')}, "
+                        f"Status: {getattr(mig, 'status', 'N/A')}"
+                    )
+                raise RuntimeError(
+                    "Cannot restore host: pending 'done' evacuation migrations exist. "
+                    "Solution: Restart nova-compute service on the host (e.g., 'systemctl restart openstack-nova-compute'), "
+                    "wait 60-180 seconds for cleanup, then retry. "
+                    "Verify with: openstack server migration list --host {self.config['failed_host']} --status done"
+                )
+
+            # Optional: Check for other incomplete migrations (e.g., running, preparing, error)
+            incomplete_statuses = ['preparing', 'running', 'post-migrating', 'error', 'aborted']
+            incomplete_migrations = [
+                mig for mig in host_migrations
+                if getattr(mig, 'status', None) in incomplete_statuses
+            ]
+            if incomplete_migrations:
+                logging.warning(f"Found {len(incomplete_migrations)} incomplete migrations on host!")
+                for mig in incomplete_migrations:
+                    logging.warning(
+                        f"  - Migration ID: {getattr(mig, 'id', 'N/A')}, "
+                        f"Instance: {getattr(mig, 'instance_uuid', 'N/A')}, "
+                        f"Type: {getattr(mig, 'migration_type', 'N/A')}, "
+                        f"Status: {getattr(mig, 'status', 'N/A')}"
+                    )
+                logging.warning(
+                    "Proceeding with restore, but incomplete migrations may cause issues. "
+                    "Investigate and resolve them manually if needed."
+                )
+                # Optionally raise here if you want to block on incomplete too: raise RuntimeError(...)
+
+            logging.info("No blocking migrations found — safe to proceed with restoration.")
 
             # Find all nova-compute services on the host
             services = list(self.conn.compute.services(
@@ -584,9 +638,9 @@ class SimpleEvacuationTester:
                 else:
                     logging.info(f"Service {service.id} not forced down, skipping update")
 
-            # Give Nova time to propagate changes
+            # Give Nova time to propagate changes (longer wait after potential restarts)
             logging.info("Waiting for service state restoration to propagate...")
-            time.sleep(10)
+            time.sleep(30)  # Increased from 10s to account for propagation delays
 
             # Re-fetch services to verify current state
             services = list(self.conn.compute.services(
@@ -624,6 +678,9 @@ class SimpleEvacuationTester:
             logging.error(f"Failed to restore host {self.config['failed_host']}: {e}")
             logging.error("Restoration failed — manual intervention may be required:")
             logging.error(f"  openstack compute service set --enable {self.config['failed_host']} nova-compute")
+            logging.error(
+                "  Also verify migrations: openstack server migration list --host {self.config['failed_host']}")
+            raise  # Re-raise to propagate the error
 
     def evacuate_single_vm(self, vm) -> Dict[str, Any]:
         """
