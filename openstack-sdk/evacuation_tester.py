@@ -4,6 +4,9 @@ OpenStack Simple Evacuation Tester
 
 Simplified script for testing VM evacuation from a failed hypervisor.
 Performs validation checks and executes evacuation with minimal complexity.
+
+Note: Host must be already DOWN and nova-compute services forced_down before running.
+This script no longer forces host down or restores it automatically.
 """
 
 import openstack
@@ -19,20 +22,14 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 def parse_arguments() -> argparse.Namespace:
-    """
-    Parse command line arguments.
-
-    Returns:
-        argparse.Namespace: Parsed arguments
-    """
     parser = argparse.ArgumentParser(
         description='Simple OpenStack Hypervisor Evacuation Tester',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   %(prog)s --failed-host compute-01 --dry-run
-  %(prog)s --failed-host compute-01 --force-host-down
   %(prog)s --failed-host compute-01 --target-hosts compute-02,compute-03
+  %(prog)s --failed-host compute-01 --max-parallel 4 --on-shared-storage
         """
     )
 
@@ -94,21 +91,11 @@ Examples:
         help='Timeout per VM in seconds (default: 300)'
     )
 
-    # Control flags
-    parser.add_argument(
-        '--force-host-down',
-        action='store_true',
-        help='Force host into down state before testing'
-    )
+    # Flags
     parser.add_argument(
         '--on-shared-storage',
         action='store_true',
-        help='Indicate shared storage is used'
-    )
-    parser.add_argument(
-        '--restore-after-test',
-        action='store_true',
-        help='Restore host after test completion'
+        help='Indicate shared storage is used (pass on_shared_storage=True)'
     )
 
     # Output
@@ -138,20 +125,14 @@ Examples:
 
     # Process comma-separated lists
     if args.target_hosts:
-        args.target_hosts = args.target_hosts.split(',')
+        args.target_hosts = [h.strip() for h in args.target_hosts.split(',') if h.strip()]
     if args.exclude_hosts:
-        args.exclude_hosts = args.exclude_hosts.split(',')
+        args.exclude_hosts = [h.strip() for h in args.exclude_hosts.split(',') if h.strip()]
 
     return args
 
 
 def get_config(args: argparse.Namespace) -> dict:
-    """
-    Build configuration dictionary.
-
-    Returns:
-        dict: Configuration
-    """
     return {
         'failed_host': args.failed_host,
         'cloud_name': args.cloud or os.getenv('OS_CLOUD'),
@@ -163,9 +144,7 @@ def get_config(args: argparse.Namespace) -> dict:
         'max_parallel': args.max_parallel,
         'evacuation_timeout': args.evacuation_timeout,
         'per_vm_timeout': args.per_vm_timeout,
-        'force_host_down': args.force_host_down,
         'on_shared_storage': args.on_shared_storage,
-        'restore_after_test': args.restore_after_test,
         'dry_run': args.dry_run,
         'log_level': args.log_level,
         'output_format': args.output_format,
@@ -174,12 +153,6 @@ def get_config(args: argparse.Namespace) -> dict:
 
 
 def setup_logging(log_level: str):
-    """
-    Configure logging.
-
-    Args:
-        log_level: Logging level
-    """
     logging.basicConfig(
         level=getattr(logging, log_level),
         format='%(asctime)s - %(levelname)s - %(message)s',
@@ -201,12 +174,6 @@ class SimpleEvacuationTester:
         self.end_time = None
 
     def connect(self):
-        """
-        Connect to OpenStack.
-
-        Raises:
-            Exception: If connection fails
-        """
         try:
             if self.config['cloud_name']:
                 self.conn = openstack.connect(
@@ -218,7 +185,6 @@ class SimpleEvacuationTester:
                 self.conn = openstack.connect()
                 logging.info("Connected via environment variables")
 
-            # Test connection
             self.conn.authorize()
             logging.info("Authentication successful")
 
@@ -227,18 +193,8 @@ class SimpleEvacuationTester:
             raise
 
     def get_host_by_name(self, host_name: str):
-        """
-        Find hypervisor by name.
-
-        Args:
-            host_name: Host name to find
-
-        Returns:
-            Hypervisor object or None
-        """
         try:
-            hypervisors = list(self.conn.compute.hypervisors())
-            for hyp in hypervisors:
+            for hyp in self.conn.compute.hypervisors():
                 if hyp.name == host_name:
                     return hyp
             return None
@@ -247,90 +203,44 @@ class SimpleEvacuationTester:
             return None
 
     def get_vms_on_host(self, host_name: str) -> List:
-        """
-        Find VMs on specified host.
-
-        Args:
-            host_name: Host name
-
-        Returns:
-            List of VMs
-        """
         vms = []
         try:
-            all_servers = list(self.conn.compute.servers(all_projects=True))
-
-            for server in all_servers:
-                server_host = getattr(server, 'hypervisor_hostname', None)
-
-                # Check if VM is on the host
-                if not server_host or server_host != host_name:
+            for server in self.conn.compute.servers(all_projects=True):
+                if getattr(server, 'hypervisor_hostname', None) != host_name:
                     continue
-
-                # Apply project filter
-                if (self.config['project_id'] and
-                        getattr(server, 'project_id', None) != self.config['project_id']):
+                if self.config['project_id'] and server.project_id != self.config['project_id']:
                     continue
-
-                # Check VM status
                 if server.status not in ['ACTIVE', 'SHUTOFF', 'ERROR']:
                     continue
-
                 vms.append(server)
-
             return vms
-
         except Exception as e:
             logging.error(f"Error finding VMs on {host_name}: {e}")
             return []
 
     def get_available_targets(self) -> List[str]:
-        """
-        Find available target hosts for evacuation.
-
-        Returns:
-            List of host names
-        """
         targets = []
         try:
-            hypervisors = list(self.conn.compute.hypervisors())
-
-            for hyp in hypervisors:
-                # Skip failed host
+            for hyp in self.conn.compute.hypervisors():
                 if hyp.name == self.config['failed_host']:
                     continue
-
-                # Check host state
                 if hyp.state != 'up' or hyp.status != 'enabled':
                     continue
-
-                # Apply filters
                 if self.config['target_hosts'] and hyp.name not in self.config['target_hosts']:
                     continue
                 if self.config['exclude_hosts'] and hyp.name in self.config['exclude_hosts']:
                     continue
-
-                # Check availability zone
                 if (self.config['availability_zone'] and
                         hasattr(hyp, 'availability_zone') and
                         hyp.availability_zone != self.config['availability_zone']):
                     continue
-
                 targets.append(hyp.name)
-
             return targets
-
         except Exception as e:
             logging.error(f"Error finding target hosts: {e}")
             return []
 
     def validate_host(self) -> bool:
-        """
-        Validate failed host.
-
-        Returns:
-            bool: True if validation passed
-        """
         logging.info(f"Validating host: {self.config['failed_host']}")
 
         self.failed_host_info = self.get_host_by_name(self.config['failed_host'])
@@ -340,358 +250,65 @@ class SimpleEvacuationTester:
             return False
 
         logging.info(f"Host found: {self.failed_host_info.name} "
-                     f"(state: {self.failed_host_info.state}, "
-                     f"status: {self.failed_host_info.status})")
+                     f"(state: {self.failed_host_info.state}, status: {self.failed_host_info.status})")
 
-        # Warn if host is up
         if self.failed_host_info.state == 'up':
-            logging.warning("⚠️  Host is UP (not down)")
-            logging.warning("   For evacuation, host must be DOWN")
-            logging.warning("   Use --force-host-down to simulate failure")
+            logging.error("Host is UP — evacuation will most likely fail")
+            logging.error("You must put host DOWN and force nova-compute services down manually")
+            return False
 
         return True
 
     def validate_vms(self) -> bool:
-        """
-        Validate VMs on failed host.
-
-        Returns:
-            bool: True if VMs found
-        """
         logging.info(f"Looking for VMs on {self.config['failed_host']}")
-
         self.vms = self.get_vms_on_host(self.config['failed_host'])
 
         if not self.vms:
-            logging.error(f"No VMs found on host {self.config['failed_host']}")
-            logging.info("Check host name or use --project-id filter")
+            logging.error(f"No suitable VMs found on host {self.config['failed_host']}")
             return False
 
-        logging.info(f"Found {len(self.vms)} VMs on host")
-
-        # Show sample VMs in dry-run
+        logging.info(f"Found {len(self.vms)} VMs eligible for evacuation")
         if self.config['dry_run']:
-            for vm in self.vms[:5]:  # First 5 VMs
-                logging.info(f"  - {vm.name} ({vm.status})")
-            if len(self.vms) > 5:
-                logging.info(f"  ... and {len(self.vms) - 5} more")
+            for vm in self.vms[:6]:
+                logging.info(f"  • {vm.name} ({vm.status})")
+            if len(self.vms) > 6:
+                logging.info(f"  ... and {len(self.vms)-6} more")
 
         return True
 
     def validate_target_hosts(self) -> bool:
-        """
-        Validate available target hosts.
-
-        Returns:
-            bool: True if targets found
-        """
         logging.info("Looking for available target hosts")
-
         self.target_hosts = self.get_available_targets()
 
         if not self.target_hosts:
             logging.error("No available target hosts found")
-            logging.info("Check host states and filters")
             return False
 
         logging.info(f"Found {len(self.target_hosts)} available target hosts")
-
         if self.config['dry_run']:
-            for host in self.target_hosts:
-                logging.info(f"  - {host}")
-
-        if self.config['max_parallel'] > 1:
-            if len(self.target_hosts) == 0:
-                logging.error("Parallel evacuation requires target hosts")
-                return False
-
-            if self.config['max_parallel'] > len(self.target_hosts) * 3:
-                logging.warning(
-                    f"High parallelism ({self.config['max_parallel']}) "
-                    f"for {len(self.target_hosts)} target hosts"
-                )
+            for h in self.target_hosts[:8]:
+                logging.info(f"  • {h}")
+            if len(self.target_hosts) > 8:
+                logging.info(f"  ... and {len(self.target_hosts)-8} more")
 
         return True
 
     def show_recommendations(self):
-        """Show recommendations based on validation."""
         if not self.config['dry_run']:
             return
 
-        logging.info("\n💡 RECOMMENDATIONS:")
+        logging.info("\nRecommendations / reminders:")
+        logging.info("  • Host must be DOWN before real evacuation")
+        logging.info("  • nova-compute services should be disabled + forced_down")
+        logging.info(f"  • {len(self.vms)} VMs will be evacuated")
+        logging.info(f"  • {len(self.target_hosts)} target hosts available")
 
-        if self.failed_host_info.state == 'up':
-            logging.info("  - Host is UP, MUST use: --force-host-down")
-
-        logging.info(f"  - {len(self.vms)} VMs will be evacuated")
-        logging.info(f"  - Target hosts available: {len(self.target_hosts)}")
-
-        # Parallelism recommendations
-        if self.config['max_parallel'] <= 1:
-            logging.info("  - Using sequential evacuation (max_parallel <= 1)")
-        else:
-            logging.info(f"  - Using parallel evacuation (max_parallel={self.config['max_parallel']})")
-
-            # Warn if too high
+        if self.config['max_parallel'] > 1:
+            logging.info(f"  • Parallel mode: up to {self.config['max_parallel']} concurrent evacuations")
             if self.config['max_parallel'] > len(self.target_hosts) * 3:
-                logging.warning("  ⚠️  High parallelism may overwhelm target hosts")
-
-            if self.config['max_parallel'] > len(self.vms):
-                logging.info(f"  - Note: Only {len(self.vms)} VMs, parallelism limited")
-
-    def force_host_down(self):
-        """
-        Force host into down state for evacuation testing.
-
-        This method disables all nova-compute services on the host and forces them down.
-        It includes checks to avoid unnecessary API calls and to verify the result.
-
-        Raises:
-            Exception: If operation fails or host not properly disabled/down
-            SystemExit: With code 1 if critical failure occurs
-        """
-        if not self.config.get('force_host_down', False):
-            logging.info(f"Skipping force down for host {self.config['failed_host']}")
-            return
-
-        try:
-            logging.info(f"Forcing host {self.config['failed_host']} into down state...")
-
-            # Find all nova-compute services on the host
-            services = list(self.conn.compute.services(
-                host=self.config['failed_host'],
-                binary='nova-compute'
-            ))
-
-            if not services:
-                raise ValueError(f"No nova-compute service found on host {self.config['failed_host']}")
-
-            logging.info(f"Found {len(services)} nova-compute service(s)")
-
-            # Process each service
-            for service in services:
-                # Disable only if not already disabled (avoids 400 "No updates were requested")
-                if service.status != 'disabled':
-                    self.conn.compute.disable_service(
-                        service,
-                        disabled_reason='Evacuation testing (forced down)'
-                    )
-                    logging.info(f"Disabled service {service.id}")
-                else:
-                    logging.info(f"Service {service.id} already disabled, skipping disable")
-
-                # Force down (idempotent in most cases)
-                self.conn.compute.update_service_forced_down(
-                    service,
-                    forced=True
-                )
-                logging.info(f"Set forced_down=True for service {service.id}")
-
-            # Give Nova time to propagate changes
-            logging.info("Waiting for service state change to propagate...")
-            time.sleep(15)
-
-            # Re-fetch services to verify current state
-            services = list(self.conn.compute.services(
-                host=self.config['failed_host'],
-                binary='nova-compute'
-            ))
-
-            if not services:
-                raise RuntimeError("All services disappeared after disable/force-down attempt")
-
-            # Check that ALL services are disabled
-            if not all(s.status == 'disabled' for s in services):
-                logging.error("❌ Not all services are disabled")
-                for s in services:
-                    if s.status != 'disabled':
-                        logging.error(f"  - Service {s.id}: status={s.status}, state={s.state}")
-                raise Exception("Not all nova-compute services are disabled")
-
-            # Optional: check forced_down field (available in newer SDK versions)
-            forced_down_ok = all(s.forced_down for s in services if hasattr(s, 'forced_down'))
-            if not forced_down_ok:
-                logging.warning("Not all services show forced_down=True (state may still propagate)")
-
-            # Check hypervisor status as additional validation
-            host = self.get_host_by_name(self.config['failed_host'])
-            if host:
-                logging.info(f"Hypervisor state: {host.state} / status={host.status}")
-
-                if host.state == 'up':
-                    logging.warning("⚠️ Hypervisor still shows 'up' – waiting additional 30 seconds...")
-                    time.sleep(30)
-                    host = self.get_host_by_name(self.config['failed_host'])
-                    if host and host.state == 'up':
-                        logging.warning("Hypervisor remains 'up' after extended wait")
-                        logging.warning("Evacuation might be affected – proceed with caution")
-
-            logging.info("✅ Host successfully prepared for evacuation testing "
-                         f"({len(services)} service(s) disabled and forced down)")
-
-        except Exception as e:
-            logging.error(f"Failed to force host down: {e}")
-            logging.error("❌ CRITICAL: Cannot proceed with evacuation")
-            logging.error("Exiting with error code 1")
-            sys.exit(1)
-
-    def restore_host(self):
-        """
-        Restore host to original state after evacuation testing.
-
-        This method first checks for any pending or incomplete evacuation migrations
-        associated with the host (especially 'done' status records that block force-up).
-        If issues are found, it raises an error with guidance. Then it enables all
-        nova-compute services on the host and removes the forced_down flag.
-        It includes checks to avoid unnecessary API calls and to verify the result.
-
-        Note: This function raises exceptions on critical issues (e.g., pending migrations)
-        to prevent unsafe restoration. Manual intervention may be required for cleanup.
-        """
-        if not self.config.get('restore_after_test', False):
-            logging.info(f"Skipping restore for host {self.config['failed_host']}")
-            return
-
-        try:
-            logging.info(f"Preparing to restore host {self.config['failed_host']} to enabled/up state...")
-
-            # Critical safety check: verify migration/evacuation statuses
-            logging.info("Checking for pending or incomplete migrations/evacuations...")
-            migrations = list(self.conn.compute.migrations())
-
-            # Filter migrations related to this host (as source)
-            host_migrations = [
-                mig for mig in migrations
-                if hasattr(mig, 'source_compute') and mig.source_compute == self.config['failed_host']
-            ]
-
-            # Check for blocking 'done' migrations (these prevent force-up)
-            done_migrations = [mig for mig in host_migrations if getattr(mig, 'status', None) == 'done']
-            if done_migrations:
-                logging.error(f"Found {len(done_migrations)} blocking 'done' migrations on host!")
-                for mig in done_migrations:
-                    logging.error(
-                        f"  - Migration ID: {getattr(mig, 'id', 'N/A')}, "
-                        f"Instance: {getattr(mig, 'instance_uuid', 'N/A')}, "
-                        f"Type: {getattr(mig, 'migration_type', 'N/A')}, "
-                        f"Status: {getattr(mig, 'status', 'N/A')}"
-                    )
-                raise RuntimeError(
-                    "Cannot restore host: pending 'done' evacuation migrations exist. "
-                    "Solution: Restart nova-compute service on the host (e.g., 'systemctl restart openstack-nova-compute'), "
-                    "wait 60-180 seconds for cleanup, then retry. "
-                    "Verify with: openstack server migration list --host {self.config['failed_host']} --status done"
-                )
-
-            # Optional: Check for other incomplete migrations (e.g., running, preparing, error)
-            incomplete_statuses = ['preparing', 'running', 'post-migrating', 'error', 'aborted']
-            incomplete_migrations = [
-                mig for mig in host_migrations
-                if getattr(mig, 'status', None) in incomplete_statuses
-            ]
-            if incomplete_migrations:
-                logging.warning(f"Found {len(incomplete_migrations)} incomplete migrations on host!")
-                for mig in incomplete_migrations:
-                    logging.warning(
-                        f"  - Migration ID: {getattr(mig, 'id', 'N/A')}, "
-                        f"Instance: {getattr(mig, 'instance_uuid', 'N/A')}, "
-                        f"Type: {getattr(mig, 'migration_type', 'N/A')}, "
-                        f"Status: {getattr(mig, 'status', 'N/A')}"
-                    )
-                logging.warning(
-                    "Proceeding with restore, but incomplete migrations may cause issues. "
-                    "Investigate and resolve them manually if needed."
-                )
-                # Optionally raise here if you want to block on incomplete too: raise RuntimeError(...)
-
-            logging.info("No blocking migrations found — safe to proceed with restoration.")
-
-            # Find all nova-compute services on the host
-            services = list(self.conn.compute.services(
-                host=self.config['failed_host'],
-                binary='nova-compute'
-            ))
-
-            if not services:
-                logging.warning(
-                    f"No nova-compute services found on host {self.config['failed_host']}. Nothing to restore.")
-                return
-
-            logging.info(f"Found {len(services)} nova-compute service(s)")
-
-            # Process each service
-            for service in services:
-                # Enable only if currently disabled (idempotent)
-                if service.status == 'disabled':
-                    self.conn.compute.enable_service(service)
-                    logging.info(f"Enabled service {service.id}")
-                else:
-                    logging.info(f"Service {service.id} already enabled, skipping enable")
-
-                # Remove forced_down flag (set to False)
-                if hasattr(service, 'forced_down') and service.forced_down:
-                    self.conn.compute.update_service_forced_down(
-                        service,
-                        forced=False
-                    )
-                    logging.info(f"Set forced_down=False for service {service.id}")
-                else:
-                    logging.info(f"Service {service.id} not forced down, skipping update")
-
-            # Give Nova time to propagate changes (longer wait after potential restarts)
-            logging.info("Waiting for service state restoration to propagate...")
-            time.sleep(30)  # Increased from 10s to account for propagation delays
-
-            # Re-fetch services to verify current state
-            services = list(self.conn.compute.services(
-                host=self.config['failed_host'],
-                binary='nova-compute'
-            ))
-
-            if not services:
-                logging.warning("Services disappeared after restore attempt — check manually")
-                return
-
-            # Check that ALL services are enabled
-            if not all(s.status == 'enabled' for s in services):
-                logging.warning("Not all services are enabled after restore")
-                for s in services:
-                    if s.status != 'enabled':
-                        logging.warning(f"  - Service {s.id}: status={s.status}, state={s.state}")
-
-            # Check forced_down / state
-            forced_up_ok = all(not s.forced_down for s in services if hasattr(s, 'forced_down'))
-            if not forced_up_ok:
-                logging.warning("Some services still show forced_down=True — state may still be propagating")
-
-            # Check hypervisor status as additional validation
-            host = self.get_host_by_name(self.config['failed_host'])
-            if host:
-                logging.info(f"Hypervisor state after restore: {host.state} / status={host.status}")
-                if host.state == 'down':
-                    logging.warning("Hypervisor still shows 'down' — may take time to recover")
-
-            logging.info(f"✅ Host {self.config['failed_host']} restoration completed "
-                         f"({len(services)} service(s) processed)")
-
-        except Exception as e:
-            logging.error(f"Failed to restore host {self.config['failed_host']}: {e}")
-            logging.error("Restoration failed — manual intervention may be required:")
-            logging.error(f"  openstack compute service set --enable {self.config['failed_host']} nova-compute")
-            logging.error(
-                "  Also verify migrations: openstack server migration list --host {self.config['failed_host']}")
-            raise  # Re-raise to propagate the error
+                logging.warning("  High parallelism → possible overload of target hosts")
 
     def evacuate_single_vm(self, vm) -> Dict[str, Any]:
-        """
-        Evacuate single VM.
-
-        Args:
-            vm: VM object
-
-        Returns:
-            Dict with evacuation result
-        """
         result = {
             'vm_id': vm.id,
             'vm_name': vm.name,
@@ -705,194 +322,102 @@ class SimpleEvacuationTester:
         try:
             logging.info(f"Evacuating: {vm.name}")
 
-            params = {
-                'server': vm.id,
-            }
-
-            # Add on_shared_storage if specified
+            params = {'server': vm.id}
             if self.config['on_shared_storage']:
                 params['on_shared_storage'] = True
 
-            # Optional: Specify target host if only one target
             if len(self.target_hosts) == 1:
                 params['host'] = self.target_hosts[0]
-                logging.info(f"Specifying target host: {self.target_hosts[0]}")
+                logging.info(f"  → explicit target: {self.target_hosts[0]}")
 
-            # Execute evacuation
             self.conn.compute.evacuate_server(**params)
 
-            # Monitor progress
-            success, target_host = self.monitor_evacuation(vm)
-
-            result['end_time'] = time.time()
-            result['evacuation_time'] = result['end_time'] - result['start_time']
+            success, target = self.monitor_evacuation(vm)
             result['success'] = success
-            result['target_host'] = target_host
-
-            if success:
-                logging.info(f"✅ {vm.name} evacuated to {target_host} "
-                             f"({result['evacuation_time']:.1f}s)")
-            else:
-                result['error_message'] = "Evacuation failed"
-                logging.error(f"❌ {vm.name} evacuation failed")
+            result['target_host'] = target
 
         except Exception as e:
+            result['error_message'] = str(e)
+            logging.error(f"Evacuation error {vm.name}: {e}")
+
+        finally:
             result['end_time'] = time.time()
             result['evacuation_time'] = result['end_time'] - result['start_time']
-            result['error_message'] = str(e)
-            logging.error(f"❌ {vm.name} error: {e}")
+
+        if result['success']:
+            logging.info(f"✓ {vm.name} → {result['target_host']} ({result['evacuation_time']:.1f}s)")
+        else:
+            logging.error(f"✗ {vm.name} failed")
 
         return result
 
-    def monitor_evacuation(self, vm, check_interval: int = 2):
-        """
-        Monitor evacuation progress.
-
-        Args:
-            vm: VM object
-            check_interval: Check interval in seconds
-
-        Returns:
-            tuple: (success, target_host)
-        """
+    def monitor_evacuation(self, vm, check_interval: int = 3):
         timeout = self.config['per_vm_timeout']
-        start_time = time.time()
-        original_host = getattr(vm, 'hypervisor_hostname', None)
+        start = time.time()
+        orig_host = getattr(vm, 'hypervisor_hostname', None)
 
-        while time.time() - start_time < timeout:
+        while time.time() - start < timeout:
             try:
-                # Refresh VM data
                 vm = self.conn.compute.get_server(vm.id)
-                current_host = getattr(vm, 'hypervisor_hostname', None)
+                curr_host = getattr(vm, 'hypervisor_hostname', None)
 
-                # Check if VM moved
-                if current_host and current_host != original_host:
-                    return True, current_host
+                if curr_host and curr_host != orig_host:
+                    return True, curr_host
 
-                # Check VM status
                 if vm.status == 'ERROR':
                     return False, None
 
                 time.sleep(check_interval)
 
-            except Exception as e:
-                logging.debug(f"Monitoring error for {vm.name}: {e}")
+            except Exception:
                 time.sleep(check_interval)
 
         return False, None
 
     def execute_evacuation(self) -> List[Dict[str, Any]]:
-        """
-        Execute evacuation of all VMs with parallel support.
-
-        Returns:
-            List of evacuation results
-        """
         logging.info(f"Starting evacuation of {len(self.vms)} VMs")
 
         if self.config['max_parallel'] <= 1:
-            # Sequential mode (backward compatible)
             return self._execute_sequential()
         else:
-            # Parallel mode
             return self._execute_parallel(self.config['max_parallel'])
 
-    def _execute_sequential(self) -> List[Dict[str, Any]]:
-        """Execute evacuations sequentially."""
-        logging.info("Using sequential evacuation")
+    def _execute_sequential(self):
+        logging.info("Sequential evacuation")
+        return [self.evacuate_single_vm(vm) for vm in self.vms]
 
+    def _execute_parallel(self, max_workers: int):
+        logging.info(f"Parallel evacuation ({max_workers} workers)")
         results = []
-        successful = 0
-        failed = 0
-
-        for vm in self.vms:
-            result = self.evacuate_single_vm(vm)
-            results.append(result)
-
-            if result['success']:
-                successful += 1
-            else:
-                failed += 1
-
-        logging.info(f"Evacuation completed: {successful} succeeded, {failed} failed")
-        return results
-
-    def _execute_parallel(self, max_workers: int) -> List[Dict[str, Any]]:
-        """
-        Execute evacuations in parallel using ThreadPoolExecutor.
-
-        Args:
-            max_workers: Maximum parallel threads
-
-        Returns:
-            List of evacuation results
-        """
-        logging.info(f"Using parallel evacuation with {max_workers} workers")
-
-        results = []
-        completed = 0
-        successful = 0
-        failed = 0
-        total_vms = len(self.vms)
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            # Submit all evacuation tasks
-            future_to_vm = {
+            futures = {
                 executor.submit(self.evacuate_single_vm, vm): vm
                 for vm in self.vms
             }
 
-            # Process results as they complete
-            for future in as_completed(future_to_vm):
-                completed += 1
-                vm = future_to_vm[future]
-
+            for future in as_completed(futures):
+                vm = futures[future]
                 try:
-                    result = future.result()
-                    results.append(result)
-
-                    if result['success']:
-                        successful += 1
-                        status = "✓"
-                    else:
-                        failed += 1
-                        status = "✗"
-
-                    # Log progress
-                    progress = (completed / total_vms) * 100
-                    logging.info(
-                        f"{status} {vm.name} "
-                        f"({completed}/{total_vms}, {progress:.1f}%) - "
-                        f"{successful} ✓, {failed} ✗"
-                    )
-
+                    results.append(future.result())
                 except Exception as e:
-                    failed += 1
+                    logging.error(f"Unexpected error for {vm.name}: {e}")
                     results.append({
                         'vm_id': vm.id,
                         'vm_name': vm.name,
                         'success': False,
-                        'error_message': str(e)
+                        'error_message': str(e),
+                        'evacuation_time': 0
                     })
-                    logging.error(f"✗ {vm.name}: Exception - {e}")
 
-        logging.info(f"Evacuation completed: {successful} succeeded, {failed} failed")
         return results
 
     def create_report(self, results: List[Dict[str, Any]]):
-        """
-        Create evacuation report.
-
-        Args:
-            results: List of evacuation results
-        """
         if not results:
-            logging.warning("No results to report")
             return
 
-        # Calculate statistics
-        successful = [r for r in results if r['success']]
-        failed = [r for r in results if not r['success']]
+        successful = sum(1 for r in results if r['success'])
+        failed = len(results) - successful
 
         report = {
             'summary': {
@@ -901,254 +426,140 @@ class SimpleEvacuationTester:
                 'end_time': datetime.fromtimestamp(self.end_time).isoformat(),
                 'total_duration': self.end_time - self.start_time,
                 'total_vms': len(results),
-                'successful': len(successful),
-                'failed': len(failed),
-                'success_rate': (len(successful) / len(results)) * 100 if results else 0,
-                'parallel_mode': 'sequential' if self.config['max_parallel'] <= 1
-                else f'parallel_{self.config["max_parallel"]}'
+                'successful': successful,
+                'failed': failed,
+                'success_rate': successful / len(results) * 100 if results else 0,
             },
             'configuration': {
-                'force_host_down': self.config['force_host_down'],
                 'on_shared_storage': self.config['on_shared_storage'],
                 'max_parallel': self.config['max_parallel'],
-                'target_hosts': self.target_hosts
+                'target_hosts_count': len(self.target_hosts),
             },
             'results': results
         }
 
-        # Add timing statistics if there are successful evacuations
-        if successful:
-            times = [r['evacuation_time'] for r in successful]
+        if successful > 0:
+            times = [r['evacuation_time'] for r in results if r['success']]
             report['timing'] = {
                 'average': sum(times) / len(times),
                 'min': min(times),
                 'max': max(times)
             }
 
-        # Output report
         self.output_report(report)
 
     def output_report(self, report: dict):
-        """
-        Output report in specified format.
-
-        Args:
-            report: Report data
-        """
         if self.config['output_format'] == 'json':
-            print(json.dumps(report, indent=2))
+            print(json.dumps(report, indent=2, ensure_ascii=False))
         elif self.config['output_format'] == 'table':
-            self.print_table_report(report)
-        else:  # text
-            self.print_text_report(report)
+            self._print_table_report(report)
+        else:
+            self._print_text_report(report)
 
-        # Save to file
-        self.save_report_to_file(report)
+        try:
+            with open(self.config['results_file'], 'w', encoding='utf-8') as f:
+                json.dump(report, f, indent=2, ensure_ascii=False)
+            logging.info(f"Results saved: {self.config['results_file']}")
+        except Exception as e:
+            logging.error(f"Cannot save report: {e}")
 
-    def print_text_report(self, report: dict):
-        """Print text format report."""
-        summary = report['summary']
-
-        print("\n" + "=" * 60)
-        print("EVACUATION REPORT")
-        print("=" * 60)
-
-        print(f"\nSummary:")
-        print(f"  Failed Host: {summary['failed_host']}")
-        print(f"  Duration: {summary['total_duration']:.1f}s")
-        print(f"  Total VMs: {summary['total_vms']}")
-        print(f"  Successful: {summary['successful']} ({summary['success_rate']:.1f}%)")
-        print(f"  Failed: {summary['failed']}")
-
+    def _print_text_report(self, report):
+        s = report['summary']
+        print("\n" + "="*70)
+        print(" EVACUATION SUMMARY ")
+        print("="*70)
+        print(f" Host          : {s['failed_host']}")
+        print(f" Duration      : {s['total_duration']:.1f} s")
+        print(f" VMs total     : {s['total_vms']}")
+        print(f" Succeeded     : {s['successful']} ({s['success_rate']:.1f}%)")
+        print(f" Failed        : {s['failed']}")
         if 'timing' in report:
-            timing = report['timing']
-            print(f"\nTiming (successful only):")
-            print(f"  Average: {timing['average']:.1f}s")
-            print(f"  Minimum: {timing['min']:.1f}s")
-            print(f"  Maximum: {timing['max']:.1f}s")
+            t = report['timing']
+            print(f" Avg time      : {t['average']:.1f} s")
+            print(f" Min / Max     : {t['min']:.1f} – {t['max']:.1f} s")
+        print("="*70 + "\n")
 
-        print("\n" + "=" * 60)
-
-    def print_table_report(self, report: dict):
-        """Print table format report."""
+    def _print_table_report(self, report):
         try:
             from tabulate import tabulate
-
-            summary = report['summary']
-
-            print("\n" + "=" * 60)
-            print("EVACUATION REPORT")
-            print("=" * 60)
-
-            # Summary table
-            summary_table = [
-                ["Failed Host", summary['failed_host']],
-                ["Total Duration", f"{summary['total_duration']:.1f}s"],
-                ["Total VMs", summary['total_vms']],
-                ["Successful", f"{summary['successful']} ({summary['success_rate']:.1f}%)"],
-                ["Failed", summary['failed']]
+            s = report['summary']
+            rows = [
+                ["Host", s['failed_host']],
+                ["Duration", f"{s['total_duration']:.1f} s"],
+                ["VMs total", s['total_vms']],
+                ["Succeeded", f"{s['successful']} ({s['success_rate']:.1f}%)"],
+                ["Failed", s['failed']],
             ]
+            print("\n" + tabulate(rows, headers=["Metric", "Value"], tablefmt="grid"))
 
-            print("\nSummary:")
-            print(tabulate(summary_table, tablefmt="grid"))
-
-            # Timing table if available
             if 'timing' in report:
-                timing = report['timing']
-                timing_table = [
-                    ["Average", f"{timing['average']:.1f}s"],
-                    ["Minimum", f"{timing['min']:.1f}s"],
-                    ["Maximum", f"{timing['max']:.1f}s"]
+                t = report['timing']
+                timing_rows = [
+                    ["Average", f"{t['average']:.1f} s"],
+                    ["Minimum", f"{t['min']:.1f} s"],
+                    ["Maximum", f"{t['max']:.1f} s"],
                 ]
-
-                print("\nTiming (successful evacuations):")
-                print(tabulate(timing_table, tablefmt="grid"))
-
-            print("\n" + "=" * 60)
+                print("\nTiming (successful VMs):")
+                print(tabulate(timing_rows, headers=["Stat", "Value"], tablefmt="grid"))
+            print()
 
         except ImportError:
-            self.print_text_report(report)
-
-    def save_report_to_file(self, report: dict):
-        """
-        Save report to JSON file.
-
-        Args:
-            report: Report data
-        """
-        try:
-            with open(self.config['results_file'], 'w') as f:
-                json.dump(report, f, indent=2)
-            logging.info(f"Report saved to: {self.config['results_file']}")
-        except Exception as e:
-            logging.error(f"Failed to save report: {e}")
+            self._print_text_report(report)
 
     def dry_run(self) -> bool:
-        """
-        Perform dry-run validation only.
-
-        Returns:
-            bool: True if validation passed
-        """
-        logging.info("=== DRY-RUN VALIDATION ===")
-
-        # Validate host
-        if not self.validate_host():
-            logging.error("❌ Host validation failed")
-            return False
-
-        # Validate VMs
-        if not self.validate_vms():
-            logging.error("❌ VM validation failed")
-            return False
-
-        # Validate target hosts
-        if not self.validate_target_hosts():
-            logging.error("❌ Target hosts validation failed")
-            return False
-
-        logging.info("\n✅ DRY-RUN: All checks passed")
-        self.show_recommendations()
-
-        return True
+        logging.info("DRY-RUN MODE")
+        ok = all([
+            self.validate_host(),
+            self.validate_vms(),
+            self.validate_target_hosts(),
+        ])
+        if ok:
+            logging.info("All validations passed ✓")
+            self.show_recommendations()
+        else:
+            logging.error("Some validations failed")
+        return ok
 
     def real_evacuation(self) -> bool:
-        """
-        Perform real evacuation.
-
-        Returns:
-            bool: True if evacuation completed
-        """
-        logging.info("=== STARTING EVACUATION ===")
-
-        # Record start time
+        logging.info("REAL EVACUATION START")
         self.start_time = time.time()
 
-        # Validate environment
-        if not self.validate_host():
-            return False
-        if not self.validate_vms():
-            return False
-        if not self.validate_target_hosts():
-            return False
-
-        # Check if host is actually down or force is needed
-        if self.failed_host_info.state == 'up':
-            if not self.config['force_host_down']:
-                logging.error("ERROR: Host is UP but --force-host-down not specified")
-                logging.error("Evacuation requires host to be DOWN")
-                logging.error("Either ensure host is actually down or use --force-host-down")
-                return False
-            else:
-                logging.warning("Host is UP, using --force-host-down to simulate failure")
-
-        try:
-            self.force_host_down()
-
-        except SystemExit:
-            raise
-        except Exception as e:
-            logging.error(f"Failed during host disable: {e}")
+        if not all([
+            self.validate_host(),
+            self.validate_vms(),
+            self.validate_target_hosts(),
+        ]):
             return False
 
-        # Execute evacuation
         results = self.execute_evacuation()
-
-        # Restore host if requested
-        self.restore_host()
-
-        # Record end time
         self.end_time = time.time()
-
-        # Create report
         self.create_report(results)
 
-        # Check if any evacuations succeeded
-        successful = any(r['success'] for r in results)
-
-        if successful:
-            logging.info("✅ Evacuation completed")
-            return True
-        else:
-            logging.error("❌ Evacuation failed - no VMs were evacuated")
-            return False
+        success_count = sum(1 for r in results if r['success'])
+        return success_count > 0
 
     def run(self) -> bool:
-        """
-        Main execution method.
-
-        Returns:
-            bool: True if operation succeeded
-        """
         try:
-            # Connect to OpenStack
             self.connect()
 
-            # Run dry-run or real evacuation
             if self.config['dry_run']:
                 return self.dry_run()
             else:
                 return self.real_evacuation()
 
         except Exception as e:
-            logging.error(f"Operation failed: {e}")
+            logging.exception(f"Critical error: {e}")
             return False
 
 
 def main():
-    """Main entry point."""
-    # Parse arguments
     args = parse_arguments()
     config = get_config(args)
-
-    # Setup logging
     setup_logging(config['log_level'])
 
-    # Create and run tester
     tester = SimpleEvacuationTester(config)
     success = tester.run()
 
-    # Exit with appropriate code
     sys.exit(0 if success else 1)
 
 
