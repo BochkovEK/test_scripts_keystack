@@ -328,7 +328,7 @@ class HostVMmigrator:
         success = sum(1 for r in results if r["success"])
         failed = total - success
 
-        logging.info("\n" + "═" * 70)
+        logging.info("═" * 70)
         logging.info("MIGRATION SUMMARY")
         logging.info("═" * 70)
         logging.info(f"Source host     : {self.config['source_host']}")
