@@ -16,12 +16,15 @@ import os
 import sys
 import time
 import json
-from typing import List, Optional, Dict, Any
+from typing import List, Dict, Any
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 def parse_arguments() -> argparse.Namespace:
+    """
+    Parse command line arguments.
+    """
     parser = argparse.ArgumentParser(
         description='Simple OpenStack Hypervisor Evacuation Tester',
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -29,7 +32,8 @@ def parse_arguments() -> argparse.Namespace:
 Examples:
   %(prog)s --failed-host compute-01 --dry-run
   %(prog)s --failed-host compute-01 --target-hosts compute-02,compute-03
-  %(prog)s --failed-host compute-01 --max-parallel 4 --on-shared-storage
+  %(prog)s --failed-host compute-01 --max-parallel 4
+  %(prog)s --failed-host compute-01 --local-storage   # only if using local disks
         """
     )
 
@@ -91,11 +95,11 @@ Examples:
         help='Timeout per VM in seconds (default: 300)'
     )
 
-    # Flags
+    # Storage mode flags
     parser.add_argument(
-        '--on-shared-storage',
+        '--local-storage',
         action='store_true',
-        help='Indicate shared storage is used (pass on_shared_storage=True)'
+        help='Use block migration (only if VMs use local storage, not shared FC/Ceph/NFS)'
     )
 
     # Output
@@ -113,6 +117,7 @@ Examples:
     )
     parser.add_argument(
         '--results-file',
+        default='evacuation_results.json',
         help='Path to save results JSON file'
     )
     parser.add_argument(
@@ -133,6 +138,9 @@ Examples:
 
 
 def get_config(args: argparse.Namespace) -> dict:
+    """
+    Build configuration dictionary from arguments.
+    """
     return {
         'failed_host': args.failed_host,
         'cloud_name': args.cloud or os.getenv('OS_CLOUD'),
@@ -144,15 +152,16 @@ def get_config(args: argparse.Namespace) -> dict:
         'max_parallel': args.max_parallel,
         'evacuation_timeout': args.evacuation_timeout,
         'per_vm_timeout': args.per_vm_timeout,
-        'on_shared_storage': args.on_shared_storage,
+        'use_shared_storage': not args.local_storage,  # True by default, False if --local-storage
         'dry_run': args.dry_run,
         'log_level': args.log_level,
         'output_format': args.output_format,
-        'results_file': args.results_file or 'evacuation_results.json',
+        'results_file': args.results_file,
     }
 
 
 def setup_logging(log_level: str):
+    """Configure logging."""
     logging.basicConfig(
         level=getattr(logging, log_level),
         format='%(asctime)s - %(levelname)s - %(message)s',
@@ -174,6 +183,7 @@ class SimpleEvacuationTester:
         self.end_time = None
 
     def connect(self):
+        """Connect to OpenStack."""
         try:
             if self.config['cloud_name']:
                 self.conn = openstack.connect(
@@ -193,6 +203,7 @@ class SimpleEvacuationTester:
             raise
 
     def get_host_by_name(self, host_name: str):
+        """Find hypervisor by name."""
         try:
             for hyp in self.conn.compute.hypervisors():
                 if hyp.name == host_name:
@@ -203,6 +214,7 @@ class SimpleEvacuationTester:
             return None
 
     def get_vms_on_host(self, host_name: str) -> List:
+        """Find VMs on specified host."""
         vms = []
         try:
             for server in self.conn.compute.servers(all_projects=True):
@@ -219,6 +231,7 @@ class SimpleEvacuationTester:
             return []
 
     def get_available_targets(self) -> List[str]:
+        """Find available target hosts for evacuation."""
         targets = []
         try:
             for hyp in self.conn.compute.hypervisors():
@@ -241,6 +254,7 @@ class SimpleEvacuationTester:
             return []
 
     def validate_host(self) -> bool:
+        """Validate failed host state."""
         logging.info(f"Validating host: {self.config['failed_host']}")
 
         self.failed_host_info = self.get_host_by_name(self.config['failed_host'])
@@ -260,6 +274,7 @@ class SimpleEvacuationTester:
         return True
 
     def validate_vms(self) -> bool:
+        """Validate VMs on failed host."""
         logging.info(f"Looking for VMs on {self.config['failed_host']}")
         self.vms = self.get_vms_on_host(self.config['failed_host'])
 
@@ -277,6 +292,7 @@ class SimpleEvacuationTester:
         return True
 
     def validate_target_hosts(self) -> bool:
+        """Validate available target hosts."""
         logging.info("Looking for available target hosts")
         self.target_hosts = self.get_available_targets()
 
@@ -294,6 +310,7 @@ class SimpleEvacuationTester:
         return True
 
     def show_recommendations(self):
+        """Show dry-run recommendations."""
         if not self.config['dry_run']:
             return
 
@@ -302,13 +319,12 @@ class SimpleEvacuationTester:
         logging.info("  • nova-compute services should be disabled + forced_down")
         logging.info(f"  • {len(self.vms)} VMs will be evacuated")
         logging.info(f"  • {len(self.target_hosts)} target hosts available")
-
+        logging.info("  • Using shared storage mode by default (on_shared_storage=True)")
         if self.config['max_parallel'] > 1:
             logging.info(f"  • Parallel mode: up to {self.config['max_parallel']} concurrent evacuations")
-            if self.config['max_parallel'] > len(self.target_hosts) * 3:
-                logging.warning("  High parallelism → possible overload of target hosts")
 
     def evacuate_single_vm(self, vm) -> Dict[str, Any]:
+        """Evacuate single VM."""
         result = {
             'vm_id': vm.id,
             'vm_name': vm.name,
@@ -323,8 +339,9 @@ class SimpleEvacuationTester:
             logging.info(f"Evacuating: {vm.name}")
 
             params = {'server': vm.id}
-            if self.config['on_shared_storage']:
-                params['on_shared_storage'] = True
+
+            # Always use on_shared_storage=True unless --local-storage is specified
+            params['on_shared_storage'] = self.config['use_shared_storage']
 
             if len(self.target_hosts) == 1:
                 params['host'] = self.target_hosts[0]
@@ -352,6 +369,7 @@ class SimpleEvacuationTester:
         return result
 
     def monitor_evacuation(self, vm, check_interval: int = 3):
+        """Monitor evacuation progress."""
         timeout = self.config['per_vm_timeout']
         start = time.time()
         orig_host = getattr(vm, 'hypervisor_hostname', None)
@@ -375,6 +393,7 @@ class SimpleEvacuationTester:
         return False, None
 
     def execute_evacuation(self) -> List[Dict[str, Any]]:
+        """Execute evacuation of all VMs with parallel support."""
         logging.info(f"Starting evacuation of {len(self.vms)} VMs")
 
         if self.config['max_parallel'] <= 1:
@@ -383,11 +402,13 @@ class SimpleEvacuationTester:
             return self._execute_parallel(self.config['max_parallel'])
 
     def _execute_sequential(self):
-        logging.info("Sequential evacuation")
+        """Execute evacuations sequentially."""
+        logging.info("Using sequential evacuation")
         return [self.evacuate_single_vm(vm) for vm in self.vms]
 
     def _execute_parallel(self, max_workers: int):
-        logging.info(f"Parallel evacuation ({max_workers} workers)")
+        """Execute evacuations in parallel using ThreadPoolExecutor."""
+        logging.info(f"Using parallel evacuation with {max_workers} workers")
         results = []
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -413,6 +434,7 @@ class SimpleEvacuationTester:
         return results
 
     def create_report(self, results: List[Dict[str, Any]]):
+        """Create evacuation report."""
         if not results:
             return
 
@@ -431,7 +453,7 @@ class SimpleEvacuationTester:
                 'success_rate': successful / len(results) * 100 if results else 0,
             },
             'configuration': {
-                'on_shared_storage': self.config['on_shared_storage'],
+                'use_shared_storage': self.config['use_shared_storage'],
                 'max_parallel': self.config['max_parallel'],
                 'target_hosts_count': len(self.target_hosts),
             },
@@ -449,6 +471,7 @@ class SimpleEvacuationTester:
         self.output_report(report)
 
     def output_report(self, report: dict):
+        """Output report in specified format."""
         if self.config['output_format'] == 'json':
             print(json.dumps(report, indent=2, ensure_ascii=False))
         elif self.config['output_format'] == 'table':
@@ -464,6 +487,7 @@ class SimpleEvacuationTester:
             logging.error(f"Cannot save report: {e}")
 
     def _print_text_report(self, report):
+        """Print text format report."""
         s = report['summary']
         print("\n" + "="*70)
         print(" EVACUATION SUMMARY ")
@@ -480,6 +504,7 @@ class SimpleEvacuationTester:
         print("="*70 + "\n")
 
     def _print_table_report(self, report):
+        """Print table format report."""
         try:
             from tabulate import tabulate
             s = report['summary']
@@ -507,6 +532,7 @@ class SimpleEvacuationTester:
             self._print_text_report(report)
 
     def dry_run(self) -> bool:
+        """Perform dry-run validation only."""
         logging.info("DRY-RUN MODE")
         ok = all([
             self.validate_host(),
@@ -521,6 +547,7 @@ class SimpleEvacuationTester:
         return ok
 
     def real_evacuation(self) -> bool:
+        """Perform real evacuation."""
         logging.info("REAL EVACUATION START")
         self.start_time = time.time()
 
@@ -539,6 +566,7 @@ class SimpleEvacuationTester:
         return success_count > 0
 
     def run(self) -> bool:
+        """Main execution method."""
         try:
             self.connect()
 
@@ -553,6 +581,7 @@ class SimpleEvacuationTester:
 
 
 def main():
+    """Main entry point."""
     args = parse_arguments()
     config = get_config(args)
     setup_logging(config['log_level'])
