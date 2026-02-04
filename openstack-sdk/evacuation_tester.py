@@ -323,8 +323,60 @@ class SimpleEvacuationTester:
         if self.config['max_parallel'] > 1:
             logging.info(f"  • Parallel mode: up to {self.config['max_parallel']} concurrent evacuations")
 
+    # def evacuate_single_vm(self, vm) -> Dict[str, Any]:
+    #     """Evacuate single VM."""
+    #     result = {
+    #         'vm_id': vm.id,
+    #         'vm_name': vm.name,
+    #         'success': False,
+    #         'start_time': time.time(),
+    #         'error_message': None,
+    #         'target_host': None,
+    #         'evacuation_time': 0
+    #     }
+    #
+    #     try:
+    #         logging.info(f"Evacuating: {vm.name}")
+    #
+    #         params = {'server': vm.id}
+    #
+    #         # Always use on_shared_storage=True unless --local-storage is specified
+    #         # ks-2025.3.1 nova does not support the on_shared_storage parameter
+    #         # "...Additional properties are not allowed ('onSharedStorage' was unexpected)"
+    #         params['on_shared_storage'] = self.config['use_shared_storage']
+    #
+    #         params['microversion'] = '2.7'
+    #
+    #         if len(self.target_hosts) == 1:
+    #             params['host'] = self.target_hosts[0]
+    #             logging.info(f"  → explicit target: {self.target_hosts[0]}")
+    #
+    #         self.conn.compute.evacuate_server(**params)
+    #
+    #         success, target = self.monitor_evacuation(vm)
+    #         result['success'] = success
+    #         result['target_host'] = target
+    #
+    #     except Exception as e:
+    #         result['error_message'] = str(e)
+    #         logging.error(f"Evacuation error {vm.name}: {e}")
+    #
+    #     finally:
+    #         result['end_time'] = time.time()
+    #         result['evacuation_time'] = result['end_time'] - result['start_time']
+    #
+    #     if result['success']:
+    #         logging.info(f"✓ {vm.name} → {result['target_host']} ({result['evacuation_time']:.1f}s)")
+    #     else:
+    #         logging.error(f"✗ {vm.name} failed")
+    #
+    #     return result
+
     def evacuate_single_vm(self, vm) -> Dict[str, Any]:
-        """Evacuate single VM."""
+        """
+        Evacuate single VM using low-level POST request to support custom microversion
+        and onSharedStorage parameter.
+        """
         result = {
             'vm_id': vm.id,
             'vm_name': vm.name,
@@ -338,24 +390,38 @@ class SimpleEvacuationTester:
         try:
             logging.info(f"Evacuating: {vm.name}")
 
-            params = {'server': vm.id}
+            # Build evacuate payload
+            payload = {
+                "evacuate": {
+                    "host": None  # will be set below if needed
+                }
+            }
 
-            # Always use on_shared_storage=True unless --local-storage is specified
-            # ks-2025.3.1 nova does not support the on_shared_storage parameter
-            # "...Additional properties are not allowed ('onSharedStorage' was unexpected)"
-            params['on_shared_storage'] = self.config['use_shared_storage']
+            # Explicitly add onSharedStorage (case-sensitive as per Nova API)
+            payload["evacuate"]["onSharedStorage"] = True  # always True for shared storage
 
-            params['microversion'] = '2.7'
-
+            # Optional: target host
             if len(self.target_hosts) == 1:
-                params['host'] = self.target_hosts[0]
+                payload["evacuate"]["host"] = self.target_hosts[0]
                 logging.info(f"  → explicit target: {self.target_hosts[0]}")
 
-            self.conn.compute.evacuate_server(**params)
+            # Low-level POST to /servers/{id}/action with explicit microversion
+            response = self.conn.compute.post(
+                f"/servers/{vm.id}/action",
+                json=payload,
+                microversion="2.14"  # minimum for onSharedStorage; try "2.95" if newer
+            )
 
-            success, target = self.monitor_evacuation(vm)
-            result['success'] = success
-            result['target_host'] = target
+            if response.status_code == 202:
+                logging.debug("Evacuation request accepted (202 Accepted)")
+                success, target = self.monitor_evacuation(vm)
+                result['success'] = success
+                result['target_host'] = target
+            else:
+                error_text = response.text if hasattr(response, 'text') else str(response)
+                raise openstack.exceptions.BadRequestException(
+                    f"Evacuation failed: HTTP {response.status_code} - {error_text}"
+                )
 
         except Exception as e:
             result['error_message'] = str(e)

@@ -5,9 +5,18 @@ python ~/test_scripts_keystack/openstack-sdk/light_migration.py --source-host cd
 source_host="" \
 target_host="" \
 echo "Migration all VMs from source_host to target_host" \
-for vm_id in $(openstack server list --all-project --host $source_host --status ACTIVE -c ID -f value); do \
+for vm_id in $(openstack server list --host $source_host --status ACTIVE -c ID -f value); do \
     echo "Migration VM $vm_id to $target_host..." \
     openstack server migrate --live-migration --host $target_host $vm_id; done
+
+# Эвакуция CLI
+source_host="" \
+target_host="" \
+echo "Evacuation VM from $source_host to $target_host" \
+for vm_id in $(openstack server list --host $source_host --all-projects --status ACTIVE -c ID -f value); do \
+    vm_status=$(openstack server show $vm_id -c status -f value) \
+    echo "Evacuation VM $vm_id to $target_host..." \
+    openstack server evacuate --shared-storage --host $target_host $vm_id; done
 
 #или
 src=""; tgt="" \
