@@ -4,12 +4,6 @@ OpenStack VM Live Migration Tool with SHUTOFF handling
 
 Migrates VMs (ACTIVE → live migration, SHUTOFF → start + live migration)
 from source host to target host (or to any if target not specified).
-
-Usage examples:
-  ./migrate-host.py --source-host compute-05 --target-host compute-12
-  ./migrate-host.py --source-host compute-05                   # scheduler chooses target
-  ./migrate-host.py --source-host compute-05 --dry-run
-  ./migrate-host.py --source-host compute-05 --max-parallel 3 --project-id 123...
 """
 
 import openstack
@@ -17,12 +11,12 @@ import argparse
 import logging
 import time
 import sys
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime
 
 
 def parse_arguments() -> argparse.Namespace:
+    """Parse command line arguments."""
     parser = argparse.ArgumentParser(
         description="Migrate VMs from one compute host to another (or let scheduler choose)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -93,6 +87,7 @@ class HostVMmigrator:
         self.vms_to_migrate: List = []
 
     def run(self) -> bool:
+        """Execute the full migration workflow."""
         try:
             self.connect()
             if not self.validate_source_host():
@@ -112,17 +107,17 @@ class HostVMmigrator:
                 return True
 
             results = self.process_vms()
-
             self.print_summary(results)
 
             success_count = sum(1 for r in results if r["success"])
-            return success_count >= len(results)  # # or > 0 — depends on policy
+            return success_count == len(results)  # all must succeed for overall success
 
         except Exception as e:
             logging.exception(f"Critical failure: {e}")
             return False
 
     def connect(self):
+        """Establish connection to OpenStack."""
         try:
             if self.config["cloud"]:
                 self.conn = openstack.connect(cloud=self.config["cloud"])
@@ -135,6 +130,7 @@ class HostVMmigrator:
             raise
 
     def validate_source_host(self) -> bool:
+        """Verify that source hypervisor and nova-compute service are operational."""
         host = self.config["source_host"]
         logging.info(f"Checking source host: {host}")
 
@@ -147,19 +143,32 @@ class HostVMmigrator:
             logging.error(f"Source host is not operational: status={hyp.status}, state={hyp.state}")
             return False
 
-        svc = self.conn.compute.find_service(host=host, binary="nova-compute")
-        if not svc or svc.status != "enabled" or svc.state != "up":
-            logging.error(f"nova-compute service on {host} is not up/enabled")
+        # Find nova-compute services running on this host
+        compute_services = list(
+            self.conn.compute.services(binary="nova-compute", host=host)
+        )
+
+        if not compute_services:
+            logging.error(f"No nova-compute service found for host {host}")
             return False
 
-        logging.info("Source host looks operational")
+        for svc in compute_services:
+            if svc.status != "enabled" or svc.state != "up":
+                logging.error(
+                    f"nova-compute service on {host} is not operational: "
+                    f"state={svc.state}, status={svc.status}"
+                )
+                return False
+
+        logging.info(f"nova-compute service(s) on {host} are operational")
         return True
 
     def find_vms_to_process(self):
-        """Look for ACTIVE and SHUTOFF VMs on source host"""
+        """Find all ACTIVE and SHUTOFF VMs residing on the source host."""
         self.vms_to_migrate = []
 
-        servers = self.conn.compute.servers(all_projects=True, status="ACTIVE,SHUTOFF")
+        # Note: status filter may not be supported in all SDK versions — fallback to manual check
+        servers = self.conn.compute.servers(all_projects=True)
 
         for server in servers:
             if getattr(server, "hypervisor_hostname", None) != self.config["source_host"]:
@@ -171,6 +180,7 @@ class HostVMmigrator:
             self.vms_to_migrate.append(server)
 
     def dry_run_report(self):
+        """Print summary of what would be migrated without performing any actions."""
         logging.info("═" * 70)
         logging.info("DRY-RUN MODE — no real actions will be performed")
         logging.info("═" * 70)
@@ -187,13 +197,14 @@ class HostVMmigrator:
         else:
             logging.info("Target host: not specified → Nova scheduler will choose")
 
-        logging.info("\nVMs:")
-        for vm in self.vms_to_migrate[:12]:
+        logging.info("\nSample VMs:")
+        for vm in self.vms_to_migrate[:10]:
             logging.info(f"  • {vm.name or vm.id}  ({vm.status})")
-        if len(self.vms_to_migrate) > 12:
-            logging.info(f"  ... and {len(self.vms_to_migrate)-12} more")
+        if len(self.vms_to_migrate) > 10:
+            logging.info(f"  ... and {len(self.vms_to_migrate)-10} more")
 
     def process_vms(self) -> List[Dict[str, Any]]:
+        """Start and/or migrate all collected VMs in parallel."""
         results = []
         max_workers = min(self.config["max_parallel"], len(self.vms_to_migrate))
 
@@ -206,20 +217,23 @@ class HostVMmigrator:
             for future in as_completed(futures):
                 vm = futures[future]
                 try:
-                    result = future.result()
-                    results.append(result)
+                    results.append(future.result())
                 except Exception as exc:
                     results.append({
                         "vm_id": vm.id,
                         "vm_name": vm.name or vm.id,
+                        "original_status": vm.status,
                         "success": False,
                         "error": str(exc),
                         "duration": 0,
+                        "final_host": None,
+                        "actions": [],
                     })
 
         return results
 
     def migrate_or_start_and_migrate(self, vm) -> Dict[str, Any]:
+        """Perform start (if needed) and live migration for a single VM."""
         result = {
             "vm_id": vm.id,
             "vm_name": vm.name or vm.id,
@@ -235,35 +249,33 @@ class HostVMmigrator:
 
         try:
             if vm.status == "SHUTOFF":
-                logging.info(f"{vm.name} is SHUTOFF → starting...")
+                logging.info(f"Starting SHUTOFF VM: {vm.name}")
                 result["actions"].append("start")
                 self.conn.compute.start_server(vm)
-                if not self._wait_for_status(vm.id, "ACTIVE", timeout=self.config["timeout_per_vm"]):
-                    raise RuntimeError("Failed to start VM — timeout or ERROR state")
+                if not self._wait_for_status(vm.id, "ACTIVE", self.config["timeout_per_vm"]):
+                    raise RuntimeError("VM failed to reach ACTIVE state after start")
 
-            # # Now VM must be ACTIVE — perform live migration
-            logging.info(f"Live migrating {vm.name} ...")
-
+            # Perform live migration
+            logging.info(f"Live migrating VM: {vm.name}")
             migrate_kwargs = {"server": vm.id}
+
             if self.config["target_host"]:
                 migrate_kwargs["host"] = self.config["target_host"]
+
             if self.config["on_shared_storage"]:
                 migrate_kwargs["block_migration"] = False
-                migrate_kwargs["disk_over_commit"] = False
             else:
                 migrate_kwargs["block_migration"] = True
 
             result["actions"].append("live-migrate")
             self.conn.compute.live_migrate_server(**migrate_kwargs)
 
-            # Wait for migration to complete
-            if not self._wait_for_migration_complete(vm.id, timeout=self.config["timeout_per_vm"]):
-                raise RuntimeError("Live migration timeout or failed")
+            if not self._wait_for_migration_complete(vm.id, self.config["timeout_per_vm"]):
+                raise RuntimeError("Live migration did not complete in time")
 
-            # Check where the VM ended up
+            # Get final location
             vm = self.conn.compute.get_server(vm.id)
-            final_host = getattr(vm, "hypervisor_hostname", "unknown")
-            result["final_host"] = final_host
+            result["final_host"] = getattr(vm, "hypervisor_hostname", "unknown")
             result["success"] = True
 
         except Exception as e:
@@ -273,6 +285,7 @@ class HostVMmigrator:
         return result
 
     def _wait_for_status(self, server_id: str, desired_status: str, timeout: int, interval: int = 6) -> bool:
+        """Wait until server reaches desired status or fails."""
         start = time.time()
         while time.time() - start < timeout:
             server = self.conn.compute.get_server(server_id)
@@ -284,9 +297,12 @@ class HostVMmigrator:
         return False
 
     def _wait_for_migration_complete(self, server_id: str, timeout: int, interval: int = 8) -> bool:
-        """Simple check — wait until the VM becomes ACTIVE and there is no migration in running status"""
+        """
+        Wait for live migration to finish.
+        Simple heuristic: wait until VM is ACTIVE again after seeing non-ACTIVE state.
+        """
         start = time.time()
-        seen_migrating = False
+        seen_non_active = False
 
         while time.time() - start < timeout:
             server = self.conn.compute.get_server(server_id)
@@ -295,20 +311,19 @@ class HostVMmigrator:
                 return False
 
             if server.status != "ACTIVE":
-                seen_migrating = True
+                seen_non_active = True
                 time.sleep(interval)
                 continue
 
-            # If we already saw migrating and returned to ACTIVE → most likely migration completed
-            if seen_migrating:
+            if seen_non_active:
                 return True
 
-            # If we haven't seen migrating yet, give another chance
             time.sleep(interval)
 
         return False
 
     def print_summary(self, results: List[Dict]):
+        """Print summary of migration results."""
         total = len(results)
         success = sum(1 for r in results if r["success"])
         failed = total - success
@@ -333,6 +348,7 @@ class HostVMmigrator:
 
 
 def main():
+    """Main entry point."""
     args = parse_arguments()
 
     config = {

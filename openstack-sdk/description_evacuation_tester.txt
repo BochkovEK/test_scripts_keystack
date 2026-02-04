@@ -1,27 +1,21 @@
-# Запуск ВМ в состоянии шутоф на указанном гипере
-python ~/test_scripts_keystack/openstack-sdk/light_migration.py --source_host cdm-bl-pca06 --target_host cdm-bl-pca06
+# Запуск миграции ВМ на указанный гипер
+python ~/test_scripts_keystack/openstack-sdk/light_migration.py --source-host cdm-bl-pca05 --target-host cdm-bl-pca06
 
 # Миграция CLI
-source_host=""; \
-target_host=""; \
-# Migration all VMs from source_host to target_host
-for vm_id in $(openstack server list --all-project --host $source_host --status ACTIVE -c ID -f value); do
-    echo "Migration VM $vm_id to $target_host..."
-    openstack server migrate --live-migration --host $target_host $vm_id
-done
+source_host="" \
+target_host="" \
+echo "Migration all VMs from source_host to target_host" \
+for vm_id in $(openstack server list --all-project --host $source_host --status ACTIVE -c ID -f value); do \
+    echo "Migration VM $vm_id to $target_host..." \
+    openstack server migrate --live-migration --host $target_host $vm_id; done
 
-watch -c openstack server migration list
+#или
+src=""; tgt="" \
+echo "Migrate VMs from $src to $tgt" \
+openstack server list --all-project --host $src --status ACTIVE \
+-c ID -f value | while read vm; do echo "Migrate $vm to $tgt"; openstack server migrate --live-migration --host $tgt $vm; done
 
-bash ~/test_scripts_keystack/command_on_nodes.sh -nt comp -c "sudo systemctl restart kolla-nova_compute-container.service"
-
-python ~/test_scripts_keystack/openstack-sdk/evacuation_tester.py \
-    --failed-host cdm-bl-pca05 \
-    --target-hosts cdm-bl-pca06 \
-    --max-parallel 5 \
-    --force-host-down \
-    --restore-after-test
-
-openstack compute service list
+watch -d openstack server migration list
 
 openstack compute service set --up --enable cdm-bl-pca05 nova-compute
 
@@ -30,7 +24,30 @@ bash ~/test_scripts_keystack/command_on_nodes.sh \
     -nn cdm-bl-pca05 \
     -c "container_name=nova_compute; sudo systemctl stop kolla-\${container_name}-container.service"
 
+# Проверить сост. нова
+bash ~/test_scripts_keystack/check_container_state_on_nodes.sh -nn cdm-bl-pca05
+watch -d openstack compute service list
+
+# Эвакуация
+python ~/test_scripts_keystack/openstack-sdk/evacuation_tester.py \
+    --failed-host cdm-bl-pca05 \
+    --target-hosts cdm-bl-pca06 \
+    --max-parallel 5
+
+# Эвакуация CLI
+src=""; tgt="" \
+openstack server list --host $src -f value -c ID | \
+while read id; do
+    echo "Evacuating $id ..."
+    openstack server evacuate --wait $id
+    # или с целевым хостом:
+    # openstack server evacuate --wait --host $tgt $id
+done
+
+# Восстановить сост. нова (запуск контейнера автоматически запускает сервис (down -> up))
 bash ~/test_scripts_keystack/command_on_nodes.sh \
     -nn cdm-bl-pca05 \
     -c "container_name=nova_compute; sudo systemctl restart kolla-\${container_name}-container.service"
+
+openstack compute service set --up --enable cdm-bl-pca05 nova-compute
 

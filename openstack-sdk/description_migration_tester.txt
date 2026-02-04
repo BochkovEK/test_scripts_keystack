@@ -21,6 +21,8 @@ OpenStack Live Migration Test Script - инструмент для тестир�
 
     --migration-timeout - таймаут для одной миграции в секундах
 
+    --full-circle FULL_CIRCLE - выполнить миграции всех ВМ по указанным гиперам указанное количество циклов
+
     Конфигурация OpenStack
     --cloud - имя облака из clouds.yaml
 
@@ -77,8 +79,17 @@ OpenStack Live Migration Test Script - инструмент для тестир�
     # Базовый запуск
 python ./migration_test.py --hypervisors "hypervisor1,hypervisor2,hypervisor3" --duration 360
 
-    # С параллельными миграциями
-python ./migration_test.py --hypervisors hv1,hv2 --max-parallel 3 --duration 7200
+    # С параллельными миграциями (by cycle)
+
+# Если
+cat /etc/kolla/nova-compute/nova.conf |grep max
+max_concurrent_live_migrations = 5
+python ~/test_scripts_keystack/openstack-sdk/migration_tester.py \
+    --hypervisors cdm-bl-pca05,cdm-bl-pca06,cdm-bl-pca08 \
+    --max-parallel 5 --full-circle 1
+
+    # С параллельными миграциями (by duration)
+python ./migration_test.py --hypervisors hv1,hv2 --max-parallel 5 --duration 7200
 
     # С подробным логированием
 python ./migration_test.py --hypervisors hv1,hv2 --log-level DEBUG --output-format json

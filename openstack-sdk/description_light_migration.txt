@@ -1,0 +1,4 @@
+Мигрирует все ВМ из указанного хоста --source-host на указанный --target-host,
+при необходимости ВМ в статусе shutoff переводит в сост. active
+
+python ~/test_scripts_keystack/openstack-sdk/light_migration.py --source-host cdm-bl-pca08 --target-host cdm-bl-pca05 --max-parallel 5
