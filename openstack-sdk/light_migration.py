@@ -23,7 +23,7 @@ def parse_arguments() -> argparse.Namespace:
         epilog="""Examples:
   %(prog)s --source-host compute-05 --target-host compute-12
   %(prog)s --source-host compute-05 --dry-run
-  %(prog)s --source-host compute-05 --max-parallel 4 --on-shared-storage
+  %(prog)s --source-host compute-05 --max-parallel 4 --block-migration
   %(prog)s --source-host compute-05 --project-id 8a4... --timeout-per-vm 600
         """
     )
@@ -59,9 +59,9 @@ def parse_arguments() -> argparse.Namespace:
         help="Timeout for single VM operation (start or migrate) in seconds (default: 900)"
     )
     parser.add_argument(
-        "--on-shared-storage",
+        "--block-migration",
         action="store_true",
-        help="Pass on_shared_storage=True (useful for live migrate without shared storage)"
+        help="Use block migration (only for instances with local storage, not shared like Ceph/NFS)"
     )
     parser.add_argument(
         "--dry-run",
@@ -248,6 +248,10 @@ class HostVMmigrator:
         start_ts = time.time()
 
         try:
+            # Check for config drive
+            if vm.config_drive:
+                logging.warning(f"VM {vm.name} has config_drive enabled. Live migration may fail if config_drive_format is not 'vfat' in nova.conf.")
+
             if vm.status == "SHUTOFF":
                 logging.info(f"Starting SHUTOFF VM: {vm.name}")
                 result["actions"].append("start")
@@ -262,10 +266,9 @@ class HostVMmigrator:
             if self.config["target_host"]:
                 migrate_kwargs["host"] = self.config["target_host"]
 
-            if self.config["on_shared_storage"]:
-                migrate_kwargs["block_migration"] = False
-            else:
-                migrate_kwargs["block_migration"] = True
+            # Default to shared storage (block_migration=False)
+            # Use block_migration=True only if --block-migration flag is set (for local storage)
+            migrate_kwargs["block_migration"] = self.config["block_migration"]
 
             result["actions"].append("live-migrate")
             self.conn.compute.live_migrate_server(**migrate_kwargs)
@@ -358,7 +361,7 @@ def main():
         "project_id": args.project_id,
         "max_parallel": args.max_parallel,
         "timeout_per_vm": args.timeout_per_vm,
-        "on_shared_storage": args.on_shared_storage,
+        "block_migration": args.block_migration,
         "dry_run": args.dry_run,
     }
 
