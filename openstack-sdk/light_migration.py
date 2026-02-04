@@ -299,30 +299,44 @@ class HostVMmigrator:
             time.sleep(interval)
         return False
 
-    def _wait_for_migration_complete(self, server_id: str, timeout: int, interval: int = 8) -> bool:
+    def _wait_for_migration_complete(self, server_id: str, timeout: int, interval: int = 10) -> bool:
         """
-        Wait for live migration to finish.
-        Simple heuristic: wait until VM is ACTIVE again after seeing non-ACTIVE state.
+        Wait for live migration to finish successfully.
+        Checks both VM status/location and migration record status.
         """
         start = time.time()
-        seen_non_active = False
+        migration_id = None
 
         while time.time() - start < timeout:
             server = self.conn.compute.get_server(server_id)
+            current_host = getattr(server, "hypervisor_hostname", None)
 
-            if server.status == "ERROR":
-                return False
+            # Try to find the latest migration record for this server
+            migrations = list(self.conn.compute.migrations(server_id=server_id))
+            if migrations:
+                latest_mig = max(migrations, key=lambda m: m.updated_at or m.created_at)
+                mig_status = getattr(latest_mig, "status", "unknown")
 
-            if server.status != "ACTIVE":
-                seen_non_active = True
-                time.sleep(interval)
-                continue
+                if mig_status == "completed":
+                    if current_host != self.config["source_host"]:
+                        logging.info(f"Migration completed: VM now on {current_host}")
+                        return True
+                    else:
+                        logging.warning("Migration marked completed but host didn't change")
 
-            if seen_non_active:
-                return True
+                elif mig_status == "failed":
+                    logging.error(f"Migration explicitly failed (status: {mig_status})")
+                    return False
 
+                elif mig_status in ("running", "preparing", "post-migrating"):
+                    logging.debug(f"Migration still in progress: {mig_status}")
+                else:
+                    logging.warning(f"Unexpected migration status: {mig_status}")
+
+            # Fallback: if no migration record found yet, wait
             time.sleep(interval)
 
+        logging.error("Migration timeout — no completed/failed status detected")
         return False
 
     def print_summary(self, results: List[Dict]):
