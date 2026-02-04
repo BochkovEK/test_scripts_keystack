@@ -345,7 +345,7 @@ class SimpleEvacuationTester:
             # "...Additional properties are not allowed ('onSharedStorage' was unexpected)"
             params['on_shared_storage'] = self.config['use_shared_storage']
 
-            params['microversion'] = '2.14'
+            params['microversion'] = '2.7'
 
             if len(self.target_hosts) == 1:
                 params['host'] = self.target_hosts[0]
