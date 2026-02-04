@@ -409,7 +409,7 @@ class SimpleEvacuationTester:
             response = self.conn.compute.post(
                 f"/servers/{vm.id}/action",
                 json=payload,
-                microversion="2.14"  # minimum for onSharedStorage; try "2.95" if newer
+                microversion="2.7"  # minimum for onSharedStorage; try "2.95" if newer
             )
 
             if response.status_code == 202:
