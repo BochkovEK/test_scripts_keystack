@@ -400,59 +400,66 @@ class MigrationTester:
             logging.error(f"❌ {error_msg}")
             return False, migration_time, error_msg
 
-    def monitor_migration(self, server, timeout):
+    def monitor_migration(self, server, timeout: int) -> tuple[bool, Optional[str]]:
         """
-        Monitor migration status until completion or timeout.
-
-        Args:
-            server: Server object to monitor
-            timeout: Maximum monitoring time in seconds
-
-        Returns:
-            tuple: (success: bool, error_message: str)
+        Monitor live migration with reliable success criteria.
+        Returns: (success: bool, error_message: str or None)
         """
         start_time = time.time()
+        original_host = getattr(server, 'hypervisor_hostname', 'unknown')
+        seen_non_active = False
+        migration_id = None
 
-        try:
-            logging.debug(f"👀 Monitoring migration status for: {server.name}")
+        logging.debug(f"Starting migration monitoring for {server.name} (original host: {original_host})")
 
-            while time.time() - start_time < timeout:
-                # Refresh server data to get current status
-                server = self.conn.compute.get_server(server.id)
+        while time.time() - start_time < timeout:
+            # Refresh server object
+            server = self.conn.compute.get_server(server.id)
+            current_host = getattr(server, 'hypervisor_hostname', None)
 
-                # Check if migration is still in progress
-                if hasattr(server, 'migration') and server.migration:
-                    migration_status = server.migration.status
-                    logging.debug(f"Migration status: {migration_status}")
+            # 1. Check task_state first (most reliable early indicator)
+            task_state = getattr(server, 'task_state', None)
+            if task_state in ('migrating', 'resize_migrating', 'post_migrating'):
+                seen_non_active = True
+                logging.debug(f"Still in migration phase: task_state={task_state}")
+                time.sleep(3)
+                continue
 
-                    if migration_status in ['completed', 'confirmed']:
-                        return True, None
-                    elif migration_status in ['error', 'failed']:
-                        return False, f"Migration failed with status: {migration_status}"
-                    # Continue monitoring for 'migrating', 'pre-migrating' etc.
-
-                # Check server status as fallback
-                if server.status == 'ACTIVE':
-                    # Verify VM actually moved to new host
-                    current_host = getattr(server, 'hypervisor_hostname', None)
-                    if current_host and current_host != getattr(server, '_original_host', None):
+            # 2. If back to None task_state + ACTIVE → likely finished
+            if task_state is None and server.status == 'ACTIVE':
+                if seen_non_active:
+                    # Final check: did host actually change?
+                    if current_host and current_host != original_host:
+                        logging.info(f"Success: VM moved from {original_host} → {current_host}")
                         return True, None
                     else:
-                        return False, "VM did not change hypervisor after migration"
+                        return False, f"VM returned to ACTIVE but host did not change (still on {current_host})"
 
-                elif server.status == 'ERROR':
-                    return False, f"VM entered ERROR state during migration"
+            # 3. Check explicit migration record (most accurate)
+            migrations = list(self.conn.compute.migrations(server=server.id))
+            if migrations:
+                latest = max(migrations, key=lambda m: m.updated_at or m.created_at)
+                status = getattr(latest, 'status', 'unknown')
 
-                # Wait before next check
-                time.sleep(2)
+                if status == 'completed':
+                    if current_host != original_host:
+                        return True, None
+                    else:
+                        return False, "Migration marked 'completed' but host unchanged"
 
-            # Timeout reached
-            return False, f"Migration timeout after {timeout} seconds"
+                if status in ('failed', 'error', 'reverted'):
+                    reason = getattr(latest, 'error_message', 'No details')
+                    return False, f"Migration {status}: {reason}"
 
-        except Exception as e:
-            error_msg = f"Monitoring error: {e}"
-            logging.error(f"❌ {error_msg}")
-            return False, error_msg
+            # 4. Error states
+            if server.status == 'ERROR':
+                fault = getattr(server, 'fault', None)
+                msg = fault.message if fault else 'Unknown error'
+                return False, f"VM in ERROR state: {msg}"
+
+            time.sleep(4)  # slightly longer interval to reduce API load
+
+        return False, f"Timeout after {timeout}s - no clear success or failure detected"
 
     def run_test_cycle(self):
         """
