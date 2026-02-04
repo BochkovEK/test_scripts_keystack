@@ -341,7 +341,9 @@ class SimpleEvacuationTester:
             params = {'server': vm.id}
 
             # Always use on_shared_storage=True unless --local-storage is specified
-            params['on_shared_storage'] = self.config['use_shared_storage']
+            # ks-2025.3.1 nova does not support the on_shared_storage parameter
+            # "...Additional properties are not allowed ('onSharedStorage' was unexpected)"
+            # params['on_shared_storage'] = self.config['use_shared_storage']
 
             if len(self.target_hosts) == 1:
                 params['host'] = self.target_hosts[0]
