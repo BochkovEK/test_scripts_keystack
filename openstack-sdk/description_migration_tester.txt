@@ -85,7 +85,7 @@ python ./migration_test.py --hypervisors "hypervisor1,hypervisor2,hypervisor3" -
 cat /etc/kolla/nova-compute/nova.conf |grep max
 max_concurrent_live_migrations = 5
 python ~/test_scripts_keystack/openstack-sdk/migration_tester.py \
-    --hypervisors cdm-bl-pca05,cdm-bl-pca06,cdm-bl-pca08 \
+    --hypervisors cdm-bl-pca05,cdm-bl-pca06,cdm-bl-pca07,cdm-bl-pca08 \
     --max-parallel 5 --full-circle 1
 
     # С параллельными миграциями (by duration)

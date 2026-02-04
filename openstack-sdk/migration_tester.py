@@ -482,7 +482,7 @@ class MigrationTester:
                 self.stats.total_cycles += 1
                 return True
 
-            logging.info(f"📋 Migrating {len(active_vms)} VM (from {len(self.vms)}, just: {len(self.excluded_vms)})")
+            logging.info(f"📋 Migrating {len(active_vms)} VM (from {len(self.vms)}, excluded: {len(self.excluded_vms)})")
 
             # Calculate number of parallel workers
             if self.config['max_parallel'] == -1:
@@ -536,15 +536,19 @@ class MigrationTester:
             return False
 
     def _migrate_single_vm(self, vm):
-        """
-        Migrate single VM and return result.
-        Helper method for parallel execution.
-        """
         current_host = getattr(vm, 'hypervisor_hostname', 'unknown')
         next_host = self._get_next_hypervisor(current_host)
 
         logging.info(f"🔄 Migrating {vm.name} {current_host} → {next_host}")
-        return self.live_migrate_vm(vm, next_host)
+
+        success, migration_time, error_msg = self.live_migrate_vm(vm, next_host)
+
+        if not success:
+            logging.warning(f"VM {vm.name} ({vm.id}) # will be excluded from further migrations "
+                            f"error: {error_msg}")
+            self.excluded_vms.add(vm.id)
+
+        return success, migration_time, error_msg
 
     def _get_next_hypervisor(self, current_host):
         """
