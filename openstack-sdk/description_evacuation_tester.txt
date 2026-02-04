@@ -16,6 +16,7 @@ openstack server list --all-project --host $src --status ACTIVE \
 -c ID -f value | while read vm; do echo "Migrate $vm to $tgt"; openstack server migrate --live-migration --host $tgt $vm; done
 
 watch -d openstack server migration list
+watch -d -c "openstack server migration list --limit 10 -c ID -c 'Source Node' -c 'Dest Node' -c Status -c 'Created At' -c 'Updated At' -c 'Server UUID'"
 
 openstack compute service set --up --enable cdm-bl-pca05 nova-compute
 
@@ -50,4 +51,20 @@ bash ~/test_scripts_keystack/command_on_nodes.sh \
     -c "container_name=nova_compute; sudo systemctl restart kolla-\${container_name}-container.service"
 
 openstack compute service set --up --enable cdm-bl-pca05 nova-compute
+
+self.conn.compute.evacuate_server(**kwargs)
+
+Параметр              | Тип    | Обязательный? | Описание                                                                  | По умолчанию
+----------------------|--------|---------------|---------------------------------------------------------------------------|--------------
+server                | str    | Да            | UUID или имя сервера (инстанса), который эвакуируем                       | —
+host                  | str    | Нет           | Имя целевого гипервизора (compute-хоста), куда эвакуировать               | None
+on_shared_storage     | bool   | Нет           | Указывает, что диски инстанса находятся на shared storage (Ceph, FC, NFS) | False
+admin_password        | str    | Нет           | Новый пароль администратора после эвакуации (если нужен)                  | None
+target_state          | str    | Нет           | Желаемое состояние ВМ после эвакуации ('ACTIVE' или 'SHUTOFF')            | 'ACTIVE'
+force                 | bool   | Нет           | Принудительная эвакуация (игнорировать некоторые проверки)                | False
+microversion          | str    | Нет           | Явно указать microversion API (например '2.95')                           | Авто
+
+
+
+
 
