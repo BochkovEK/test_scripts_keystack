@@ -186,6 +186,7 @@ class MigrationTester:
         self.conn = None
         self.stats = MigrationStats()
         self.vms = []
+        self.excluded_vms = set()
 
     def connect_openstack(self):
         """
@@ -471,6 +472,18 @@ class MigrationTester:
         try:
             logging.info(f"🚀 Starting migration cycle {self.stats.total_cycles + 1}")
 
+            # Filter only active (not excluded) VMs
+            active_vms = [vm for vm in self.vms if vm.id not in self.excluded_vms]
+
+            if not active_vms:
+                logging.info("⚠️ All VMs are excluded due to previous failures — cycle is empty")
+                cycle_duration = time.time() - cycle_start
+                self.stats.cycle_times.append(cycle_duration)
+                self.stats.total_cycles += 1
+                return True
+
+            logging.info(f"📋 Migrating {len(active_vms)} VM (from {len(self.vms)}, just: {len(self.excluded_vms)})")
+
             # Calculate number of parallel workers
             if self.config['max_parallel'] == -1:
                 workers = len(self.vms)  # Unlimited - all VMs in parallel
@@ -484,7 +497,7 @@ class MigrationTester:
                 # Submit all migration tasks
                 future_to_vm = {
                     executor.submit(self._migrate_single_vm, vm): vm
-                    for vm in self.vms
+                    for vm in active_vms
                 }
 
                 # Collect results
