@@ -8,6 +8,7 @@ import logging
 import sys
 import time
 import os
+from tabulate import tabulate
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
