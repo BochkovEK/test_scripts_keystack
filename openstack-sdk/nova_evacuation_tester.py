@@ -11,10 +11,10 @@ import logging
 import os
 import sys
 import time
+import json
 from typing import List, Dict, Any
+from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
-# from datetime import datetime
-# import json
 
 from novaclient import client as nova_client
 from novaclient.exceptions import ClientException
@@ -139,6 +139,7 @@ class EvacuationTester:
     def _get_nova_client(self):
         """Create nova client using environment variables or clouds.yaml"""
         try:
+            # Use OS_* variables or clouds.yaml if OS_CLOUD set
             nc = nova_client.Client(
                 version=self.args.microversion,
                 session=None,  # will use env vars / clouds.yaml
@@ -267,7 +268,7 @@ class EvacuationTester:
         print(f"Host: {self.args.failed_host}")
         print(f"Duration: {duration:.1f}s")
         print(f"Total VMs: {len(self.results)}")
-        print(f"Successful: {successful} ({successful/len(self.results)*100:.1f}%)")
+        print(f"Successful: {successful} ({successful/len(self.results)*100:.1f}% if self.results else 0)")
         print(f"Failed: {failed}")
         if self.results:
             times = [r['evacuation_time'] for r in self.results if r['success']]
@@ -276,13 +277,8 @@ class EvacuationTester:
         print("="*60)
 
 
-def main():
-    """Main entry point."""
+if __name__ == "__main__":
     args = parse_arguments()
     tester = EvacuationTester(args)
     tester.run()
     sys.exit(0)
-
-
-if __name__ == "__main__":
-    main()

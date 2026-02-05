@@ -2,21 +2,19 @@
 python ~/test_scripts_keystack/openstack-sdk/light_migration.py --source-host cdm-bl-pca05 --target-host cdm-bl-pca06
 
 # Миграция CLI
-source_host="" \
-target_host="" \
-echo "Migration all VMs from source_host to target_host" \
-for vm_id in $(openstack server list --host $source_host --status ACTIVE -c ID -f value); do \
-    echo "Migration VM $vm_id to $target_host..." \
-    openstack server migrate --live-migration --host $target_host $vm_id; done
+
+source_host=comp05 target_host=comp06;
+for vm in $(openstack server list --host $source_host --all-projects --status ACTIVE -c ID -f value);
+    do echo "Migration $vm from $source_host to $target_host...";
+    openstack server migrate --live-migration --shared-migration --host $target_host $vm;
+    done
 
 # Эвакуция CLI
-source_host="" \
-target_host="" \
-echo "Evacuation VM from $source_host to $target_host" \
-for vm_id in $(openstack server list --host $source_host --all-projects --status ACTIVE -c ID -f value); do \
-    vm_status=$(openstack server show $vm_id -c status -f value) \
-    echo "Evacuation VM $vm_id to $target_host..." \
-    openstack server evacuate --shared-storage --host $target_host $vm_id; done
+source_host=comp05 target_host=comp06;
+for vm in $(openstack server list --host $source_host --all-projects --status ACTIVE -c ID -f value);
+    do echo "Evacuating $vm from $source_host to $target_host...";
+    openstack server evacuate --os-compute-api-version 2.14 --shared-storage --host $target_host $vm;
+    done
 
 #или
 src=""; tgt="" \
