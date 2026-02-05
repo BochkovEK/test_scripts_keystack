@@ -1,3 +1,9 @@
+python ~/test_scripts_keystack/openstack-sdk/minimal_evacuation_tester.py \
+    --failed-host cdm-bl-pca05 \
+    --target-host cdm-bl-pca06 \
+    --microversion 2.53 \
+    --max-parallel 5
+
 # Запуск миграции ВМ на указанный гипер
 python ~/test_scripts_keystack/openstack-sdk/light_migration.py --source-host cdm-bl-pca05 --target-host cdm-bl-pca06
 
