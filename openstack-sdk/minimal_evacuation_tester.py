@@ -68,7 +68,7 @@ def evacuate_vms(args):
             logging.info(f"Evacuating {vm.name} ({vm.id}) → {args.target_host}")
 
             # Execute evacuation
-            nova.servers.evacuate(vm, host=args.target_host, preserve_ephemeral=True)
+            nova.servers.evacuate(vm, host=args.target_host)
 
             # Monitor: wait for host change and task_state == None
             start = time.time()
