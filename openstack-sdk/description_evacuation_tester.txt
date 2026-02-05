@@ -59,6 +59,9 @@ bash ~/test_scripts_keystack/command_on_nodes.sh \
 
 openstack compute service set --up --enable cdm-bl-pca05 nova-compute
 
+# Восстановить состояние ВМ
+openstack server set --state active ubuntu_vm
+
 self.conn.compute.evacuate_server(**kwargs)
 
 Параметр              | Тип    | Обязательный? | Описание                                                                  | По умолчанию
