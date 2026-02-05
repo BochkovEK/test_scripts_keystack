@@ -10,6 +10,7 @@ import argparse
 import logging
 import sys
 import time
+import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from novaclient import client as nova_client
