@@ -4,6 +4,7 @@ Minimal OpenStack Evacuation Tester (novaclient)
 
 Evacuates VMs from failed host to target host.
 Supports microversion as argument.
+Does NOT start VMs after evacuation.
 """
 
 import argparse
@@ -17,16 +18,19 @@ from novaclient import client as nova_client
 
 
 def parse_arguments():
+    """Parse command line arguments."""
     parser = argparse.ArgumentParser(description="Evacuate VMs from failed host")
     parser.add_argument('--failed-host', required=True, help="Source host")
     parser.add_argument('--target-host', required=True, help="Target host")
     parser.add_argument('--microversion', default='2.96', help="Nova API microversion")
     parser.add_argument('--max-parallel', type=int, default=3, help="Max parallel evacuations")
+    parser.add_argument('--timeout', type=int, default=600, help="Timeout per VM in seconds")
     parser.add_argument('--dry-run', action='store_true', help="Dry run")
     return parser.parse_args()
 
 
 def get_nova_client(microversion):
+    """Create nova client using environment variables."""
     return nova_client.Client(
         version=microversion,
         auth_url=os.getenv('OS_AUTH_URL'),
@@ -39,6 +43,7 @@ def get_nova_client(microversion):
 
 
 def evacuate_vms(args):
+    """Main evacuation logic."""
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
 
     nova = get_nova_client(args.microversion)
@@ -58,21 +63,36 @@ def evacuate_vms(args):
         return
 
     def evacuate_one(vm):
+        """Evacuate one VM and wait for host change."""
         try:
             logging.info(f"Evacuating {vm.name} ({vm.id}) → {args.target_host}")
+
+            # Execute evacuation
             nova.servers.evacuate(vm, host=args.target_host)
-            # Wait for completion (simple polling)
-            for _ in range(60):  # ~5 min max
+
+            # Monitor: wait for host change and task_state == None
+            start = time.time()
+            original_host = getattr(vm, 'OS-EXT-SRV-ATTR:hypervisor_hostname', None)
+
+            while time.time() - start < args.timeout:
                 vm = nova.servers.get(vm.id)
-                if vm.status == 'ACTIVE':
-                    logging.info(f"Success: {vm.name}")
+                current_host = getattr(vm, 'OS-EXT-SRV-ATTR:hypervisor_hostname', None)
+                task_state = getattr(vm, 'OS-EXT-STS:task_state', None)
+
+                if current_host and current_host != original_host and task_state is None:
+                    logging.info(f"Success: {vm.name} moved to {current_host}")
                     return True
+
                 if vm.status == 'ERROR':
-                    logging.error(f"Failed: {vm.name} in ERROR")
+                    fault = getattr(vm, 'fault', {}).get('message', 'no details')
+                    logging.error(f"Failed: {vm.name} in ERROR - {fault}")
                     return False
+
                 time.sleep(5)
-            logging.warning(f"Timeout for {vm.name}")
+
+            logging.warning(f"Timeout for {vm.name}: no host change or task not cleared")
             return False
+
         except Exception as e:
             logging.error(f"Error evacuating {vm.name}: {e}")
             return False
@@ -81,11 +101,12 @@ def evacuate_vms(args):
     with ThreadPoolExecutor(max_workers=args.max_parallel) as executor:
         results = list(executor.map(evacuate_one, active_vms))
 
-    success_count = sum(results)
+    success_count = sum(1 for r in results if r)
     logging.info(f"Evacuation completed: {success_count}/{len(active_vms)} successful")
 
 
 def main():
+    """Main entry point."""
     args = parse_arguments()
     evacuate_vms(args)
     sys.exit(0)
