@@ -1,35 +1,35 @@
 #!/usr/bin/env python3
 """
-Minimal check for nova.servers.evacuate parameters
+Minimal check for openstack.compute.evacuate_server parameters
 """
 
-from novaclient import client as nova_client
+import openstack
 
 
 def main():
-    print("=== Checking nova.servers.evacuate parameters ===\n")
+    print("=== Checking openstack.compute.evacuate_server parameters ===\n")
 
     print("Trying to get parameter info from TypeError and docstring...\n")
 
     try:
-        # Create dummy client (no real auth needed for inspection)
-        nova = nova_client.Client(version='2.1')
+        # Create dummy connection (no real auth needed for inspection)
+        conn = openstack.connect()
 
-        # Try to call evacuate without arguments → get TypeError hint
+        # Try to call evacuate_server without arguments → get TypeError hint
         try:
-            nova.servers.evacuate()
+            conn.compute.evacuate_server()
         except TypeError as e:
             print("From TypeError (required arguments):")
             print(f"  {e}\n")
 
         # Show docstring if available
         print("Method docstring (if available):")
-        doc = nova.servers.evacuate.__doc__
+        doc = conn.compute.evacuate_server.__doc__
         print(doc if doc else "No docstring available in this version\n")
 
     except ImportError:
-        print("Error: python-novaclient is not installed.")
-        print("Install it: pip install python-novaclient")
+        print("Error: openstacksdk is not installed.")
+        print("Install it: pip install openstacksdk")
     except Exception as e:
         print(f"Unexpected error: {e}")
 
