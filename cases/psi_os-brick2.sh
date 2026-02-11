@@ -1,10 +1,19 @@
 #!/bin/bash
 
+set -x
+
 # Script for OpenStack volume migration testing with multipath devices
 # This script creates VMs, tests volume operations, and performs live migration
 
 # Предпроверка podman exec -it multipathd multipath -ll (на гиперах)
-# Итоговая проверка dmesg -T (на гиперах)
+# Итоговая проверка sudo dmesg -T| tail -n 20 (на гиперах)
+
+# Пример предваиртельной проверки кластера
+# openstack image list --long
+# openstack volume list --all-proj --long
+# bash ~/test_scripts_keystack/command_on_nodes.sh -nt comp -c "sudo podman exec -it multipathd multipath -ll"
+# bash ~/test_scripts_keystack/command_on_nodes.sh -nt comp -c "sudo dmesg -T| tail -n 20"
+
 
 #ENVS
 #export SKIP_CREATE_VMS=true
@@ -58,6 +67,8 @@ create_vms() {
 #    declare -A SERVERS
 
     if [ -z "$TC_FLAVOR" ]; then
+        echo "Creating flavor ${default_flavor_name}..."
+        # check for exists
         openstack flavor create --public --vcpus "$default_flavor_vcpus" --ram "$default_flavor_ram" --disk 0 "$default_flavor_name"
         TC_FLAVOR="$default_flavor_name"
     fi

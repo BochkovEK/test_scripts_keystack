@@ -39,7 +39,7 @@ resource "openstack_compute_instance_v2" "vm" {
   for_each = { for k, v in local.instances : v.name => v }
 
   name                        = each.value.name
-  image_name                  = each.value.image_name
+#  image_name                  = each.value.image_name
   flavor_name                 = each.value.flavor_name == "" ? "${each.value.base_name}-flavor" : each.value.flavor_name
   key_pair                    = each.value.keypair_name == null ? openstack_compute_keypair_v2.keypair.name : each.value.keypair_name
   security_groups             = each.value.security_groups == null ? [openstack_compute_secgroup_v2.secgroup.name] : each.value.security_groups

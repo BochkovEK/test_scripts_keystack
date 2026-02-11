@@ -4,22 +4,28 @@ python ~/test_scripts_keystack/openstack-sdk/minimal_evacuation_tester.py \
     --microversion 2.53 \
     --max-parallel 5
 
+# Проверить состояние ВМ
+watch -d -c "openstack server list --long -c id -c Host -c Status -c Name -c 'Power State'"
+
+
 # Запуск миграции ВМ на указанный гипер
 python ~/test_scripts_keystack/openstack-sdk/light_migration.py --source-host cdm-bl-pca05 --target-host cdm-bl-pca06
 
 # Миграция CLI
-
 source_host=comp05 target_host=comp06;
 for vm in $(openstack server list --host $source_host --all-projects --status ACTIVE -c ID -f value);
     do echo "Migration $vm from $source_host to $target_host...";
     openstack server migrate --live-migration --shared-migration --host $target_host $vm;
     done
 
+# Проверка испольщования микроверсии
+openstack --os-compute-api-version 2.53 server list --debug 2>&1 | grep -i "X-OpenStack-Nova-API-Version"
+
 # Эвакуция CLI
 source_host=comp05 target_host=comp06;
-for vm in $(openstack server list --host $source_host --all-projects --status ACTIVE -c ID -f value);
+for id in $(openstack server list --long --status ACTIVE -c ID -c Host -f value | awk -v host="$source_host" '$2 == host {print $1}')
     do echo "Evacuating $vm from $source_host to $target_host...";
-    openstack server evacuate --os-compute-api-version 2.14 --shared-storage --host $target_host $vm;
+    openstack server evacuate --os-compute-api-version 2.53 --host $target_host $id;
     done
 
 #или
@@ -41,6 +47,16 @@ bash ~/test_scripts_keystack/command_on_nodes.sh \
 # Проверить сост. нова
 bash ~/test_scripts_keystack/check_container_state_on_nodes.sh -nn cdm-bl-pca05
 watch -d openstack compute service list
+
+# Проверить состояние миграций
+watch -d -c "openstack server migration list \
+    --limit 10 \
+    -c ID -c 'Source Node' \
+    -c 'Dest Node' \
+    -c Status \
+    -c 'Created At' \
+    -c 'Updated At' \
+    -c 'Server UUID'"
 
 # Эвакуация
 python ~/test_scripts_keystack/openstack-sdk/evacuation_tester.py \
