@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Force set 'creating' volumes to 'error' status and optionally delete them.
-Uses openstack.connect() — same auth method as your working example.
-Requires admin privileges.
+Uses openstack.connect() for authentication (environment variables or clouds.yaml).
+Requires admin privileges for reset_state action.
 """
 
 import argparse
@@ -58,12 +58,12 @@ def main():
 
     try:
         conn = openstack.connect()
-        conn.authorize()  # explicitly check auth (like in your example)
-        logging.info("✅ Authentication successful")
+        conn.authorize()  # Verify authentication
+        logging.info("Authentication successful")
 
         cinder = conn.block_storage
     except Exception as e:
-        logging.error(f"❌ Failed to connect or authorize: {e}")
+        logging.error(f"Failed to connect or authorize: {e}")
         sys.exit(1)
 
     logging.info("Searching for volumes in 'creating' status...")
@@ -83,7 +83,7 @@ def main():
         return
 
     print("\n" + "-" * 60)
-    print("STARTING VOLUME STATUS CHANGE...")
+    print("STARTING VOLUME STATUS RESET...")
     print("-" * 60)
 
     updated = 0
@@ -91,14 +91,15 @@ def main():
 
     for vol in volumes:
         try:
-            logging.info(f"Setting status 'error' for volume {vol.id} ({vol.name or 'no name'})")
+            logging.info(f"Resetting state to 'error' for volume {vol.id} ({vol.name or 'no name'})")
 
+            # Correct way: use reset_state on the proxy or resource
             cinder.reset_state(vol, state="error")
             updated += 1
 
             time.sleep(args.wait)
 
-            # Verify
+            # Verify the status change
             vol_refreshed = cinder.get_volume(vol.id)
             if vol_refreshed.status == "error":
                 logging.info("  → success: status = error")
@@ -118,13 +119,13 @@ def main():
     print("RESULT")
     print("=" * 60)
     print(f"  Found volumes in 'creating'     : {len(volumes)}")
-    print(f"  Set to 'error'                  : {updated}")
+    print(f"  Reset to 'error'                : {updated}")
     if args.force_delete:
         print(f"  Deleted                         : {deleted}")
     print("=" * 60)
 
     if updated == 0:
-        logging.warning("No volumes were set to error")
+        logging.warning("No volumes were reset to error")
 
 
 if __name__ == "__main__":
