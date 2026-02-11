@@ -93,7 +93,7 @@ def main():
         try:
             logging.info(f"Setting status 'error' for volume {vol.id} ({vol.name or 'no name'})")
 
-            cinder.reset_volume_state(vol.id, status="error")
+            cinder.reset_state(vol, state="error")
             updated += 1
 
             time.sleep(args.wait)
