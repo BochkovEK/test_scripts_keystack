@@ -78,24 +78,17 @@ def main():
         logging.error(f"Connection failed: {e}")
         sys.exit(1)
 
-    # Find all VMs in ERROR status
-    logging.info("Searching for VMs in 'ERROR' status...")
-    error_vms = list(conn.compute.servers(status="ERROR", all_projects=True))
-
-    if not error_vms:
-        logging.info("No VMs found in 'ERROR' status.")
-
-    # If no --force-delete → just list all VMs and their volumes
     if not args.force_delete:
+        # Только просмотр всех ВМ — без поиска ERROR
         logging.info("Listing all VMs with attached volumes...")
-
         all_vms = list(conn.compute.servers(all_projects=True))
+
         if not all_vms:
-            logging.info("No VMs found at all.")
+            logging.info("No VMs found.")
             return
 
         print("\n" + "=" * 80)
-        print("ALL VIRTUAL MACHINES AND ATTACHED VOLUMES")
+        print("LIST OF ALL VIRTUAL MACHINES AND ATTACHED VOLUMES")
         print("=" * 80)
 
         for vm in all_vms:
@@ -113,7 +106,14 @@ def main():
 
         return
 
-    # If --force-delete is set → process ERROR VMs
+    # Если есть --force-delete — работаем только с ERROR ВМ
+    logging.info("Searching for VMs in 'ERROR' status...")
+    error_vms = list(conn.compute.servers(status="ERROR", all_projects=True))
+
+    if not error_vms:
+        logging.info("No VMs found in 'ERROR' status.")
+        return
+
     logging.info(f"Found {len(error_vms)} VMs in 'ERROR' status")
 
     if args.dry_run:
