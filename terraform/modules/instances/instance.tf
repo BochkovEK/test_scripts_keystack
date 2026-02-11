@@ -18,14 +18,14 @@ resource "openstack_compute_servergroup_v2" "vm_group" {
   policies = [each.value.policy]
 }
 
-#resource "openstack_blockstorage_volume_v3" "root_volume" {
-#  for_each = { for k, v in local.instances : v.name => v }
-#
-#  name        = "${each.value.name}-root"
-#  size        = each.value.boot_volume_size
-#  volume_type = var.default_volume_type
-##  image_id    = data.openstack_images_image_v2.image_id[each.key].id
-#}
+resource "openstack_blockstorage_volume_v3" "root_volume" {
+  for_each = { for k, v in local.instances : v.name => v }
+
+  name        = "${each.value.name}-root"
+  size        = each.value.boot_volume_size
+  volume_type = var.default_volume_type
+  image_id    = data.openstack_images_image_v2.image_id[each.key].id
+}
 
 resource "openstack_blockstorage_volume_v3" "data_volumes" {
   for_each = { for vol in local.all_data_volumes : "${vol.vm_name}-${vol.name}" => vol }
@@ -39,7 +39,7 @@ resource "openstack_compute_instance_v2" "vm" {
   for_each = { for k, v in local.instances : v.name => v }
 
   name                        = each.value.name
-#  image_name                  = each.value.image_name
+  image_name                  = each.value.image_name
   flavor_name                 = each.value.flavor_name == "" ? "${each.value.base_name}-flavor" : each.value.flavor_name
   key_pair                    = each.value.keypair_name == null ? openstack_compute_keypair_v2.keypair.name : each.value.keypair_name
   security_groups             = each.value.security_groups == null ? [openstack_compute_secgroup_v2.secgroup.name] : each.value.security_groups
@@ -48,23 +48,24 @@ resource "openstack_compute_instance_v2" "vm" {
   user_data                   = each.value.user_data
   config_drive                = each.value.config_drive
 
-#  block_device {
-#    uuid                  = openstack_blockstorage_volume_v3.root_volume[each.key].id
-#    source_type           = "volume"
-#    boot_index            = 0
-#    destination_type      = "volume"
-#    delete_on_termination = each.value.boot_volume_delete_on_termination
-#  }
   # Bootable disk
   block_device {
-    uuid                  = data.openstack_images_image_v2.image_id[each.key].id
-    source_type           = "image"
-    destination_type      = "volume"
+    uuid                  = openstack_blockstorage_volume_v3.root_volume[each.key].id
+    source_type           = "volume"
     boot_index            = 0
-    volume_size           = each.value.boot_volume_size
-    volume_type           = var.default_volume_type
+    destination_type      = "volume"
     delete_on_termination = each.value.boot_volume_delete_on_termination
   }
+
+#  block_device {
+#    uuid                  = data.openstack_images_image_v2.image_id[each.key].id
+#    source_type           = "image"
+#    destination_type      = "volume"
+#    boot_index            = 0
+#    volume_size           = each.value.boot_volume_size
+#    volume_type           = var.default_volume_type
+#    delete_on_termination = each.value.boot_volume_delete_on_termination
+#  }
 
   dynamic "block_device" {
     for_each = { for vol in local.all_data_volumes : vol.name => vol if vol.vm_name == each.value.name }
@@ -82,7 +83,7 @@ resource "openstack_compute_instance_v2" "vm" {
   }
 
   depends_on = [
-#    openstack_blockstorage_volume_v3.root_volume,
+    openstack_blockstorage_volume_v3.root_volume,
     openstack_blockstorage_volume_v3.data_volumes
   ]
 }

@@ -1,3 +1,7 @@
+data "openstack_images_image_v2" "image_id" {
+  name        = "cirros-0.6.2-x86_64-disk"
+}
+
 resource "openstack_compute_instance_v2" "vm" {
   name                        = "test_vm_1"
 #  image_name                  = cirros-0.5.2-x86_64-disk
@@ -41,8 +45,4 @@ resource "openstack_compute_instance_v2" "vm" {
     volume_size = 1
     delete_on_termination = true
  }
-}
-
-data "openstack_images_image_v2" "image_id" {
-  name        = "cirros-0.6.2-x86_64-disk"
 }

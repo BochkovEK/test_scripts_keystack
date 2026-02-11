@@ -4,6 +4,8 @@
 
 terraform plan -var-file *.auto.tfavrs -out=plan.tfplan
 terraform apply "plan.tfplan"
+
+for id in 24f5ed09-d0bc-4ccf-beb7-f316101c4fc7; do openstack volume set --state error $id && openstack volume delete $id;done
 #==============================================
 
 #variable list:
