@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Force set 'creating' volumes to 'error' status and optionally delete them.
+Force reset 'creating' and/or 'deleting' volumes to 'error' status and optionally delete them.
 Uses openstack.connect() for authentication (environment variables or clouds.yaml).
-Requires admin privileges for reset_state action.
+Requires admin privileges for reset_volume_status action.
 """
 
 import argparse
@@ -15,7 +15,7 @@ import openstack
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Force set all 'creating' volumes to 'error' and optionally delete them"
+        description="Force reset 'creating' and/or 'deleting' volumes to 'error' and optionally delete them"
     )
     parser.add_argument(
         "--force-delete",
@@ -39,6 +39,18 @@ def parse_args():
         default="INFO",
         help="Logging level"
     )
+    parser.add_argument(
+        "--reset-creating",
+        action="store_true",
+        default=True,
+        help="Process volumes in 'creating' status (default: True)"
+    )
+    parser.add_argument(
+        "--reset-deleting",
+        action="store_true",
+        default=True,
+        help="Process volumes in 'deleting' status (default: True)"
+    )
     return parser.parse_args()
 
 
@@ -58,7 +70,7 @@ def main():
 
     try:
         conn = openstack.connect()
-        conn.authorize()  # Verify authentication
+        conn.authorize()
         logging.info("Authentication successful")
 
         cinder = conn.block_storage
@@ -66,14 +78,28 @@ def main():
         logging.error(f"Failed to connect or authorize: {e}")
         sys.exit(1)
 
-    logging.info("Searching for volumes in 'creating' status...")
-    volumes = list(cinder.volumes(status="creating", all_projects=True))
+    volumes = []
+
+    if args.reset_creating:
+        logging.info("Searching for volumes in 'creating' status...")
+        creating_vols = list(cinder.volumes(status="creating", all_projects=True))
+        volumes.extend(creating_vols)
+        logging.info(f"Found {len(creating_vols)} volumes in 'creating'")
+
+    if args.reset_deleting:
+        logging.info("Searching for volumes in 'deleting' status...")
+        deleting_vols = list(cinder.volumes(status="deleting", all_projects=True))
+        volumes.extend(deleting_vols)
+        logging.info(f"Found {len(deleting_vols)} volumes in 'deleting'")
 
     if not volumes:
-        logging.info("No volumes in 'creating' status found. Exiting.")
+        logging.info("No volumes to process. Exiting.")
         return
 
-    logging.info(f"Found {len(volumes)} volumes in 'creating' status")
+    # Remove duplicates if any (unlikely but safe)
+    volumes = list({vol.id: vol for vol in volumes}.values())
+
+    logging.info(f"Total volumes to process: {len(volumes)}")
 
     for vol in volumes:
         print(f"  {vol.id[:8]}... {vol.name or '<no name>'}  ({vol.size} GiB)  {vol.status}")
@@ -91,7 +117,8 @@ def main():
 
     for vol in volumes:
         try:
-            logging.info(f"Resetting state to 'error' for volume {vol.id} ({vol.name or 'no name'})")
+            logging.info(f"Resetting state to 'error' for volume {vol.id} ({vol.name or 'no name'}) "
+                         f"current status: {vol.status}")
 
             cinder.reset_volume_status(vol.id, status='error')
             updated += 1
@@ -116,7 +143,7 @@ def main():
     print("\n" + "=" * 60)
     print("RESULT")
     print("=" * 60)
-    print(f"  Found volumes in 'creating'     : {len(volumes)}")
+    print(f"  Total volumes processed         : {len(volumes)}")
     print(f"  Reset to 'error'                : {updated}")
     if args.force_delete:
         print(f"  Deleted                         : {deleted}")
