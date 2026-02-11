@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 Force set 'creating' volumes to 'error' status and optionally delete them.
+Uses openstack.connect() — same auth method as your working example.
 Requires admin privileges.
 """
 
@@ -8,7 +9,8 @@ import argparse
 import sys
 import time
 import logging
-from openstack import connection
+
+import openstack
 
 
 def parse_args():
@@ -28,7 +30,7 @@ def parse_args():
     parser.add_argument(
         "--wait",
         type=int,
-        default=1,
+        default=3,
         help="Seconds to wait between operations (default: 3)"
     )
     parser.add_argument(
@@ -52,13 +54,16 @@ def main():
     args = parse_args()
     setup_logging(args.log_level)
 
-    logging.info("Connecting to OpenStack (using OS_* environment variables)")
+    logging.info("Connecting to OpenStack (using OS_* env vars or clouds.yaml)")
 
     try:
-        conn = connection.Connection()
+        conn = openstack.connect()
+        conn.authorize()  # explicitly check auth (like in your example)
+        logging.info("✅ Authentication successful")
+
         cinder = conn.block_storage
     except Exception as e:
-        logging.error(f"Failed to connect to OpenStack: {e}")
+        logging.error(f"❌ Failed to connect or authorize: {e}")
         sys.exit(1)
 
     logging.info("Searching for volumes in 'creating' status...")
@@ -92,12 +97,12 @@ def main():
 
             time.sleep(args.wait)
 
-            # Verify status
-            vol = cinder.get_volume(vol.id)
-            if vol.status == "error":
+            # Verify
+            vol_refreshed = cinder.get_volume(vol.id)
+            if vol_refreshed.status == "error":
                 logging.info("  → success: status = error")
             else:
-                logging.warning(f"  → status not changed: {vol.status}")
+                logging.warning(f"  → status not changed: {vol_refreshed.status}")
 
             if args.force_delete:
                 logging.info(f"  Deleting volume {vol.id}")
