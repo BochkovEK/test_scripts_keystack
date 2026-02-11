@@ -1,0 +1,14 @@
+# List all volumes (no flags)
+python3 script.py
+
+# Delete all volumes in 'error' status
+python3 script.py --force-delete
+
+# Reset creating → error (no delete)
+python3 script.py --reset-creating
+
+# Reset both creating and deleting → error + delete all error volumes
+python3 script.py --reset-creating --reset-deleting --force-delete
+
+# Dry run with delete (only show what would be deleted)
+python3 script.py --force-delete --dry-run
