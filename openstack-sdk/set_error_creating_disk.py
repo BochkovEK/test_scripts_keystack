@@ -93,8 +93,7 @@ def main():
         try:
             logging.info(f"Resetting state to 'error' for volume {vol.id} ({vol.name or 'no name'})")
 
-            # Correct way: use reset_state on the proxy or resource
-            cinder.reset_state(vol, state="error")
+            conn.volume.reset_state('volume_id', state='error')
             updated += 1
 
             time.sleep(args.wait)
