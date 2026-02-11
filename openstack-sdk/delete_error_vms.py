@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-Force delete VMs in 'ERROR' status along with their attached volumes.
+Force reset VMs in 'BUILDING' status to 'ERROR' and/or delete ERROR VMs along with their attached volumes.
 Uses openstack.connect() for authentication (environment variables or clouds.yaml).
-Requires admin privileges for force delete actions.
+Requires admin privileges for force delete and reset actions.
 
 Behavior:
 - No flags → list all VMs sorted by status (ERROR first), then attached volumes
+- --reset-building → reset ALL VMs in 'BUILDING' status to 'ERROR'
 - --force-delete → delete all volumes attached to ERROR VMs, then delete the ERROR VMs
 """
 
@@ -19,7 +20,7 @@ import openstack
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Delete VMs in 'ERROR' status and their attached volumes"
+        description="Reset BUILDING VMs to ERROR and/or delete ERROR VMs with attached volumes"
     )
     parser.add_argument(
         "--force-delete",
@@ -27,15 +28,20 @@ def parse_args():
         help="Delete all volumes attached to ERROR VMs, then delete the ERROR VMs"
     )
     parser.add_argument(
+        "--reset-building",
+        action="store_true",
+        help="Reset ALL VMs in 'BUILDING' status to 'ERROR'"
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Show what would be deleted without executing changes"
+        help="Show what would be done without executing changes"
     )
     parser.add_argument(
         "--wait",
         type=int,
         default=3,
-        help="Seconds to wait between delete operations (default: 3)"
+        help="Seconds to wait between operations (default: 3)"
     )
     parser.add_argument(
         "--log-level",
@@ -92,8 +98,91 @@ def main():
         logging.error(f"Connection failed: {e}")
         sys.exit(1)
 
-    if not args.force_delete:
-        # List mode — show all VMs, ERROR first
+    # Step 1: Reset BUILDING VMs to ERROR (if flag is set)
+    if args.reset_building:
+        logging.info("Searching for VMs in 'BUILDING' status...")
+        building_vms = list(conn.compute.servers(status="BUILDING", all_projects=True))
+
+        if not building_vms:
+            logging.info("No VMs found in 'BUILDING' status.")
+        else:
+            logging.info(f"Found {len(building_vms)} VMs in 'BUILDING' status")
+            updated = 0
+
+            for vm in building_vms:
+                try:
+                    logging.info(f"Resetting VM {vm.id} ({vm.name or 'no name'}) from BUILDING to ERROR")
+                    conn.compute.reset_server_state(vm.id, state="error")
+                    updated += 1
+                    time.sleep(args.wait)
+                except Exception as e:
+                    logging.error(f"Failed to reset VM {vm.id}: {e}")
+
+            print(f"\nReset BUILDING → ERROR: {updated} VMs")
+
+    # Step 2: Force-delete mode — only process ERROR VMs
+    if args.force_delete:
+        logging.info("Searching for VMs in 'ERROR' status...")
+        error_vms = list(conn.compute.servers(status="ERROR", all_projects=True))
+
+        if not error_vms:
+            logging.info("No VMs found in 'ERROR' status.")
+            return
+
+        logging.info(f"Found {len(error_vms)} VMs in 'ERROR' status")
+
+        if args.dry_run:
+            print("\nDRY RUN MODE — no deletions will be performed")
+            for vm in error_vms:
+                print(f"Would delete VM: {vm.id[:8]}... {vm.name or '<no name>':<30}")
+                attached = get_attached_volumes(conn, vm)
+                for vol_id in attached:
+                    vol = conn.block_storage.get_volume(vol_id)
+                    if vol:
+                        print(f"  → Would delete volume: {vol.id[:8]}... {vol.name or '<no name>':<30} | {vol.status}")
+            return
+
+        print("\n" + "=" * 80)
+        print("STARTING DELETION OF ERROR VMs AND THEIR VOLUMES")
+        print("=" * 80)
+
+        deleted_vms = 0
+        deleted_volumes = 0
+
+        for vm in error_vms:
+            try:
+                # Step 1: Delete attached volumes first
+                attached = get_attached_volumes(conn, vm)
+                for vol_id in attached:
+                    try:
+                        vol = conn.block_storage.get_volume(vol_id)
+                        if vol:
+                            logging.info(f"Deleting volume {vol.id} attached to VM {vm.id}")
+                            conn.block_storage.delete_volume(vol.id, force=True)
+                            deleted_volumes += 1
+                            time.sleep(args.wait)
+                    except Exception as e:
+                        logging.error(f"Failed to delete volume {vol_id}: {e}")
+
+                # Step 2: Delete the VM
+                logging.info(f"Deleting VM {vm.id} ({vm.name or 'no name'}) in ERROR status")
+                conn.compute.delete_server(vm.id, force=True)
+                deleted_vms += 1
+                time.sleep(args.wait)
+
+            except Exception as e:
+                logging.error(f"Error processing VM {vm.id}: {e}")
+
+        print("\n" + "=" * 80)
+        print("RESULT")
+        print("=" * 80)
+        print(f"  Processed ERROR VMs           : {len(error_vms)}")
+        print(f"  Deleted volumes               : {deleted_volumes}")
+        print(f"  Deleted VMs                   : {deleted_vms}")
+        print("=" * 80)
+
+    # Default: no actions → list all VMs (ERROR first)
+    if not args.force_delete and not args.reset_building:
         logging.info("Listing all VMs with attached volumes...")
         all_vms = list(conn.compute.servers(all_projects=True))
 
@@ -124,68 +213,6 @@ def main():
             else:
                 print("  No attached volumes")
             print("-" * 80)
-
-        return
-
-    # Force-delete mode — only process ERROR VMs
-    logging.info("Searching for VMs in 'ERROR' status...")
-    error_vms = list(conn.compute.servers(status="ERROR", all_projects=True))
-
-    if not error_vms:
-        logging.info("No VMs found in 'ERROR' status.")
-        return
-
-    logging.info(f"Found {len(error_vms)} VMs in 'ERROR' status")
-
-    if args.dry_run:
-        print("\nDRY RUN MODE — no deletions will be performed")
-        for vm in error_vms:
-            print(f"Would delete VM: {vm.id[:8]}... {vm.name or '<no name>':<30}")
-            attached = get_attached_volumes(conn, vm)
-            for vol_id in attached:
-                vol = conn.block_storage.get_volume(vol_id)
-                if vol:
-                    print(f"  → Would delete volume: {vol.id[:8]}... {vol.name or '<no name>':<30} | {vol.status}")
-        return
-
-    print("\n" + "=" * 80)
-    print("STARTING DELETION OF ERROR VMs AND THEIR VOLUMES")
-    print("=" * 80)
-
-    deleted_vms = 0
-    deleted_volumes = 0
-
-    for vm in error_vms:
-        try:
-            # Step 1: Delete attached volumes first
-            attached = get_attached_volumes(conn, vm)
-            for vol_id in attached:
-                try:
-                    vol = conn.block_storage.get_volume(vol_id)
-                    if vol:
-                        logging.info(f"Deleting volume {vol.id} attached to VM {vm.id}")
-                        conn.block_storage.delete_volume(vol.id, force=True)
-                        deleted_volumes += 1
-                        time.sleep(args.wait)
-                except Exception as e:
-                    logging.error(f"Failed to delete volume {vol_id}: {e}")
-
-            # Step 2: Delete the VM
-            logging.info(f"Deleting VM {vm.id} ({vm.name or 'no name'}) in ERROR status")
-            conn.compute.delete_server(vm.id, force=True)
-            deleted_vms += 1
-            time.sleep(args.wait)
-
-        except Exception as e:
-            logging.error(f"Error processing VM {vm.id}: {e}")
-
-    print("\n" + "=" * 80)
-    print("RESULT")
-    print("=" * 80)
-    print(f"  Processed ERROR VMs           : {len(error_vms)}")
-    print(f"  Deleted volumes               : {deleted_volumes}")
-    print(f"  Deleted VMs                   : {deleted_vms}")
-    print("=" * 80)
 
 
 if __name__ == "__main__":
