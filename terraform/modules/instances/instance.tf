@@ -82,7 +82,7 @@ resource "openstack_compute_instance_v2" "vm" {
   }
 
   depends_on = [
-    openstack_blockstorage_volume_v3.root_volume,
+#    openstack_blockstorage_volume_v3.root_volume,
     openstack_blockstorage_volume_v3.data_volumes
   ]
 }
