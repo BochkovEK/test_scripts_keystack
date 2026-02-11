@@ -55,12 +55,26 @@ def setup_logging(level_str: str):
 
 
 def get_attached_volumes(conn, server):
-    """Get list of volume IDs attached to the server"""
+    """Get attached volumes from Nova + fallback search by instance_uuid"""
     volumes = []
+
+    # Primary method — from Nova extended attribute
     for attachment in getattr(server, 'os-extended-volumes:volumes_attached', []):
         vol_id = attachment.get('id')
         if vol_id:
             volumes.append(vol_id)
+
+    # Fallback: search volumes where instance_uuid matches server.id
+    if not volumes:
+        logging.debug(f"Fallback search for volumes attached to {server.id}")
+        all_vols = conn.block_storage.volumes(all_projects=True)
+        for vol in all_vols:
+            attachments = getattr(vol, 'attachments', [])
+            for att in attachments:
+                if att.get('server_id') == server.id:
+                    volumes.append(vol.id)
+                    break
+
     return volumes
 
 
@@ -79,7 +93,7 @@ def main():
         sys.exit(1)
 
     if not args.force_delete:
-        # Только просмотр всех ВМ — без поиска ERROR
+        # List mode — show all VMs, ERROR first
         logging.info("Listing all VMs with attached volumes...")
         all_vms = list(conn.compute.servers(all_projects=True))
 
@@ -87,11 +101,9 @@ def main():
             logging.info("No VMs found.")
             return
 
-        # Сортируем: сначала ERROR, потом остальные (по имени)
+        # Sort: ERROR VMs first, then others sorted by name (case-insensitive)
         error_vms = [vm for vm in all_vms if vm.status == "ERROR"]
         other_vms = [vm for vm in all_vms if vm.status != "ERROR"]
-
-        # Сортируем остальные по имени
         other_vms.sort(key=lambda vm: (vm.name or vm.id).lower())
 
         sorted_vms = error_vms + other_vms
@@ -115,7 +127,7 @@ def main():
 
         return
 
-    # Если есть --force-delete — работаем только с ERROR ВМ
+    # Force-delete mode — only process ERROR VMs
     logging.info("Searching for VMs in 'ERROR' status...")
     error_vms = list(conn.compute.servers(status="ERROR", all_projects=True))
 
@@ -145,7 +157,7 @@ def main():
 
     for vm in error_vms:
         try:
-            # Step 1: Delete attached volumes
+            # Step 1: Delete attached volumes first
             attached = get_attached_volumes(conn, vm)
             for vol_id in attached:
                 try:
@@ -158,7 +170,7 @@ def main():
                 except Exception as e:
                     logging.error(f"Failed to delete volume {vol_id}: {e}")
 
-            # Step 2: Delete the VM itself
+            # Step 2: Delete the VM
             logging.info(f"Deleting VM {vm.id} ({vm.name or 'no name'}) in ERROR status")
             conn.compute.delete_server(vm.id, force=True)
             deleted_vms += 1
