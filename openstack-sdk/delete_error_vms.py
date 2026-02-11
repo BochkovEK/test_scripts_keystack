@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Force reset VMs in 'BUILDING' status to 'ERROR' and/or delete ERROR VMs along with their attached volumes.
+Force reset VMs in 'BUILD' status to 'ERROR' and/or delete ERROR VMs along with their attached volumes.
 Uses openstack.connect() for authentication (environment variables or clouds.yaml).
 Requires admin privileges for force delete and reset actions.
 
 Behavior:
 - No flags → list all VMs sorted by status (ERROR first), then attached volumes
-- --reset-building → reset ALL VMs in 'BUILDING' status to 'ERROR'
+- --reset-build → reset ALL VMs in 'BUILD' status to 'ERROR'
 - --force-delete → delete all volumes attached to ERROR VMs, then delete the ERROR VMs
 """
 
@@ -20,7 +20,7 @@ import openstack
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Reset BUILDING VMs to ERROR and/or delete ERROR VMs with attached volumes"
+        description="Reset BUILD VMs to ERROR and/or delete ERROR VMs with attached volumes"
     )
     parser.add_argument(
         "--force-delete",
@@ -28,9 +28,9 @@ def parse_args():
         help="Delete all volumes attached to ERROR VMs, then delete the ERROR VMs"
     )
     parser.add_argument(
-        "--reset-building",
+        "--reset-build",
         action="store_true",
-        help="Reset ALL VMs in 'BUILDING' status to 'ERROR'"
+        help="Reset ALL VMs in 'BUILD' status to 'ERROR'"
     )
     parser.add_argument(
         "--dry-run",
@@ -98,27 +98,27 @@ def main():
         logging.error(f"Connection failed: {e}")
         sys.exit(1)
 
-    # Step 1: Reset BUILDING VMs to ERROR (if flag is set)
-    if args.reset_building:
-        logging.info("Searching for VMs in 'BUILDING' status...")
-        building_vms = list(conn.compute.servers(status="BUILDING", all_projects=True))
+    # Step 1: Reset BUILD VMs to ERROR (if flag is set)
+    if args.reset_build:
+        logging.info("Searching for VMs in 'BUILD' status...")
+        build_vms = list(conn.compute.servers(status="BUILD", all_projects=True))
 
-        if not building_vms:
-            logging.info("No VMs found in 'BUILDING' status.")
+        if not build_vms:
+            logging.info("No VMs found in 'BUILD' status.")
         else:
-            logging.info(f"Found {len(building_vms)} VMs in 'BUILDING' status")
+            logging.info(f"Found {len(build_vms)} VMs in 'BUILD' status")
             updated = 0
 
-            for vm in building_vms:
+            for vm in build_vms:
                 try:
-                    logging.info(f"Resetting VM {vm.id} ({vm.name or 'no name'}) from BUILDING to ERROR")
+                    logging.info(f"Resetting VM {vm.id} ({vm.name or 'no name'}) from BUILD to ERROR")
                     conn.compute.reset_server_state(vm.id, state="error")
                     updated += 1
                     time.sleep(args.wait)
                 except Exception as e:
                     logging.error(f"Failed to reset VM {vm.id}: {e}")
 
-            print(f"\nReset BUILDING → ERROR: {updated} VMs")
+            print(f"\nReset BUILD → ERROR: {updated} VMs")
 
     # Step 2: Force-delete mode — only process ERROR VMs
     if args.force_delete:
@@ -182,7 +182,7 @@ def main():
         print("=" * 80)
 
     # Default: no actions → list all VMs (ERROR first)
-    if not args.force_delete and not args.reset_building:
+    if not args.force_delete and not args.reset_build:
         logging.info("Listing all VMs with attached volumes...")
         all_vms = list(conn.compute.servers(all_projects=True))
 
