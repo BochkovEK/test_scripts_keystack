@@ -55,12 +55,26 @@ def setup_logging(level_str: str):
 
 
 def get_attached_volumes(conn, server):
-    """Get list of volume IDs attached to the server"""
+    """Get attached volumes from Nova + fallback search by instance_uuid"""
     volumes = []
+
+    # Основной способ — из Nova
     for attachment in getattr(server, 'os-extended-volumes:volumes_attached', []):
         vol_id = attachment.get('id')
         if vol_id:
             volumes.append(vol_id)
+
+    # Fallback: ищем тома с instance_uuid == server.id
+    if not volumes:
+        logging.debug(f"Fallback search for volumes attached to {server.id}")
+        all_vols = conn.block_storage.volumes(all_projects=True)
+        for vol in all_vols:
+            attachments = getattr(vol, 'attachments', [])
+            for att in attachments:
+                if att.get('server_id') == server.id:
+                    volumes.append(vol.id)
+                    break
+
     return volumes
 
 
