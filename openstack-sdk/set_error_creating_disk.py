@@ -93,12 +93,11 @@ def main():
         try:
             logging.info(f"Resetting state to 'error' for volume {vol.id} ({vol.name or 'no name'})")
 
-            conn.volume.reset_state('volume_id', state='error')
+            cinder.set_volume_status(vol.id, status='error')
             updated += 1
 
             time.sleep(args.wait)
 
-            # Verify the status change
             vol_refreshed = cinder.get_volume(vol.id)
             if vol_refreshed.status == "error":
                 logging.info("  → success: status = error")
@@ -107,7 +106,7 @@ def main():
 
             if args.force_delete:
                 logging.info(f"  Deleting volume {vol.id}")
-                cinder.delete_volume(vol.id)
+                cinder.delete_volume(vol.id, force=True)
                 deleted += 1
                 time.sleep(2)
 
