@@ -12,3 +12,9 @@ python3 script.py --reset-creating --reset-deleting --force-delete
 
 # Dry run with delete (only show what would be deleted)
 python3 script.py --force-delete --dry-run
+
+# Только конкретные тома → error (игнорирует --reset-*)
+python3 script.py --volumes "vol-abc-123 vol-def-456"
+
+# Конкретные тома → error + удалить все error-тома
+python3 script.py --volumes "vol-abc-123 vol-def-456" --force-delete
