@@ -5,9 +5,9 @@ Uses openstack.connect() for authentication (environment variables or clouds.yam
 Requires admin privileges for force delete and reset actions.
 
 Behavior:
-- No flags    → list all VMs sorted by status (ERROR first), then show attached volumes
+- No flags    → list all VMs sorted by status (ERROR first), show attached volumes
 - --reset-build → reset ALL VMs in 'BUILD' status to 'ERROR'
-- --force-delete → delete all volumes attached to ERROR VMs, then delete the ERROR VMs
+- --force-delete → delete volumes attached to ERROR VMs, then delete the ERROR VMs
 """
 
 import argparse
@@ -21,22 +21,22 @@ from openstack import exceptions
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Reset BUILD VMs to ERROR and/or force-delete ERROR VMs with their volumes"
+        description="Reset BUILD VMs to ERROR and/or force-delete ERROR VMs with volumes"
     )
     parser.add_argument(
         "--force-delete",
         action="store_true",
-        help="Delete all volumes attached to ERROR VMs, then delete the ERROR VMs"
+        help="Delete volumes attached to ERROR VMs, then delete the VMs"
     )
     parser.add_argument(
         "--reset-build",
         action="store_true",
-        help="Reset ALL VMs in 'BUILD' status to 'ERROR'"
+        help="Reset all VMs in BUILD status to ERROR"
     )
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Show what would be done without making any changes"
+        help="Show planned actions without executing any changes"
     )
     parser.add_argument(
         "--wait",
@@ -62,86 +62,130 @@ def setup_logging(level_str: str):
 
 
 def get_attached_volumes(conn, server):
-    """Retrieve attached volumes using Nova extended attribute + fallback search"""
+    """Get list of volume IDs attached to the server"""
     volumes = []
 
-    # Primary method: use Nova's os-extended-volumes:volumes_attached
+    # From Nova extended volumes attribute
     for attachment in getattr(server, 'os-extended-volumes:volumes_attached', []):
         vol_id = attachment.get('id')
         if vol_id:
             volumes.append(vol_id)
 
-    # Fallback: search all volumes and check attachments
+    # Fallback: search volumes by instance_uuid
     if not volumes:
-        logging.debug(f"Fallback search for volumes attached to server {server.id}")
+        logging.debug(f"Fallback: searching volumes attached to server {server.id}")
         try:
             all_vols = conn.block_storage.volumes(all_projects=True)
             for vol in all_vols:
-                attachments = getattr(vol, 'attachments', [])
-                for att in attachments:
+                for att in getattr(vol, 'attachments', []):
                     if att.get('server_id') == server.id:
                         volumes.append(vol.id)
                         break
         except Exception as e:
-            logging.warning(f"Failed to search volumes for server {server.id}: {e}")
+            logging.warning(f"Volume search failed for server {server.id}: {e}")
 
     return volumes
 
 
 def reset_server_state_with_fallback(conn, server_id, target_state="error"):
-    """
-    Try multiple methods to reset server state.
-    Returns True if successful, False otherwise.
-    """
-    # Method 1: standard reset_state
+    """Attempt to reset server state using multiple methods"""
     try:
         conn.compute.reset_server_state(server_id, state=target_state)
         return True
     except exceptions.HttpException as e:
-        if "DBReferenceError" in str(e) or "DatabaseError" in str(e) or "500" in str(e):
-            logging.warning(f"Standard reset failed for {server_id} (DB issue), trying admin API...")
+        if any(x in str(e) for x in ["DBReferenceError", "DatabaseError", "500"]):
+            logging.warning(f"Standard reset failed for {server_id}, trying direct API")
         else:
-            logging.error(f"Unexpected error resetting {server_id}: {e}")
+            logging.error(f"Reset failed for {server_id}: {e}")
             return False
     except Exception as e:
-        logging.error(f"Failed to reset server {server_id}: {e}")
+        logging.error(f"Reset failed for {server_id}: {e}")
         return False
 
-    # Method 2: direct admin API call
+    # Direct admin API reset
     try:
         conn.compute.post(
             f"/servers/{server_id}/action",
             json={"os-resetState": {"state": target_state.upper()}}
         )
-        logging.info(f"Reset {server_id} using direct admin API")
+        logging.info(f"Reset {server_id} using direct API call")
         return True
     except Exception as e:
-        logging.error(f"Admin API reset failed for {server_id}: {e}")
+        logging.error(f"Direct API reset failed for {server_id}: {e}")
         return False
 
 
 def force_delete_server_with_dependencies(conn, server_id):
-    """Attempt to clean up floating IPs and then force-delete the server."""
+    """Clean floating IPs if any, then force delete server"""
     try:
-        # Clean up floating IPs
-        try:
-            ports = list(conn.network.ports(device_id=server_id))
-            for port in ports:
-                if port.fixed_ips:
-                    for fixed_ip in port.fixed_ips:
-                        floating_ips = list(conn.network.ips(port_id=port.id))
-                        for fip in floating_ips:
-                            logging.info(f"Disassociating floating IP {fip.id} from server {server_id}")
-                            conn.network.update_ip(fip.id, port_id=None)
-                            time.sleep(1)
-        except Exception as e:
-            logging.debug(f"Floating IP cleanup failed for {server_id}: {e}")
+        # Clean floating IPs
+        ports = list(conn.network.ports(device_id=server_id))
+        for port in ports:
+            floating_ips = list(conn.network.ips(port_id=port.id))
+            for fip in floating_ips:
+                logging.info(f"Disassociating floating IP {fip.id}")
+                conn.network.update_ip(fip.id, port_id=None)
+                time.sleep(1)
 
-        # Force delete server
         conn.compute.delete_server(server_id, force=True)
         return True
     except Exception as e:
         logging.error(f"Force delete failed for server {server_id}: {e}")
+        return False
+
+
+def safe_delete_volume(conn, vol_id, server_id, wait_sec=5, max_attempts=24):
+    """Attempt to delete volume with preparatory steps"""
+    try:
+        vol = conn.block_storage.get_volume(vol_id)
+        if not vol:
+            return True
+
+        # Detach if still attached
+        if vol.status == "in-use" or vol.attachments:
+            logging.info(f"Detaching volume {vol_id} from server {server_id}")
+            try:
+                conn.compute.detach_volume(server_id, vol_id)
+            except Exception:
+                pass
+
+            for _ in range(max_attempts):
+                vol = conn.block_storage.get_volume(vol_id)
+                if vol.status != "in-use" and not vol.attachments:
+                    break
+                time.sleep(wait_sec)
+
+        # Reset state if needed
+        if vol.status not in ("available", "error", "deleting", "error_deleting"):
+            try:
+                conn.block_storage.reset_volume_state(vol_id, "available")
+                logging.info(f"Reset volume {vol_id} to available")
+                time.sleep(3)
+            except Exception:
+                try:
+                    conn.block_storage.reset_volume_state(vol_id, "error")
+                    logging.info(f"Reset volume {vol_id} to error")
+                    time.sleep(3)
+                except Exception:
+                    pass
+
+        # Delete snapshots if any
+        snapshots = list(conn.block_storage.snapshots(volume_id=vol_id))
+        for snap in snapshots:
+            logging.info(f"Deleting snapshot {snap.id} of volume {vol_id}")
+            try:
+                conn.block_storage.delete_snapshot(snap.id, force=True)
+            except Exception as e:
+                logging.error(f"Snapshot {snap.id} delete failed: {e}")
+            time.sleep(wait_sec)
+
+        # Final delete
+        logging.info(f"Deleting volume {vol_id} (current status: {vol.status})")
+        conn.block_storage.delete_volume(vol_id, force=True)
+        return True
+
+    except Exception as e:
+        logging.error(f"Volume {vol_id} delete failed: {e}")
         return False
 
 
@@ -150,7 +194,6 @@ def main():
     setup_logging(args.log_level)
 
     logging.info("Connecting to OpenStack...")
-
     try:
         conn = openstack.connect()
         conn.authorize()
@@ -159,143 +202,98 @@ def main():
         logging.error(f"Connection failed: {e}")
         sys.exit(1)
 
-    # Phase 1: Reset BUILD → ERROR
     if args.reset_build:
-        logging.info("Looking for VMs in BUILD status...")
-        try:
-            build_vms = list(conn.compute.servers(status="BUILD", all_projects=True))
-        except Exception as e:
-            logging.error(f"Failed to list BUILD VMs: {e}")
-            build_vms = []
+        logging.info("Searching for VMs in BUILD status...")
+        build_vms = list(conn.compute.servers(status="BUILD", all_projects=True))
 
         if not build_vms:
-            logging.info("No VMs found in BUILD status.")
+            logging.info("No BUILD VMs found.")
         else:
-            logging.info(f"Found {len(build_vms)} VMs in BUILD status")
+            logging.info(f"Found {len(build_vms)} BUILD VMs")
             reset_count = 0
-            force_deleted_count = 0
+            force_deleted = 0
 
             for vm in build_vms:
-                try:
-                    logging.info(f"Resetting VM {vm.id} ({vm.name or 'unnamed'}) from BUILD → ERROR")
+                logging.info(f"Processing VM {vm.id} ({vm.name or 'unnamed'})")
+                if args.dry_run:
+                    print(f"Would reset: {vm.id[:8]}... {vm.name or '<unnamed>':<30}")
+                else:
+                    if reset_server_state_with_fallback(conn, vm.id):
+                        reset_count += 1
+                    elif args.force_delete:
+                        if force_delete_server_with_dependencies(conn, vm.id):
+                            force_deleted += 1
+                time.sleep(args.wait)
 
-                    if args.dry_run:
-                        print(f"Would reset VM: {vm.id[:8]}... {vm.name or '<unnamed>':<30}")
-                    else:
-                        success = reset_server_state_with_fallback(conn, vm.id)
-                        if success:
-                            reset_count += 1
-                        else:
-                            logging.warning(f"Reset failed for VM {vm.id}")
-                            if args.force_delete:
-                                logging.info(f"Force-deleting stuck BUILD VM {vm.id}")
-                                if force_delete_server_with_dependencies(conn, vm.id):
-                                    force_deleted_count += 1
+            print(f"\nBUILD → ERROR: {reset_count} VMs")
+            if force_deleted:
+                print(f"Force-deleted BUILD VMs: {force_deleted}")
 
-                    time.sleep(args.wait)
-
-                except Exception as e:
-                    logging.error(f"Error processing VM {vm.id}: {e}")
-
-            print(f"\nBUILD → ERROR reset: {reset_count} VMs")
-            if force_deleted_count:
-                print(f"Force-deleted stuck BUILD VMs: {force_deleted_count}")
-
-    # Phase 2: Force-delete ERROR VMs + volumes
     if args.force_delete:
-        logging.info("Looking for VMs in ERROR status...")
-        try:
-            error_vms = list(conn.compute.servers(status="ERROR", all_projects=True))
-        except Exception as e:
-            logging.error(f"Failed to list ERROR VMs: {e}")
-            error_vms = []
+        logging.info("Searching for VMs in ERROR status...")
+        error_vms = list(conn.compute.servers(status="ERROR", all_projects=True))
 
         if not error_vms:
-            logging.info("No VMs found in ERROR status.")
-            if not args.reset_build:
-                return
+            logging.info("No ERROR VMs found.")
         else:
-            logging.info(f"Found {len(error_vms)} VMs in ERROR status")
+            logging.info(f"Found {len(error_vms)} ERROR VMs")
 
             if args.dry_run:
-                print("\nDRY RUN MODE — no actual deletions will occur")
+                print("\nDRY RUN — no changes will be made")
                 for vm in error_vms:
                     print(f"Would delete VM: {vm.id[:8]}... {vm.name or '<unnamed>':<30}")
-                    attached = get_attached_volumes(conn, vm)
-                    for vol_id in attached:
+                    for vol_id in get_attached_volumes(conn, vm):
                         try:
                             vol = conn.block_storage.get_volume(vol_id)
-                            if vol:
-                                print(
-                                    f"  → Would delete volume: {vol.id[:8]}... {vol.name or '<unnamed>':<30} | {vol.status}")
-                        except Exception:
-                            print(f"  → Would delete volume: {vol_id} (details unavailable)")
+                            print(f"  → Would delete volume: {vol_id[:8]}... {vol.name or '<unnamed>':<30} | {vol.status}")
+                        except:
+                            print(f"  → Would delete volume: {vol_id}")
                 return
 
             print("\n" + "=" * 80)
-            print("STARTING DELETION OF ERROR VMs AND ATTACHED VOLUMES")
+            print("DELETING ERROR VMs AND THEIR VOLUMES")
             print("=" * 80)
 
             deleted_vms = 0
             deleted_volumes = 0
 
             for vm in error_vms:
-                try:
-                    # Delete attached volumes first
-                    attached = get_attached_volumes(conn, vm)
-                    for vol_id in attached:
-                        try:
-                            vol = conn.block_storage.get_volume(vol_id)
-                            if vol:
-                                logging.info(f"Deleting volume {vol.id} attached to VM {vm.id}")
-                                conn.block_storage.delete_volume(vol.id, force=True)
-                                deleted_volumes += 1
-                                time.sleep(args.wait)
-                        except Exception as e:
-                            logging.error(f"Failed to delete volume {vol_id}: {e}")
-
-                    # Then delete the VM
-                    logging.info(f"Deleting VM {vm.id} ({vm.name or 'unnamed'}) in ERROR status")
-                    if force_delete_server_with_dependencies(conn, vm.id):
-                        deleted_vms += 1
+                attached = get_attached_volumes(conn, vm)
+                for vol_id in attached:
+                    if safe_delete_volume(conn, vol_id, vm.id, wait_sec=args.wait):
+                        deleted_volumes += 1
                     time.sleep(args.wait)
 
-                except Exception as e:
-                    logging.error(f"Error processing VM {vm.id}: {e}")
+                logging.info(f"Deleting VM {vm.id} ({vm.name or 'unnamed'})")
+                if force_delete_server_with_dependencies(conn, vm.id):
+                    deleted_vms += 1
+                time.sleep(args.wait)
 
             print("\n" + "=" * 80)
             print("SUMMARY")
             print("=" * 80)
-            print(f"  Processed ERROR VMs     : {len(error_vms)}")
-            print(f"  Deleted volumes         : {deleted_volumes}")
-            print(f"  Deleted VMs             : {deleted_vms}")
+            print(f"  ERROR VMs processed : {len(error_vms)}")
+            print(f"  Volumes deleted     : {deleted_volumes}")
+            print(f"  VMs deleted         : {deleted_vms}")
             print("=" * 80)
 
-    # Default mode: just list VMs (ERROR first)
-    if not args.force_delete and not args.reset_build:
-        logging.info("Listing all VMs with attached volumes...")
-        try:
-            all_vms = list(conn.compute.servers(all_projects=True))
-        except Exception as e:
-            logging.error(f"Failed to list VMs: {e}")
-            sys.exit(1)
+    if not args.reset_build and not args.force_delete:
+        logging.info("Listing all VMs...")
+        all_vms = list(conn.compute.servers(all_projects=True))
 
         if not all_vms:
             logging.info("No VMs found.")
             return
 
-        # Sort: ERROR first, then others by name (case-insensitive)
         error_vms = [vm for vm in all_vms if vm.status == "ERROR"]
         other_vms = [vm for vm in all_vms if vm.status != "ERROR"]
-        other_vms.sort(key=lambda vm: (vm.name or vm.id).lower())
-
-        sorted_vms = error_vms + other_vms
+        other_vms.sort(key=lambda v: (v.name or v.id).lower())
 
         print("\n" + "=" * 80)
-        print("LIST OF ALL VIRTUAL MACHINES AND ATTACHED VOLUMES (ERROR first)")
+        print("ALL VIRTUAL MACHINES AND ATTACHED VOLUMES (ERROR first)")
         print("=" * 80)
 
-        for vm in sorted_vms:
+        for vm in error_vms + other_vms:
             print(f"VM: {vm.id[:8]}... {vm.name or '<unnamed>':<30} | Status: {vm.status:12}")
             attached = get_attached_volumes(conn, vm)
             if attached:
@@ -304,10 +302,9 @@ def main():
                     try:
                         vol = conn.block_storage.get_volume(vol_id)
                         if vol:
-                            print(
-                                f"    {vol.id[:8]}... {vol.name or '<unnamed>':<30} | {vol.status:12} | {vol.size} GiB")
-                    except Exception:
-                        print(f"    {vol_id[:8]}... (volume details unavailable)")
+                            print(f"    {vol.id[:8]}... {vol.name or '<unnamed>':<30} | {vol.status:12} | {vol.size} GiB")
+                    except:
+                        print(f"    {vol_id[:8]}... (details unavailable)")
             else:
                 print("  No attached volumes")
             print("-" * 80)
