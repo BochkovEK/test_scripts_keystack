@@ -1,0 +1,11 @@
+# Стандартный режим с таймаутом 600 сек
+./script.py --failed-host host1
+
+# Увеличенный таймаут
+./script.py --failed-host host1 --timeout 1800
+
+# Без таймаута (ждать бесконечно)
+./script.py --failed-host host1 --no-timeout
+
+# С указанием целевого хоста и малым таймаутом
+./script.py --failed-host host1 --target-host host2 --timeout 120
