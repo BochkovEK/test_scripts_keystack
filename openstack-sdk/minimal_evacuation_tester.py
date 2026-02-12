@@ -19,7 +19,8 @@ def parse_arguments():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description="Evacuate VMs from a failed host")
     parser.add_argument('--failed-host', required=True, help="Source host")
-    parser.add_argument('--target-host', required=True, help="Target host")
+    parser.add_argument('--target-host', required=False,
+                        help="Target host (optional - if not specified, Nova will auto-select)")
     parser.add_argument('--microversion', default='2.96', help="Nova API microversion")
     parser.add_argument('--max-parallel', type=int, default=3, help="Max parallel evacuations")
     parser.add_argument('--timeout', type=int, default=600, help="Timeout per VM in seconds")
@@ -56,7 +57,10 @@ def evacuate_vms(args):
         logging.info("No ACTIVE VMs found")
         return 0, 0, 0, start_time, time.time()
 
-    logging.info(f"Found {len(active_vms)} ACTIVE VMs to evacuate to {args.target_host}")
+    if args.target_host:
+        logging.info(f"Found {len(active_vms)} ACTIVE VMs to evacuate to {args.target_host}")
+    else:
+        logging.info(f"Found {len(active_vms)} ACTIVE VMs to evacuate (Nova auto-select target)")
 
     if args.dry_run:
         logging.info("Dry run mode — no actual evacuation performed")
@@ -65,10 +69,16 @@ def evacuate_vms(args):
     def evacuate_one(vm):
         """Evacuate one VM and wait for host change."""
         try:
-            logging.info(f"Evacuating {vm.name} ({vm.id}) → {args.target_host}")
+            if args.target_host:
+                logging.info(f"Evacuating {vm.name} ({vm.id}) → {args.target_host}")
+            else:
+                logging.info(f"Evacuating {vm.name} ({vm.id}) → (auto-selected host)")
 
             # Execute evacuation
-            nova.servers.evacuate(vm, host=args.target_host)
+            if args.target_host:
+                nova.servers.evacuate(vm, host=args.target_host)
+            else:
+                nova.servers.evacuate(vm)  # Без указания host, Nova выберет сама
 
             # Monitor: wait for host change and task_state == None
             start = time.time()
@@ -122,16 +132,20 @@ def evacuate_vms(args):
     cycles_per_hour = (cycles * 3600) / duration if duration > 0 else 0
 
     # Final report
-    print("\n" + "="*60)
+    target_info = f" → {args.target_host}" if args.target_host else " → auto-selected"
+
+    print("\n" + "=" * 60)
     print("📊 OPENSTACK EVACUATION TEST REPORT")
-    print("="*60)
+    print("=" * 60)
     print("📈 TEST SUMMARY:")
     print(tabulate([
+        ["Source Host", args.failed_host],
+        ["Target Host", args.target_host if args.target_host else "Auto-selected by Nova"],
         ["Total Duration", f"{duration:.2f}s"],
         ["Total Evacuation", total_migrations],
         ["Successful", success_count],
         ["Failed", total_migrations - success_count],
-        ["Success Rate", f"{success_count/total_migrations*100:.1f}%" if total_migrations else "0.0%"]
+        ["Success Rate", f"{success_count / total_migrations * 100:.1f}%" if total_migrations else "0.0%"]
     ], tablefmt="grid"))
 
     print("\n⚡ PERFORMANCE METRICS:")
@@ -142,7 +156,7 @@ def evacuate_vms(args):
         ["Max Evacuation Time", f"{max_time:.2f}s"]
     ], tablefmt="grid"))
 
-    print("="*60)
+    print("=" * 60)
 
     return success_count, total_migrations - success_count, total_migrations, start_time, end_time
 
