@@ -194,8 +194,6 @@ class EvacuationTester:
             self.nova.servers.evacuate(
                 server=server,
                 host=target,
-                # on_shared_storage=True,  # uncomment if your Nova supports it
-                # admin_password="newpass"  # if you need to set new password
             )
 
             # Simple monitoring

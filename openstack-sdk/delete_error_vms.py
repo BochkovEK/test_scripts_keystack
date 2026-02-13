@@ -7,7 +7,7 @@ Requires admin privileges for force delete and reset actions.
 Behavior:
 - No flags    → list all VMs sorted by status (ERROR first), show attached volumes
 - --reset-build → reset ALL VMs in 'BUILD' status to 'ERROR'
-- --force-delete → delete volumes attached to ERROR VMs, then delete the ERROR VMs
+- --force-delete → reset volumes attached to ERROR VMs to 'ERROR', delete them, then delete the ERROR VMs
 """
 
 import argparse
@@ -26,7 +26,7 @@ def parse_args():
     parser.add_argument(
         "--force-delete",
         action="store_true",
-        help="Delete volumes attached to ERROR VMs, then delete the VMs"
+        help="Reset volumes attached to ERROR VMs to 'ERROR', delete them, then delete the VMs"
     )
     parser.add_argument(
         "--reset-build",
@@ -135,7 +135,7 @@ def force_delete_server_with_dependencies(conn, server_id):
 
 
 def safe_delete_volume(conn, vol_id, server_id, wait_sec=5, max_attempts=24):
-    """Attempt to delete volume with preparatory steps"""
+    """Attempt to delete volume with preparatory steps: detach, reset to error, delete snapshots, delete"""
     try:
         vol = conn.block_storage.get_volume(vol_id)
         if not vol:
@@ -155,19 +155,13 @@ def safe_delete_volume(conn, vol_id, server_id, wait_sec=5, max_attempts=24):
                     break
                 time.sleep(wait_sec)
 
-        # Reset state if needed
-        if vol.status not in ("available", "error", "deleting", "error_deleting"):
-            try:
-                conn.block_storage.reset_volume_state(vol_id, "available")
-                logging.info(f"Reset volume {vol_id} to available")
-                time.sleep(3)
-            except Exception:
-                try:
-                    conn.block_storage.reset_volume_state(vol_id, "error")
-                    logging.info(f"Reset volume {vol_id} to error")
-                    time.sleep(3)
-                except Exception:
-                    pass
+        # Reset to error
+        try:
+            conn.block_storage.reset_volume_status(vol_id, status='error')
+            logging.info(f"Reset volume {vol_id} to 'error'")
+            time.sleep(3)
+        except Exception as e:
+            logging.warning(f"Reset to 'error' failed for {vol_id}: {e}")
 
         # Delete snapshots if any
         snapshots = list(conn.block_storage.snapshots(volume_id=vol_id))
@@ -180,6 +174,7 @@ def safe_delete_volume(conn, vol_id, server_id, wait_sec=5, max_attempts=24):
             time.sleep(wait_sec)
 
         # Final delete
+        vol = conn.block_storage.get_volume(vol_id)  # Refresh
         logging.info(f"Deleting volume {vol_id} (current status: {vol.status})")
         conn.block_storage.delete_volume(vol_id, force=True)
         return True
@@ -221,6 +216,11 @@ def main():
                     if reset_server_state_with_fallback(conn, vm.id):
                         reset_count += 1
                     elif args.force_delete:
+                        # For consistency, delete attached volumes before force deleting VM
+                        attached = get_attached_volumes(conn, vm)
+                        for vol_id in attached:
+                            safe_delete_volume(conn, vol_id, vm.id, wait_sec=args.wait)
+                            time.sleep(args.wait)
                         if force_delete_server_with_dependencies(conn, vm.id):
                             force_deleted += 1
                 time.sleep(args.wait)
@@ -245,13 +245,13 @@ def main():
                     for vol_id in get_attached_volumes(conn, vm):
                         try:
                             vol = conn.block_storage.get_volume(vol_id)
-                            print(f"  → Would delete volume: {vol_id[:8]}... {vol.name or '<unnamed>':<30} | {vol.status}")
+                            print(f"  → Would reset to 'error' and delete volume: {vol_id[:8]}... {vol.name or '<unnamed>':<30} | {vol.status}")
                         except:
-                            print(f"  → Would delete volume: {vol_id}")
+                            print(f"  → Would reset to 'error' and delete volume: {vol_id}")
                 return
 
             print("\n" + "=" * 80)
-            print("DELETING ERROR VMs AND THEIR VOLUMES")
+            print("DELETING ERROR VMs AND THEIR VOLUMES (with reset to 'error' first)")
             print("=" * 80)
 
             deleted_vms = 0

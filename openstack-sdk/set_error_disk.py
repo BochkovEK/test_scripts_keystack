@@ -6,7 +6,7 @@ Uses openstack.connect() for authentication (environment variables or clouds.yam
 Behavior priority:
 - --volumes "id1 id2 id3" → reset ONLY these volumes to 'error' (ignores all --reset-* flags)
 - --force-delete → delete ALL volumes currently in 'error' status (always applies, even alone)
-- If no --volumes → use --reset-creating / --reset-deleting / --reset-reserved to select volumes
+- If no --volumes → use --reset-creating / --reset-deleting / --reset-reserved / --reset-attaching
 - No flags → list all volumes with their statuses
 """
 
@@ -47,17 +47,22 @@ def parse_args():
     parser.add_argument(
         "--reset-creating",
         action="store_true",
-        help="Reset volumes in 'creating' status to 'error' (ignored if --volumes is used)"
+        help="Reset volumes in 'creating' status to 'error'"
     )
     parser.add_argument(
         "--reset-deleting",
         action="store_true",
-        help="Reset volumes in 'deleting' status to 'error' (ignored if --volumes is used)"
+        help="Reset volumes in 'deleting' status to 'error'"
     )
     parser.add_argument(
         "--reset-reserved",
         action="store_true",
-        help="Reset volumes in 'reserved' status to 'error' (ignored if --volumes is used)"
+        help="Reset volumes in 'reserved' status to 'error'"
+    )
+    parser.add_argument(
+        "--reset-attaching",
+        action="store_true",
+        help="Reset volumes in 'attaching' status to 'error' (stuck attach operations)"
     )
     parser.add_argument(
         "--volumes",
@@ -108,11 +113,11 @@ def main():
                 logging.error(f"Failed to fetch volume {vol_id}: {e}")
 
         # Explicitly ignore reset flags
-        if args.reset_creating or args.reset_deleting or args.reset_reserved:
+        if any([args.reset_creating, args.reset_deleting, args.reset_reserved, args.reset_attaching]):
             logging.info("All --reset-* flags are ignored when --volumes is used")
 
     # Priority 2: status-based reset (only if no --volumes)
-    elif args.reset_creating or args.reset_deleting or args.reset_reserved:
+    elif any([args.reset_creating, args.reset_deleting, args.reset_reserved, args.reset_attaching]):
         if args.reset_creating:
             logging.info("Collecting volumes in 'creating' status...")
             reset_volumes.extend(cinder.volumes(status="creating", all_projects=True))
@@ -125,11 +130,18 @@ def main():
             logging.info("Collecting volumes in 'reserved' status...")
             reset_volumes.extend(cinder.volumes(status="reserved", all_projects=True))
 
+        if args.reset_attaching:
+            logging.info("Collecting volumes in 'attaching' status...")
+            reset_volumes.extend(cinder.volumes(status="attaching", all_projects=True))
+
     # Show volumes to be reset (if any)
     if reset_volumes:
         logging.info(f"Found {len(reset_volumes)} volumes to reset to 'error'")
+        print("\nVOLUMES TO RESET TO 'error':")
+        print("-" * 70)
         for vol in reset_volumes:
             print(f"  {vol.id[:8]}... {vol.name or '<no name>':<30} | {vol.status:12} | {vol.size} GiB")
+        print("-" * 70)
 
         if args.dry_run:
             logging.info("Dry run — no reset performed")
@@ -137,7 +149,7 @@ def main():
             updated = 0
             for vol in reset_volumes:
                 try:
-                    logging.info(f"Resetting volume {vol.id} to 'error'")
+                    logging.info(f"Resetting volume {vol.id} ({vol.name or 'no name'}) to 'error'")
                     cinder.reset_volume_status(vol.id, status='error')
                     updated += 1
                     time.sleep(args.wait)
@@ -149,7 +161,7 @@ def main():
                         logging.warning(f"  → status remains: {refreshed.status}")
                 except Exception as e:
                     logging.error(f"Reset failed for {vol.id}: {e}")
-            print(f"\nReset to 'error': {updated} volumes")
+            print(f"\nSuccessfully reset to 'error': {updated} volumes")
 
     # Handle --force-delete (independent, always deletes current 'error' volumes)
     if args.force_delete:
