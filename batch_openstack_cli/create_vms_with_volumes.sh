@@ -232,6 +232,7 @@ if [ "$PHASE" -eq 2 ]; then
             fi
         done
 
+        echo "Start creating $VM_NAME ..."
         # 3. Create Server
         openstack server create \
             --flavor "$FLAVOR" \
