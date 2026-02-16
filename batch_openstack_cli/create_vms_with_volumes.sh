@@ -193,27 +193,36 @@ if [ "$PHASE" -eq 1 ]; then
     # --- End of Waiter Block ---
 fi
 
-# --- PHASE 2: VMs (Fixed) ---
+# --- PHASE 2: VMs
 if [ "$PHASE" -eq 2 ]; then
     echo "PHASE 2: Launching $VM_COUNT Virtual Machines..."
+    # Array for disk letters: vdb, vdc, vdd...
     letters=({b..z})
+
     for i in $(seq -f "%03g" 1 $VM_COUNT); do
         VM_NAME="${BASE_NAME}-${i}"
-        if echo "$EXISTING_VMS" | grep -qxw "$VM_NAME"; then continue; fi
 
-        # Constructing the Boot Device (vda)
-        # source=volume, dest=volume, bootindex=0 makes it the bootable drive
+        # Check if VM already exists to ensure idempotency
+        if echo "$EXISTING_VMS" | grep -qxw "$VM_NAME"; then
+            continue
+        fi
+
+        # 1. Construct the BOOT device mapping
+        # bootindex=0 makes it the primary bootable device
+        # shutdown=preserve (optional) ensures the volume isn't deleted when VM is deleted
         BDM="--block-device uuid=${VM_NAME}-boot,source=volume,dest=volume,bus=virtio,device=vda,bootindex=0"
 
-        # Adding Data Devices (vdb, vdc, etc.)
+        # 2. Add DATA devices
         for d in $(seq 1 $DATA_COUNT_PER_VM); do
             idx=$((d-1))
             VOL_NAME="${VM_NAME}-data-$(printf "%02d" $d)"
-            # Note: bootindex is omitted or set to -1 for non-bootable disks
+
+            # For data disks, bootindex is omitted or set to -1
             BDM="$BDM --block-device uuid=${VOL_NAME},source=volume,dest=volume,bus=virtio,device=vd${letters[$idx]}"
         done
 
-        # Launch VM
+        # 3. Execution
+        # We DO NOT use --image here, as bootindex=0 points to a bootable volume
         openstack server create \
             --flavor "$FLAVOR" \
             --network "$NET_NAME" \
@@ -224,7 +233,9 @@ if [ "$PHASE" -eq 2 ]; then
             "$VM_NAME" > /dev/null &
 
         sleep $SLEEP_INTERVAL
-        [[ $i == *0 ]] && echo "Progress: $i / $VM_COUNT VMs launched"
+
+        # Simple progress tracking
+        [[ $i == *0 ]] && echo "Progress: $i / $VM_COUNT VM launch requests sent"
     done
-    echo "Phase 2 requests submitted."
+    echo "Phase 2 requests submitted. Use 'openstack server list' to monitor provisioning."
 fi
