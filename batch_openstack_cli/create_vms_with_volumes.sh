@@ -222,7 +222,6 @@ if [ "$PHASE" -eq 2 ]; then
         done
 
         # 3. Execution
-        # We DO NOT use --image here, as bootindex=0 points to a bootable volume
         openstack server create \
             --flavor "$FLAVOR" \
             --network "$NET_NAME" \
