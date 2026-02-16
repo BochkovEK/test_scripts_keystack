@@ -21,7 +21,6 @@ INTERVAL=5
 # -----------------
 
 
-
 # --- 1. LOAD ENV FILE IF EXISTS ---
 if [ -f "$(dirname $0)/$ENV_FILE" ]; then
     echo "Loading configuration from $ENV_FILE..."
@@ -246,4 +245,50 @@ if [ "$PHASE" -eq 2 ]; then
         sleep $SLEEP_INTERVAL
         [[ $i == *0 ]] && echo "Progress: $i / $VM_COUNT VM launch requests sent"
     done
+
+    # --- Start of VM Waiter Block ---
+    echo -e "\nAll VM requests submitted. Starting VM Waiter (Timeout: 1h, Interval: 10s)..."
+
+    VM_START_TIME=$(date +%s)
+
+    while true; do
+        VM_ELAPSED=$(( $(date +%s) - VM_START_TIME ))
+
+        # Fetch current statuses for VMs matching our BASE_NAME
+        # We use --column Name --column Status for a clean output
+        CURRENT_VM_STATE=$(openstack server list --column Name --column Status -f value | grep "^${BASE_NAME}")
+
+        ACTIVE_COUNT=$(echo "$CURRENT_VM_STATE" | grep -w "ACTIVE" | wc -l)
+        VM_ERROR_COUNT=$(echo "$CURRENT_VM_STATE" | grep -w "ERROR" | wc -l)
+        # Some VMs might be in BUILD or Networking states, we wait for them
+        TOTAL_VM_TERMINAL=$(( ACTIVE_COUNT + VM_ERROR_COUNT ))
+
+        echo "VM Status: $TOTAL_VM_TERMINAL / $VM_COUNT terminal (Active: $ACTIVE_COUNT, Errors: $VM_ERROR_COUNT). Time: ${VM_ELAPSED}s"
+
+        # Condition 1: All VMs reached terminal state
+        if [ "$TOTAL_VM_TERMINAL" -ge "$VM_COUNT" ]; then
+            echo -e "\n[Success] All VM provisioning processes have finished."
+            break
+        fi
+
+        # Condition 2: Timeout
+        if [ "$VM_ELAPSED" -ge "$VM_TIMEOUT" ]; then
+            echo -e "\n[Timeout] 1 hour limit reached. Some VMs are still provisioning."
+            break
+        fi
+
+        sleep $VM_INTERVAL
+    done
+
+    # Final reporting for Phase 2
+    if [ "$VM_ERROR_COUNT" -gt 0 ]; then
+        echo "------------------------------------------------"
+        echo "CRITICAL: The following VMs are in ERROR state:"
+        echo "$CURRENT_VM_STATE" | grep -w "ERROR"
+        echo "------------------------------------------------"
+        echo "Check Nova/Compute logs for these instances."
+    else
+        echo "Perfect! All VMs are ACTIVE and ready for use."
+    fi
+    # --- End of VM Waiter Block ---
 fi
