@@ -157,7 +157,7 @@ if [ "$PHASE" -eq 1 ]; then
         # We only need Name and Status to minimize API load
         CURRENT_STATE=$(openstack volume list --column Name --column Status -f value | grep "^${BASE_NAME}")
 
-        READY_COUNT=$(echo "$CURRENT_STATE" | grep -w "available" | wc -l)
+        READY_COUNT=$(echo "$CURRENT_STATE" | grep -E -w "available|in-use" | wc -l)
         ERROR_COUNT=$(echo "$CURRENT_STATE" | grep -w "error" | wc -l)
         TOTAL_TERMINAL=$(( READY_COUNT + ERROR_COUNT ))
 
