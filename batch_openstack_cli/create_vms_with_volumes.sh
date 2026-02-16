@@ -15,6 +15,10 @@
 
 
 ENV_FILE=".env.create_vms_with_volumes"
+# -- Waiter parm --
+TIMEOUT=3600  # 1 hour in seconds
+INTERVAL=5
+# -----------------
 
 # --- 1. LOAD ENV FILE IF EXISTS ---
 if [ -f "$ENV_FILE" ]; then
@@ -138,20 +142,55 @@ if [ "$PHASE" -eq 1 ]; then
             fi
         done
     done
-
-    echo -e "\nAll requests sent. Checking for 'tails'..."
-
-    # Check for "tails" (pending or failed resources)
-    TAILS=$(openstack volume list --column Name --column Status -f value | grep -E "creating|downloading|error")
-
-    if [ -n "$TAILS" ]; then
-        echo "The following volumes are still in progress or have ERRORS:"
-        echo "$TAILS"
-        echo "Please wait or clean 'error' states before starting Phase 2."
-    else
-        echo "All volumes are already 'available' or 'in-use'."
-    fi
 fi
+
+# --- Start of Waiter Block ---
+echo -e "\nAll requests sent. Starting Waiter (Timeout: 1h, Interval: 5s)..."
+
+START_TIME=$(date +%s)
+
+while true; do
+    CURRENT_TIME=$(date +%s)
+    ELAPSED=$(( CURRENT_TIME - START_TIME ))
+
+    # Fetch current statuses for volumes matching our BASE_NAME
+    # We only need Name and Status to minimize API load
+    CURRENT_STATE=$(openstack volume list --column Name --column Status -f value | grep "^${BASE_NAME}")
+
+    READY_COUNT=$(echo "$CURRENT_STATE" | grep -w "available" | wc -l)
+    ERROR_COUNT=$(echo "$CURRENT_STATE" | grep -w "error" | wc -l)
+    TOTAL_TERMINAL=$(( READY_COUNT + ERROR_COUNT ))
+
+    # Log progress to console
+    echo "Status: Total terminal states $TOTAL_TERMINAL / $TOTAL_VOLS (Ready: $READY_COUNT, Errors: $ERROR_COUNT). Elapsed: ${ELAPSED}s"
+
+    # Condition 1: Success or complete processing
+    if [ "$TOTAL_TERMINAL" -ge "$TOTAL_VOLS" ]; then
+        echo -e "\n[Success] All volumes have reached a terminal state."
+        break
+    fi
+
+    # Condition 2: Timeout
+    if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
+        echo -e "\n[Timeout] Reached 1 hour limit. Not all volumes are ready."
+        break
+    fi
+
+    sleep $INTERVAL
+done
+
+# Final reporting
+if [ "$ERROR_COUNT" -gt 0 ]; then
+    echo "------------------------------------------------"
+    echo "CRITICAL: The following volumes are in ERROR state:"
+    echo "$CURRENT_STATE" | grep -w "error"
+    echo "------------------------------------------------"
+    echo "Please fix these errors before proceeding to Phase 2."
+else
+    echo "Perfect! All volumes are in 'available' state. You can safely start Phase 2."
+fi
+# --- End of Waiter Block ---
+
 
 if [ "$PHASE" -eq 2 ]; then
     echo "PHASE 2: Launching VMs (Errors only)..."
