@@ -41,7 +41,7 @@ echo "--- Infrastructure Configuration ---"
 get_param "BASE_NAME"         "Enter Base VM name"          "test-vm"
 get_param "FLAVOR"            "Enter Flavor name"           "g1-cpu-2-2"
 get_param "IMAGE"             "Enter Image name/ID"         "cirros-0.6.3-x86_64-disk"
-get_param "NET_NAME"          "Enter Network name"          "pubnet"
+get_param "NET_NAME"          "Enter Network name"          "pub_net"
 get_param "KEY_PAIR"          "Enter Keypair name"          "test-keypair"
 get_param "SEC_GROUP"         "Enter Security Group"        "test_security-group"
 get_param "HOST_HINT"         "Enter Target Host (nova:XX)" "nova:compute-01"
@@ -102,27 +102,55 @@ EXISTING_VOLS=$(openstack volume list --column Name -f value)
 EXISTING_VMS=$(openstack server list --column Name -f value)
 
 if [ "$PHASE" -eq 1 ]; then
-    echo "PHASE 1: Creating Volumes (Errors only)..."
+    TOTAL_VOLS=$(( VM_COUNT * (1 + DATA_COUNT_PER_VM) ))
+    CURRENT_VOL=0
+    echo "PHASE 1: Creating $TOTAL_VOLS volumes in total (skipping existing)..."
+
     for i in $(seq -f "%03g" 1 $VM_COUNT); do
         VM_NAME="${BASE_NAME}-${i}"
 
-        # Boot
+        # --- 1. Boot Volume ---
+        ((CURRENT_VOL++))
         if ! echo "$EXISTING_VOLS" | grep -qxw "${VM_NAME}-boot"; then
+            echo "Start creating ${VM_NAME}-boot"
             openstack volume create --size $BOOT_SIZE --image "$IMAGE" --bootable "${VM_NAME}-boot" > /dev/null &
             sleep $SLEEP_INTERVAL
         fi
 
-        # Data
+        # Display progress after processing boot volume
+        if (( CURRENT_VOL % 10 == 0 || CURRENT_VOL == TOTAL_VOLS )); then
+            echo "Progress: $CURRENT_VOL / $TOTAL_VOLS volumes processed"
+        fi
+
+        # --- 2. Data Volumes ---
         for d in $(seq -f "%02g" 1 $DATA_COUNT_PER_VM); do
+            ((CURRENT_VOL++))
             VOL_NAME="${VM_NAME}-data-${d}"
             if ! echo "$EXISTING_VOLS" | grep -qxw "$VOL_NAME"; then
+                echo "Start creating ${VOL_NAME}"
                 openstack volume create --size $DATA_SIZE "$VOL_NAME" > /dev/null &
                 sleep $SLEEP_INTERVAL
             fi
-        done
 
-        if (( 10#$i % 10 == 0 )); then echo "Progress: $i/$VM_COUNT VMs processed"; fi
+            # Display progress after each data volume
+            if (( CURRENT_VOL % 10 == 0 || CURRENT_VOL == TOTAL_VOLS )); then
+                echo "Progress: $CURRENT_VOL / $TOTAL_VOLS volumes processed"
+            fi
+        done
     done
+
+    echo -e "\nAll requests sent. Checking for 'tails'..."
+
+    # Check for "tails" (pending or failed resources)
+    TAILS=$(openstack volume list --column Name --column Status -f value | grep -E "creating|downloading|error")
+
+    if [ -n "$TAILS" ]; then
+        echo "The following volumes are still in progress or have ERRORS:"
+        echo "$TAILS"
+        echo "Please wait or clean 'error' states before starting Phase 2."
+    else
+        echo "All volumes are already 'available' or 'in-use'."
+    fi
 fi
 
 if [ "$PHASE" -eq 2 ]; then
