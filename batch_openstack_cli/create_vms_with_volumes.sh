@@ -145,78 +145,86 @@ if [ "$PHASE" -eq 1 ]; then
             fi
         done
     done
+    # --- Start of Waiter Block ---
+    echo -e "\nAll requests sent. Starting Waiter (Timeout: 1h, Interval: 5s)..."
+
+    START_TIME=$(date +%s)
+
+    while true; do
+        CURRENT_TIME=$(date +%s)
+        ELAPSED=$(( CURRENT_TIME - START_TIME ))
+
+        # Fetch current statuses for volumes matching our BASE_NAME
+        # We only need Name and Status to minimize API load
+        CURRENT_STATE=$(openstack volume list --column Name --column Status -f value | grep "^${BASE_NAME}")
+
+        READY_COUNT=$(echo "$CURRENT_STATE" | grep -w "available" | wc -l)
+        ERROR_COUNT=$(echo "$CURRENT_STATE" | grep -w "error" | wc -l)
+        TOTAL_TERMINAL=$(( READY_COUNT + ERROR_COUNT ))
+
+        # Log progress to console
+        echo "Status: Total terminal states $TOTAL_TERMINAL / $TOTAL_VOLS (Ready: $READY_COUNT, Errors: $ERROR_COUNT). Elapsed: ${ELAPSED}s"
+
+        # Condition 1: Success or complete processing
+        if [ "$TOTAL_TERMINAL" -ge "$TOTAL_VOLS" ]; then
+            echo -e "\n[Success] All volumes have reached a terminal state."
+            break
+        fi
+
+        # Condition 2: Timeout
+        if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
+            echo -e "\n[Timeout] Reached 1 hour limit. Not all volumes are ready."
+            break
+        fi
+
+        sleep $INTERVAL
+    done
+
+    # Final reporting
+    if [ "$ERROR_COUNT" -gt 0 ]; then
+        echo "------------------------------------------------"
+        echo "CRITICAL: The following volumes are in ERROR state:"
+        echo "$CURRENT_STATE" | grep -w "error"
+        echo "------------------------------------------------"
+        echo "Please fix these errors before proceeding to Phase 2."
+    else
+        echo "Perfect! All volumes are in 'available' state. You can safely start Phase 2."
+    fi
+    # --- End of Waiter Block ---
 fi
 
-# --- Start of Waiter Block ---
-echo -e "\nAll requests sent. Starting Waiter (Timeout: 1h, Interval: 5s)..."
-
-START_TIME=$(date +%s)
-
-while true; do
-    CURRENT_TIME=$(date +%s)
-    ELAPSED=$(( CURRENT_TIME - START_TIME ))
-
-    # Fetch current statuses for volumes matching our BASE_NAME
-    # We only need Name and Status to minimize API load
-    CURRENT_STATE=$(openstack volume list --column Name --column Status -f value | grep "^${BASE_NAME}")
-
-    READY_COUNT=$(echo "$CURRENT_STATE" | grep -w "available" | wc -l)
-    ERROR_COUNT=$(echo "$CURRENT_STATE" | grep -w "error" | wc -l)
-    TOTAL_TERMINAL=$(( READY_COUNT + ERROR_COUNT ))
-
-    # Log progress to console
-    echo "Status: Total terminal states $TOTAL_TERMINAL / $TOTAL_VOLS (Ready: $READY_COUNT, Errors: $ERROR_COUNT). Elapsed: ${ELAPSED}s"
-
-    # Condition 1: Success or complete processing
-    if [ "$TOTAL_TERMINAL" -ge "$TOTAL_VOLS" ]; then
-        echo -e "\n[Success] All volumes have reached a terminal state."
-        break
-    fi
-
-    # Condition 2: Timeout
-    if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
-        echo -e "\n[Timeout] Reached 1 hour limit. Not all volumes are ready."
-        break
-    fi
-
-    sleep $INTERVAL
-done
-
-# Final reporting
-if [ "$ERROR_COUNT" -gt 0 ]; then
-    echo "------------------------------------------------"
-    echo "CRITICAL: The following volumes are in ERROR state:"
-    echo "$CURRENT_STATE" | grep -w "error"
-    echo "------------------------------------------------"
-    echo "Please fix these errors before proceeding to Phase 2."
-else
-    echo "Perfect! All volumes are in 'available' state. You can safely start Phase 2."
-fi
-# --- End of Waiter Block ---
-
-
+# --- PHASE 2: VMs (Fixed) ---
 if [ "$PHASE" -eq 2 ]; then
-    echo "PHASE 2: Launching VMs (Errors only)..."
+    echo "PHASE 2: Launching $VM_COUNT Virtual Machines..."
     letters=({b..z})
     for i in $(seq -f "%03g" 1 $VM_COUNT); do
         VM_NAME="${BASE_NAME}-${i}"
-
         if echo "$EXISTING_VMS" | grep -qxw "$VM_NAME"; then continue; fi
 
-        BDM="--block-device-mapping vda=${VM_NAME}-boot:volume"
+        # Constructing the Boot Device (vda)
+        # source=volume, dest=volume, bootindex=0 makes it the bootable drive
+        BDM="--block-device uuid=${VM_NAME}-boot,source=volume,dest=volume,bus=virtio,device=vda,bootindex=0"
+
+        # Adding Data Devices (vdb, vdc, etc.)
         for d in $(seq 1 $DATA_COUNT_PER_VM); do
             idx=$((d-1))
-            BDM="$BDM --block-device-mapping vd${letters[$idx]}=${VM_NAME}-data-$(printf "%02d" $d):volume"
+            VOL_NAME="${VM_NAME}-data-$(printf "%02d" $d)"
+            # Note: bootindex is omitted or set to -1 for non-bootable disks
+            BDM="$BDM --block-device uuid=${VOL_NAME},source=volume,dest=volume,bus=virtio,device=vd${letters[$idx]}"
         done
 
+        # Launch VM
         openstack server create \
             --flavor "$FLAVOR" \
             --network "$NET_NAME" \
             --key-name "$KEY_PAIR" \
             --security-group "$SEC_GROUP" \
-            --availability-zone "$HOST_HINT" $BDM "$VM_NAME" > /dev/null &
+            --availability-zone "$HOST_HINT" \
+            $BDM \
+            "$VM_NAME" > /dev/null &
 
         sleep $SLEEP_INTERVAL
-        if (( 10#$i % 10 == 0 )); then echo "Progress: $i/$VM_COUNT VM requests sent"; fi
+        [[ $i == *0 ]] && echo "Progress: $i / $VM_COUNT VMs launched"
     done
+    echo "Phase 2 requests submitted."
 fi
