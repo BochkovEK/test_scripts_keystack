@@ -100,7 +100,7 @@ if [ "$PHASE" -eq 1 ]; then
             echo "[Skip] $BOOT_VOL exists"
         else
             echo "[Create] $BOOT_VOL"
-            openstack volume create --size $BOOT_SIZE --image "$IMAGE" --bootable "$BOOT_VOL" &
+            openstack volume create --size $BOOT_SIZE --image "$IMAGE" --bootable "$BOOT_VOL" > /dev/null &
             sleep $SLEEP_INTERVAL
         fi
 
@@ -111,7 +111,7 @@ if [ "$PHASE" -eq 1 ]; then
                 echo "[Skip] $DATA_VOL exists"
             else
                 echo "[Create] $DATA_VOL"
-                openstack volume create --size $DATA_SIZE "$DATA_VOL" &
+                openstack volume create --size $DATA_SIZE "$DATA_VOL" > /dev/null &
                 sleep $SLEEP_INTERVAL
             fi
         done
@@ -152,7 +152,7 @@ if [ "$PHASE" -eq 2 ]; then
             --security-group "$SEC_GROUP" \
             --availability-zone "$HOST_HINT" \
             $BDM \
-            "$VM_NAME" &
+            "$VM_NAME" > /dev/null &
 
         sleep $SLEEP_INTERVAL
     done
