@@ -95,13 +95,13 @@ def reset_volume_to_error(conn, vol_id):
 
 
 def force_delete_volume(conn, vol_id):
-    """Force delete volume (ignores current state)"""
+    """Delete volume (ignores current state)"""
     try:
-        conn.block_storage.delete_volume(vol_id, force=True)
-        logging.info(f"Force delete issued for volume {vol_id}")
+        conn.block_storage.delete_volume(vol_id)
+        logging.info(f"Delete issued for volume {vol_id}")
         return True
     except Exception as e:
-        logging.error(f"Force delete volume {vol_id} failed: {e}")
+        logging.error(f"Delete volume {vol_id} failed: {e}")
         return False
 
 

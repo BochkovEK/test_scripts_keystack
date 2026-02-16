@@ -57,16 +57,6 @@ resource "openstack_compute_instance_v2" "vm" {
     delete_on_termination = each.value.boot_volume_delete_on_termination
   }
 
-#  block_device {
-#    uuid                  = data.openstack_images_image_v2.image_id[each.key].id
-#    source_type           = "image"
-#    destination_type      = "volume"
-#    boot_index            = 0
-#    volume_size           = each.value.boot_volume_size
-#    volume_type           = var.default_volume_type
-#    delete_on_termination = each.value.boot_volume_delete_on_termination
-#  }
-
   dynamic "block_device" {
     for_each = { for vol in local.all_data_volumes : vol.name => vol if vol.vm_name == each.value.name }
     content {
