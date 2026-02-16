@@ -107,8 +107,9 @@ echo "Fetching current OpenStack state..."
 EXISTING_VOLS=$(openstack volume list --column Name -f value)
 EXISTING_VMS=$(openstack server list --column Name -f value)
 
+TOTAL_VOLS=$(( VM_COUNT * (1 + DATA_COUNT_PER_VM) ))
+
 if [ "$PHASE" -eq 1 ]; then
-    TOTAL_VOLS=$(( VM_COUNT * (1 + DATA_COUNT_PER_VM) ))
     CURRENT_VOL=0
     echo "PHASE 1: Creating $TOTAL_VOLS volumes in total (skipping existing)..."
 
