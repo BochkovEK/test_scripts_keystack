@@ -23,7 +23,7 @@ INTERVAL=5
 
 
 # --- 1. LOAD ENV FILE IF EXISTS ---
-if [ -f "$ENV_FILE" ]; then
+if [ -f "$(dirname $0)/$ENV_FILE" ]; then
     echo "Loading configuration from $ENV_FILE..."
     # Exporting values from file to current session
     export $(grep -v '^#' $(dirname $0)/$ENV_FILE | xargs)
