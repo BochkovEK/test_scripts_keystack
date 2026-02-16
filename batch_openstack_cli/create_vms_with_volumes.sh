@@ -272,12 +272,12 @@ if [ "$PHASE" -eq 2 ]; then
         fi
 
         # Condition 2: Timeout
-        if [ "$VM_ELAPSED" -ge "$VM_TIMEOUT" ]; then
+        if [ "$VM_ELAPSED" -ge "$TIMEOUT" ]; then
             echo -e "\n[Timeout] 1 hour limit reached. Some VMs are still provisioning."
             break
         fi
 
-        sleep $VM_INTERVAL
+        sleep $INTERVAL
     done
 
     # Final reporting for Phase 2
