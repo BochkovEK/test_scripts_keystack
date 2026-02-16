@@ -296,53 +296,51 @@ fi
 # --- PHASE 3: CLEANUP (Teardown Infrastructure) ---
 if [ "$PHASE" -eq 3 ]; then
     echo "PHASE 3: Starting cleanup for base name '$BASE_NAME'..."
+    START_CLEANUP=$(date +%s)
 
-    # 1. Delete Virtual Machines
-    TARGET_VMS=$(echo "$EXISTING_VMS" | grep "^${BASE_NAME}-")
+    # 1. Delete Virtual Machines in background
+    TARGET_VMS=$(openstack server list --column Name -f value | grep "^${BASE_NAME}-")
     if [ -n "$TARGET_VMS" ]; then
         VM_DEL_COUNT=$(echo "$TARGET_VMS" | wc -l)
-        echo "Deleting $VM_DEL_COUNT virtual machines..."
-        echo "$TARGET_VMS" | xargs -n 1 openstack server delete
+        echo "Sending delete requests for $VM_DEL_COUNT VMs..."
+        for vm in $TARGET_VMS; do
+            openstack server delete "$vm" > /dev/null &
+            sleep "$SLEEP_INTERVAL"
+        done
 
-        echo "Waiting for VMs to be removed..."
+        echo "Waiting for VMs to disappear..."
         while true; do
             STILL_VMS=$(openstack server list --column Name -f value | grep "^${BASE_NAME}-" | wc -l)
-            if [ "$STILL_VMS" -eq 0 ]; then
-                echo "All VMs successfully deleted."
-                break
-            fi
-            echo "Waiting... $STILL_VMS VMs still exist."
+            echo "Status: $STILL_VMS VMs remaining..."
+            if [ "$STILL_VMS" -eq 0 ]; then break; fi
             sleep 5
         done
-    else
-        echo "No VMs found matching prefix ${BASE_NAME}-"
+        echo "All VMs deleted."
     fi
 
-    # 2. Delete Volumes
-    # We refresh the volume list to ensure we have the latest state after VM deletion
+    # 2. Delete Volumes in background
     echo "Fetching volumes for deletion..."
     TARGET_VOLS=$(openstack volume list --column Name -f value | grep "^${BASE_NAME}-")
 
     if [ -n "$TARGET_VOLS" ]; then
         VOL_DEL_COUNT=$(echo "$TARGET_VOLS" | wc -l)
-        echo "Deleting $VOL_DEL_COUNT volumes..."
+        echo "Sending delete requests for $VOL_DEL_COUNT volumes..."
+        for vol in $TARGET_VOLS; do
+            openstack volume delete "$vol" > /dev/null &
+            sleep "$SLEEP_INTERVAL"
+        done
 
-        # We delete in small batches or one by one to avoid API rate limits
-        echo "$TARGET_VOLS" | xargs -n 1 openstack volume delete
-
-        echo "Waiting for volumes to be removed..."
+        echo "Waiting for volumes to disappear..."
         while true; do
             STILL_VOLS=$(openstack volume list --column Name -f value | grep "^${BASE_NAME}-" | wc -l)
-            if [ "$STILL_VOLS" -eq 0 ]; then
-                echo "All volumes successfully deleted."
-                break
-            fi
-            echo "Waiting... $STILL_VOLS volumes still exist."
+            echo "Status: $STILL_VOLS volumes remaining..."
+            if [ "$STILL_VOLS" -eq 0 ]; then break; fi
             sleep 5
         done
-    else
-        echo "No volumes found matching prefix ${BASE_NAME}-"
+        echo "All volumes deleted."
     fi
 
-    echo "Cleanup complete. Environment is clear."
+    END_CLEANUP=$(date +%s)
+    TOTAL_CLEANUP_TIME=$(( END_CLEANUP - START_CLEANUP ))
+    echo "Cleanup complete in $TOTAL_CLEANUP_TIME seconds. Environment is clear."
 fi
