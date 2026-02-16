@@ -196,29 +196,27 @@ fi
 # --- PHASE 2: VMs
 if [ "$PHASE" -eq 2 ]; then
     echo "PHASE 2: Launching $VM_COUNT Virtual Machines..."
-    # Array for disk letters: vdb, vdc, vdd...
     letters=({b..z})
 
     for i in $(seq -f "%03g" 1 $VM_COUNT); do
         VM_NAME="${BASE_NAME}-${i}"
 
-        # Check if VM already exists to ensure idempotency
         if echo "$EXISTING_VMS" | grep -qxw "$VM_NAME"; then
             continue
         fi
 
         # 1. Construct the BOOT device mapping
-        # bootindex=0 makes it the primary bootable device
-        # shutdown=preserve (optional) ensures the volume isn't deleted when VM is deleted
-        BDM="--block-device uuid=${VM_NAME}-boot,source=volume,dest=volume,bus=virtio,device=vda,bootindex=0"
+        # Corrected keys: source_type, destination_type, boot_index, disk_bus
+        BOOT_VOL="${VM_NAME}-boot"
+        BDM="--block-device uuid=${BOOT_VOL},source_type=volume,destination_type=volume,disk_bus=virtio,boot_index=0"
 
         # 2. Add DATA devices
         for d in $(seq 1 $DATA_COUNT_PER_VM); do
             idx=$((d-1))
             VOL_NAME="${VM_NAME}-data-$(printf "%02d" $d)"
 
-            # For data disks, bootindex is omitted or set to -1
-            BDM="$BDM --block-device uuid=${VOL_NAME},source=volume,dest=volume,bus=virtio,device=vd${letters[$idx]}"
+            # For data disks, boot_index is usually omitted or set to -1
+            BDM="$BDM --block-device uuid=${VOL_NAME},source_type=volume,destination_type=volume,disk_bus=virtio"
         done
 
         # 3. Execution
@@ -233,8 +231,7 @@ if [ "$PHASE" -eq 2 ]; then
 
         sleep $SLEEP_INTERVAL
 
-        # Simple progress tracking
         [[ $i == *0 ]] && echo "Progress: $i / $VM_COUNT VM launch requests sent"
     done
-    echo "Phase 2 requests submitted. Use 'openstack server list' to monitor provisioning."
+    echo "Phase 2 requests submitted."
 fi
