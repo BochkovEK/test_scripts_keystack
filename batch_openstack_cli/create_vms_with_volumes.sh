@@ -193,33 +193,46 @@ if [ "$PHASE" -eq 1 ]; then
     # --- End of Waiter Block ---
 fi
 
-# --- PHASE 2: VMs
+# --- PHASE 2: VMs (UUID-safe version) ---
 if [ "$PHASE" -eq 2 ]; then
     echo "PHASE 2: Launching $VM_COUNT Virtual Machines..."
     letters=({b..z})
 
+    echo "Caching Volume UUIDs..."
+    declare -A VOL_MAP
+    # Get all volumes and their IDs at once
+    while read -r vid vname; do
+        VOL_MAP["$vname"]="$vid"
+    done < <(openstack volume list --column ID --column Name -f value)
+
     for i in $(seq -f "%03g" 1 $VM_COUNT); do
         VM_NAME="${BASE_NAME}-${i}"
 
-        if echo "$EXISTING_VMS" | grep -qxw "$VM_NAME"; then
+        if echo "$EXISTING_VMS" | grep -qxw "$VM_NAME"; then continue; fi
+
+        # 1. Resolve Boot Volume UUID
+        BOOT_VOL_NAME="${VM_NAME}-boot"
+        BOOT_VOL_ID=${VOL_MAP["$BOOT_VOL_NAME"]}
+
+        if [ -z "$BOOT_VOL_ID" ]; then
+            echo "[Error] Could not find UUID for $BOOT_VOL_NAME. Skipping..."
             continue
         fi
 
-        # 1. Construct the BOOT device mapping
-        # Corrected keys: source_type, destination_type, boot_index, disk_bus
-        BOOT_VOL="${VM_NAME}-boot"
-        BDM="--block-device uuid=${BOOT_VOL},source_type=volume,destination_type=volume,disk_bus=virtio,boot_index=0"
+        # 2. Build BDM using UUIDs instead of Names
+        BDM="--block-device uuid=${BOOT_VOL_ID},source_type=volume,destination_type=volume,disk_bus=virtio,boot_index=0"
 
-        # 2. Add DATA devices
         for d in $(seq 1 $DATA_COUNT_PER_VM); do
             idx=$((d-1))
-            VOL_NAME="${VM_NAME}-data-$(printf "%02d" $d)"
+            DATA_VOL_NAME="${VM_NAME}-data-$(printf "%02d" $d)"
+            DATA_VOL_ID=${VOL_MAP["$DATA_VOL_NAME"]}
 
-            # For data disks, boot_index is usually omitted or set to -1
-            BDM="$BDM --block-device uuid=${VOL_NAME},source_type=volume,destination_type=volume,disk_bus=virtio"
+            if [ -n "$DATA_VOL_ID" ]; then
+                BDM="$BDM --block-device uuid=${DATA_VOL_ID},source_type=volume,destination_type=volume,disk_bus=virtio"
+            fi
         done
 
-        # 3. Execution
+        # 3. Create Server
         openstack server create \
             --flavor "$FLAVOR" \
             --network "$NET_NAME" \
@@ -230,8 +243,6 @@ if [ "$PHASE" -eq 2 ]; then
             "$VM_NAME" > /dev/null &
 
         sleep $SLEEP_INTERVAL
-
         [[ $i == *0 ]] && echo "Progress: $i / $VM_COUNT VM launch requests sent"
     done
-    echo "Phase 2 requests submitted."
 fi
