@@ -5,6 +5,7 @@ Uses openstack.connect() for authentication (environment variables or clouds.yam
 
 Behavior priority:
 - --volumes "id1 id2 id3" → reset ONLY these volumes to 'error' (ignores all --reset-* flags)
+- --vm-name to reset all volumes with matching name prefix
 - --force-delete → delete ALL volumes currently in 'error' status (always applies, even alone)
 - If no --volumes → use --reset-creating / --reset-deleting / --reset-reserved / --reset-attaching
 - No flags → list all volumes with their statuses
@@ -25,12 +26,12 @@ def parse_args():
     parser.add_argument(
         "--force-delete",
         action="store_true",
-        help="Delete ALL volumes currently in 'error' status (always applies)"
+        help="Delete ALL volumes in 'error' status"
     )
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Show what would be done without executing any changes"
+        help="Show actions without executing them"
     )
     parser.add_argument(
         "--wait",
@@ -47,27 +48,32 @@ def parse_args():
     parser.add_argument(
         "--reset-creating",
         action="store_true",
-        help="Reset volumes in 'creating' status to 'error'"
+        help="Reset volumes in 'creating' to 'error'"
     )
     parser.add_argument(
         "--reset-deleting",
         action="store_true",
-        help="Reset volumes in 'deleting' status to 'error'"
+        help="Reset volumes in 'deleting' to 'error'"
     )
     parser.add_argument(
         "--reset-reserved",
         action="store_true",
-        help="Reset volumes in 'reserved' status to 'error'"
+        help="Reset volumes in 'reserved' to 'error'"
     )
     parser.add_argument(
         "--reset-attaching",
         action="store_true",
-        help="Reset volumes in 'attaching' status to 'error' (stuck attach operations)"
+        help="Reset volumes in 'attaching' to 'error'"
     )
     parser.add_argument(
         "--volumes",
         type=str,
-        help="Space-separated list of volume IDs to force reset to 'error' (highest priority)"
+        help="Space-separated volume IDs to reset to 'error' (highest priority)"
+    )
+    parser.add_argument(
+        "--vm-name",
+        type=str,
+        help="Reset all volumes whose name starts with this prefix"
     )
     return parser.parse_args()
 
@@ -84,128 +90,85 @@ def main():
     args = parse_args()
     setup_logging(args.log_level)
 
-    logging.info("Connecting to OpenStack...")
-
-    try:
-        conn = openstack.connect()
-        conn.authorize()
-        logging.info("Authentication successful")
-        cinder = conn.block_storage
-    except Exception as e:
-        logging.error(f"Connection failed: {e}")
-        sys.exit(1)
+    conn = openstack.connect()
+    cinder = conn.block_storage
 
     reset_volumes = []
 
-    # Priority 1: --volumes — highest priority, ignores all --reset-* flags
+    # Priority 1: specific volume IDs
     if args.volumes:
         volume_ids = args.volumes.split()
-        logging.info(f"Processing {len(volume_ids)} specific volumes from --volumes (highest priority)")
-
         for vol_id in volume_ids:
-            try:
-                vol = cinder.get_volume(vol_id)
-                if vol:
-                    reset_volumes.append(vol)
-                else:
-                    logging.warning(f"Volume {vol_id} not found")
-            except Exception as e:
-                logging.error(f"Failed to fetch volume {vol_id}: {e}")
+            vol = cinder.get_volume(vol_id)
+            if vol:
+                reset_volumes.append(vol)
 
-        # Explicitly ignore reset flags
-        if any([args.reset_creating, args.reset_deleting, args.reset_reserved, args.reset_attaching]):
-            logging.info("All --reset-* flags are ignored when --volumes is used")
+    # Priority 2: name prefix (--vm-name)
+    elif args.vm_name:
+        prefix = args.vm_name.strip()
+        all_vols = cinder.volumes(all_projects=True)
+        reset_volumes = [v for v in all_vols if v.name and v.name.startswith(prefix)]
 
-    # Priority 2: status-based reset (only if no --volumes)
+    # Priority 3: status-based reset
     elif any([args.reset_creating, args.reset_deleting, args.reset_reserved, args.reset_attaching]):
         if args.reset_creating:
-            logging.info("Collecting volumes in 'creating' status...")
             reset_volumes.extend(cinder.volumes(status="creating", all_projects=True))
-
         if args.reset_deleting:
-            logging.info("Collecting volumes in 'deleting' status...")
             reset_volumes.extend(cinder.volumes(status="deleting", all_projects=True))
-
         if args.reset_reserved:
-            logging.info("Collecting volumes in 'reserved' status...")
             reset_volumes.extend(cinder.volumes(status="reserved", all_projects=True))
-
         if args.reset_attaching:
-            logging.info("Collecting volumes in 'attaching' status...")
             reset_volumes.extend(cinder.volumes(status="attaching", all_projects=True))
 
-    # Show volumes to be reset (if any)
+    # Show and reset volumes
     if reset_volumes:
-        logging.info(f"Found {len(reset_volumes)} volumes to reset to 'error'")
-        print("\nVOLUMES TO RESET TO 'error':")
-        print("-" * 70)
+        print("\nVolumes to reset to 'error':")
+        print("-" * 80)
         for vol in reset_volumes:
-            print(f"  {vol.id[:8]}... {vol.name or '<no name>':<30} | {vol.status:12} | {vol.size} GiB")
-        print("-" * 70)
+            print(f"  {vol.id[:8]}... {vol.name or '<no name>':<36} | {vol.status:12} | {vol.size:>4} GiB")
+        print("-" * 80)
 
-        if args.dry_run:
-            logging.info("Dry run — no reset performed")
-        else:
+        if not args.dry_run:
             updated = 0
             for vol in reset_volumes:
                 try:
-                    logging.info(f"Resetting volume {vol.id} ({vol.name or 'no name'}) to 'error'")
                     cinder.reset_volume_status(vol.id, status='error')
                     updated += 1
                     time.sleep(args.wait)
-
-                    refreshed = cinder.get_volume(vol.id)
-                    if refreshed.status == "error":
-                        logging.info("  → success")
-                    else:
-                        logging.warning(f"  → status remains: {refreshed.status}")
                 except Exception as e:
                     logging.error(f"Reset failed for {vol.id}: {e}")
-            print(f"\nSuccessfully reset to 'error': {updated} volumes")
+            print(f"Reset to 'error': {updated} volumes")
 
-    # Handle --force-delete (independent, always deletes current 'error' volumes)
+    # Force delete all error volumes (independent action)
     if args.force_delete:
-        logging.info("Collecting volumes in 'error' for deletion...")
         error_volumes = list(cinder.volumes(status="error", all_projects=True))
-
-        if not error_volumes:
-            logging.info("No volumes in 'error' status found for deletion.")
-        else:
-            print("\n" + "=" * 70)
-            print("VOLUMES TO BE DELETED (status 'error')")
-            print("=" * 70)
+        if error_volumes:
+            print("\nVolumes to delete (status 'error'):")
+            print("=" * 80)
             for v in error_volumes:
-                print(f"{v.id[:8]}... {v.name or '<no name>':<30} | {v.status:12} | {v.size} GiB")
-            print("=" * 70)
+                print(f"{v.id[:8]}... {v.name or '<no name>':<36} | {v.status:12} | {v.size:>4} GiB")
+            print("=" * 80)
 
-            if args.dry_run:
-                logging.info("Dry run — no deletions performed")
-            else:
+            if not args.dry_run:
                 deleted = 0
                 for vol in error_volumes:
                     try:
-                        logging.info(f"Deleting volume {vol.id} ({vol.name or 'no name'})")
                         cinder.delete_volume(vol.id, force=True)
                         deleted += 1
                         time.sleep(args.wait)
                     except Exception as e:
                         logging.error(f"Delete failed for {vol.id}: {e}")
-                print(f"\nDeleted {deleted} volumes in 'error' status")
+                print(f"Deleted {deleted} volumes")
 
-    # Default: no actions → list all volumes
+    # Default: list all volumes
     if not reset_volumes and not args.force_delete:
-        logging.info("No actions requested. Listing all volumes...")
         all_volumes = list(cinder.volumes(all_projects=True))
-        if not all_volumes:
-            logging.info("No volumes found.")
-            return
-
-        print("\n" + "=" * 70)
-        print("ALL VOLUMES")
-        print("=" * 70)
-        for v in all_volumes:
-            print(f"{v.id[:8]}... {v.name or '<no name>':<30} | {v.status:12} | {v.size} GiB")
-        print("=" * 70)
+        if all_volumes:
+            print("\nAll volumes:")
+            print("=" * 80)
+            for v in all_volumes:
+                print(f"{v.id[:8]}... {v.name or '<no name>':<36} | {v.status:12} | {v.size:>4} GiB")
+            print("=" * 80)
 
 
 if __name__ == "__main__":

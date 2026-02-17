@@ -304,6 +304,7 @@ if [ "$PHASE" -eq 3 ]; then
         VM_DEL_COUNT=$(echo "$TARGET_VMS" | wc -l)
         echo "Sending delete requests for $VM_DEL_COUNT VMs..."
         for vm in $TARGET_VMS; do
+            echo "Start deleting $vm..."
             openstack server delete "$vm" > /dev/null &
             sleep "$SLEEP_INTERVAL"
         done
@@ -326,6 +327,7 @@ if [ "$PHASE" -eq 3 ]; then
         VOL_DEL_COUNT=$(echo "$TARGET_VOLS" | wc -l)
         echo "Sending delete requests for $VOL_DEL_COUNT volumes..."
         for vol in $TARGET_VOLS; do
+            echo "Start deleting $vol..."
             openstack volume delete "$vol" > /dev/null &
             sleep "$SLEEP_INTERVAL"
         done
