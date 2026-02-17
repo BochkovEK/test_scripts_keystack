@@ -24,7 +24,7 @@ get_param() {
     fi
 }
 
-echo "--- Infrastructure Configuration ---"
+echo "Infrastructure Configuration..."
 get_param "BASE_NAME"         "Enter Base VM name"          "test-vm"
 get_param "FLAVOR"            "Enter Flavor name"           "g1-cpu-2-2"
 get_param "IMAGE"             "Enter Image name/ID"         "cirros-0.6.3-x86_64-disk"
@@ -37,6 +37,7 @@ get_param "DATA_SIZE"         "Enter Data disk size (GB)"   "50"
 get_param "DATA_COUNT_PER_VM" "Data disks per VM"           "2"
 get_param "VM_COUNT"          "Total VMs to create"         "100"
 get_param "SLEEP_INTERVAL"    "Throttling sleep (sec)"      "2"
+echo "All required parameters are defined"
 
 echo -e "\n========================================"
 echo "REVIEW CONFIGURATION:"
