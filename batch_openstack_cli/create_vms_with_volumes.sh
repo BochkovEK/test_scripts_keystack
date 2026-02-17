@@ -38,6 +38,26 @@ get_param "DATA_COUNT_PER_VM" "Data disks per VM"           "2"
 get_param "VM_COUNT"          "Total VMs to create"         "100"
 get_param "SLEEP_INTERVAL"    "Throttling sleep (sec)"      "2"
 
+echo -e "\n========================================"
+echo "REVIEW CONFIGURATION:"
+echo "========================================"
+cat << EOF
+Base Name      : $BASE_NAME
+Flavor         : $FLAVOR
+Image          : $IMAGE
+Network        : $NET_NAME
+Keypair        : $KEY_PAIR
+Sec Group      : $SEC_GROUP
+Host Hint      : $HOST_HINT
+Boot Size      : ${BOOT_SIZE}GB
+Data Size      : ${DATA_SIZE}GB x $DATA_COUNT_PER_VM
+VM Count       : $VM_COUNT
+Sleep Interval : ${SLEEP_INTERVAL}s
+EOF
+echo "========================================"
+
+read -p "Press [Enter] to save config and continue..."
+
 # Save Environment
 cat << EOF > $ENV_FILE
 BASE_NAME=$BASE_NAME
@@ -53,6 +73,7 @@ DATA_COUNT_PER_VM=$DATA_COUNT_PER_VM
 VM_COUNT=$VM_COUNT
 SLEEP_INTERVAL=$SLEEP_INTERVAL
 EOF
+
 
 PHASE=1
 while [[ "$#" -gt 0 ]]; do
