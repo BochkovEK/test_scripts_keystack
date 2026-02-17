@@ -2,13 +2,6 @@
 """
 Reset stuck volumes to 'error' status and/or delete volumes in 'error'.
 Uses openstack.connect() for authentication (environment variables or clouds.yaml).
-
-Behavior priority:
-- --volumes "id1 id2 id3" → reset ONLY these volumes to 'error' (ignores all --reset-* flags)
-- --vm-name to reset all volumes with matching name prefix
-- --force-delete → delete ALL volumes currently in 'error' status (always applies, even alone)
-- If no --volumes → use --reset-creating / --reset-deleting / --reset-reserved / --reset-attaching
-- No flags → list all volumes with their statuses
 """
 
 import argparse
@@ -73,7 +66,7 @@ def parse_args():
     parser.add_argument(
         "--vm-name",
         type=str,
-        help="Reset all volumes whose name starts with this prefix"
+        help="Reset all volumes whose name starts with any of these prefixes (space-separated)"
     )
     return parser.parse_args()
 
@@ -97,17 +90,32 @@ def main():
 
     # Priority 1: specific volume IDs
     if args.volumes:
-        volume_ids = args.volumes.split()
+        volume_ids = [vid.strip() for vid in args.volumes.split() if vid.strip()]
         for vol_id in volume_ids:
             vol = cinder.get_volume(vol_id)
             if vol:
                 reset_volumes.append(vol)
+            else:
+                logging.warning(f"Volume ID not found: {vol_id}")
 
-    # Priority 2: name prefix (--vm-name)
+    # Priority 2: name prefixes (--vm-name supports multiple space-separated values)
     elif args.vm_name:
-        prefix = args.vm_name.strip()
-        all_vols = cinder.volumes(all_projects=True)
-        reset_volumes = [v for v in all_vols if v.name and v.name.startswith(prefix)]
+        prefixes = [p.strip() for p in args.vm_name.split() if p.strip()]
+
+        if not prefixes:
+            logging.warning("No valid prefix provided after --vm-name")
+        else:
+            all_vols = list(cinder.volumes(all_projects=True))
+            seen = set()
+
+            for prefix in prefixes:
+                for vol in all_vols:
+                    if vol.name and vol.name.startswith(prefix) and vol.id not in seen:
+                        reset_volumes.append(vol)
+                        seen.add(vol.id)
+
+            if not reset_volumes:
+                print("No volumes found matching any of the provided prefixes")
 
     # Priority 3: status-based reset
     elif any([args.reset_creating, args.reset_deleting, args.reset_reserved, args.reset_attaching]):
@@ -138,12 +146,14 @@ def main():
                 except Exception as e:
                     logging.error(f"Reset failed for {vol.id}: {e}")
             print(f"Reset to 'error': {updated} volumes")
+        else:
+            print("(dry-run mode - no changes performed)")
 
     # Force delete all error volumes (independent action)
     if args.force_delete:
         error_volumes = list(cinder.volumes(status="error", all_projects=True))
         if error_volumes:
-            print("\nVolumes to delete (status 'error'):")
+            print("\nVolumes in 'error' status to delete:")
             print("=" * 80)
             for v in error_volumes:
                 print(f"{v.id[:8]}... {v.name or '<no name>':<36} | {v.status:12} | {v.size:>4} GiB")
@@ -159,8 +169,10 @@ def main():
                     except Exception as e:
                         logging.error(f"Delete failed for {vol.id}: {e}")
                 print(f"Deleted {deleted} volumes")
+            else:
+                print("(dry-run mode - no deletions performed)")
 
-    # Default: list all volumes
+    # Default: list all volumes if nothing else was requested
     if not reset_volumes and not args.force_delete:
         all_volumes = list(cinder.volumes(all_projects=True))
         if all_volumes:
@@ -169,6 +181,8 @@ def main():
             for v in all_volumes:
                 print(f"{v.id[:8]}... {v.name or '<no name>':<36} | {v.status:12} | {v.size:>4} GiB")
             print("=" * 80)
+        else:
+            print("No volumes found.")
 
 
 if __name__ == "__main__":
