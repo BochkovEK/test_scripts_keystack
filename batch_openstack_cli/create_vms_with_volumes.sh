@@ -57,7 +57,7 @@ Sleep Interval : ${SLEEP_INTERVAL}s
 EOF
 echo "========================================"
 
-read -p "Press [Enter] to save config and continue..."
+read -p "Press [Enter] to save config and continue: "
 
 # Save Environment
 cat << EOF > $ENV_FILE
