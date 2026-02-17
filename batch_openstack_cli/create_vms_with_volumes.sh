@@ -90,14 +90,14 @@ if [ "$PHASE" -eq 1 ]; then
 
             # Boot Volume
             if ! echo "$EXISTING_VOLS" | grep -qxw "${VM_NAME}-boot"; then
-                echo "Start creating ${VM_NAME}-boot"
+                echo "Start creating ${VM_NAME}-boot..."
                 openstack volume create --size $BOOT_SIZE --image "$IMAGE" --bootable "${VM_NAME}-boot" > /dev/null &
                 sleep $SLEEP_INTERVAL
             fi
             # Data Volumes
             for d in $(seq -f "%02g" 1 $DATA_COUNT_PER_VM); do
                 if ! echo "$EXISTING_VOLS" | grep -qxw "${VM_NAME}-data-${d}"; then
-                    echo "Start creating ${VM_NAME}-data-${d}"
+                    echo "Start creating ${VM_NAME}-data-${d}..."
                     openstack volume create --size $DATA_SIZE "${VM_NAME}-data-${d}" > /dev/null &
                     sleep $SLEEP_INTERVAL
                 fi
