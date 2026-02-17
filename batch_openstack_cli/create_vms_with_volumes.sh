@@ -175,21 +175,81 @@ if [ "$PHASE" -eq 2 ]; then
     done
 fi
 
-# --- PHASE 3: CLEANUP ---
+# --- PHASE 3: CLEANUP (Teardown Infrastructure) ---
 if [ "$PHASE" -eq 3 ]; then
-    echo "PHASE 3: Teardown and Metric Reset..."
-    # Wipe metrics on full cleanup
-    > "$(dirname $0)/$VOL_METRICS"
-    > "$(dirname $0)/$VM_METRICS"
+    echo -e "\n========================================"
+    echo "PHASE 3: PREPARING CLEANUP"
+    echo "========================================"
 
-    # Delete VMs
-    TARGET_VMS=$(openstack server list --column Name -f value | grep "^${BASE_NAME}-")
-    for vm in $TARGET_VMS; do openstack server delete "$vm" > /dev/null & done
-    while openstack server list --column Name -f value | grep -q "^${BASE_NAME}-"; do sleep 5; done
+    # Collect actual resources from OpenStack to show the user
+    RESOURCES_VMS=$(openstack server list --column Name -f value | grep "^${BASE_NAME}-")
+    RESOURCES_VOLS=$(openstack volume list --column Name -f value | grep "^${BASE_NAME}-")
 
-    # Delete Volumes
-    TARGET_VOLS=$(openstack volume list --column Name -f value | grep "^${BASE_NAME}-")
-    for vol in $TARGET_VOLS; do openstack volume delete "$vol" > /dev/null & done
-    while openstack volume list --column Name -f value | grep -q "^${BASE_NAME}-"; do sleep 5; done
-    echo "Cleanup complete."
+    VM_COUNT_FOUND=$(echo "$RESOURCES_VMS" | grep -v '^$' | wc -l)
+    VOL_COUNT_FOUND=$(echo "$RESOURCES_VOLS" | grep -v '^$' | wc -l)
+
+    if [ "$VM_COUNT_FOUND" -eq 0 ] && [ "$VOL_COUNT_FOUND" -eq 0 ]; then
+        echo "No resources found matching prefix '${BASE_NAME}-'. Nothing to delete."
+        exit 0
+    fi
+
+    echo "The following resources will be DELETED:"
+    echo "----------------------------------------"
+    [ "$VM_COUNT_FOUND" -gt 0 ] && echo "Virtual Machines ($VM_COUNT_FOUND):" && echo "$RESOURCES_VMS" | sed 's/^/  - /'
+    [ "$VOL_COUNT_FOUND" -gt 0 ] && echo "Volumes ($VOL_COUNT_FOUND):" && echo "$RESOURCES_VOLS" | sed 's/^/  - /'
+    echo "----------------------------------------"
+    echo "WARNING: Metrics files ($VOL_METRICS, $VM_METRICS) will also be cleared."
+
+    read -p "CRITICAL: Press [Enter] to confirm DELETION of all listed resources..."
+
+    # Start cleanup process
+    START_CLEANUP=$(date +%s)
+
+    # 0. Clear metrics files immediately
+    > "$(dirname $0)/$VOL_METRICS" 2>/dev/null
+    > "$(dirname $0)/$VM_METRICS" 2>/dev/null
+
+    # 1. Delete Virtual Machines in background
+    if [ "$VM_COUNT_FOUND" -gt 0 ]; then
+        echo "Sending delete requests for $VM_COUNT_FOUND VMs..."
+        for vm in $RESOURCES_VMS; do
+            openstack server delete "$vm" > /dev/null &
+            sleep 0.2
+        done
+
+        echo "Waiting for VMs to disappear..."
+        while true; do
+            STILL_VMS=$(openstack server list --column Name -f value | grep "^${BASE_NAME}-" | wc -l)
+            echo "Status: $STILL_VMS VMs remaining..."
+            if [ "$STILL_VMS" -eq 0 ]; then break; fi
+            sleep 5
+        done
+        echo "All VMs deleted."
+    fi
+
+    # 2. Delete Volumes in background
+    if [ "$VOL_COUNT_FOUND" -gt 0 ]; then
+        echo "Refreshing volume list after VM deletion..."
+        # We refresh the list because volumes status might have changed to 'available'
+        RESOURCES_VOLS=$(openstack volume list --column Name -f value | grep "^${BASE_NAME}-")
+        VOL_COUNT_REFRESHED=$(echo "$RESOURCES_VOLS" | grep -v '^$' | wc -l)
+
+        echo "Sending delete requests for $VOL_COUNT_REFRESHED volumes..."
+        for vol in $RESOURCES_VOLS; do
+            openstack volume delete "$vol" > /dev/null &
+            sleep 0.2
+        done
+
+        echo "Waiting for volumes to disappear..."
+        while true; do
+            STILL_VOLS=$(openstack volume list --column Name -f value | grep "^${BASE_NAME}-" | wc -l)
+            echo "Status: $STILL_VOLS volumes remaining..."
+            if [ "$STILL_VOLS" -eq 0 ]; then break; fi
+            sleep 5
+        done
+        echo "All volumes deleted."
+    fi
+
+    END_CLEANUP=$(date +%s)
+    echo -e "\nCleanup complete in $(( END_CLEANUP - START_CLEANUP )) seconds."
 fi
