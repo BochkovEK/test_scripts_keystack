@@ -1,30 +1,15 @@
 #!/bin/bash
 
-# The script creates a certain number of VMs with a certain number of data disks
-
-# Create key pair
-# openstack keypair create test-keypair --public-key ~/test_scripts_keystack/key_test.pub
-
-# Create test security group
-# openstack security group create test-security-group
-# openstack security group rule create --egress --ethertype IPv4 --protocol tcp test-security-group
-# openstack security group rule create --ingress --ethertype IPv4 --protocol tcp test-security-group
-# openstack security group rule create --egress --ethertype IPv4 --protocol udp test-security-group
-# openstack security group rule create --ingress --ethertype IPv4 --protocol udp test-security-group
-# openstack security group rule create --ingress --ethertype IPv4 --protocol icmp test-security-group
-
-
+# Configuration and Environment Loading
 ENV_FILE=".env.create_vms_with_volumes"
-# -- Waiter parm --
-TIMEOUT=3600  # 1 hour in seconds
+VOL_METRICS="volume_time_metrics.csv"
+VM_METRICS="vm_time_metrics.csv"
+TIMEOUT=3600  # 1 hour
 INTERVAL=5
-# -----------------
 
-
-# --- 1. LOAD ENV FILE IF EXISTS ---
+# --- 1. LOAD ENV FILE ---
 if [ -f "$(dirname $0)/$ENV_FILE" ]; then
     echo "Loading configuration from $ENV_FILE..."
-    # Exporting values from file to current session
     export $(grep -v '^#' $(dirname $0)/$ENV_FILE | xargs)
 fi
 
@@ -32,9 +17,7 @@ get_param() {
     local var_name=$1
     local prompt_text=$2
     local default_val=$3
-    # Look for value in Environment (already loaded from .env or set manually)
     local current_val=$(eval echo \$$var_name)
-
     if [ -z "$current_val" ]; then
         read -p "$prompt_text [$default_val]: " user_input
         export "$var_name"="${user_input:-$default_val}"
@@ -42,7 +25,6 @@ get_param() {
 }
 
 echo "--- Infrastructure Configuration ---"
-
 get_param "BASE_NAME"         "Enter Base VM name"          "test-vm"
 get_param "FLAVOR"            "Enter Flavor name"           "g1-cpu-2-2"
 get_param "IMAGE"             "Enter Image name/ID"         "cirros-0.6.3-x86_64-disk"
@@ -56,27 +38,7 @@ get_param "DATA_COUNT_PER_VM" "Data disks per VM"           "2"
 get_param "VM_COUNT"          "Total VMs to create"         "100"
 get_param "SLEEP_INTERVAL"    "Throttling sleep (sec)"      "2"
 
-echo -e "\n========================================"
-echo "REVIEW CONFIGURATION:"
-echo "========================================"
-cat << EOF
-Base Name      : $BASE_NAME
-Flavor         : $FLAVOR
-Image          : $IMAGE
-Network        : $NET_NAME
-Keypair        : $KEY_PAIR
-Sec Group      : $SEC_GROUP
-Host Hint      : $HOST_HINT
-Boot Size      : ${BOOT_SIZE}GB
-Data Size      : ${DATA_SIZE}GB x $DATA_COUNT_PER_VM
-VM Count       : $VM_COUNT
-Sleep Interval : ${SLEEP_INTERVAL}s
-EOF
-echo "========================================"
-
-read -p "Press [Enter] to save config and continue..."
-
-# Save current variables to .env file for future use
+# Save Environment
 cat << EOF > $ENV_FILE
 BASE_NAME=$BASE_NAME
 FLAVOR=$FLAVOR
@@ -101,248 +63,133 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
-# Snapshot current state
-echo "Fetching current OpenStack state..."
+# Snapshot state
 EXISTING_VOLS=$(openstack volume list --column Name -f value)
 EXISTING_VMS=$(openstack server list --column Name -f value)
+TOTAL_VOLS_EXPECTED=$(( VM_COUNT * (1 + DATA_COUNT_PER_VM) ))
 
-TOTAL_VOLS=$(( VM_COUNT * (1 + DATA_COUNT_PER_VM) ))
-
+# --- PHASE 1: VOLUMES ---
 if [ "$PHASE" -eq 1 ]; then
-    CURRENT_VOL=0
-    echo "PHASE 1: Creating $TOTAL_VOLS volumes in total (skipping existing)..."
+    echo "PHASE 1: Creating volumes and logging start times..."
+    [ ! -f "$(dirname $0)/$VOL_METRICS" ] && echo "VM_NAME;START_TS;END_TS;DURATION" > "$(dirname $0)/$VOL_METRICS"
 
     for i in $(seq -f "%03g" 1 $VM_COUNT); do
         VM_NAME="${BASE_NAME}-${i}"
+        NEEDS_CREATE=false
 
-        # --- 1. Boot Volume ---
-        ((CURRENT_VOL++))
-        if ! echo "$EXISTING_VOLS" | grep -qxw "${VM_NAME}-boot"; then
-            echo "Start creating ${VM_NAME}-boot"
-            openstack volume create --size $BOOT_SIZE --image "$IMAGE" --bootable "${VM_NAME}-boot" > /dev/null &
-            sleep $SLEEP_INTERVAL
-        fi
-
-        # Display progress after processing boot volume
-        if (( CURRENT_VOL % 10 == 0 || CURRENT_VOL == TOTAL_VOLS )); then
-            echo "Progress: $CURRENT_VOL / $TOTAL_VOLS volumes processed"
-        fi
-
-        # --- 2. Data Volumes ---
+        # Logic: If any disk in the pack is missing, we re-log the whole pack start time
+        if ! echo "$EXISTING_VOLS" | grep -qxw "${VM_NAME}-boot"; then NEEDS_CREATE=true; fi
         for d in $(seq -f "%02g" 1 $DATA_COUNT_PER_VM); do
-            ((CURRENT_VOL++))
-            VOL_NAME="${VM_NAME}-data-${d}"
-            if ! echo "$EXISTING_VOLS" | grep -qxw "$VOL_NAME"; then
-                echo "Start creating ${VOL_NAME}"
-                openstack volume create --size $DATA_SIZE "$VOL_NAME" > /dev/null &
+            if ! echo "$EXISTING_VOLS" | grep -qxw "${VM_NAME}-data-${d}"; then NEEDS_CREATE=true; fi
+        done
+
+        if [ "$NEEDS_CREATE" = true ]; then
+            # Cleanup old entry and start new timer
+            sed -i "/^${VM_NAME};/d" "$(dirname $0)/$VOL_METRICS"
+            echo "${VM_NAME};$(date +%s);pending;0" >> "$(dirname $0)/$VOL_METRICS"
+
+            # Boot Volume
+            if ! echo "$EXISTING_VOLS" | grep -qxw "${VM_NAME}-boot"; then
+                openstack volume create --size $BOOT_SIZE --image "$IMAGE" --bootable "${VM_NAME}-boot" > /dev/null &
                 sleep $SLEEP_INTERVAL
             fi
+            # Data Volumes
+            for d in $(seq -f "%02g" 1 $DATA_COUNT_PER_VM); do
+                if ! echo "$EXISTING_VOLS" | grep -qxw "${VM_NAME}-data-${d}"; then
+                    openstack volume create --size $DATA_SIZE "${VM_NAME}-data-${d}" > /dev/null &
+                    sleep $SLEEP_INTERVAL
+                fi
+            done
+        fi
+    done
 
-            # Display progress after each data volume
-            if (( CURRENT_VOL % 10 == 0 || CURRENT_VOL == TOTAL_VOLS )); then
-                echo "Progress: $CURRENT_VOL / $TOTAL_VOLS volumes processed"
+    echo "Waiting for volumes..."
+    while true; do
+        CURRENT_LIST=$(openstack volume list --column Name --column Status -f value | grep "^${BASE_NAME}-")
+        PENDING_VMS=$(grep ";pending;" "$(dirname $0)/$VOL_METRICS" | cut -d ';' -f 1)
+
+        # Check readiness for pending VMs
+        for p_vm in $PENDING_VMS; do
+            PACK_STATUS=$(echo "$CURRENT_LIST" | grep "^${p_vm}-")
+            # All disks must be available/in-use
+            if [[ -n "$PACK_STATUS" ]] && ! echo "$PACK_STATUS" | grep -qvE "available|in-use"; then
+                END_TS=$(date +%s)
+                START_TS=$(grep "^${p_vm};" "$(dirname $0)/$VOL_METRICS" | cut -d ';' -f 2)
+                sed -i "s/^${p_vm};${START_TS};pending;0/${p_vm};${START_TS};${END_TS};$((END_TS - START_TS))/" "$(dirname $0)/$VOL_METRICS"
             fi
         done
-    done
-    # --- Start of Waiter Block ---
-    echo -e "\nAll requests sent. Starting Waiter (Timeout: 1h, Interval: 5s)..."
 
-    START_TIME=$(date +%s)
-
-    while true; do
-        CURRENT_TIME=$(date +%s)
-        ELAPSED=$(( CURRENT_TIME - START_TIME ))
-
-        # Fetch current statuses for volumes matching our BASE_NAME
-        # We only need Name and Status to minimize API load
-        CURRENT_STATE=$(openstack volume list --column Name --column Status -f value | grep "^${BASE_NAME}")
-
-        READY_COUNT=$(echo "$CURRENT_STATE" | grep -E -w "available|in-use" | wc -l)
-        ERROR_COUNT=$(echo "$CURRENT_STATE" | grep -w "error" | wc -l)
-        TOTAL_TERMINAL=$(( READY_COUNT + ERROR_COUNT ))
-
-        # Log progress to console
-        echo "Status: Total terminal states $TOTAL_TERMINAL / $TOTAL_VOLS (Ready: $READY_COUNT, Errors: $ERROR_COUNT). Elapsed: ${ELAPSED}s"
-
-        # Condition 1: Success or complete processing
-        if [ "$TOTAL_TERMINAL" -ge "$TOTAL_VOLS" ]; then
-            echo -e "\n[Success] All volumes have reached a terminal state."
-            break
-        fi
-
-        # Condition 2: Timeout
-        if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
-            echo -e "\n[Timeout] Reached 1 hour limit. Not all volumes are ready."
-            break
-        fi
-
+        REM_PENDING=$(grep ";pending;" "$(dirname $0)/$VOL_METRICS" | wc -l)
+        echo "Volumes Status: $REM_PENDING packs remaining. Time: $(date +%T)"
+        if [ "$REM_PENDING" -eq 0 ]; then break; fi
         sleep $INTERVAL
     done
-
-    # Final reporting
-    if [ "$ERROR_COUNT" -gt 0 ]; then
-        echo "------------------------------------------------"
-        echo "CRITICAL: The following volumes are in ERROR state:"
-        echo "$CURRENT_STATE" | grep -w "error"
-        echo "------------------------------------------------"
-        echo "Please fix these errors before proceeding to Phase 2."
-    else
-        echo "Perfect! All volumes are in 'available' state. You can safely start Phase 2."
-    fi
-    # --- End of Waiter Block ---
 fi
 
-# --- PHASE 2: VMs (UUID-safe version) ---
+# --- PHASE 2: VMs ---
 if [ "$PHASE" -eq 2 ]; then
-    echo "PHASE 2: Launching $VM_COUNT Virtual Machines..."
-    letters=({b..z})
+    echo "PHASE 2: Launching VMs..."
+    [ ! -f "$(dirname $0)/$VM_METRICS" ] && echo "VM_NAME;START_TS;END_TS;DURATION" > "$(dirname $0)/$VM_METRICS"
 
-    echo "Caching Volume UUIDs..."
     declare -A VOL_MAP
-    # Get all volumes and their IDs at once
-    while read -r vid vname; do
-        VOL_MAP["$vname"]="$vid"
-    done < <(openstack volume list --column ID --column Name -f value)
+    while read -r vid vname; do VOL_MAP["$vname"]="$vid"; done < <(openstack volume list --column ID --column Name -f value)
 
     for i in $(seq -f "%03g" 1 $VM_COUNT); do
         VM_NAME="${BASE_NAME}-${i}"
-
         if echo "$EXISTING_VMS" | grep -qxw "$VM_NAME"; then continue; fi
 
-        # 1. Resolve Boot Volume UUID
-        BOOT_VOL_NAME="${VM_NAME}-boot"
-        BOOT_VOL_ID=${VOL_MAP["$BOOT_VOL_NAME"]}
+        # Initialize metrics
+        sed -i "/^${VM_NAME};/d" "$(dirname $0)/$VM_METRICS"
+        echo "${VM_NAME};$(date +%s);pending;0" >> "$(dirname $0)/$VM_METRICS"
 
-        if [ -z "$BOOT_VOL_ID" ]; then
-            echo "[Error] Could not find UUID for $BOOT_VOL_NAME. Skipping..."
-            continue
-        fi
-
-        # 2. Build BDM using UUIDs instead of Names
-        BDM="--block-device uuid=${BOOT_VOL_ID},source_type=volume,destination_type=volume,disk_bus=virtio,boot_index=0"
-
+        # Construct BDM
+        BOOT_VOL_ID=${VOL_MAP["${VM_NAME}-boot"]}
+        BDM="--block-device uuid=${BOOT_VOL_ID},source_type=volume,destination_type=volume,boot_index=0"
         for d in $(seq 1 $DATA_COUNT_PER_VM); do
-            idx=$((d-1))
-            DATA_VOL_NAME="${VM_NAME}-data-$(printf "%02d" $d)"
-            DATA_VOL_ID=${VOL_MAP["$DATA_VOL_NAME"]}
+            VOL_NAME="${VM_NAME}-data-$(printf "%02d" $d)"
+            BDM="$BDM --block-device uuid=${VOL_MAP[$VOL_NAME]},source_type=volume,destination_type=volume"
+        done
 
-            if [ -n "$DATA_VOL_ID" ]; then
-                BDM="$BDM --block-device uuid=${DATA_VOL_ID},source_type=volume,destination_type=volume,disk_bus=virtio"
+        openstack server create --flavor "$FLAVOR" --network "$NET_NAME" --key-name "$KEY_PAIR" --security-group "$SEC_GROUP" --availability-zone "$HOST_HINT" $BDM "$VM_NAME" > /dev/null &
+        sleep $SLEEP_INTERVAL
+    done
+
+    echo "Waiting for VMs..."
+    while true; do
+        CURRENT_VM_LIST=$(openstack server list --column Name --column Status -f value | grep "^${BASE_NAME}-")
+        PENDING_LIST=$(grep ";pending;" "$(dirname $0)/$VM_METRICS" | cut -d ';' -f 1)
+
+        for p_vm in $PENDING_LIST; do
+            VM_STATE=$(echo "$CURRENT_VM_LIST" | grep -w "$p_vm" | awk '{print $2}')
+            if [ "$VM_STATE" == "ACTIVE" ]; then
+                END_TS=$(date +%s)
+                START_TS=$(grep "^${p_vm};" "$(dirname $0)/$VM_METRICS" | cut -d ';' -f 2)
+                sed -i "s/^${p_vm};${START_TS};pending;0/${p_vm};${START_TS};${END_TS};$((END_TS - START_TS))/" "$(dirname $0)/$VM_METRICS"
             fi
         done
 
-        echo "Start creating $VM_NAME ..."
-        # 3. Create Server
-        openstack server create \
-            --flavor "$FLAVOR" \
-            --network "$NET_NAME" \
-            --key-name "$KEY_PAIR" \
-            --security-group "$SEC_GROUP" \
-            --availability-zone "$HOST_HINT" \
-            $BDM \
-            "$VM_NAME" > /dev/null &
-
-        sleep $SLEEP_INTERVAL
-        [[ $i == *0 ]] && echo "Progress: $i / $VM_COUNT VM launch requests sent"
-    done
-
-    # --- Start of VM Waiter Block ---
-    echo -e "\nAll VM requests submitted. Starting VM Waiter (Timeout: 1h, Interval: 10s)..."
-
-    VM_START_TIME=$(date +%s)
-
-    while true; do
-        VM_ELAPSED=$(( $(date +%s) - VM_START_TIME ))
-
-        # Fetch current statuses for VMs matching our BASE_NAME
-        # We use --column Name --column Status for a clean output
-        CURRENT_VM_STATE=$(openstack server list --column Name --column Status -f value | grep "^${BASE_NAME}")
-
-        ACTIVE_COUNT=$(echo "$CURRENT_VM_STATE" | grep -w "ACTIVE" | wc -l)
-        VM_ERROR_COUNT=$(echo "$CURRENT_VM_STATE" | grep -w "ERROR" | wc -l)
-        # Some VMs might be in BUILD or Networking states, we wait for them
-        TOTAL_VM_TERMINAL=$(( ACTIVE_COUNT + VM_ERROR_COUNT ))
-
-        echo "VM Status: $TOTAL_VM_TERMINAL / $VM_COUNT terminal (Active: $ACTIVE_COUNT, Errors: $VM_ERROR_COUNT). Time: ${VM_ELAPSED}s"
-
-        # Condition 1: All VMs reached terminal state
-        if [ "$TOTAL_VM_TERMINAL" -ge "$VM_COUNT" ]; then
-            echo -e "\n[Success] All VM provisioning processes have finished."
-            break
-        fi
-
-        # Condition 2: Timeout
-        if [ "$VM_ELAPSED" -ge "$TIMEOUT" ]; then
-            echo -e "\n[Timeout] 1 hour limit reached. Some VMs are still provisioning."
-            break
-        fi
-
+        REM_VM=$(grep ";pending;" "$(dirname $0)/$VM_METRICS" | wc -l)
+        echo "VM Status: $REM_VM remaining. Time: $(date +%T)"
+        if [ "$REM_VM" -eq 0 ]; then break; fi
         sleep $INTERVAL
     done
-
-    # Final reporting for Phase 2
-    if [ "$VM_ERROR_COUNT" -gt 0 ]; then
-        echo "------------------------------------------------"
-        echo "CRITICAL: The following VMs are in ERROR state:"
-        echo "$CURRENT_VM_STATE" | grep -w "ERROR"
-        echo "------------------------------------------------"
-        echo "Check Nova/Compute logs for these instances."
-    else
-        echo "Perfect! All VMs are ACTIVE and ready for use."
-    fi
-    # --- End of VM Waiter Block ---
 fi
 
-# --- PHASE 3: CLEANUP (Teardown Infrastructure) ---
+# --- PHASE 3: CLEANUP ---
 if [ "$PHASE" -eq 3 ]; then
-    echo "PHASE 3: Starting cleanup for base name '$BASE_NAME'..."
-    START_CLEANUP=$(date +%s)
+    echo "PHASE 3: Teardown and Metric Reset..."
+    # Wipe metrics on full cleanup
+    > "$(dirname $0)/$VOL_METRICS"
+    > "$(dirname $0)/$VM_METRICS"
 
-    # 1. Delete Virtual Machines in background
+    # Delete VMs
     TARGET_VMS=$(openstack server list --column Name -f value | grep "^${BASE_NAME}-")
-    if [ -n "$TARGET_VMS" ]; then
-        VM_DEL_COUNT=$(echo "$TARGET_VMS" | wc -l)
-        echo "Sending delete requests for $VM_DEL_COUNT VMs..."
-        for vm in $TARGET_VMS; do
-            echo "Start deleting $vm..."
-            openstack server delete "$vm" > /dev/null &
-            sleep "$SLEEP_INTERVAL"
-        done
+    for vm in $TARGET_VMS; do openstack server delete "$vm" > /dev/null & done
+    while openstack server list --column Name -f value | grep -q "^${BASE_NAME}-"; do sleep 5; done
 
-        echo "Waiting for VMs to disappear..."
-        while true; do
-            STILL_VMS=$(openstack server list --column Name -f value | grep "^${BASE_NAME}-" | wc -l)
-            echo "Status: $STILL_VMS VMs remaining..."
-            if [ "$STILL_VMS" -eq 0 ]; then break; fi
-            sleep 5
-        done
-        echo "All VMs deleted."
-    fi
-
-    # 2. Delete Volumes in background
-    echo "Fetching volumes for deletion..."
+    # Delete Volumes
     TARGET_VOLS=$(openstack volume list --column Name -f value | grep "^${BASE_NAME}-")
-
-    if [ -n "$TARGET_VOLS" ]; then
-        VOL_DEL_COUNT=$(echo "$TARGET_VOLS" | wc -l)
-        echo "Sending delete requests for $VOL_DEL_COUNT volumes..."
-        for vol in $TARGET_VOLS; do
-            echo "Start deleting $vol..."
-            openstack volume delete "$vol" > /dev/null &
-            sleep "$SLEEP_INTERVAL"
-        done
-
-        echo "Waiting for volumes to disappear..."
-        while true; do
-            STILL_VOLS=$(openstack volume list --column Name -f value | grep "^${BASE_NAME}-" | wc -l)
-            echo "Status: $STILL_VOLS volumes remaining..."
-            if [ "$STILL_VOLS" -eq 0 ]; then break; fi
-            sleep 5
-        done
-        echo "All volumes deleted."
-    fi
-
-    END_CLEANUP=$(date +%s)
-    TOTAL_CLEANUP_TIME=$(( END_CLEANUP - START_CLEANUP ))
-    echo "Cleanup complete in $TOTAL_CLEANUP_TIME seconds. Environment is clear."
+    for vol in $TARGET_VOLS; do openstack volume delete "$vol" > /dev/null & done
+    while openstack volume list --column Name -f value | grep -q "^${BASE_NAME}-"; do sleep 5; done
+    echo "Cleanup complete."
 fi
