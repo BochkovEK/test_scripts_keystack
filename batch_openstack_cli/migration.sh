@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # --- CONFIGURATION ---
-METRICS_FILE="migration_metrics.csv"
+METRICS_FILE="migration_results.csv"
 INTERVAL=5
 
 # --- ARGUMENT PARSING ---
@@ -20,32 +20,43 @@ if [[ -z "$VM_LIST" || -z "$TARGET_HOST" ]]; then
 fi
 
 METRICS_PATH="$(dirname $0)/$METRICS_FILE"
-echo "VM_NAME;MIGRATION_ID;START_TS;END_TS;DURATION;STATUS" > "$METRICS_PATH"
+# Header: VM Name, Migration ID, Start Epoch, End Epoch, Duration, Final Status
+echo "VM_NAME;MIG_ID;START_TS;END_TS;DURATION;STATUS" > "$METRICS_PATH"
 
-echo "Phase 1: Triggering Migrations..."
+echo "Triggering all migrations for: $VM_LIST"
+echo "-----------------------------------------------"
+
+# 1. TRIGGER LOOP: Send all commands immediately
 for VM in $VM_LIST; do
     START_TS=$(date +%s)
 
-    # Trigger migration
+    # Send migration command to background
+    echo "Start migrating $VM..."
     openstack server migrate --live-migration --host "$TARGET_HOST" "$VM" > /dev/null 2>&1 &
 
-    # Give Nova a split second to create the migration record
+    # Capture the migration ID for this specific server
+    # We wait a tiny fraction to allow Nova to register the task
     sleep 0.5
+    MIG_ID=$(openstack server migration list --server "$VM" -f value -c Id | sort -rn | head -n 1)
 
-    # Get the latest Migration ID for this server
-    MIG_ID=$(openstack server migration list "$VM" -f value -c Id | sort -rn | head -n 1)
+    if [[ -z "$MIG_ID" ]]; then
+        echo "Warning: Could not find Migration ID for $VM"
+        MIG_ID="unknown"
+    fi
 
     echo "${VM};${MIG_ID};${START_TS};pending;0;running" >> "$METRICS_PATH"
-    echo "Migration $MIG_ID started for $VM"
+    echo "Migration $MIG_ID triggered for $VM"
 done
 
 echo "-----------------------------------------------"
-echo "Phase 2: Monitoring Migration Tasks..."
+echo "All migrations initiated. Monitoring status..."
 
+# 2. MONITORING LOOP
 while true; do
-    PENDING_LINES=$(grep ";running" "$METRICS_PATH")
+    # Get only the lines that are still running
+    PENDING_DATA=$(grep ";running" "$METRICS_PATH")
 
-    if [[ -z "$PENDING_LINES" ]]; then
+    if [[ -z "$PENDING_DATA" ]]; then
         break
     fi
 
@@ -54,26 +65,35 @@ while true; do
         MIG_ID=$(echo "$LINE" | cut -d ';' -f 2)
         START_TS=$(echo "$LINE" | cut -d ';' -f 3)
 
-        # Check specific migration status
-        # Statuses: running, completed, failed, cancelled
-        MIG_STATUS=$(openstack server migration show "$VM" "$MIG_ID" -f value -c status)
+        # Skip if MIG_ID wasn't captured correctly
+        [[ "$MIG_ID" == "unknown" ]] && continue
 
-        if [[ "$MIG_STATUS" == "completed" || "$MIG_STATUS" == "failed" || "$MIG_STATUS" == "cancelled" ]]; then
-            END_TS=$(date +%s)
-            DURATION=$(( END_TS - START_TS ))
+        # Check status using the server-specific migration list
+        # We filter by the specific ID we captured earlier
+        MIG_STATUS=$(openstack server migration list --server "$VM" -f value | grep "^$MIG_ID " | awk '{print $4}')
 
-            # Update CSV
-            sed -i "s|^${VM};${MIG_ID};${START_TS};pending;0;running|${VM};${MIG_ID};${START_TS};${END_TS};${DURATION};${MIG_STATUS}|" "$METRICS_PATH"
-            echo "[TERMINAL] $VM -> $MIG_STATUS (${DURATION}s)"
-        fi
-    done <<< "$PENDING_LINES"
+        # Terminal statuses in OpenStack: completed, failed, cancelled
+        case "$MIG_STATUS" in
+            completed|failed|cancelled)
+                END_TS=$(date +%s)
+                DURATION=$(( END_TS - START_TS ))
+
+                # Update the specific line in the CSV
+                sed -i "s|^${VM};${MIG_ID};${START_TS};pending;0;running|${VM};${MIG_ID};${START_TS};${END_TS};${DURATION};${MIG_STATUS}|" "$METRICS_PATH"
+                echo "[FINISHED] $VM: $MIG_STATUS in ${DURATION}s"
+                ;;
+            *)
+                # Still running or queuing
+                ;;
+        esac
+    done <<< "$PENDING_DATA"
 
     REMAINING=$(grep ";running" "$METRICS_PATH" | wc -l)
-    echo "Waiting for $REMAINING migrations... ($(date +%T))"
+    echo "Progress: $REMAINING VMs still migrating... ($(date +%T))"
 
-    [ "$REMAINING" -eq 0 ] && break
+    [[ "$REMAINING" -eq 0 ]] && break
     sleep $INTERVAL
 done
 
 echo "-----------------------------------------------"
-echo "Results saved to $METRICS_PATH"
+echo "Work complete. Results saved to $METRICS_PATH"
