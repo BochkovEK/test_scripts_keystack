@@ -1,5 +1,24 @@
 #!/bin/bash
 
+# The script creates a certain number of VMs with a certain number of data disks
+
+# Create key pair
+# openstack keypair create test-keypair --public-key ~/test_scripts_keystack/key_test.pub
+
+# Create test security group
+# openstack security group create test-security-group
+# openstack security group rule create --egress --ethertype IPv4 --protocol tcp test-security-group
+# openstack security group rule create --ingress --ethertype IPv4 --protocol tcp test-security-group
+# openstack security group rule create --egress --ethertype IPv4 --protocol udp test-security-group
+# openstack security group rule create --ingress --ethertype IPv4 --protocol udp test-security-group
+# openstack security group rule create --ingress --ethertype IPv4 --protocol icmp test-security-group
+
+# Remove VMs
+#for v in test-vm-043 test-vm-044 test-vm-045; do openstack server delete "$v" > /dev/null; sleep 1; done
+
+# Error parse
+#grep "2026-02-18" /var/log/kolla/nova/nova-conductor.log | grep -i error
+
 # Configuration and Environment Loading
 ENV_FILE=".env.create_vms_with_volumes"
 VOL_METRICS="volume_time_metrics.csv"
@@ -153,8 +172,10 @@ fi
 # --- PHASE 2: VMs ---
 if [ "$PHASE" -eq 2 ]; then
     echo "PHASE 2: Launching VMs..."
+    # Ensure metrics file exists with header
     [ ! -f "$(dirname $0)/$VM_METRICS" ] && echo "VM_NAME;START_TS;END_TS;DURATION" > "$(dirname $0)/$VM_METRICS"
 
+    # Map volume names to IDs for BDM construction
     declare -A VOL_MAP
     while read -r vid vname; do VOL_MAP["$vname"]="$vid"; done < <(openstack volume list --column ID --column Name -f value)
 
@@ -162,11 +183,11 @@ if [ "$PHASE" -eq 2 ]; then
         VM_NAME="${BASE_NAME}-${i}"
         if echo "$EXISTING_VMS" | grep -qxw "$VM_NAME"; then continue; fi
 
-        # Initialize metrics
+        # Initialize tracking with 'pending' status
         sed -i "/^${VM_NAME};/d" "$(dirname $0)/$VM_METRICS"
         echo "${VM_NAME};$(date +%s);pending;0" >> "$(dirname $0)/$VM_METRICS"
 
-        # Construct BDM
+        # Build Block Device Mapping (boot + data volumes)
         BOOT_VOL_ID=${VOL_MAP["${VM_NAME}-boot"]}
         BDM="--block-device uuid=${BOOT_VOL_ID},source_type=volume,destination_type=volume,boot_index=0"
         for d in $(seq 1 $DATA_COUNT_PER_VM); do
@@ -174,6 +195,7 @@ if [ "$PHASE" -eq 2 ]; then
             BDM="$BDM --block-device uuid=${VOL_MAP[$VOL_NAME]},source_type=volume,destination_type=volume"
         done
 
+        # Trigger background VM creation
         echo "Start creating $VM_NAME..."
         openstack server create \
             --flavor "$FLAVOR" \
@@ -186,25 +208,28 @@ if [ "$PHASE" -eq 2 ]; then
 
     echo "Waiting for VMs..."
     while true; do
+        # Fetch current statuses and identify pending VMs
         CURRENT_VM_LIST=$(openstack server list --column Name --column Status -f value | grep "^${BASE_NAME}-")
         PENDING_LIST=$(grep ";pending;" "$(dirname $0)/$VM_METRICS" | cut -d ';' -f 1)
 
         for p_vm in $PENDING_LIST; do
             VM_STATE=$(echo "$CURRENT_VM_LIST" | grep -w "$p_vm" | awk '{print $2}')
-            if [ "$VM_STATE" == "ACTIVE" ]; then
+
+            # Finalize metrics if VM reaches terminal state (ACTIVE or ERROR)
+            if [[ "$VM_STATE" == "ACTIVE" || "$VM_STATE" == "ERROR" ]]; then
                 END_TS=$(date +%s)
                 START_TS=$(grep "^${p_vm};" "$(dirname $0)/$VM_METRICS" | cut -d ';' -f 2)
                 sed -i "s/^${p_vm};${START_TS};pending;0/${p_vm};${START_TS};${END_TS};$((END_TS - START_TS))/" "$(dirname $0)/$VM_METRICS"
             fi
         done
 
+        # Check if all VMs have exited pending state
         REM_VM=$(grep ";pending;" "$(dirname $0)/$VM_METRICS" | wc -l)
-        echo "VM Status: $REM_VM remaining. Time: $(date +%T)"
+        echo "VM Status: $REM_VM remaining (awaiting ACTIVE or ERROR). Time: $(date +%T)"
         if [ "$REM_VM" -eq 0 ]; then break; fi
         sleep $INTERVAL
     done
 fi
-
 # --- PHASE 3: CLEANUP (Teardown Infrastructure) ---
 if [ "$PHASE" -eq 3 ]; then
     echo -e "\n========================================"
