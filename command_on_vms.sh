@@ -279,9 +279,113 @@ execute_on_vm() {
     return $exit_code
 }
 
+## Main function to run commands on VMs
+#batch_run_commands() {
+#    local at_least_one_failure=false
+#
+#    echo "batch_run_commands..."
+#    # Remove known_hosts to avoid conflicts
+#    [ -f "$HOME/.ssh/known_hosts" ] && rm -f "$HOME/.ssh/known_hosts"
+#
+#    # Ask for confirmation if not in auto mode
+#    if [ "$DONT_ASK" != "true" ]; then
+#        read -p "Press Enter to continue or Ctrl+C to cancel..."
+#    fi
+#
+#    # Get VMs IPs if not provided
+##    if [ -z "$VMS" ] && [ -n "$HYPERVISOR_NAME" ]; then
+#    get_vms_ips
+##    elif [ -z "$VMS" ]; then
+##        get_vms_ips
+##        echo -e "${red}No target specified. Use -hv or -ips option.${normal}"
+##        exit 1
+##    fi
+#
+#    local exit_code=$?
+#    [ "$TS_DEBUG" = "true" ] && echo -e "exit_code from get_vms_ips: $exit_code"
+#    if [ $exit_code -ne 0 ]; then
+#        echo -e "${yellow}Warning: Failed to get the list of IPs${normal}"
+#        return 1
+#    fi
+#
+#    [ "$TS_DEBUG" = "true" ] && echo -e "
+#    [DEBUG] Configuration:
+#      VMS: $VMS
+#      KEY_PATH: $KEY_PATH
+#      VM_USER: $VM_USER
+#      SSH_BY_PASS: $SSH_BY_PASS
+#      TS_SSH_TIMEOUT: $TS_SSH_TIMEOUT
+#    "
+#
+##    if [ "$TS_DEBUG" = "true" ]; then
+##        echo -e "${yellow}[Warning] Debug mode enabled - skipping command execution${normal}"
+##        return 0
+##    fi
+#
+#    # Process each VM
+#    for vm_tripl in $VMS; do
+#
+#        vm_name=$(echo "$vm_tripl" | awk -F':' '{print $1}')
+#        vm_status=$(echo "$vm_tripl" | awk -F':' '{print $2}')
+#        vm_ip=$(echo "$vm_tripl" | awk -F':' '{print $3}')
+#
+#        echo -e "${cyan}Processing VM: $vm_name VM status: $vm_status VM ip: $vm_ip${normal}"
+#
+#        [ "$TS_DEBUG" = "true" ] &&
+#        echo -e "
+#    [DEBUG] Configuration:
+#      VM_USER:     $VM_USER
+#      KEY_PATH:    $KEY_PATH
+#      SSH_BY_PASS: $SSH_BY_PASS
+#      KEY_STRING:  $KEY_STRING
+#      vm_name:     $vm_name
+#      vm_status:   $vm_status
+#      vm_ip:       $vm_ip
+#      "
+#
+#        # Check ping connectivity
+#        if ! check_vm_connectivity "$vm_ip"; then
+#            at_least_one_failure=true
+#            #continue
+#        fi
+#
+#        # Skip further checks if only ping is requested
+#        if [ "$ONLY_PING" = "true" ]; then
+#            continue
+#        fi
+#
+#        if [ "$SSH_BY_PASS" != "true" ]; then
+#          # Check SSH connectivity
+#          if ! check_ssh_connectivity "$vm_ip"; then
+#              at_least_one_failure=true
+#              continue
+#          fi
+#        fi
+#
+#        # Execute command if not only checking
+#        if [ "$ONLY_CHECK" = "false" ]; then
+#            if ! execute_on_vm "$vm_ip"; then
+#                at_least_one_failure=true
+#            fi
+#        fi
+#
+#        sleep 1
+#    done
+#
+#    # Set global variable for exit status
+#    if [ "$at_least_one_failure" = true ]; then
+#        return 1
+#    else
+#        return 0
+#    fi
+#}
+
 # Main function to run commands on VMs
 batch_run_commands() {
     local at_least_one_failure=false
+    local success_count=0
+    local failure_count=0
+    local total_vms=0
 
     echo "batch_run_commands..."
     # Remove known_hosts to avoid conflicts
@@ -292,92 +396,66 @@ batch_run_commands() {
         read -p "Press Enter to continue or Ctrl+C to cancel..."
     fi
 
-    # Get VMs IPs if not provided
-#    if [ -z "$VMS" ] && [ -n "$HYPERVISOR_NAME" ]; then
+    # Get VMs IPs
     get_vms_ips
-#    elif [ -z "$VMS" ]; then
-#        get_vms_ips
-#        echo -e "${red}No target specified. Use -hv or -ips option.${normal}"
-#        exit 1
-#    fi
-
     local exit_code=$?
-    [ "$TS_DEBUG" = "true" ] && echo -e "exit_code from get_vms_ips: $exit_code"
+
     if [ $exit_code -ne 0 ]; then
         echo -e "${yellow}Warning: Failed to get the list of IPs${normal}"
         return 1
     fi
 
-    [ "$TS_DEBUG" = "true" ] && echo -e "
-    [DEBUG] Configuration:
-      VMS: $VMS
-      KEY_PATH: $KEY_PATH
-      VM_USER: $VM_USER
-      SSH_BY_PASS: $SSH_BY_PASS
-      TS_SSH_TIMEOUT: $TS_SSH_TIMEOUT
-    "
-
-#    if [ "$TS_DEBUG" = "true" ]; then
-#        echo -e "${yellow}[Warning] Debug mode enabled - skipping command execution${normal}"
-#        return 0
-#    fi
-
     # Process each VM
     for vm_tripl in $VMS; do
+        ((total_vms++))
+        local current_vm_failed=false
 
         vm_name=$(echo "$vm_tripl" | awk -F':' '{print $1}')
         vm_status=$(echo "$vm_tripl" | awk -F':' '{print $2}')
         vm_ip=$(echo "$vm_tripl" | awk -F':' '{print $3}')
 
-        echo -e "${cyan}Processing VM: $vm_name VM status: $vm_status VM ip: $vm_ip${normal}"
+        echo -e "${cyan}Processing VM: $vm_name | Status: $vm_status | IP: $vm_ip${normal}"
 
-        [ "$TS_DEBUG" = "true" ] &&
-        echo -e "
-    [DEBUG] Configuration:
-      VM_USER:     $VM_USER
-      KEY_PATH:    $KEY_PATH
-      SSH_BY_PASS: $SSH_BY_PASS
-      KEY_STRING:  $KEY_STRING
-      vm_name:     $vm_name
-      vm_status:   $vm_status
-      vm_ip:       $vm_ip
-      "
-
-        # Check ping connectivity
+        # 1. Check ping connectivity
         if ! check_vm_connectivity "$vm_ip"; then
-            at_least_one_failure=true
-            #continue
+            current_vm_failed=true
         fi
 
-        # Skip further checks if only ping is requested
-        if [ "$ONLY_PING" = "true" ]; then
-            continue
-        fi
-
-        if [ "$SSH_BY_PASS" != "true" ]; then
-          # Check SSH connectivity
-          if ! check_ssh_connectivity "$vm_ip"; then
-              at_least_one_failure=true
-              continue
-          fi
-        fi
-
-        # Execute command if not only checking
-        if [ "$ONLY_CHECK" = "false" ]; then
-            if ! execute_on_vm "$vm_ip"; then
-                at_least_one_failure=true
+        # 2. Check SSH connectivity (if not bypassed and ping succeeded)
+        if [ "$ONLY_PING" != "true" ] && [ "$SSH_BY_PASS" != "true" ] && [ "$current_vm_failed" = false ]; then
+            if ! check_ssh_connectivity "$vm_ip"; then
+                current_vm_failed=true
             fi
+        fi
+
+        # 3. Execute command (if not only checking and no failures so far)
+        if [ "$ONLY_PING" != "true" ] && [ "$ONLY_CHECK" = "false" ] && [ "$current_vm_failed" = false ]; then
+            if ! execute_on_vm "$vm_ip"; then
+                current_vm_failed=true
+            fi
+        fi
+
+        # Update counters
+        if [ "$current_vm_failed" = true ]; then
+            ((failure_count++))
+            at_least_one_failure=true
+        else
+            ((success_count++))
         fi
 
         sleep 1
     done
 
-    # Set global variable for exit status
-    if [ "$at_least_one_failure" = true ]; then
-        return 1
-    else
-        return 0
-    fi
+    # --- Summary Report ---
+    echo -e "\n${cyan}=======================================${normal}"
+    echo -e "Execution Summary:"
+    echo -e "  Total VMs processed: $total_vms"
+    echo -e "  ${green}Successful:         $success_count${normal}"
+    echo -e "  ${red}Failed:             $failure_count${normal}"
+    echo -e "${cyan}=======================================${normal}\n"
+
+    # Set return status
+    [ "$at_least_one_failure" = true ] && return 1 || return 0
 }
 
 # Main execution
