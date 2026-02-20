@@ -80,7 +80,7 @@ echo "========================================"
 read -p "Press [Enter] to save config and continue: "
 
 # Save Environment
-cat << EOF > $ENV_FILE
+cat << EOF > $ENV_PATH
 BASE_NAME=$BASE_NAME
 FLAVOR=$FLAVOR
 IMAGE=$IMAGE
