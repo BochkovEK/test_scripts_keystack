@@ -24,8 +24,8 @@ INTERVAL=5
 : "${ENV_PATH:=$(dirname $0)/.env.create_vms_with_volumes}"
 ENV_FILE=$(basename "${ENV_PATH}" | sed 's/\.[^.]*$//')
 
-VOL_METRICS="volume_metrics_${ENV_NAME}.csv"
-VM_METRICS="vm_metrics_${ENV_NAME}.csv"
+VOL_METRICS="volume_metrics_${ENV_FILE}.csv"
+VM_METRICS="vm_metrics_${ENV_FILE}.csv"
 
 # Load configuration if file exists
 if [ -f "${ENV_PATH}" ]; then
