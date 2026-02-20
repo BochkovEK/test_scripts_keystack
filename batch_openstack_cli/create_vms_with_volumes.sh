@@ -19,17 +19,18 @@
 # Error parse
 #grep "2026-02-18" /var/log/kolla/nova/nova-conductor.log | grep -i error
 
-# Configuration and Environment Loading
-ENV_FILE=".env.create_vms_with_volumes"
-VOL_METRICS="volume_time_metrics.csv"
-VM_METRICS="vm_time_metrics.csv"
-TIMEOUT=3600  # 1 hour
 INTERVAL=5
 
-# --- 1. LOAD ENV FILE ---
-if [ -f "$(dirname $0)/$ENV_FILE" ]; then
-    echo "Loading configuration from $ENV_FILE..."
-    export $(grep -v '^#' $(dirname $0)/$ENV_FILE | xargs)
+: "${ENV_PATH:=$(dirname $0)/.env.create_vms_with_volumes}"
+ENV_FILE=$(basename "${ENV_PATH}" | sed 's/\.[^.]*$//')
+
+VOL_METRICS="volume_metrics_${ENV_NAME}.csv"
+VM_METRICS="vm_metrics_${ENV_NAME}.csv"
+
+# Load configuration if file exists
+if [ -f "${ENV_PATH}" ]; then
+    echo "Loading configuration from ${ENV_PATH}..."
+    export $(grep -v '^#' "${ENV_PATH}" | xargs)
 fi
 
 get_param() {
