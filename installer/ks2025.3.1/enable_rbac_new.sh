@@ -215,19 +215,19 @@ EOF
                     token = user.personal_access_tokens.find_by(id: $existing_pat)
                     token.destroy if token"
             fi
-            PAT=$(docker exec gitlab gitlab-rails runner "
-                require 'securerandom'
-                user = User.find_by(username: 'ks-admin')
-                token_plain = SecureRandom.hex(20)
-                token = user.personal_access_tokens.create!(
-                  name: 'PAT',
-                  scopes: ['api', 'sudo'],
-                  expires_at: Time.current + 1.year
-                )
-                token.set_token(token_plain)
-                token.save!
-                puts token.token"
-            )
+              PAT=$(docker exec gitlab gitlab-rails runner "
+                  require 'securerandom'
+                  user = User.find_by(username: 'ks-admin')
+                  token_plain = SecureRandom.hex(20)
+                  token = user.personal_access_tokens.create!(
+                    name: 'PAT',
+                    scopes: ['api', 'sudo'],
+                    expires_at: Time.current + 1.year
+                  )
+                  token.set_token(token_plain)
+                  token.save!
+                  puts token.token"
+              )
             if [ -z "$PAT" ]; then
                 echo "PAT creation error" && exit 1
             fi
