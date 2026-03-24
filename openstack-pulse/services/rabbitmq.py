@@ -7,7 +7,7 @@ import requests
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from config.config import ServiceType
-
+import os
 
 class RabbitCheck:
     """
@@ -38,9 +38,33 @@ class RabbitCheck:
         self.nodes = auth_params['nodes']
         self.timeout = 3  # Request timeout in seconds
 
+        cacert = os.environ.get('OS_CACERT')
+        insecure = os.environ.get('OS_INSECURE', 'false').lower() in ('true', '1', 'yes')
+
+        if insecure:
+            self.verify = False
+            if self.debug:
+                print("🔧 [RABBIT_DEBUG] OS_INSECURE=true → SSL verification disabled")
+        elif cacert and os.path.isfile(cacert):
+            self.verify = cacert
+            if self.debug:
+                print(f"🔧 [RABBIT_DEBUG] Using OS_CACERT: {cacert}")
+        else:
+            self.verify = True
+            if self.debug and cacert:
+                print(f"🔧 [RABBIT_DEBUG] OS_CACERT={cacert} not found or not a file → using default verification")
+
+        scheme_from_config = auth_params.get('scheme') or auth_params.get('protocol')
+        if scheme_from_config:
+            self.scheme = scheme_from_config.lower().strip()
+        else:
+            # Fallback based on common RabbitMQ management ports
+            self.scheme = "https" if self.port in (15671, 443, 8443) else "http"
+
         if self.debug:
             print(f"🔧 [RABBIT_DEBUG] Initialized with {len(self.nodes)} nodes: {[node[0] for node in self.nodes]}")
-            print(f"🔧 [RABBIT_DEBUG] Auth: user={auth_params['username']}, port={self.port}, timeout={self.timeout}s")
+            print(
+                f"🔧 [RABBIT_DEBUG] Auth: user={auth_params['username']}, port={self.port}, scheme={self.scheme}, timeout={self.timeout}s")
 
         self.sessions = {}
         self._init_sessions()
@@ -113,15 +137,17 @@ class RabbitCheck:
                         print(f"        {' | '.join(alarms)}")
 
     def _init_sessions(self):
-        """Initialize separate HTTP sessions for each RabbitMQ node."""
+        """Initialize separate HTTP sessions for each RabbitMQ node with proper TLS settings."""
         urls_with_info = self._get_rabbitmq_urls()
         for display_name, connect_host, url in urls_with_info:
             session = requests.Session()
             session.auth = self.auth
+            session.verify = self.verify  # ← вот главное добавление
+
             self.sessions[connect_host] = session
 
             if self.debug:
-                print(f"🔧 [RABBIT_DEBUG] Created session for {display_name} -> {url}")
+                print(f"🔧 [RABBIT_DEBUG] Created session for {display_name} → {url} (verify={session.verify})")
 
     def run_check(self):
         """
@@ -141,12 +167,12 @@ class RabbitCheck:
             print(f"🔧 [RABBIT_DEBUG] Starting cluster health check with timeout={self.timeout}s")
 
         try:
-            urls = self._get_rabbitmq_urls()
-            cluster_status = self._check_rabbitmq_cluster(urls)
+            urls_with_info = self._get_rabbitmq_urls()
+            cluster_status = self._check_rabbitmq_cluster(urls_with_info)
 
             # Calculate node reachability statistics
             reachable_count = len(cluster_status['reachable_nodes'])
-            total_count = len(urls)
+            total_count = len(urls_with_info)
 
             if self.debug:
                 print(f"🔧 [RABBIT_DEBUG] Cluster status: {reachable_count}/{total_count} nodes reachable")
@@ -362,14 +388,16 @@ class RabbitCheck:
     def _get_rabbitmq_urls(self):
         """
         Generate RabbitMQ API URLs for all configured nodes.
-
-        Returns:
-            List of tuples containing (display_name, connect_host, api_url)
         """
         urls_with_info = []
         for display_name, connect_host in self.nodes:
-            url = f"http://{connect_host}:{self.port}"
+            url = f"{self.scheme}://{connect_host}:{self.port}"
+
             urls_with_info.append((display_name, connect_host, url))
+
+            if self.debug:
+                print(f"🔧 [RABBIT_DEBUG] {display_name} → {url} (verify={self.verify})")
+
         return urls_with_info
 
     def _check_rabbitmq_cluster(self, urls_with_info):

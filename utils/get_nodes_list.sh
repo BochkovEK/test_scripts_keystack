@@ -157,7 +157,7 @@ parse_hosts() {
 
     # Validate we found nodes
     if [ ${#NODES[@]} -eq 0 ]; then
-        echo "Failed to find nodes in $TS_HOSTS_PATH" >&2
+        echo "Failed to find nodes in $TS_HOSTS_PATH; check signature like <ip> <fqdn> <node-type-NUMBER>" >&2
         exit 1
     fi
 }
