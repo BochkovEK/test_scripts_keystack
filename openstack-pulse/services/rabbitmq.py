@@ -31,45 +31,32 @@ class RabbitCheck:
         """
         self.config = config
         self.debug = debug
+
         auth_params = config.get_service_auth(ServiceType.RABBITMQ)
 
         self.auth = (auth_params['username'], auth_params['password'])
-        self.port = auth_params['port']
+        self.port = auth_params.get('port', 15672)
         self.nodes = auth_params['nodes']
-        self.timeout = 3  # Request timeout in seconds
-
         self.timeout = 3
 
-        # === TLS / CA handling (OpenStack style) ===
-        cacert = os.environ.get('OS_CACERT')
-        insecure = os.environ.get('OS_INSECURE', 'false').lower() in ('true', '1', 'yes')
+        scheme_from_config = (
+                auth_params.get('rabbitmq_scheme') or
+                auth_params.get('scheme') or
+                auth_params.get('protocol')
+        )
 
-        if insecure:
-            self.verify = False
-            self.scheme = "https"
-            if self.debug:
-                print(
-                    "🔧 [RABBIT_DEBUG] OS_INSECURE=true → using HTTPS with SSL verification disabled (--insecure mode)")
-        elif cacert and os.path.isfile(cacert):
-            self.verify = cacert
-            self.scheme = "https"
-            if self.debug:
-                print(f"🔧 [RABBIT_DEBUG] Using OS_CACERT: {cacert} with HTTPS")
+        if scheme_from_config:
+            self.scheme = scheme_from_config.lower().strip()
         else:
-            self.verify = True
-            scheme_from_config = auth_params.get('scheme') or auth_params.get('protocol')
-            if scheme_from_config:
-                self.scheme = scheme_from_config.lower().strip()
-            else:
-                self.scheme = "https" if self.port in (15671, 443, 8443) else "http"
+            self.scheme = "https"
 
-            if self.debug and cacert:
-                print(f"🔧 [RABBIT_DEBUG] OS_CACERT={cacert} not found → using default verification")
+        self.verify = False
 
         if self.debug:
-            print(f"🔧 [RABBIT_DEBUG] Initialized with {len(self.nodes)} nodes: {[node[0] for node in self.nodes]}")
-            print(
-                f"🔧 [RABBIT_DEBUG] Scheme={self.scheme}, Port={self.port}, Verify={self.verify}, Timeout={self.timeout}s")
+            print(f"🔧 [RABBIT_DEBUG] Scheme={self.scheme} → verify=False (insecure mode)")
+            print(f"🔧 [RABBIT_DEBUG] Initialized with {len(self.nodes)} nodes: {[n[0] for n in self.nodes]}")
+            print(f"🔧 [RABBIT_DEBUG] Final settings → Scheme={self.scheme}, "
+                  f"Port={self.port}, Verify={self.verify}, Timeout={self.timeout}s")
 
         self.sessions = {}
         self._init_sessions()
