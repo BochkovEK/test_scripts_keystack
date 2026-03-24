@@ -38,33 +38,38 @@ class RabbitCheck:
         self.nodes = auth_params['nodes']
         self.timeout = 3  # Request timeout in seconds
 
+        self.timeout = 3
+
+        # === TLS / CA handling (OpenStack style) ===
         cacert = os.environ.get('OS_CACERT')
         insecure = os.environ.get('OS_INSECURE', 'false').lower() in ('true', '1', 'yes')
 
         if insecure:
             self.verify = False
+            self.scheme = "https"
             if self.debug:
-                print("🔧 [RABBIT_DEBUG] OS_INSECURE=true → SSL verification disabled")
+                print(
+                    "🔧 [RABBIT_DEBUG] OS_INSECURE=true → using HTTPS with SSL verification disabled (--insecure mode)")
         elif cacert and os.path.isfile(cacert):
             self.verify = cacert
+            self.scheme = "https"
             if self.debug:
-                print(f"🔧 [RABBIT_DEBUG] Using OS_CACERT: {cacert}")
+                print(f"🔧 [RABBIT_DEBUG] Using OS_CACERT: {cacert} with HTTPS")
         else:
             self.verify = True
-            if self.debug and cacert:
-                print(f"🔧 [RABBIT_DEBUG] OS_CACERT={cacert} not found or not a file → using default verification")
+            scheme_from_config = auth_params.get('scheme') or auth_params.get('protocol')
+            if scheme_from_config:
+                self.scheme = scheme_from_config.lower().strip()
+            else:
+                self.scheme = "https" if self.port in (15671, 443, 8443) else "http"
 
-        scheme_from_config = auth_params.get('scheme') or auth_params.get('protocol')
-        if scheme_from_config:
-            self.scheme = scheme_from_config.lower().strip()
-        else:
-            # Fallback based on common RabbitMQ management ports
-            self.scheme = "https" if self.port in (15671, 443, 8443) else "http"
+            if self.debug and cacert:
+                print(f"🔧 [RABBIT_DEBUG] OS_CACERT={cacert} not found → using default verification")
 
         if self.debug:
             print(f"🔧 [RABBIT_DEBUG] Initialized with {len(self.nodes)} nodes: {[node[0] for node in self.nodes]}")
             print(
-                f"🔧 [RABBIT_DEBUG] Auth: user={auth_params['username']}, port={self.port}, scheme={self.scheme}, timeout={self.timeout}s")
+                f"🔧 [RABBIT_DEBUG] Scheme={self.scheme}, Port={self.port}, Verify={self.verify}, Timeout={self.timeout}s")
 
         self.sessions = {}
         self._init_sessions()
