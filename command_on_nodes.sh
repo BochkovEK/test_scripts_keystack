@@ -31,6 +31,7 @@ external_scripts=(
 [[ -z $NODES_TYPE ]] && NODES_TYPE="all"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $DONT_CHECK_CONN ]] && DONT_CHECK_CONN="true"
+[[ -z $SSH_KEY_PATH ]] && SSH_KEY_PATH=""
 
 # Function to display help information
 show_help() {
@@ -45,6 +46,7 @@ show_help() {
       -nn, -node_name <names>         Specific node names (space-separated)
       -u, -user <username>            SSH username
       -check_conn                     Check connection before executing commands
+      -key, -ssh_key_path             Path to private ssh key
       -debug                          Enable debug mode
       --help                          Show this help message
 
@@ -80,6 +82,12 @@ parse_arguments() {
             -c|-command)
                 COMMAND="$2"
                 echo "Found -command option with value: $COMMAND"
+                shift
+                ;;
+
+            -key|ssh_key_path)
+                SSH_KEY_PATH="$2"
+                echo "Found ssh_key_path option with value: $SSH_KEY_PATH"
                 shift
                 ;;
 
@@ -176,9 +184,14 @@ start_commands_on_nodes() {
             continue
         fi
 
+        if [ -n "$SSH_KEY_PATH" ]; then
+            SSH_KEY="-i $SSH_KEY_PATH"
+        else
+            SSH_KEY=""
+        fi
         [ "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG] Executing command: ssh -o StrictHostKeyChecking=no -t \"$SSH_USER@$node_ip\" \"$COMMAND\""
-        ssh -o StrictHostKeyChecking=no -t "$SSH_USER@$node_ip" "$COMMAND"
+    [DEBUG] Executing command: ssh -o StrictHostKeyChecking=no -t $SSH_KEY \"$SSH_USER@$node_ip\" \"$COMMAND\""
+        ssh -o StrictHostKeyChecking=no -t $SSH_KEY "$SSH_USER@$node_ip" "$COMMAND"
     done
 }
 
