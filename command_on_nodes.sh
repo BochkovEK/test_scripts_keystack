@@ -70,12 +70,17 @@ define_parameters() {
 }
 
 # Parse command line arguments
-# Parse command line arguments
 while [ -n "$1" ]; do
   case "$1" in
     --help)
       # ... твой help остается без изменений ...
       exit 0
+      ;;
+
+    -c|--command)
+      COMMAND="$2"
+      echo "Found -command option with value: $COMMAND"
+      shift
       ;;
 
     -debug|--debug)
