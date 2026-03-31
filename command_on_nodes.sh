@@ -186,6 +186,7 @@ start_commands_on_nodes() {
 
         if [ -n "$SSH_KEY_PATH" ]; then
             SSH_KEY="-i $SSH_KEY_PATH"
+            echo $SSH_KEY
         else
             SSH_KEY=""
         fi
