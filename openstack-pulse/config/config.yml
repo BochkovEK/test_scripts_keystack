@@ -21,9 +21,14 @@ single_mode_checks:
 
 # Endpoints
 endpoints:
-  rabbitmq_port: 15672
-  #rabbitmq_scheme: http # by default https + insecure to ctrl addresses
   mariadb_port: 3306
+
+rabbitmq:
+#  username: "" from ENV RABBIT_USER
+#  password: "" from ENV RABBIT_PASS
+
+  protocol: "https"
+  port: "15672"
 
 # Timing parameters
 intervals:
