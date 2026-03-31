@@ -70,75 +70,76 @@ define_parameters() {
 }
 
 # Parse command line arguments
-while [ -n "$1" ]; do
-  case "$1" in
-    --help)
-      # ... твой help остается без изменений ...
-      exit 0
-      ;;
+parse_arguments() {
+    while [ -n "$1" ]; do
+        case "$1" in
+            --help|-h)
+                show_help
+                exit 0
+                ;;
 
-    -c|--command)
-      COMMAND="$2"
-      echo "Found -command option with value: $COMMAND"
-      shift
-      ;;
+            -c|--command)
+                COMMAND="$2"
+                echo "Found -command option with value: $COMMAND"
+                shift
+                ;;
 
-    -debug|--debug)
-      TS_UTILS_DEBUG="true"
-      [ "$TS_UTILS_DEBUG" = true ] && echo -e "Debug mode enabled"
-      ;;
+            -key|--ssh_key_path)
+                SSH_KEY_PATH="$2"
+                echo "Found ssh_key_path option with value: $SSH_KEY_PATH"
+                shift
+                ;;
 
-    -nt|-type_of_nodes)
-      NODES_TYPE="$2"
-      [ "$TS_UTILS_DEBUG" = true ] && echo -e "Node type set to: $NODES_TYPE"
-      shift
-      ;;
+            -nt|--type_of_nodes)
+                NODES_TYPE="$2"
+                echo "Found -type_of_nodes option with value: $NODES_TYPE"
+                shift
+                ;;
 
-    -suffix)
-      RMI_SUFFIX="$2"
-      [ "$TS_UTILS_DEBUG" = true ] && echo -e "RMI suffix set to: $RMI_SUFFIX"
-      shift
-      ;;
+            -u|--user)
+                SSH_USER="$2"
+                echo "Found -user option with value: $SSH_USER"
+                shift
+                ;;
 
-    -nn|-nodes_name)
-      NODES_NAME="$2"
-      [ "$TS_UTILS_DEBUG" = true ] && echo -e "Node names set to: $NODES_NAME"
-      shift
-      ;;
+            -nn|--node_name)
+                NODES_NAME="$2"
+                echo "Found -node_name option with value: $NODES_NAME"
+                shift
+                ;;
 
-    -return_type)
-      RETURN_TYPE_NODE_NAME="$2"
-      [ "$TS_UTILS_DEBUG" = true ] && echo -e "Return type for node: $RETURN_TYPE_NODE_NAME"
-      shift
-      ;;
+            -debug|--debug)
+                TS_DEBUG="true"
+                echo "Found -debug option"
+                ;;
 
-    -h|-hosts_path)
-      TS_HOSTS_PATH="$2"
-      [ "$TS_UTILS_DEBUG" = true ] && echo -e "Hosts file path set to: $TS_HOSTS_PATH"
-      shift
-      ;;
+            -check_conn|--check_conn)
+                DONT_CHECK_CONN="false"
+                echo "Found -check_conn option"
+                ;;
 
-    --)
-      shift
-      break
-      ;;
+            --)
+                shift
+                break
+                ;;
 
-    -*)
-      echo "Unknown option: $1" >&2
-      exit 1
-      ;;
+            -*)
+                echo "Unknown option: $1" >&2
+                show_help
+                exit 1
+                ;;
 
-    *)
-      if [ -z "$NODES_TYPE" ] || [ "$NODES_TYPE" = "all" ]; then
-        NODES_TYPE="$1"
-        [ "$TS_UTILS_DEBUG" = true ] && echo -e "Nodes type parameter found with value: $NODES_TYPE"
-      else
-        echo "Warning: extra positional argument ignored: $1" >&2
-      fi
-      ;;
-  esac
-  shift
-done
+            *)
+                if [ -z "$COMMAND" ] || [ "$COMMAND" = "ls -la" ]; then
+                    COMMAND="$1"
+                    echo "Command parameter found with value: $COMMAND"
+                else
+                    echo "Extra positional argument: $1" >&2
+                fi
+                ;;
+        esac
+    done
+}
 
 # Function to display error messages and exit
 error_output() {
