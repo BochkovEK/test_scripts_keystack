@@ -71,50 +71,49 @@ define_parameters() {
 
 # Parse command line arguments
 parse_arguments() {
-    local count=1
     while [ -n "$1" ]; do
         case "$1" in
-            --help)
+            --help|-h)
                 show_help
                 exit 0
                 ;;
 
-            -c|-command)
+            -c|--command)
                 COMMAND="$2"
                 echo "Found -command option with value: $COMMAND"
                 shift
                 ;;
 
-            -key|ssh_key_path)
+            -key|--ssh_key_path)
                 SSH_KEY_PATH="$2"
                 echo "Found ssh_key_path option with value: $SSH_KEY_PATH"
                 shift
                 ;;
 
-            -nt|-type_of_nodes)
+            -nt|--type_of_nodes)
                 NODES_TYPE="$2"
                 echo "Found -type_of_nodes option with value: $NODES_TYPE"
                 shift
                 ;;
 
-            -u|-user)
+            -u|--user)
                 SSH_USER="$2"
                 echo "Found -user option with value: $SSH_USER"
                 shift
                 ;;
 
-            -nn|-node_name)
+            -nn|--node_name)
                 NODES_NAME="$2"
                 echo "Found -node_name option with value: $NODES_NAME"
                 shift
                 ;;
 
-            -debug)
+            -debug|--debug)
                 TS_DEBUG="true"
                 echo "Found -debug option"
                 ;;
 
-            -check_conn)
+            -check_conn|--check_conn)
                 DONT_CHECK_CONN="false"
                 echo "Found -check_conn option"
                 ;;
@@ -124,10 +123,19 @@ parse_arguments() {
                 break
                 ;;
 
+            -*)
+                echo "Unknown option: $1" >&2
+                show_help
+                exit 1
+                ;;
+
             *)
-                echo "Parameter #$count: $1"
-                define_parameters "$1"
-                count=$((count + 1))
+                if [ -z "$COMMAND" ] || [ "$COMMAND" = "ls -la" ]; then
+                    COMMAND="$1"
+                    echo "Command parameter found with value: $COMMAND"
+                else
+                    echo "Extra positional argument: $1" >&2
+                fi
                 ;;
         esac
         shift
