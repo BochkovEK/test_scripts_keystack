@@ -62,37 +62,44 @@ while [ -n "$1" ]; do
 
     -debug)
       TS_UTILS_DEBUG="true"
-      [ "$TS_UTILS_DEBUG" = true ] && echo -e "Debug mode enabled"
+      echo -e "Debug mode enabled"
+      shift
+      continue
       ;;
 
     -nt|-type_of_nodes)
       NODES_TYPE="$2"
       [ "$TS_UTILS_DEBUG" = true ] && echo -e "Node type set to: $NODES_TYPE"
-      shift
-      ;;
-
-    -suffix)
-      RMI_SUFFIX="$2"
-      [ "$TS_UTILS_DEBUG" = true ] && echo -e "RMI suffix set to: $RMI_SUFFIX"
-      shift
+      shift 2
+      continue
       ;;
 
     -nn|-nodes_name)
       NODES_NAME="$2"
       [ "$TS_UTILS_DEBUG" = true ] && echo -e "Node names set to: $NODES_NAME"
-      shift
+      shift 2
+      continue
+      ;;
+
+    -suffix)
+      RMI_SUFFIX="$2"
+      [ "$TS_UTILS_DEBUG" = true ] && echo -e "RMI suffix set to: $RMI_SUFFIX"
+      shift 2
+      continue
       ;;
 
     -return_type)
       RETURN_TYPE_NODE_NAME="$2"
       [ "$TS_UTILS_DEBUG" = true ] && echo -e "Return type for node: $RETURN_TYPE_NODE_NAME"
-      shift
+      shift 2
+      continue
       ;;
 
     -h|-hosts_path)
       TS_HOSTS_PATH="$2"
       [ "$TS_UTILS_DEBUG" = true ] && echo -e "Hosts file path set to: $TS_HOSTS_PATH"
-      shift
+      shift 2
+      continue
       ;;
 
     --)
@@ -101,12 +108,11 @@ while [ -n "$1" ]; do
       ;;
 
     *)
-      [ "$TS_UTILS_DEBUG" = true ] && echo -e "Parameter #$count: $1"
+      [ "$TS_UTILS_DEBUG" = true ] && echo -e "Unknown parameter: $1"
       define_parameters "$1"
-      count=$((count + 1))
+      shift
       ;;
   esac
-  shift
 done
 
 # Function to find IP address in hosts file
