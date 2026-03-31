@@ -262,18 +262,46 @@ main() {
 
     echo -e "Using SSH user: $SSH_USER"
 
-    # Get nodes list
+#    # Get nodes list
+#    if [ -n "$NODES_NAME" ]; then
+#        NODES=$(get_nodes_list "-nn" "$NODES_NAME")
+#    else
+#        NODES=$(get_nodes_list "-nt" "$NODES_TYPE")
+#    fi
+#
+#    if [ "$TS_DEBUG" = true ]; then
+#        echo -e "
+#    [DEBUG] nodes: $NODES
+#    "
+#    fi
+    get_nodes_params=()
+
     if [ -n "$NODES_NAME" ]; then
-        NODES=$(get_nodes_list "-nn" "$NODES_NAME")
+        get_nodes_params+=("-nn" "$NODES_NAME")
     else
-        NODES=$(get_nodes_list "-nt" "$NODES_TYPE")
+        get_nodes_params+=("-nt" "$NODES_TYPE")
+    fi
+
+    [[ "$TS_DEBUG" = true ]] && get_nodes_params+=("-debug")
+
+    if ! NODES=$(bash "$utils_dir/$get_nodes_list_script" "${get_nodes_params[@]}" 2>&1); then
+        echo -e "${red}ERROR: Failed to execute get_nodes_list.sh${normal}" >&2
+        exit 1
+    fi
+
+    NODES=$(echo "$NODES" | tail -n 1 | tr -d '\n\r')
+
+    if [ -z "$NODES" ] || echo "$NODES" | grep -q "ERROR\|Failed\|Warning"; then
+        echo -e "${red}Failed to get nodes list. Output was:${normal}" >&2
+        echo "$NODES" >&2
+        exit 1
     fi
 
     if [ "$TS_DEBUG" = true ]; then
         echo -e "
-    [DEBUG] nodes: $NODES
-    "
+    [DEBUG] Final nodes list: $NODES"
     fi
+
 
     start_commands_on_nodes
 }
