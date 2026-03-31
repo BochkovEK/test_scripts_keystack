@@ -111,11 +111,17 @@ class Config:
 
     def _get_rabbitmq_auth(self) -> Dict[str, Any]:
         """Get RabbitMQ specific authentication parameters"""
+
+        rabbit = getattr(self.settings, 'rabbitmq', {})
+
         return {
             'username': self.auth['rabbit_user'],
             'password': self.auth['rabbit_pass'],
-            'port': self.settings.endpoints.rabbitmq_port,
-            'nodes': self.nodes['control']
+            'port': int(rabbit.get('port') or getattr(self.settings.endpoints, 'rabbitmq_port', 15672)),
+            'scheme': rabbit.get('protocol') or rabbit.get('scheme') or 'https',
+            'nodes': self.nodes.get('control', []),
+            'timeout': rabbit.get('timeout', 3),
+            'verify': rabbit.get('verify', False),
         }
 
     def _get_mariadb_auth(self) -> Dict[str, Any]:
