@@ -117,18 +117,9 @@ class Config:
         return {
             'username': self.auth['rabbit_user'],
             'password': self.auth['rabbit_pass'],
-            'port': int(
-                rabbit.get('port') or
-                getattr(self.settings.endpoints, 'rabbitmq_port', 15672)
-            ),
-            'scheme': (
-                    rabbit.get('protocol') or
-                    rabbit.get('scheme') or
-                    'https'
-            ),
+            'port': int(rabbit.port or getattr(self.settings.endpoints, 'rabbitmq_port', 15672)),
+            'scheme': rabbit.protocol or getattr(rabbit, 'scheme', None) or 'https',
             'nodes': self.nodes.get('control', []),
-            'timeout': rabbit.get('timeout', 3),
-            'verify': rabbit.get('verify', False),
         }
 
     def _get_mariadb_auth(self) -> Dict[str, Any]:
