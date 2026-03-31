@@ -34,7 +34,7 @@ count=1
 define_parameters() {
   [ "$count" = 1 ] && [[ -n $1 ]] && {
     NODES_TYPE="$1"
-    [ "$TS_DEBUG" = true ] && echo -e "Nodes type parameter found with value $NODES_TYPE"
+    [ "$TS_DEBUG" = true ] && echo -e "Nodes type parameter found with value $NODES_TYPE" >&2
   }
 }
 
