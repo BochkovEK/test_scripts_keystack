@@ -42,7 +42,7 @@ yellow=$(tput setaf 3)
 [[ -z $GITLAB_SHORT_NAME ]] && GITLAB_SHORT_NAME="$gitlab_short_name"
 [[ -z $ADD_STRINGS ]] && ADD_STRINGS="$add_strings"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
-[[ -z $VIRTUAL_ENV ]] && VIRTUAL_ENV="$script_dir"
+#[[ -z $VIRTUAL_ENV ]] && VIRTUAL_ENV="$script_dir"
 [[ -z $INVENTORY_PATH ]] && INVENTORY_PATH="$VIRTUAL_ENV/$inventory_file_name"
 [[ -z $OUTPUT_FILE_PATH ]] && OUTPUT_FILE_PATH="$VIRTUAL_ENV/$output_file_name"
 
@@ -194,19 +194,19 @@ check_and_set_variables() {
     if [ ${#missing_vars[@]} -gt 0 ]; then
         echo "Some required environment variables are not set: ${missing_vars[*]}"
 
-        # Try to load from environment file
-        if [[ -f "${VIRTUAL_ENV}/$env_file_name" ]]; then
-            echo -e "${yellow}Loading variables from ${env_file_name}${normal}"
-            source "${VIRTUAL_ENV}/${env_file_name}"
-
-            # Re-check after loading
-            missing_vars=()
-            for var in "${REQUIRED_VARS[@]}"; do
-                if [[ -z "${!var}" ]]; then
-                    missing_vars+=("$var")
-                fi
-            done
-        fi
+#        # Try to load from environment file
+#        if [[ -f "${VIRTUAL_ENV}/$env_file_name" ]]; then
+#            echo -e "${yellow}Loading variables from ${env_file_name}${normal}"
+#            source "${VIRTUAL_ENV}/${env_file_name}"
+#
+#            # Re-check after loading
+#            missing_vars=()
+#            for var in "${REQUIRED_VARS[@]}"; do
+#                if [[ -z "${!var}" ]]; then
+#                    missing_vars+=("$var")
+#                fi
+#            done
+#        fi
 
         # If still missing, prompt user
         if [ ${#missing_vars[@]} -gt 0 ]; then
