@@ -387,7 +387,7 @@ check_container_status() {
 
     # Now check containers since SSH is working
     ssh -o StrictHostKeyChecking=no "$KEY_STRING" "$SSH_USER@$node_ip" \
-        "sudo $CONTAINER_ENGINE ps -a $format_option" 2>/dev/null | \
+        "sudo $CONTAINER_ENGINE ps -a $format_option"  | \
         sed --unbuffered \
           -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
           -e 's/\(.*Exited.*\)/\o033[31m\1\o033[39m/' \
