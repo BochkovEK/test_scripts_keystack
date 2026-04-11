@@ -387,7 +387,7 @@ check_container_status() {
     " >&2
 
     # Now check containers since SSH is working
-    ssh -o StrictHostKeyChecking=no -i /root/eb-update/id_rsa "$SSH_USER@$node_ip" \
+    ssh -o StrictHostKeyChecking=no $key_string "$SSH_USER@$node_ip" \
         "sudo $CONTAINER_ENGINE ps -a $format_option" | \
         sed --unbuffered \
           -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
