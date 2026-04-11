@@ -365,6 +365,7 @@ check_ssh_connectivity() {
 check_container_status() {
     local node_name="$1"
     local node_ip="$2"
+    local key_string=""
 
     echo -e "${cyan}Checking containers on $node_name ($node_ip)${normal}"
 
@@ -374,20 +375,20 @@ check_container_status() {
     fi
 
     if [ -n "$KEY_PATH" ]; then
-        KEY_STRING="-i $KEY_PATH"
+        key_string="-i $KEY_PATH"
         [ "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG] KEY_STRING: $KEY_STRING
+    [DEBUG] key_string: $key_string
     " >&2
     fi
 
      [ "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG] check container command string: ssh -o StrictHostKeyChecking=no $KEY_STRING $SSH_USER@$node_ip \
+    [DEBUG] check container command string: ssh -o StrictHostKeyChecking=no $key_string $SSH_USER@$node_ip \
         \"sudo $CONTAINER_ENGINE ps -a $format_option\"
     " >&2
 
     # Now check containers since SSH is working
-    ssh -o StrictHostKeyChecking=no "$KEY_STRING" "$SSH_USER@$node_ip" \
-        "sudo $CONTAINER_ENGINE ps -a $format_option"  | \
+    ssh -o StrictHostKeyChecking=no "$key_string" "$SSH_USER@$node_ip" \
+        "sudo $CONTAINER_ENGINE ps -a $format_option" 2>/dev/null | \
         sed --unbuffered \
           -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
           -e 's/\(.*Exited.*\)/\o033[31m\1\o033[39m/' \

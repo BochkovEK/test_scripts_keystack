@@ -38,6 +38,14 @@
 # Create disk from image (create bootable disk)
 #openstack volume create --image  ubuntu-22.04-server-cloudimg-amd64.img --size 20 my-volume
 
+# Start
+# PHASE 1 - create volumes
+# bash ~/test_scripts_keystack/batch_openstack_cli/create_vms_with_volumes.sh
+# PHASE 2 - create vms
+# bash ~/test_scripts_keystack/batch_openstack_cli/create_vms_with_volumes.sh --phase 2
+# PHASE 3 - cleanup
+# bash ~/test_scripts_keystack/batch_openstack_cli/create_vms_with_volumes.sh --phase 3
+
 # Remove error volume:
 #python ~/test_scripts_keystack/openstack-sdk/set_error_disk.py --force-delete
 
