@@ -145,6 +145,12 @@ while [ -n "$1" ]; do
             shift
             ;;
 
+        -k|-key_path)
+            KEY_PATH="$2"
+            echo "Found -key_path with value: $KEY_PATH"
+            shift
+            ;;
+
         -debug)
             TS_DEBUG="true"
             echo "Found -debug option"
@@ -360,8 +366,12 @@ check_container_status() {
         format_option="--format 'table {{.ID}}\t{{.Image}}\t{{.Created}}\t{{.Status}}\t{{.Names}}'"
     fi
 
+    if [ -n "$KEY_PATH" ]; then
+        KEY_STRING="-i $KEY_PATH"
+    fi
+
     # Now check containers since SSH is working
-    ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+    ssh -o StrictHostKeyChecking=no "$KEY_STRING" "$SSH_USER@$node_ip" \
         "sudo $CONTAINER_ENGINE ps -a $format_option" 2>/dev/null | \
         sed --unbuffered \
           -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \

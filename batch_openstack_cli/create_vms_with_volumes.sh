@@ -13,6 +13,34 @@
 # openstack security group rule create --ingress --ethertype IPv4 --protocol udp test-security-group
 # openstack security group rule create --ingress --ethertype IPv4 --protocol icmp test-security-group
 
+# Create env file (.env.create_vms_with_volumes) in script dir or source\define env var
+# Example env file .env.create_vms_with_volumes:
+#BASE_NAME=test-vm
+#FLAVOR=g1-cpu-2-2
+#IMAGE=cirros-0.6.3-x86_64-disk
+#NET_NAME=pub_net
+#KEY_PAIR=test-keypair
+#SEC_GROUP=test-security-group
+#HOST_HINT=nova:cdm-bl-pca05
+#BOOT_SIZE=5
+#DATA_SIZE=1
+#DATA_COUNT_PER_VM=10
+#VM_COUNT=100
+#SLEEP_INTERVAL=2
+
+# Add quotas
+#openstack quota set --cores -1 $test_project_id --force
+#openstack quota set --volumes -1 $test_project_id --force
+#openstack quota set --instance -1 $test_project_id --force
+#openstack quota set --snapshots -1 $test_project_id --force
+#openstack quota set --ram -1 $test_project_id --force
+
+# Create disk from image (create bootable disk)
+#openstack volume create --image  ubuntu-22.04-server-cloudimg-amd64.img --size 20 my-volume
+
+# Remove error volume:
+#python ~/test_scripts_keystack/openstack-sdk/set_error_disk.py --force-delete
+
 # Remove VMs
 #for v in test-vm-043 test-vm-044 test-vm-045; do openstack server delete "$v" > /dev/null; sleep 1; done
 
