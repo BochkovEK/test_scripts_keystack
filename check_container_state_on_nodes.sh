@@ -370,6 +370,11 @@ check_container_status() {
         KEY_STRING="-i $KEY_PATH"
     fi
 
+     [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] check container command string: ssh -o StrictHostKeyChecking=no $KEY_STRING $SSH_USER@$node_ip \
+        \"sudo $CONTAINER_ENGINE ps -a $format_option\"
+    " >&2
+
     # Now check containers since SSH is working
     ssh -o StrictHostKeyChecking=no "$KEY_STRING" "$SSH_USER@$node_ip" \
         "sudo $CONTAINER_ENGINE ps -a $format_option" 2>/dev/null | \
