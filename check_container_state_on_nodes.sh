@@ -253,18 +253,19 @@ check_required_containers() {
     local node_ip="$1"
     local node_type="$2"
     local check_succeeded=true
+    local key_string=""
 
     echo -e "Checking required containers on $node_ip ($node_type)"
 
-     if [ -n "$KEY_PATH" ]; then
-        KEY_STRING="-i $KEY_PATH"
+    if [ -n "$KEY_PATH" ]; then
+        key_string="-i $KEY_PATH"
         [ "$TS_DEBUG" = true ] && echo -e "
-    [DEBUG] KEY_STRING: $KEY_STRING
+    [DEBUG] key_string: $key_string
     " >&2
     fi
 
     local container_names
-    container_names=$(ssh -o StrictHostKeyChecking=no "$KEY_STRING" "$SSH_USER@$node_ip" \
+    container_names=$(ssh -o StrictHostKeyChecking=no $key_string "$SSH_USER@$node_ip" \
         "sudo $CONTAINER_ENGINE ps --format '{{.Names}}' --filter status=running" 2>/dev/null)
 
     local required_containers=()
