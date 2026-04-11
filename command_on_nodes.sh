@@ -41,14 +41,14 @@ show_help() {
     Execute commands on multiple nodes. Node IPs and names must be defined in /etc/hosts.
 
     Options:
-      -c, -command <command>          Command to execute on nodes
-      -nt, -type_of_nodes <type>      Node type: 'lcm', 'ctrl', 'comp', 'net', 'strg', 'all'
-      -nn, -node_name <names>         Specific node names (space-separated)
-      -u, -user <username>            SSH username
-      -check_conn                     Check connection before executing commands
-      -key, -ssh_key_path             Path to private ssh key
-      -debug                          Enable debug mode
-      --help                          Show this help message
+      -c, -command <command>                Command to execute on nodes
+      -nt, -type_of_nodes <type>            Node type: 'lcm', 'ctrl', 'comp', 'net', 'strg', 'all'
+      -nn, -node_name <names>               Specific node names (space-separated)
+      -u, -user <username>                  SSH username
+      -check_conn                           Check connection before executing commands
+      -k, -key_path <path to private key>   Path to private ssh key
+      -debug                                Enable debug mode
+      --help                                Show this help message
 
     Examples:
       Remove all containers on all nodes:
@@ -85,7 +85,7 @@ parse_arguments() {
                 shift
                 ;;
 
-            -key|--ssh_key_path)
+            -k|-key_path)
                 SSH_KEY_PATH="$2"
                 echo "Found ssh_key_path option with value: $SSH_KEY_PATH"
                 shift
