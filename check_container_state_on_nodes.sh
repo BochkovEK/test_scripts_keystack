@@ -361,10 +361,10 @@ check_container_status() {
 
     echo -e "${cyan}Checking containers on $node_name ($node_ip)${normal}"
 
-    local format_option=""
-    if [ "$CONTAINER_ENGINE" = "podman" ]; then
+#    local format_option=""
+#    if [ "$CONTAINER_ENGINE" = "podman" ]; then
         format_option="--format 'table {{.ID}}\t{{.Image}}\t{{.Created}}\t{{.Status}}\t{{.Names}}'"
-    fi
+#    fi
 
     if [ -n "$KEY_PATH" ]; then
         KEY_STRING="-i $KEY_PATH"
