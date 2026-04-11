@@ -368,6 +368,9 @@ check_container_status() {
 
     if [ -n "$KEY_PATH" ]; then
         KEY_STRING="-i $KEY_PATH"
+        [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] KEY_STRING: $KEY_STRING
+    " >&2
     fi
 
      [ "$TS_DEBUG" = true ] && echo -e "
