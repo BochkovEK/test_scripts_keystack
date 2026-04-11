@@ -256,8 +256,15 @@ check_required_containers() {
 
     echo -e "Checking required containers on $node_ip ($node_type)"
 
+     if [ -n "$KEY_PATH" ]; then
+        KEY_STRING="-i $KEY_PATH"
+        [ "$TS_DEBUG" = true ] && echo -e "
+    [DEBUG] KEY_STRING: $KEY_STRING
+    " >&2
+    fi
+
     local container_names
-    container_names=$(ssh -o StrictHostKeyChecking=no "$SSH_USER@$node_ip" \
+    container_names=$(ssh -o StrictHostKeyChecking=no "$KEY_STRING" "$SSH_USER@$node_ip" \
         "sudo $CONTAINER_ENGINE ps --format '{{.Names}}' --filter status=running" 2>/dev/null)
 
     local required_containers=()
@@ -361,10 +368,10 @@ check_container_status() {
 
     echo -e "${cyan}Checking containers on $node_name ($node_ip)${normal}"
 
-#    local format_option=""
-#    if [ "$CONTAINER_ENGINE" = "podman" ]; then
+    local format_option=""
+    if [ "$CONTAINER_ENGINE" = "podman" ]; then
         format_option="--format 'table {{.ID}}\t{{.Image}}\t{{.Created}}\t{{.Status}}\t{{.Names}}'"
-#    fi
+    fi
 
     if [ -n "$KEY_PATH" ]; then
         KEY_STRING="-i $KEY_PATH"
