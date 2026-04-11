@@ -50,6 +50,7 @@
 #python ~/test_scripts_keystack/openstack-sdk/set_error_disk.py --force-delete
 
 # Remove VMs
+#python ~/test_scripts_keystack/openstack-sdk/delete_error_vms.py
 #for v in test-vm-043 test-vm-044 test-vm-045; do openstack server delete "$v" > /dev/null; sleep 1; done
 
 # Error parse
