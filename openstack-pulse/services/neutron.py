@@ -59,20 +59,36 @@ class NeutronCheck:
                     print(f"    {agent_emoji} {agent_type}: {up_count} up")
                 elif up_count == 0:
                     agent_emoji = "🔴"
-                    print(f"    {agent_emoji} {agent_type}:")
+                    print(f"    {agent_emoji} {agent_type}: all down")
                 else:
                     agent_emoji = "🟡"
-                    print(f"    {agent_emoji} {agent_type}:")
+                    print(f"    {agent_emoji} {agent_type}: {up_count} up, {down_count} down")
 
-                if down_count > 0:
+                # Show detailed agent information if there are down agents or debug is enabled
+                if down_count > 0 or self.debug:
                     all_agents = list(self.conn.network.agents())
                     type_agents = [agent for agent in all_agents if agent.agent_type == agent_type]
 
                     for agent in type_agents:
-                        status_icon = "🟢" if agent.is_alive else "🔴"
-                        status_text = "" if agent.is_alive else ": down"
-                        host_info = agent.host
-                        print(f"      {status_icon} {host_info}{status_text}")
+                        # Safe attribute access
+                        is_alive = getattr(agent, 'is_alive', False)
+                        alive_emoji = "🟢" if is_alive else "🔴"
+
+                        # admin_state_up handling (different attribute names in SDK)
+                        is_admin_up = getattr(agent, 'is_admin_state_up',
+                                              getattr(agent, 'admin_state_up', True))
+
+                        host = getattr(agent, 'host', 'unknown-host')
+                        heartbeat = getattr(agent, 'heartbeat_timestamp',
+                                            getattr(agent, 'last_heartbeat', 'N/A'))
+
+                        status_text = ""
+                        if not is_alive:
+                            status_text = " : DOWN"
+                        if not is_admin_up:
+                            status_text += " (admin DOWN)"
+
+                        print(f"      {alive_emoji} {host}{status_text} | heartbeat: {heartbeat}")
 
     def run_check(self):
         """
@@ -88,15 +104,21 @@ class NeutronCheck:
         start_time = time.time()
 
         try:
-            agents = list(self.conn.network.agents(details=True))
+            agents = list(self.conn.network.agents())
+
             if self.debug:
-                print(f"🔧 [NEUTRON_DEBUG] Получено агентов: {len(agents)}")
-                for a in agents[:5]:  # first 5 for example
-                    print(f"    {a.agent_type} @ {a.host} | "
-                          f"is_alive={a.is_alive} | "
-                          f"admin_state_up={a.admin_state_up} | "
-                          f"alive={getattr(a, 'alive', 'N/A')} | "
-                          f"heartbeat={getattr(a, 'heartbeat_timestamp', getattr(a, 'last_heartbeat', 'N/A'))}")
+                print(f"🔧 [NEUTRON_DEBUG] Check started. Retrieved {len(agents)} agents.")
+                if agents:
+                    print(f"🔧 [NEUTRON_DEBUG] Attributes of the first agent for debugging:")
+                    a = agents[0]
+                    print(f"    Type                  : {a.agent_type}")
+                    print(f"    Host                  : {getattr(a, 'host', None)}")
+                    print(f"    is_alive              : {getattr(a, 'is_alive', None)}")
+                    print(f"    is_admin_state_up     : {getattr(a, 'is_admin_state_up', None)}")
+                    print(f"    admin_state_up        : {getattr(a, 'admin_state_up', None)}")
+                    print(f"    heartbeat_timestamp   : {getattr(a, 'heartbeat_timestamp', None)}")
+                    print(f"    binary                : {getattr(a, 'binary', None)}")
+                    print(f"    alive                 : {getattr(a, 'alive', None)}")  # sometimes used
 
             agent_stats = self._analyze_agents(agents)
 
@@ -113,7 +135,7 @@ class NeutronCheck:
             }
 
             if self.debug:
-                print(f"🔧 [NEUTRON_DEBUG] Check completed: {len(agents)} agents")
+                print(f"🔧 [NEUTRON_DEBUG] Check completed: {len(agents)} agents processed")
 
             return result
 
