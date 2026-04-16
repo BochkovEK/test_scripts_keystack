@@ -49,8 +49,12 @@
 # Remove error volume:
 #python ~/test_scripts_keystack/openstack-sdk/set_error_disk.py --force-delete
 
+# Remove volume
+#openstack volume delete $(openstack volume list --project <project_name_or_id> -c ID -f value)
+
 # Remove VMs
-#python ~/test_scripts_keystack/openstack-sdk/delete_error_vms.py
+#python ~/test_scripts_keystack/openstack-sdk/delete_error_vms.py --force-delete
+# or
 #for v in test-vm-043 test-vm-044 test-vm-045; do openstack server delete "$v" > /dev/null; sleep 1; done
 
 # Error parse

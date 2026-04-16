@@ -88,7 +88,16 @@ class NeutronCheck:
         start_time = time.time()
 
         try:
-            agents = list(self.conn.network.agents())
+            agents = list(self.conn.network.agents(details=True))
+            if self.debug:
+                print(f"🔧 [NEUTRON_DEBUG] Получено агентов: {len(agents)}")
+                for a in agents[:5]:  # first 5 for example
+                    print(f"    {a.agent_type} @ {a.host} | "
+                          f"is_alive={a.is_alive} | "
+                          f"admin_state_up={a.admin_state_up} | "
+                          f"alive={getattr(a, 'alive', 'N/A')} | "
+                          f"heartbeat={getattr(a, 'heartbeat_timestamp', getattr(a, 'last_heartbeat', 'N/A'))}")
+
             agent_stats = self._analyze_agents(agents)
 
             if agent_stats['up'] < agent_stats['total']:
