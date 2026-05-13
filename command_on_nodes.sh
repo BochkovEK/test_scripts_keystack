@@ -262,18 +262,10 @@ main() {
 
     echo -e "Using SSH user: $SSH_USER"
 
-#    # Get nodes list
-#    if [ -n "$NODES_NAME" ]; then
-#        NODES=$(get_nodes_list "-nn" "$NODES_NAME")
-#    else
-#        NODES=$(get_nodes_list "-nt" "$NODES_TYPE")
-#    fi
-#
-#    if [ "$TS_DEBUG" = true ]; then
-#        echo -e "
-#    [DEBUG] nodes: $NODES
-#    "
-#    fi
+    if [ -n "$SSH_KEY_PATH" ]; then
+        echo "Using SSH key path: $SSH_KEY_PATH"
+    fi
+
     get_nodes_params=()
 
     if [ -n "$NODES_NAME" ]; then
