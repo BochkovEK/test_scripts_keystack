@@ -354,7 +354,7 @@ check_ssh_connectivity() {
     local node_name="${node_pair%%:*}"
     local node_ip="${node_pair#*:}"
 
-    if test_ssh_connection "$node_name" "$node_ip" "10" "$SSH_USER" "$KEY_PATH" > /dev/null 2>&1; then
+    if test_ssh_connection "$node_name" "$node_ip" "10" "$SSH_USER" "$SSH_KEY_PATH" > /dev/null 2>&1; then
         echo -e "✓ SSH connection successful"
         return 0
     else
@@ -376,8 +376,8 @@ check_container_status() {
         format_option="--format 'table {{.ID}}\t{{.Image}}\t{{.Created}}\t{{.Status}}\t{{.Names}}'"
     fi
 
-    if [ -n "$KEY_PATH" ]; then
-        key_string="-i $KEY_PATH"
+    if [ -n "$SSH_KEY_PATH" ]; then
+        key_string="-i $SSH_KEY_PATH"
         [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG] key_string: $key_string
     " >&2
