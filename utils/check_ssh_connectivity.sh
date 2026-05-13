@@ -13,7 +13,7 @@ blue=$(tput setaf 6)
 # Default values
 DEFAULT_SSH_USER="${SSH_USER:-root}"
 DEFAULT_TIMEOUT=10
-DEFAULT_SSH_KEY="${SSH_KEY:-}"
+DEFAULT_SSH_KEY="${SSH_KEY_PATH:-}"
 
 # Function to display help
 show_help() {

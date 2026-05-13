@@ -87,6 +87,7 @@ default_comp_required_container_list=(
 [[ -z $NODES_NAME ]] && NODES_NAME=""
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $SSH_USER ]] && SSH_USER=""
+[[ -z $SSH_KEY_PATH ]] && SSH_KEY_PATH=""
 [[ -z $CONTAINER_ENGINE ]] && CONTAINER_ENGINE="$default_container_engine"
 [[ -z $KS_RELEASE ]] && KS_RELEASE=$default_ks_release
 
@@ -146,8 +147,8 @@ while [ -n "$1" ]; do
             ;;
 
         -k|-key_path)
-            KEY_PATH="$2"
-            echo "Found -key_path with value: $KEY_PATH"
+            SSH_KEY_PATH="$2"
+            echo "Found -key_path with value: $SSH_KEY_PATH"
             shift
             ;;
 
@@ -257,8 +258,8 @@ check_required_containers() {
 
     echo -e "Checking required containers on $node_ip ($node_type)"
 
-    if [ -n "$KEY_PATH" ]; then
-        key_string="-i $KEY_PATH"
+    if [ -n "$SSH_KEY_PATH" ]; then
+        key_string="-i $SSH_KEY_PATH"
         [ "$TS_DEBUG" = true ] && echo -e "
     [DEBUG] key_string: $key_string
     " >&2
