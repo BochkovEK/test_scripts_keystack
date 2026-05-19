@@ -52,13 +52,7 @@ class Config:
         return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     def _load_auth_credentials(self) -> Dict[str, str]:
-        """
-        Load authentication credentials from environment variables.
-
-        Returns:
-            Dictionary containing all required authentication parameters
-            with fallback values for optional parameters.
-        """
+        """Load authentication credentials from environment variables."""
         return {
             'username': os.getenv('OS_USERNAME'),
             'password': os.getenv('OS_PASSWORD'),
@@ -68,6 +62,7 @@ class Config:
             'auth_url': os.getenv('OS_AUTH_URL'),
             'rabbit_user': os.getenv('RABBIT_USER', 'guest'),
             'rabbit_pass': os.getenv('RABBIT_PASS', 'guest'),
+            'rabbit_cacert': os.getenv('RABBIT_CACERT'),
             'mysql_user': os.getenv('MYSQL_USER', 'user'),
             'mysql_pass': os.getenv('MYSQL_PASS', 'pass')
         }
@@ -114,12 +109,15 @@ class Config:
 
         rabbit = getattr(self.settings, 'rabbitmq', {})
 
+        yaml_cacert = getattr(rabbit, 'cacert_path', None) or getattr(rabbit, 'path_to_cacert', None)
+
         return {
             'username': self.auth['rabbit_user'],
             'password': self.auth['rabbit_pass'],
             'port': int(rabbit.port or getattr(self.settings.endpoints, 'rabbitmq_port', 15672)),
             'scheme': rabbit.protocol or getattr(rabbit, 'scheme', None) or 'https',
             'nodes': self.nodes.get('control', []),
+            'cacert_path': self.auth['rabbit_cacert'] or yaml_cacert,
         }
 
     def _get_mariadb_auth(self) -> Dict[str, Any]:
