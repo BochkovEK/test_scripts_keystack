@@ -46,6 +46,10 @@ class RabbitCheck:
         )
         self.scheme = scheme_from_config.lower().strip() if scheme_from_config else "https"
 
+        if self.debug:
+            print(f"🔧 [RABBIT_DEBUG] Raw auth_params keys: {list(auth_params.keys())}")
+            print(f"🔧 [RABBIT_DEBUG] Raw auth_params content: {auth_params}")
+
         # ca_cert
         cacert_path = auth_params.get('cacert_path') or auth_params.get('path_to_cacert')
 
