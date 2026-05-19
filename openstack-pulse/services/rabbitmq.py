@@ -47,17 +47,24 @@ class RabbitCheck:
         self.scheme = scheme_from_config.lower().strip() if scheme_from_config else "https"
 
         # ca_cert
-        cacert_path = auth_params.get('cacert_path')
+        cacert_path = auth_params.get('cacert_path') or auth_params.get('path_to_cacert')
 
-        if cacert_path and os.path.exists(cacert_path):
-            self.verify = cacert_path  # requests path to ca .pem/.crt
-            if self.debug:
-                print(f"🔒 [RABBIT_DEBUG] SSL verification enabled using CA: {self.verify}")
+        if cacert_path:
+            abs_cacert_path = os.path.abspath(cacert_path)
+
+            if os.path.exists(abs_cacert_path):
+                self.verify = abs_cacert_path
+                if self.debug:
+                    print(f"🔒 [RABBIT_DEBUG] SSL verification enabled using CA: {self.verify}")
+            else:
+                self.verify = False
+                if self.debug:
+                    print(f"⚠️ [RABBIT_DEBUG] CA cert file NOT FOUND. "
+                          f"Tried to find it at: {abs_cacert_path} → SSL verification is DISABLED.")
         else:
             self.verify = False
-            #urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
             if self.debug:
-                print(f"⚠️ [RABBIT_DEBUG] CA cert not found or not provided. SSL verification is DISABLED.")
+                print(f"⚠️ [RABBIT_DEBUG] CA cert path not provided in config. SSL verification is DISABLED.")
 
         if self.debug:
             print(f"🔧 [RABBIT_DEBUG] Initialized with {len(self.nodes)} nodes: {[n[0] for n in self.nodes]}")
