@@ -47,7 +47,7 @@ class RabbitCheck:
         self.scheme = scheme_from_config.lower().strip() if scheme_from_config else "https"
 
         # ca_cert
-        cacert_path = auth_params.get('path_to_cacert')
+        cacert_path = auth_params.get('cacert_path')
 
         if cacert_path and os.path.exists(cacert_path):
             self.verify = cacert_path  # requests path to ca .pem/.crt
