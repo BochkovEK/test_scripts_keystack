@@ -437,7 +437,12 @@ main() {
         echo -e "${yellow}Using default container lists${normal}"
     fi
 
-    echo -e "Using SSH user: $SSH_USER"
+    echo -e "
+Using SSH user:   $SSH_USER
+Using SSH KEY:    $SSH_KEY_PATH
+Using CE:         $CONTAINER_ENGINE
+"
+
 
     # Get nodes list
     if [ -n "$NODES_NAME" ]; then
