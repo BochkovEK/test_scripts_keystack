@@ -467,6 +467,10 @@ main() {
         KEY_STRING="-i $KEY_PATH"
         validate_ssh_key
     fi
+
+    echo "VM_USER: $VM_USER"
+    echo "KEY_STRING: $KEY_STRING"
+
     batch_run_commands
 
     local exit_code=$?

@@ -443,7 +443,6 @@ Using SSH KEY:    $SSH_KEY_PATH
 Using CE:         $CONTAINER_ENGINE
 "
 
-
     # Get nodes list
     if [ -n "$NODES_NAME" ]; then
         nodes=$(get_nodes_list -nn "$NODES_NAME")
