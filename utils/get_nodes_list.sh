@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# !!! Lines describing nodes in hosts must have a strict format: <ip> <random_string> <NODE_TYPE-NUMBER>
+# example:
+# Storage
+#10.224.138.190 ebochkov-installer-v2-strg-01.vm.lab.itkey.com strg-01
 # Script to get node list from hosts file and return string like: "node_name1:ip1 node_name2:ip2 ... node_nameN:ipN"
 # Requires node IPs and names to be defined in /etc/hosts
 
@@ -208,7 +212,7 @@ nodes_list_by_type() {
             ;;
 
         all)
-            nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern|$lcm_pattern|$strg_pattern"
+            nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern|$lcm_pattern|$strg_pattern|$storage_pattern"
             [ "$TS_DEBUG" = true ] && echo -e "Looking for all node types" >&2
             parse_hosts
             ;;
