@@ -62,10 +62,38 @@
 #grep "2026-02-18" /var/log/kolla/nova/nova-conductor.log | grep -i error
 
 INTERVAL=5
-
+PHASE=1
 : "${ENV_PATH:=$(dirname $0)/.env.create_vms_with_volumes}"
 ENV_FILE=$(basename "${ENV_PATH}" | sed 's/\.[^.]*$//')
 
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        -c|--config)
+            if [[ -n "$2" && "$2" != -* ]]; then
+                ENV_PATH="$2"
+                shift 2
+            else
+                echo "Error: Argument for $1 is missing" >&2
+                exit 1
+            fi
+            ;;
+        -p|--phase)
+            if [[ -n "$2" && "$2" != -* ]]; then
+                PHASE="$2"
+                shift 2
+            else
+                echo "Error: Argument for $1 is missing" >&2
+                exit 1
+            fi
+            ;;
+        *)
+            echo "Unknown parameter: $1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+ENV_FILE=$(basename "${ENV_PATH}" | sed 's/\.[^.]*$//')
 VOL_METRICS="volume_metrics_${ENV_FILE}.csv"
 VM_METRICS="vm_metrics_${ENV_FILE}.csv"
 
@@ -73,6 +101,8 @@ VM_METRICS="vm_metrics_${ENV_FILE}.csv"
 if [ -f "${ENV_PATH}" ]; then
     echo "Loading configuration from ${ENV_PATH}..."
     export $(grep -v '^#' "${ENV_PATH}" | xargs)
+else
+    echo "Config file ${ENV_PATH} not found. Will create a new one."
 fi
 
 get_param() {
@@ -122,7 +152,7 @@ echo "========================================"
 read -p "Press [Enter] to save config ( $ENV_PATH ) and continue: "
 
 # Save Environment
-cat << EOF > $ENV_PATH
+cat << EOF > "$ENV_PATH"
 BASE_NAME=$BASE_NAME
 FLAVOR=$FLAVOR
 IMAGE=$IMAGE
@@ -137,49 +167,10 @@ VM_COUNT=$VM_COUNT
 SLEEP_INTERVAL=$SLEEP_INTERVAL
 EOF
 
-
-PHASE=1
-# Parse all arguments first
-while [[ "$#" -gt 0 ]]; do
-    case $1 in
-        -c|--config)
-            if [[ -n "$2" && "$2" != -* ]]; then
-                ENV_PATH="$2"
-                shift 2
-            else
-                echo "Error: Argument for $1 is missing" >&2
-                exit 1
-            fi
-            ;;
-        -p|--phase)
-            if [[ -n "$2" && "$2" != -* ]]; then
-                PHASE="$2"
-                shift 2
-            else
-                echo "Error: Argument for $1 is missing" >&2
-                exit 1
-            fi
-            ;;
-        *)
-            echo "Unknown parameter: $1" >&2
-            exit 1
-            ;;
-    esac
-done
-
 # Snapshot state
-ENV_FILE=$(basename "${ENV_PATH}" | sed 's/\.[^.]*$//')
 EXISTING_VOLS=$(openstack volume list --column Name -f value)
 EXISTING_VMS=$(openstack server list --column Name -f value)
 #TOTAL_VOLS_EXPECTED=$(( VM_COUNT * (1 + DATA_COUNT_PER_VM) ))
-
-# Load configuration if file exists
-if [ -f "${ENV_PATH}" ]; then
-    echo "Loading configuration from ${ENV_PATH}..."
-    export $(grep -v '^#' "${ENV_PATH}" | xargs)
-else
-    echo "Config file ${ENV_PATH} not found. Will create a new one."
-fi
 
 # --- PHASE 1: VOLUMES ---
 if [ "$PHASE" -eq 1 ]; then
