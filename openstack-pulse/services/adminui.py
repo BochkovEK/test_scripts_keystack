@@ -148,6 +148,8 @@ class AdminUICheck:
         try:
             if self.debug:
                 print(f"🔧 [ADMINUI_DEBUG] Authenticating to {login_url}")
+                print(
+                    f"🔧 [ADMINUI_DEBUG] Login data: { {k: v for k, v in login_data.items() if k != 'password'} }")
 
             response = self.session.post(login_url, json=login_data, timeout=self.timeout)
 
@@ -165,15 +167,21 @@ class AdminUICheck:
 
                 if token:
                     if self.debug:
-                        print(f"🔧 [ADMINUI_DEBUG] Authentication successful, token obtained")
+                        # Show first 20 chars and last 10 chars of token for security
+                        token_preview = f"{token[:20]}...{token[-10:]}" if len(token) > 30 else token
+                        print(f"🔧 [ADMINUI_DEBUG] Authentication successful")
+                        print(f"🔧 [ADMINUI_DEBUG] Token: {token_preview}")
+                        print(f"🔧 [ADMINUI_DEBUG] Token length: {len(token)} chars")
                     return token
                 else:
                     if self.debug:
                         print(f"🔧 [ADMINUI_DEBUG] Token not found in response")
+                        print(f"🔧 [ADMINUI_DEBUG] Response keys: {response_json.keys() if response_json else 'empty'}")
                     return None
             else:
                 if self.debug:
                     print(f"🔧 [ADMINUI_DEBUG] Authentication failed with status {response.status_code}")
+                    print(f"🔧 [ADMINUI_DEBUG] Response body: {response.text[:200]}")
                 return None
 
         except requests.exceptions.Timeout:
