@@ -6,7 +6,6 @@ Checks portal availability, authentication and OpenStack services status
 import requests
 import time
 import os
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from config.config import ServiceType
 
 
@@ -18,7 +17,6 @@ class AdminUICheck:
     - Portal authentication via /api/login endpoint
     - Token-based access to status pages
     - OpenStack services status checking via /api/{region}/status_page/os_services
-    - Parallel health checks across all portal nodes
     """
 
     def __init__(self, config, debug=False):
@@ -36,15 +34,13 @@ class AdminUICheck:
         auth_params = config.get_service_auth(ServiceType.ADMINUI)
 
         self.port = auth_params.get('port', 12999)
-        self.nodes = auth_params.get('nodes', [])
         self.timeout = 3
-        self.region = os.getenv('OS_REGION_NAME', 'RegionOne')
 
         # Determine scheme (HTTP/HTTPS)
         scheme_from_config = (
-                auth_params.get('scheme') or
-                auth_params.get('protocol') or
-                "https"
+            auth_params.get('scheme') or
+            auth_params.get('protocol') or
+            "https"
         )
         self.scheme = scheme_from_config.lower().strip()
 
@@ -73,19 +69,19 @@ class AdminUICheck:
         self.os_auth_url = os.getenv('OS_AUTH_URL')
         self.region = os.getenv('OS_REGION_NAME', 'RegionOne')
 
-        # Extract FQDN from OS_AUTH_URL (without port 5000)
+        # Extract FQDN from OS_AUTH_URL
         self.fqdn = self._extract_fqdn_from_auth_url()
+        self.base_url = self._build_base_url()
 
         if self.debug:
-            print(f"🔧 [ADMINUI_DEBUG] Config params: port={self.port}, scheme={self.scheme}")
-            print(f"🔧 [ADMINUI_DEBUG] OS_ credentials: username={self.os_username}, domain={self.os_domain}")
-            print(f"🔧 [ADMINUI_DEBUG] OS_AUTH_URL={self.os_auth_url} → FQDN={self.fqdn}")
+            print(f"🔧 [ADMINUI_DEBUG] Base URL: {self.base_url}")
             print(f"🔧 [ADMINUI_DEBUG] Region: {self.region}")
-            print(f"🔧 [ADMINUI_DEBUG] Nodes: {[n[0] for n in self.nodes] if self.nodes else 'not specified'}")
+            print(f"🔧 [ADMINUI_DEBUG] Username: {self.os_username}")
+            print(f"🔧 [ADMINUI_DEBUG] Domain: {self.os_domain}")
 
-        # Initialize HTTP sessions for each node
-        self.sessions = {}
-        self._init_sessions()
+        # Initialize HTTP session
+        self.session = None
+        self._init_session()
 
     def _extract_fqdn_from_auth_url(self):
         """
@@ -94,6 +90,7 @@ class AdminUICheck:
         Examples:
         https://portal.example.com:5000 → portal.example.com
         https://portal.example.com:5000/v3 → portal.example.com
+        http://192.168.1.10:5000 → 192.168.1.10
 
         Returns:
             str: FQDN or IP address without port
@@ -110,62 +107,33 @@ class AdminUICheck:
 
         return host
 
-    def _get_base_url_for_node(self, node_hostname):
-        """
-        Build base URL for specific portal node.
+    def _build_base_url(self):
+        """Build base URL for portal."""
+        return f"{self.scheme}://{self.fqdn}:{self.port}"
 
-        Args:
-            node_hostname: Node hostname (overrides FQDN from OS_AUTH_URL if provided)
+    def _init_session(self):
+        """Initialize HTTP session."""
+        self.session = requests.Session()
+        self.session.verify = self.verify
 
-        Returns:
-            str: Base URL like https://hostname:12999
-        """
-        if node_hostname:
-            host = node_hostname
-        else:
-            host = self.fqdn
+        # Default headers
+        self.session.headers.update({
+            'User-Agent': 'AdminUI-Monitor/1.0',
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        })
 
-        return f"{self.scheme}://{host}:{self.port}"
+        if self.debug:
+            print(f"🔧 [ADMINUI_DEBUG] Session initialized")
 
-    def _init_sessions(self):
-        """Initialize HTTP sessions for each portal node."""
-        for display_name, connect_host in self.nodes:
-            base_url = self._get_base_url_for_node(connect_host)
-
-            session = requests.Session()
-            session.verify = self.verify
-
-            # Default headers
-            session.headers.update({
-                'User-Agent': 'AdminUI-Monitor/1.0',
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            })
-
-            self.sessions[connect_host] = {
-                'session': session,
-                'base_url': base_url,
-                'display_name': display_name
-            }
-
-            if self.debug:
-                print(f"🔧 [ADMINUI_DEBUG] Created session for {display_name} → {base_url}")
-
-    def _login_and_get_token(self, session_info):
+    def _login_and_get_token(self):
         """
         Authenticate on portal and get access token.
-
-        Args:
-            session_info: Dictionary with session and node URL info
 
         Returns:
             str: Access token or None on error
         """
-        session = session_info['session']
-        base_url = session_info['base_url']
-        display_name = session_info['display_name']
-
-        login_url = f"{base_url}/api/login"
+        login_url = f"{self.base_url}/api/login"
 
         login_data = {
             "login": self.os_username,
@@ -175,9 +143,9 @@ class AdminUICheck:
 
         try:
             if self.debug:
-                print(f"🔧 [ADMINUI_DEBUG] {display_name}: Authenticating to {login_url}")
+                print(f"🔧 [ADMINUI_DEBUG] Authenticating to {login_url}")
 
-            response = session.post(login_url, json=login_data, timeout=self.timeout)
+            response = self.session.post(login_url, json=login_data, timeout=self.timeout)
 
             if response.status_code == 200:
                 # Try to get token from response body first, then from headers
@@ -193,46 +161,41 @@ class AdminUICheck:
 
                 if token:
                     if self.debug:
-                        print(f"🔧 [ADMINUI_DEBUG] {display_name}: Authentication successful, token obtained")
+                        print(f"🔧 [ADMINUI_DEBUG] Authentication successful, token obtained")
                     return token
                 else:
                     if self.debug:
-                        print(f"🔧 [ADMINUI_DEBUG] {display_name}: Token not found in response")
+                        print(f"🔧 [ADMINUI_DEBUG] Token not found in response")
                     return None
             else:
                 if self.debug:
-                    print(f"🔧 [ADMINUI_DEBUG] {display_name}: Authentication failed with status {response.status_code}")
+                    print(f"🔧 [ADMINUI_DEBUG] Authentication failed with status {response.status_code}")
                 return None
 
         except requests.exceptions.Timeout:
             if self.debug:
-                print(f"🔧 [ADMINUI_DEBUG] {display_name}: Authentication timeout after {self.timeout}s")
+                print(f"🔧 [ADMINUI_DEBUG] Authentication timeout after {self.timeout}s")
             return None
         except requests.exceptions.ConnectionError:
             if self.debug:
-                print(f"🔧 [ADMINUI_DEBUG] {display_name}: Connection error during authentication")
+                print(f"🔧 [ADMINUI_DEBUG] Connection error during authentication")
             return None
         except Exception as e:
             if self.debug:
-                print(f"🔧 [ADMINUI_DEBUG] {display_name}: Authentication exception: {str(e)}")
+                print(f"🔧 [ADMINUI_DEBUG] Authentication exception: {str(e)}")
             return None
 
-    def _check_services_status(self, session_info, token):
+    def _check_services_status(self, token):
         """
         Check OpenStack services status page.
 
         Args:
-            session_info: Dictionary with session and node URL info
             token: Access token for authentication
 
         Returns:
             Dictionary with status information or None on error
         """
-        session = session_info['session']
-        base_url = session_info['base_url']
-        display_name = session_info['display_name']
-
-        status_url = f"{base_url}/api/{self.region}/status_page/os_services"
+        status_url = f"{self.base_url}/api/{self.region}/status_page/os_services"
 
         headers = {
             'X-Auth-Token': token
@@ -241,14 +204,14 @@ class AdminUICheck:
         try:
             start_time = time.time()
 
-            response = session.get(status_url, headers=headers, timeout=self.timeout)
+            response = self.session.get(status_url, headers=headers, timeout=self.timeout)
             response_time = time.time() - start_time
 
             if response.status_code == 200:
                 services_data = response.json()
 
                 if self.debug:
-                    print(f"🔧 [ADMINUI_DEBUG] {display_name}: Status check completed in {response_time:.3f}s")
+                    print(f"🔧 [ADMINUI_DEBUG] Status check completed in {response_time:.3f}s")
 
                 return {
                     'status_code': response.status_code,
@@ -257,7 +220,7 @@ class AdminUICheck:
                 }
             else:
                 if self.debug:
-                    print(f"🔧 [ADMINUI_DEBUG] {display_name}: Status check failed with HTTP {response.status_code}")
+                    print(f"🔧 [ADMINUI_DEBUG] Status check failed with HTTP {response.status_code}")
                 return {
                     'status_code': response.status_code,
                     'response_time': round(response_time, 3),
@@ -271,164 +234,47 @@ class AdminUICheck:
         except Exception as e:
             return {'error': f'Exception: {str(e)}'}
 
-    def _check_single_node(self, display_name, connect_host):
-        """
-        Check single portal node - authenticate and get services status.
-
-        Args:
-            display_name: Human-readable node identifier
-            connect_host: Network address for connection
-
-        Returns:
-            Dictionary containing node reachability and service information
-        """
-        session_info = self.sessions.get(connect_host)
-        if not session_info:
-            if self.debug:
-                print(f"🔧 [ADMINUI_DEBUG] No session found for {display_name}")
-            return {'reachable': False, 'error': 'No session available'}
-
-        # Step 1: Login and get token
-        token = self._login_and_get_token(session_info)
-
-        if not token:
-            return {
-                'reachable': False,
-                'error': 'Authentication failed - check credentials'
-            }
-
-        # Step 2: Check services status with token
-        status_result = self._check_services_status(session_info, token)
-
-        if status_result.get('error'):
-            return {
-                'reachable': True,  # Node is reachable but status check failed
-                'authenticated': True,
-                'status_error': status_result['error']
-            }
-
-        return {
-            'reachable': True,
-            'authenticated': True,
-            'response_time': status_result['response_time'],
-            'status_code': status_result['status_code'],
-            'services_data': status_result.get('data', {})
-        }
-
-    def _check_adminui_cluster(self):
-        """
-        Perform parallel health checks across all portal nodes.
-
-        Returns:
-            Dictionary containing cluster status and node details
-        """
-        status = {
-            'reachable_nodes': [],
-            'unreachable_nodes': [],
-            'node_details': {},
-            'cluster_errors': []
-        }
-
-        # Configure thread pool for parallel node checks
-        max_workers = min(5, len(self.nodes))
-
-        if self.debug:
-            print(f"🔧 [ADMINUI_DEBUG] Starting cluster check with {max_workers} workers, timeout={self.timeout}s")
-
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            # Submit node check tasks to thread pool
-            future_to_node = {
-                executor.submit(self._check_single_node, display_name, connect_host):
-                    (display_name, connect_host)
-                for display_name, connect_host in self.nodes
-            }
-
-            # Process completed node checks as they finish
-            for future in as_completed(future_to_node):
-                display_name, connect_host = future_to_node[future]
-                try:
-                    node_result = future.result()
-
-                    if node_result.get('reachable'):
-                        status['reachable_nodes'].append(display_name)
-                        status['node_details'][display_name] = node_result
-                        if self.debug:
-                            print(f"🔧 [ADMINUI_DEBUG] ✓ {display_name} is reachable")
-                    else:
-                        status['unreachable_nodes'].append(display_name)
-                        error_msg = node_result.get('error', 'Unknown error')
-                        status['cluster_errors'].append(f"{display_name}: {error_msg}")
-                        if self.debug:
-                            print(f"🔧 [ADMINUI_DEBUG] ✗ {display_name} is unreachable: {error_msg}")
-                except Exception as e:
-                    status['unreachable_nodes'].append(display_name)
-                    error_msg = f"Exception: {str(e)}"
-                    status['cluster_errors'].append(f"{display_name}: {error_msg}")
-                    if self.debug:
-                        print(f"🔧 [ADMINUI_DEBUG] ✗ {display_name} failed with exception: {error_msg}")
-
-        if self.debug:
-            print(
-                f"🔧 [ADMINUI_DEBUG] Cluster check completed: {len(status['reachable_nodes'])} reachable, {len(status['unreachable_nodes'])} unreachable")
-
-        return status
-
     def display_details(self, data):
         """
         Display AdminUI portal details in formatted output.
 
         Args:
-            data: Dictionary containing cluster status and node information
+            data: Dictionary containing check results
         """
-        cluster = data['cluster']
-        total_nodes = data['total_nodes']
-        reachable_nodes = data['reachable_nodes']
+        status = data.get('status', 'UNKNOWN')
+        response_time = data.get('response_time', 0)
+        status_code = data.get('status_code', '?')
+        services_data = data.get('services_data', {})
 
-        # Display node reachability summary
-        print(f"  Nodes: {reachable_nodes}/{total_nodes} reachable")
+        print(f"  Status: {status}")
+        print(f"  Response time: {response_time}s")
+        print(f"  HTTP Status: {status_code}")
 
-        # Display unreachable nodes with detailed error information
-        if cluster.get('cluster_errors'):
-            for error in cluster['cluster_errors']:
-                node_name = error.split(':')[0] if ':' in error else error
-                error_message = error.split(':', 1)[1] if ':' in error else error
-                print(f"    ❌ {node_name}: {error_message.strip()}")
+        # Display services status if available
+        if services_data:
+            if isinstance(services_data, dict):
+                if 'services' in services_data:
+                    services_list = services_data['services']
+                    if isinstance(services_list, list):
+                        print(f"  Total services: {len(services_list)}")
 
-        # Display detailed status for each reachable node
-        for node_name, details in cluster['node_details'].items():
-            response_time = details.get('response_time', '?')
-            status_code = details.get('status_code', '?')
+                        # Show unhealthy services
+                        unhealthy = []
+                        for s in services_list:
+                            if isinstance(s, dict) and s.get('status') != 'up':
+                                unhealthy.append(s.get('name', 'unknown'))
 
-            print(f"    🟢 ({response_time}s) {node_name}:")
-            print(f"      HTTP Status: {status_code}")
+                        if unhealthy:
+                            print(f"  ⚠️  Unhealthy services ({len(unhealthy)}): {', '.join(unhealthy[:5])}")
+                        else:
+                            print(f"  ✅ All services healthy")
+                elif 'status' in services_data:
+                    print(f"  Portal status: {services_data['status']}")
+            elif isinstance(services_data, list):
+                print(f"  Services: {len(services_data)} total")
 
-            # Display services status if available
-            services_data = details.get('services_data', {})
-            if services_data:
-                # Try to extract useful information from services data
-                if isinstance(services_data, dict):
-                    # Count services if it's a list or dict
-                    if 'services' in services_data:
-                        services_list = services_data['services']
-                        if isinstance(services_list, list):
-                            print(f"      Services: {len(services_list)} total")
-
-                            # Optionally show unhealthy services
-                            unhealthy = [s for s in services_list if isinstance(s, dict) and s.get('status') != 'up']
-                            if unhealthy:
-                                print(f"      ⚠️  Unhealthy services: {len(unhealthy)}")
-                    elif isinstance(services_data, list):
-                        print(f"      Services: {len(services_data)} total")
-                    else:
-                        print(f"      Response contains {len(str(services_data))} bytes of data")
-                else:
-                    print(f"      Response: {str(services_data)[:100]}...")
-
-            # Display authentication errors if any
-            if details.get('status_error'):
-                print(f"      ⚠️  Status check failed: {details['status_error']}")
-            elif not details.get('authenticated'):
-                print(f"      🔴 Not authenticated")
+        if data.get('error'):
+            print(f"  ❌ Error: {data['error']}")
 
     def run_check(self):
         """
@@ -436,11 +282,10 @@ class AdminUICheck:
 
         Returns:
             Dictionary containing check results:
-            - status: Overall cluster status ('OK', 'DEGRADED', 'ERROR')
+            - status: Overall status ('OK', 'ERROR')
             - response_time: Total check execution time
-            - cluster: Detailed cluster status information
-            - reachable_nodes: Count of reachable nodes
-            - total_nodes: Total number of configured nodes
+            - status_code: HTTP status code
+            - services_data: Services information from portal
         """
         start_time = time.time()
 
@@ -448,47 +293,36 @@ class AdminUICheck:
             print(f"🔧 [ADMINUI_DEBUG] Starting portal health check with timeout={self.timeout}s")
 
         try:
-            cluster_status = self._check_adminui_cluster()
+            # Step 1: Login and get token
+            token = self._login_and_get_token()
 
-            reachable_count = len(cluster_status['reachable_nodes'])
-            total_count = len(self.nodes)
-
-            if self.debug:
-                print(f"🔧 [ADMINUI_DEBUG] Cluster status: {reachable_count}/{total_count} nodes reachable")
-
-            # Handle complete cluster unreachable scenario
-            if reachable_count == 0 and cluster_status.get('cluster_errors'):
-                main_error = cluster_status['cluster_errors'][0]
-                if self.debug:
-                    print(f"🔧 [ADMINUI_DEBUG] All nodes unreachable, using error: {main_error}")
-
+            if not token:
                 return {
                     'status': 'ERROR',
                     'response_time': round(time.time() - start_time, 2),
-                    'error': main_error,
-                    'cluster': cluster_status,
-                    'reachable_nodes': reachable_count,
-                    'total_nodes': total_count
+                    'error': 'Authentication failed - check credentials'
                 }
 
-            # Determine overall cluster status based on node availability
-            if reachable_count == total_count:
-                status = 'OK'
-            elif reachable_count > 0:
-                status = 'DEGRADED'
-            else:
-                status = 'ERROR'
+            # Step 2: Check services status with token
+            status_result = self._check_services_status(token)
+
+            if status_result.get('error'):
+                return {
+                    'status': 'ERROR',
+                    'response_time': round(time.time() - start_time, 2),
+                    'error': status_result['error'],
+                    'status_code': status_result.get('status_code')
+                }
 
             result = {
-                'status': status,
+                'status': 'OK',
                 'response_time': round(time.time() - start_time, 2),
-                'cluster': cluster_status,
-                'reachable_nodes': reachable_count,
-                'total_nodes': total_count
+                'status_code': status_result['status_code'],
+                'services_data': status_result.get('data', {})
             }
 
             if self.debug:
-                print(f"🔧 [ADMINUI_DEBUG] Check completed in {result['response_time']}s, status: {status}")
+                print(f"🔧 [ADMINUI_DEBUG] Check completed in {result['response_time']}s, status: OK")
 
             return result
 
@@ -505,10 +339,8 @@ class AdminUICheck:
             }
 
     def close_sessions(self):
-        """Close all HTTP sessions to free resources."""
-        for node_host, session_info in self.sessions.items():
-            session_info['session'].close()
-        self.sessions.clear()
-
-        if self.debug:
-            print(f"🔧 [ADMINUI_DEBUG] Closed all sessions")
+        """Close HTTP session to free resources."""
+        if self.session:
+            self.session.close()
+            if self.debug:
+                print(f"🔧 [ADMINUI_DEBUG] Session closed")
