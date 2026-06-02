@@ -14,6 +14,7 @@ check_services:
   - keystone
   - rabbitmq
   - galera
+  - adminui
 
 # Single check services
 single_mode_checks:
@@ -22,6 +23,11 @@ single_mode_checks:
 # Endpoints
 endpoints:
   mariadb_port: 3306
+
+adminui:
+  protocol: "https"
+  port: 12999
+#  cacert_path: "/path/to/ca-bundle.crt"
 
 rabbitmq:
 #  username: "" from ENV RABBIT_USER

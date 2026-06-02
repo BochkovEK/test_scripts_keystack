@@ -170,13 +170,14 @@ SLEEP_INTERVAL=$SLEEP_INTERVAL
 EOF
 
 # Snapshot state
-EXISTING_VOLS=$(openstack volume list --column Name -f value)
-EXISTING_VMS=$(openstack server list --column Name -f value)
-TOTAL_VOLS_EXPECTED=$(( VM_COUNT * (1 + DATA_COUNT_PER_VM) ))
+
+#EXISTING_VMS=$(openstack server list --column Name -f value)
+#TOTAL_VOLS_EXPECTED=$(( VM_COUNT * (1 + DATA_COUNT_PER_VM) ))
 
 # --- PHASE 1: VOLUMES ---
 if [ "$PHASE" -eq 1 ]; then
     echo "PHASE 1: Creating volumes and logging start times..."
+    EXISTING_VOLS=$(openstack volume list --column Name -f value)
     [ ! -f "$(dirname "$0")/$VOL_METRICS" ] && echo "VM_NAME;START_TS;END_TS;DURATION" > "$(dirname "$0")/$VOL_METRICS"
 
     for i in $(seq -f "%03g" 1 $VM_COUNT); do

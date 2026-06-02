@@ -11,6 +11,7 @@ class ServiceType(Enum):
     OPENSTACK = "openstack"
     RABBITMQ = "rabbitmq"
     MARIADB = "galera"
+    ADMINUI = 'adminui'
 
 
 class DotDict:

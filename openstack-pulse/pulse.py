@@ -21,6 +21,7 @@ from services.keystone import KeystoneCheck
 from services.neutron import NeutronCheck
 from services.rabbitmq import RabbitCheck
 from services.mariadb import MariaDBCheck
+from services.adminui import AdminUICheck
 
 # Single check services
 from single_check_services.placement import PlacementCheck
@@ -37,6 +38,7 @@ class Pulse:
         'neutron': {'type': ServiceType.OPENSTACK, 'class': NeutronCheck},
         'rabbitmq': {'type': ServiceType.RABBITMQ, 'class': RabbitCheck},
         'galera': {'type': ServiceType.MARIADB, 'class': MariaDBCheck},
+        'adminui': {'type': ServiceType.ADMINUI, 'class': AdminUICheck},
     }
 
     SINGLE_CHECK_SERVICE_REGISTRY = {
