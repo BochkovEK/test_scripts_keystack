@@ -84,7 +84,8 @@ class Config:
         auth_handlers = {
             ServiceType.OPENSTACK: self._get_openstack_auth,
             ServiceType.RABBITMQ: self._get_rabbitmq_auth,
-            ServiceType.MARIADB: self._get_mariadb_auth
+            ServiceType.MARIADB: self._get_mariadb_auth,
+            ServiceType.ADMINUI: self._get_adminui_auth
         }
 
         handler = auth_handlers.get(service_type)
@@ -92,6 +93,29 @@ class Config:
             return handler()
 
         raise ValueError(f"Unknown service type: {service_type}")
+
+    def _get_adminui_auth(self) -> Dict[str, Any]:
+        """Get AdminUI specific authentication parameters"""
+
+        # Get adminui section from config.yml
+        adminui = getattr(self.settings, 'adminui', {})
+
+        # Get nodes from inventory (control section) or use single host from OS_AUTH_URL
+        nodes = self.nodes.get('control', [])
+
+        # If no nodes in inventory, use FQDN from OS_AUTH_URL as single node
+        if not nodes and self.auth.get('auth_url'):
+            from urllib.parse import urlparse
+            parsed = urlparse(self.auth['auth_url'])
+            fqdn = parsed.hostname
+            nodes = [('adminui', fqdn)]
+
+        return {
+            'port': int(getattr(adminui, 'port', 12999)),
+            'scheme': getattr(adminui, 'protocol', getattr(adminui, 'scheme', 'https')),
+            'nodes': nodes,
+            'cacert_path': getattr(adminui, 'cacert_path', getattr(adminui, 'path_to_cacert', None)),
+        }
 
     def _get_openstack_auth(self) -> Dict[str, Any]:
         """Get OpenStack specific authentication parameters"""
