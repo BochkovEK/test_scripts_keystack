@@ -245,6 +245,16 @@ if [ "$PHASE" -eq 2 ]; then
         CURRENT_VM_LIST=$(openstack server list --column Name --column Status -f value | tr -d '|' | awk '{$1=$1;print}')
         PENDING_LIST=$(grep ";pending;" "$(dirname "$0")/$VM_METRICS" | cut -d ';' -f 1)
 
+        # Print all currently detected VMs with their states for better visibility
+        echo "----------------------------------------"
+        echo "Detected VMs with prefix '${BASE_NAME}-':"
+        if [ -n "$CURRENT_VM_LIST" ]; then
+            echo "$CURRENT_VM_LIST" | awk '{print "  * " $1 " -> " $2}'
+        else
+            echo "  No matching VMs found in OpenStack yet."
+        fi
+        echo "----------------------------------------"
+
         for p_vm in $PENDING_LIST; do
             # Match exact VM name in the first column and safely extract status from the second column
             VM_STATE=$(echo "$CURRENT_VM_LIST" | awk -v vm="$p_vm" '$1 == vm {print $2}')
