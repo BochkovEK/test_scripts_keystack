@@ -139,18 +139,47 @@ EOF
 
 
 PHASE=1
+# Parse all arguments first
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        -p|--phase) PHASE="$2"; shift ;;
-        *) echo "Unknown parameter: $1"; exit 1 ;;
+        -c|--config)
+            if [[ -n "$2" && "$2" != -* ]]; then
+                ENV_PATH="$2"
+                shift 2
+            else
+                echo "Error: Argument for $1 is missing" >&2
+                exit 1
+            fi
+            ;;
+        -p|--phase)
+            if [[ -n "$2" && "$2" != -* ]]; then
+                PHASE="$2"
+                shift 2
+            else
+                echo "Error: Argument for $1 is missing" >&2
+                exit 1
+            fi
+            ;;
+        *)
+            echo "Unknown parameter: $1" >&2
+            exit 1
+            ;;
     esac
-    shift
 done
 
 # Snapshot state
+ENV_FILE=$(basename "${ENV_PATH}" | sed 's/\.[^.]*$//')
 EXISTING_VOLS=$(openstack volume list --column Name -f value)
 EXISTING_VMS=$(openstack server list --column Name -f value)
-TOTAL_VOLS_EXPECTED=$(( VM_COUNT * (1 + DATA_COUNT_PER_VM) ))
+#TOTAL_VOLS_EXPECTED=$(( VM_COUNT * (1 + DATA_COUNT_PER_VM) ))
+
+# Load configuration if file exists
+if [ -f "${ENV_PATH}" ]; then
+    echo "Loading configuration from ${ENV_PATH}..."
+    export $(grep -v '^#' "${ENV_PATH}" | xargs)
+else
+    echo "Config file ${ENV_PATH} not found. Will create a new one."
+fi
 
 # --- PHASE 1: VOLUMES ---
 if [ "$PHASE" -eq 1 ]; then
