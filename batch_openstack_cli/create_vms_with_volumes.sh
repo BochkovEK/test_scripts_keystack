@@ -239,7 +239,7 @@ if [ "$PHASE" -eq 2 ]; then
 
     # Define VM creation loop here if needed
 
-    echo "Waiting for VMs..."
+        echo "Waiting for VMs..."
     while true; do
         # Clean pipes and trailing spaces from openstack output for proper column alignment
         CURRENT_VM_LIST=$(openstack server list --column Name --column Status -f value | tr -d '|' | awk '{$1=$1;print}')
@@ -258,6 +258,16 @@ if [ "$PHASE" -eq 2 ]; then
         for p_vm in $PENDING_LIST; do
             # Match exact VM name in the first column and safely extract status from the second column
             VM_STATE=$(echo "$CURRENT_VM_LIST" | awk -v vm="$p_vm" '$1 == vm {print $2}')
+
+            # Handle case when VM is completely missing from OpenStack (e.g., failed to create or deleted)
+            if [ -z "$VM_STATE" ]; then
+                END_TS=$(date +%s)
+                START_TS=$(grep "^${p_vm};" "$(dirname "$0")/$VM_METRICS" | cut -d ';' -f 2)
+                # Mark as NOT_FOUND to prevent infinite loop
+                sed -i "s/^${p_vm};${START_TS};pending;0/${p_vm};${START_TS};${END_TS};NOT_FOUND/" "$(dirname "$0")/$VM_METRICS"
+                echo "  ⚠️ Warning: ${p_vm} is missing from OpenStack. Marked as NOT_FOUND."
+                continue
+            fi
 
             # Finalize metrics if VM reaches terminal state (ACTIVE or ERROR)
             if [[ "$VM_STATE" == "ACTIVE" || "$VM_STATE" == "ERROR" ]]; then
