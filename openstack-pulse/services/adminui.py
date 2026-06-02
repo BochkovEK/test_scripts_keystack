@@ -164,6 +164,8 @@ class AdminUICheck:
                     token = response_json['access_token']
                 elif 'X-Subject-Token' in response.headers:
                     token = response.headers['X-Subject-Token']
+                elif 'X-Auth-Token' in response.headers:
+                    token = response.headers['X-Auth-Token']
 
                 if token:
                     if self.debug:
