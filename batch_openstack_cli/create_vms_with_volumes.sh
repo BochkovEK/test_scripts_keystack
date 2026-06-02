@@ -273,26 +273,31 @@ if [ "$PHASE" -eq 2 ]; then
     while true; do
         # Fetch current statuses and identify pending VMs
         CURRENT_VM_LIST=$(openstack server list --column Name --column Status -f value | grep "^${BASE_NAME}-")
-        PENDING_LIST=$(grep ";pending;" "$(dirname $0)/$VM_METRICS" | cut -d ';' -f 1)
+        PENDING_LIST=$(grep ";pending;" "$(dirname "$0")/$VM_METRICS" | cut -d ';' -f 1)
 
         for p_vm in $PENDING_LIST; do
-            VM_STATE=$(echo "$CURRENT_VM_LIST" | grep -w "$p_vm" | awk '{print $2}')
+            VM_STATE=$(echo "$CURRENT_VM_LIST" | awk -v vm="$p_vm" '$1 == vm {print $2}')
+
+            if [ -z "$VM_STATE" ]; then
+                continue
+            fi
 
             # Finalize metrics if VM reaches terminal state (ACTIVE or ERROR)
             if [[ "$VM_STATE" == "ACTIVE" || "$VM_STATE" == "ERROR" ]]; then
                 END_TS=$(date +%s)
-                START_TS=$(grep "^${p_vm};" "$(dirname $0)/$VM_METRICS" | cut -d ';' -f 2)
-                sed -i "s/^${p_vm};${START_TS};pending;0/${p_vm};${START_TS};${END_TS};$((END_TS - START_TS))/" "$(dirname $0)/$VM_METRICS"
+                START_TS=$(grep "^${p_vm};" "$(dirname "$0")/$VM_METRICS" | cut -d ';' -f 2)
+                sed -i "s/^${p_vm};${START_TS};pending;0/${p_vm};${START_TS};${END_TS};$((END_TS - START_TS))/" "$(dirname "$0")/$VM_METRICS"
             fi
         done
 
         # Check if all VMs have exited pending state
-        REM_VM=$(grep ";pending;" "$(dirname $0)/$VM_METRICS" | wc -l)
+        REM_VM=$(grep ";pending;" "$(dirname "$0")/$VM_METRICS" | wc -l)
         echo "VM Status: $REM_VM remaining (awaiting ACTIVE or ERROR). Time: $(date +%T)"
         if [ "$REM_VM" -eq 0 ]; then break; fi
-        sleep $INTERVAL
+        sleep "$INTERVAL"
     done
 fi
+
 # --- PHASE 3: CLEANUP (Teardown Infrastructure) ---
 if [ "$PHASE" -eq 3 ]; then
     echo -e "\n========================================"
