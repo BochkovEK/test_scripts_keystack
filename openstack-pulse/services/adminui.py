@@ -240,44 +240,43 @@ class AdminUICheck:
     def display_details(self, data):
         """
         Display AdminUI portal details in formatted output.
-
-        Args:
-            data: Dictionary containing check results
         """
-        status = data.get('status', 'UNKNOWN')
         response_time = data.get('response_time', 0)
-        status_code = data.get('status_code', '?')
         services_data = data.get('services_data', {})
+        status_code = data.get('status_code', 200)
 
-        print(f"  Status: {status}")
+        print(f"  AdminUI HTTP Status: {status_code} ✅")
         print(f"  Response time: {response_time}s")
-        print(f"  HTTP Status: {status_code}")
 
-        # Display services status if available
         if services_data:
-            if isinstance(services_data, dict):
-                if 'services' in services_data:
-                    services_list = services_data['services']
-                    if isinstance(services_list, list):
-                        print(f"  Total services: {len(services_list)}")
+            # Extract services from response
+            services = services_data.get('services state', {})
 
-                        # Show unhealthy services
-                        unhealthy = []
-                        for s in services_list:
-                            if isinstance(s, dict) and s.get('status') != 'up':
-                                unhealthy.append(s.get('name', 'unknown'))
+            if services:
+                print(f"  Services:")
 
-                        if unhealthy:
-                            print(f"  ⚠️  Unhealthy services ({len(unhealthy)}): {', '.join(unhealthy[:5])}")
-                        else:
-                            print(f"  ✅ All services healthy")
-                elif 'status' in services_data:
-                    print(f"  Portal status: {services_data['status']}")
-            elif isinstance(services_data, list):
-                print(f"  Services: {len(services_data)} total")
+                # Sort services by name for consistent output
+                for service_name, service_status in sorted(services.items()):
+                    # Determine status icon
+                    if service_status == 'up':
+                        icon = "🟢"
+                        status_text = "up"
+                    elif service_status == 'down':
+                        icon = "🔴"
+                        status_text = "down"
+                    elif service_status is None:
+                        icon = "⚪"
+                        status_text = "not configured"
+                    else:
+                        icon = "⚠️"
+                        status_text = str(service_status)
 
-        if data.get('error'):
-            print(f"  ❌ Error: {data['error']}")
+                    # Print with proper indentation
+                    print(f"    {icon} {service_name}: {status_text}")
+            else:
+                print(f"  No service data available")
+        else:
+            print(f"  No services data received")
 
     def run_check(self):
         """
