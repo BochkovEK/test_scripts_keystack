@@ -158,21 +158,18 @@ class AdminUICheck:
                 print(f"🔧 [ADMINUI_DEBUG] Response cookies: {dict(self.session.cookies)}")
                 print(f"🔧 [ADMINUI_DEBUG] Response body: {response.text}")
             if response.status_code == 200:
-                # Token is in header X-Auth-Token (not in body)
-                token = response.headers.get('X-Auth-Token')
+                token = response.json().get('X-Auth-Token')
+
+                if self.debug:
+                    print(f"🔧 [ADMINUI_DEBUG] Response body: {response.text}")
 
                 if token:
                     if self.debug:
-                        # Show first 20 chars and last 10 chars of token for security
-                        token_preview = f"{token[:20]}...{token[-10:]}" if len(token) > 30 else token
-                        print(f"🔧 [ADMINUI_DEBUG] Authentication successful")
-                        print(f"🔧 [ADMINUI_DEBUG] Token (from X-Auth-Token header): {token_preview}")
-                        print(f"🔧 [ADMINUI_DEBUG] Token length: {len(token)} chars")
+                        print(f"🔧 [ADMINUI_DEBUG] Token from body: {token}")
                     return token
                 else:
                     if self.debug:
                         print(f"🔧 [ADMINUI_DEBUG] X-Auth-Token header not found in response")
-                        print(f"🔧 [ADMINUI_DEBUG] Response headers: {dict(response.headers)}")
                     return None
             else:
                 if self.debug:
