@@ -156,7 +156,7 @@ class AdminUICheck:
                 print(f"🔧 [ADMINUI_DEBUG] Response status: {response.status_code}")
                 print(f"🔧 [ADMINUI_DEBUG] Response headers: {dict(response.headers)}")
                 print(f"🔧 [ADMINUI_DEBUG] Response cookies: {dict(self.session.cookies)}")
-                print(f"🔧 [ADMINUI_DEBUG] Response body: {response.text}")
+                print(f"🔧 [ADMINUI_DEBUG] Response body: {response.text[:200]}...")
             if response.status_code == 200:
                 token = response.json().get('X-Auth-Token')
 
