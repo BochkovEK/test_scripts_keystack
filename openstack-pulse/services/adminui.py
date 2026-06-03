@@ -155,31 +155,21 @@ class AdminUICheck:
 
             print(f"🔧 [ADMINUI_DEBUG] Authentication response status code: {response.status_code}")
             if response.status_code == 200:
-                # Try to get token from response body first, then from headers
-                token = None
-                response_json = response.json()
-
-                if 'token' in response_json:
-                    token = response_json['token']
-                elif 'access_token' in response_json:
-                    token = response_json['access_token']
-                elif 'X-Subject-Token' in response.headers:
-                    token = response.headers['X-Subject-Token']
-                elif 'X-Auth-Token' in response.headers:
-                    token = response.headers['X-Auth-Token']
+                # Token is in header X-Auth-Token (not in body)
+                token = response.headers.get('X-Auth-Token')
 
                 if token:
                     if self.debug:
                         # Show first 20 chars and last 10 chars of token for security
                         token_preview = f"{token[:20]}...{token[-10:]}" if len(token) > 30 else token
                         print(f"🔧 [ADMINUI_DEBUG] Authentication successful")
-                        print(f"🔧 [ADMINUI_DEBUG] Token: {token_preview}")
+                        print(f"🔧 [ADMINUI_DEBUG] Token (from X-Auth-Token header): {token_preview}")
                         print(f"🔧 [ADMINUI_DEBUG] Token length: {len(token)} chars")
                     return token
                 else:
                     if self.debug:
-                        print(f"🔧 [ADMINUI_DEBUG] Token not found in response")
-                        print(f"🔧 [ADMINUI_DEBUG] Response keys: {response_json.keys() if response_json else 'empty'}")
+                        print(f"🔧 [ADMINUI_DEBUG] X-Auth-Token header not found in response")
+                        print(f"🔧 [ADMINUI_DEBUG] Response headers: {dict(response.headers)}")
                     return None
             else:
                 if self.debug:
