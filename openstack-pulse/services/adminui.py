@@ -217,7 +217,7 @@ class AdminUICheck:
 
                 if self.debug:
                     print(f"🔧 [ADMINUI_DEBUG] Status check completed in {response_time:.3f}s")
-
+                    print(f"🔧 [ADMINUI_DEBUG] Services response: {response.text}")
                 return {
                     'status_code': response.status_code,
                     'response_time': round(response_time, 3),
