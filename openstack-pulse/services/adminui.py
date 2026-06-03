@@ -160,9 +160,6 @@ class AdminUICheck:
             if response.status_code == 200:
                 token = response.json().get('X-Auth-Token')
 
-                if self.debug:
-                    print(f"🔧 [ADMINUI_DEBUG] Response body: {response.text}")
-
                 if token:
                     if self.debug:
                         print(f"🔧 [ADMINUI_DEBUG] Token from body: {token}")
@@ -174,7 +171,6 @@ class AdminUICheck:
             else:
                 if self.debug:
                     print(f"🔧 [ADMINUI_DEBUG] Authentication failed with status {response.status_code}")
-                    print(f"🔧 [ADMINUI_DEBUG] Response body: {response.text[:200]}")
                 return None
 
         except requests.exceptions.Timeout:
