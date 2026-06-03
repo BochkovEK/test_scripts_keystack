@@ -246,7 +246,7 @@ class AdminUICheck:
         services_data = data.get('services_data', {})
         status_code = data.get('status_code', 200)
 
-        print(f"  AdminUI HTTP Status: {status_code} ✅")
+        print(f"  HTTP Status: {status_code} ✅")
         print(f"  Response time: {response_time}s")
 
         if services_data:
