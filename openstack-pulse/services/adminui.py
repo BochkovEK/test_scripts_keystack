@@ -34,7 +34,7 @@ class AdminUICheck:
         auth_params = config.get_service_auth(ServiceType.ADMINUI)
 
         self.port = auth_params.get('port', 12999)
-        self.timeout = 3
+        self.timeout = auth_params.get('timeout', 5)
 
         # Determine scheme (HTTP/HTTPS)
         scheme_from_config = (

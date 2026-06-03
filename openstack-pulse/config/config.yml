@@ -28,12 +28,14 @@ adminui:
   protocol: "https"
   port: 12999
 #  cacert_path: "/path/to/ca-bundle.crt"
+  timeout: 12
 
 rabbitmq:
 #  username: "" from ENV RABBIT_USER
 #  password: "" from ENV RABBIT_PASS
 
   protocol: "https"
+#  cacert_path : "/path/to/ca-bundle.crt"
   port: "15672"
 
 # Timing parameters
