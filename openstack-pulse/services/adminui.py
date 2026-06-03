@@ -208,6 +208,8 @@ class AdminUICheck:
             response = self.session.get(status_url, headers=headers, timeout=self.timeout)
             response_time = time.time() - start_time
 
+            print(f"🔧 [ADMINUI_DEBUG] Response body from status page: {response.text[:200]}...")
+
             if response.status_code == 200:
                 services_data = response.json()
 
