@@ -153,6 +153,7 @@ class AdminUICheck:
 
             response = self.session.post(login_url, json=login_data, timeout=self.timeout)
 
+            print(f"🔧 [ADMINUI_DEBUG] Authentication response status code: {response.status_code}")
             if response.status_code == 200:
                 # Try to get token from response body first, then from headers
                 token = None
