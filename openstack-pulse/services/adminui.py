@@ -152,9 +152,11 @@ class AdminUICheck:
                     f"🔧 [ADMINUI_DEBUG] Login data: { {k: v for k, v in login_data.items() if k != 'password'} }")
 
             response = self.session.post(login_url, json=login_data, timeout=self.timeout)
-
-            print(f"🔧 [ADMINUI_DEBUG] Authentication response status code: {response.status_code}")
-            print(f"🔧 [ADMINUI_DEBUG] Response: {response}")
+            if self.debug:
+                print(f"🔧 [ADMINUI_DEBUG] Response status: {response.status_code}")
+                print(f"🔧 [ADMINUI_DEBUG] Response headers: {dict(response.headers)}")
+                print(f"🔧 [ADMINUI_DEBUG] Response cookies: {dict(self.session.cookies)}")
+                print(f"🔧 [ADMINUI_DEBUG] Response body: {response.text}")
             if response.status_code == 200:
                 # Token is in header X-Auth-Token (not in body)
                 token = response.headers.get('X-Auth-Token')
