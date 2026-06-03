@@ -154,6 +154,7 @@ class AdminUICheck:
             response = self.session.post(login_url, json=login_data, timeout=self.timeout)
 
             print(f"🔧 [ADMINUI_DEBUG] Authentication response status code: {response.status_code}")
+            print(f"🔧 [ADMINUI_DEBUG] Response: {response}")
             if response.status_code == 200:
                 # Token is in header X-Auth-Token (not in body)
                 token = response.headers.get('X-Auth-Token')
