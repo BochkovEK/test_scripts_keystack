@@ -195,7 +195,8 @@ class AdminUICheck:
         status_url = f"{self.base_url}/api/v1/status_page/os_services"
 
         headers = {
-            'X-Auth-Token': token
+            'X-Auth-Token': token,
+            'x-region-name': self.region
         }
 
         try:
