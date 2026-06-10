@@ -66,8 +66,6 @@ class AdminUICheck:
         self.os_username = os.getenv('OS_USERNAME')
         self.os_password = os.getenv('OS_PASSWORD')
         self.os_domain = os.getenv('OS_USER_DOMAIN_NAME', 'Default')
-        self.os_project_name = os.getenv('OS_PROJECT_NAME', 'admin')
-        self.os_project_domain_name = os.getenv('OS_PROJECT_DOMAIN_NAME', 'Default')
         self.os_auth_url = os.getenv('OS_AUTH_URL')
         self.region = os.getenv('OS_REGION_NAME', 'RegionOne')
 
@@ -141,8 +139,6 @@ class AdminUICheck:
             "login": self.os_username,
             "password": self.os_password,
             "user_domain_name": self.os_domain,
-            "project_name": self.os_project_name,
-            "project_domain_name": self.os_project_domain_name
         }
 
         try:
