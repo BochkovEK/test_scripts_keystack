@@ -192,7 +192,7 @@ class AdminUICheck:
         Returns:
             Dictionary with status information or None on error
         """
-        status_url = f"{self.base_url}/api/v1/{self.region}/status_page/os_services"
+        status_url = f"{self.base_url}/api/v1/status_page/os_services"
 
         headers = {
             'X-Auth-Token': token
