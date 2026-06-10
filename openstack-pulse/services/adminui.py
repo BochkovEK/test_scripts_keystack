@@ -14,7 +14,7 @@ class AdminUICheck:
     AdminUI portal health monitoring.
 
     Provides:
-    - Portal authentication via /api/login endpoint
+    - Portal authentication via /api/v1/login endpoint
     - Token-based access to status pages
     - OpenStack services status checking via /api/{region}/status_page/os_services
     """
@@ -135,7 +135,7 @@ class AdminUICheck:
         Returns:
             str: Access token or None on error
         """
-        login_url = f"{self.base_url}/api/login"
+        login_url = f"{self.base_url}/api/v1/login"
 
         login_data = {
             "login": self.os_username,
