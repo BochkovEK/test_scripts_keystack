@@ -75,9 +75,10 @@ show_help() {
     Usage: $0 [OPTIONS]
 
     Options:
-      -u, -user <username>          SSH username
-      -debug                        Enable debug output
-      --help                        Show this help message
+      -u, -user <username>                  SSH username
+      -k, -key_path <path to private key>   Path to private ssh key
+      -debug                                Enable debug output
+      --help                                Show this help message
     "
 }
 
@@ -92,6 +93,11 @@ parse_arguments() {
             -u|-user)
                 SSH_USER="$2"
                 echo "Found -user with value: $SSH_USER"
+                shift
+                ;;
+            -k|-key_path)
+                SSH_KEY_PATH="$2"
+                echo "Found ssh_key_path option with value: $SSH_KEY_PATH"
                 shift
                 ;;
             -debug)
@@ -152,8 +158,14 @@ get_settings() {
 
     echo "Retrieving network settings from LCM node: $node_ip"
 
+    if [ -n "$SSH_KEY_PATH" ]; then
+        SSH_KEY="-i $SSH_KEY_PATH"
+        echo $SSH_KEY
+    else
+        SSH_KEY=""
+    fi
     # Get CIDR from LCM node
-    CIDR=$(ssh $SSH_USER@$node_ip "sudo ip r | grep 'dev external proto kernel scope'" | awk '{print $1}')
+    CIDR=$(ssh $SSH_KEY $SSH_USER@$node_ip "sudo ip r | grep 'dev external proto kernel scope'" | awk '{print $1}')
 
     if [ -z "$CIDR" ]; then
         warning_message="Could not determine CIDR from LCM node"
