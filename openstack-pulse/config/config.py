@@ -148,10 +148,14 @@ class Config:
 
     def _get_mariadb_auth(self) -> Dict[str, Any]:
         """Get MariaDB specific authentication parameters"""
+        mariadb = getattr(self.settings, 'mariadb', {})
+
+        port_value = getattr(mariadb, 'port', None) or 3306
+
         return {
             'username': self.auth['mysql_user'],
             'password': self.auth['mysql_pass'],
-            'port': self.settings.mariadb.port,
+            'port': int(port_value),
             'nodes': self.nodes['control']
         }
 
