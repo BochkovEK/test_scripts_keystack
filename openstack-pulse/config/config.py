@@ -151,7 +151,7 @@ class Config:
         return {
             'username': self.auth['mysql_user'],
             'password': self.auth['mysql_pass'],
-            'port': self.settings.endpoints.mariadb_port,
+            'port': self.settings.mariadb.port,
             'nodes': self.nodes['control']
         }
 

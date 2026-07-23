@@ -20,9 +20,8 @@ check_services:
 single_mode_checks:
   - placement
 
-# Endpoints
-endpoints:
-  mariadb_port: 3306
+mariadb:
+  port: 3306
 
 adminui:
   protocol: "https"
