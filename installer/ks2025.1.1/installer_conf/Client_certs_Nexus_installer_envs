@@ -65,7 +65,7 @@ export KS_LDAP_REQUIRE_GROUP_DN_GITLAB=""
 export KS_INSTALL_DOMAIN="test.domain"
 
 #Enter the LCM Nexus domain name for the KeyStack [nexus]:
-export KS_NEXUS_NAME="lcm-nexus"
+export KS_NEXUS_NAME="client-nexus"
 
 #Enter the LCM Gitlab domain name for the KeyStack [ks-lcm]:
 export KS_GITLAB_NAME="gitlab"

@@ -111,7 +111,7 @@ class Config:
             nodes = [('adminui', fqdn)]
 
         return {
-            'port': int(getattr(adminui, 'port', 12999)),
+            'port': getattr(adminui, 'port', None),
             'scheme': getattr(adminui, 'protocol', getattr(adminui, 'scheme', 'https')),
             'nodes': nodes,
             'cacert_path': getattr(adminui, 'cacert_path', getattr(adminui, 'path_to_cacert', None)),
