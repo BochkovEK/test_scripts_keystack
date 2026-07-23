@@ -111,7 +111,9 @@ class AdminUICheck:
 
     def _build_base_url(self):
         """Build base URL for portal."""
-        return f"{self.scheme}://{self.fqdn}:{self.port}"
+        port_suffix = f":{self.port}" if self.port is not None else ""
+
+        return f"{self.scheme}://{self.fqdn}{port_suffix}"
 
     def _init_session(self):
         """Initialize HTTP session."""
