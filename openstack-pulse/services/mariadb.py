@@ -206,9 +206,14 @@ class MariaDBCheck:
                 for display_name, connect_host in self.nodes
             }
 
+
             # Process completed node checks as they finish
             for future in as_completed(future_to_info):
                 display_name, connect_host = future_to_info[future]
+
+                current_port = self.db_config.get('port', 3306)
+                endpoint = f"{connect_host}:{current_port}"
+
                 try:
                     node_result = future.result()
 
@@ -219,19 +224,21 @@ class MariaDBCheck:
                             'metrics': node_result['metrics']
                         }
                         if self.debug:
-                            print(f"🔧 [MARIADB_DEBUG] ✓ {display_name} is reachable")
+                            print(f"🔧 [MARIADB_DEBUG] ✓ {display_name} ({endpoint}) is reachable")
+
                     else:
                         status['unreachable_nodes'].append(display_name)
                         error_msg = node_result.get('error', 'Unknown error')
                         status['cluster_errors'].append(f"{display_name}: {error_msg}")
                         if self.debug:
-                            print(f"🔧 [MARIADB_DEBUG] ✗ {display_name} is unreachable: {error_msg}")
+                            print(f"🔧 [MARIADB_DEBUG] ✗ {display_name} ({endpoint}) is unreachable: {error_msg}")
+
                 except Exception as e:
                     status['unreachable_nodes'].append(display_name)
                     error_msg = f"Exception: {str(e)}"
                     status['cluster_errors'].append(f"{display_name}: {error_msg}")
                     if self.debug:
-                        print(f"🔧 [MARIADB_DEBUG] ✗ {display_name} failed with exception: {error_msg}")
+                        print(f"🔧 [MARIADB_DEBUG] ✗ {display_name} ({endpoint}) failed with exception: {error_msg}")
 
         if self.debug:
             print(f"🔧 [MARIADB_DEBUG] Cluster check completed: {len(status['reachable_nodes'])} reachable, {len(status['unreachable_nodes'])} unreachable")
