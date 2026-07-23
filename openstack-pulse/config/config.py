@@ -115,6 +115,7 @@ class Config:
             'scheme': getattr(adminui, 'protocol', getattr(adminui, 'scheme', 'https')),
             'nodes': nodes,
             'cacert_path': getattr(adminui, 'cacert_path', getattr(adminui, 'path_to_cacert', None)),
+            'timeout': getattr(adminui, 'timeout', None),
         }
 
     def _get_openstack_auth(self) -> Dict[str, Any]:
