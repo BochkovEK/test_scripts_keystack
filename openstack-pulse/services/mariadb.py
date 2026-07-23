@@ -249,6 +249,11 @@ class MariaDBCheck:
         Returns:
             Dictionary containing reachability status and node metrics
         """
+
+        if self.debug:
+            current_port = self.db_config.get('port', 3306)
+            print(f"🔧 [MARIADB_DEBUG] Connecting to node '{display_name}' via endpoint: {connect_host}:{current_port}")
+
         try:
             if self.debug:
                 print(f"🔧 [MARIADB_DEBUG] Checking node {display_name} at {connect_host}")
