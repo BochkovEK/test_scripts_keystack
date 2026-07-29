@@ -21,6 +21,7 @@ single_mode_checks:
   - placement
 
 mariadb:
+  #python3 -c 'import os, mysql.connector; print("🔄 Try to connect..."); c=mysql.connector.connect(host="10.224.138.180", user="root", password=os.getenv("MYSQL_PASS"), port=3306, connect_timeout=3); print("🟢 Success"); c.close()'
   port: 3306
 
 adminui:
