@@ -12,9 +12,9 @@ check_services:
   - cinder
   - neutron
   - keystone
-  - rabbitmq
-  - galera
   - adminui
+#  - rabbitmq
+#  - galera
 
 # Single check services
 single_mode_checks:
