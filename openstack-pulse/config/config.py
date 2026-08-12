@@ -14,6 +14,10 @@ class ServiceType(Enum):
     ADMINUI = 'adminui'
 
 
+# Services that require the Ansible inventory (control-plane host list)
+INVENTORY_DEPENDENT_SERVICES = {ServiceType.RABBITMQ.value, ServiceType.MARIADB.value}
+
+
 class DotDict:
     """
     Wrapper class providing dot-notation access to dictionary attributes.
@@ -36,6 +40,10 @@ class Config:
 
     Handles loading and validation of configuration files, environment variables,
     and service-specific authentication parameters.
+
+    Inventory (Ansible inventory / inventory.ini) is only required when
+    'rabbitmq' and/or 'galera' are listed under `check_services` in config.yml.
+    All other services (including adminui) never depend on inventory.
     """
 
     def __init__(self, inventory_path=None, config_path=None):
@@ -44,8 +52,14 @@ class Config:
         self.config_path = config_path
         self.project_root = self._get_project_root()
         self.auth = self._load_auth_credentials()
-        self._validate_config_files()
+
+        # config.yml must always exist and is loaded before we know
+        # whether inventory is required at all
+        self._validate_config_exists()
         self.settings = self._load_yaml_config()
+
+        # inventory is validated/loaded conditionally now
+        self._validate_inventory_if_required()
         self.nodes = self._load_inventory()
 
     def _get_project_root(self) -> str:
@@ -95,7 +109,7 @@ class Config:
         raise ValueError(f"Unknown service type: {service_type}")
 
     def _get_adminui_auth(self) -> Dict[str, Any]:
-        """Get AdminUI specific authentication parameters"""
+        """Get AdminUI specific authentication parameters. Never depends on inventory."""
 
         # Get adminui section from config.yml
         adminui = getattr(self.settings, 'adminui', {})
@@ -131,7 +145,7 @@ class Config:
         }
 
     def _get_rabbitmq_auth(self) -> Dict[str, Any]:
-        """Get RabbitMQ specific authentication parameters"""
+        """Get RabbitMQ specific authentication parameters. Requires inventory."""
 
         rabbit = getattr(self.settings, 'rabbitmq', {})
 
@@ -147,7 +161,7 @@ class Config:
         }
 
     def _get_mariadb_auth(self) -> Dict[str, Any]:
-        """Get MariaDB specific authentication parameters"""
+        """Get MariaDB specific authentication parameters. Requires inventory."""
         mariadb = getattr(self.settings, 'mariadb', {})
 
         port_value = getattr(mariadb, 'port', None) or 3306
@@ -156,33 +170,44 @@ class Config:
             'username': self.auth['mysql_user'],
             'password': self.auth['mysql_pass'],
             'port': int(port_value),
-            'nodes': self.nodes['control']
+            'nodes': self.nodes.get('control', [])
         }
 
-    def _validate_config_files(self):
-        """
-        Validate existence of required configuration files.
+    def _get_check_services(self) -> List[str]:
+        """Return the list of services declared under check_services in config.yml"""
+        return list(getattr(self.settings, 'check_services', []) or [])
 
-        Checks for config.yml and inventory files, exiting with error
-        if required files are not found.
+    def _inventory_required(self) -> bool:
         """
+        Inventory is only required when at least one inventory-dependent
+        service (rabbitmq, galera) is present in check_services.
+        """
+        check_services = set(self._get_check_services())
+        return bool(check_services & INVENTORY_DEPENDENT_SERVICES)
+
+    def _validate_config_exists(self):
+        """Validate existence of config.yml. Exits with error if not found."""
         config_path = self.config_path or os.path.join(self.project_root, 'config', 'config.yml')
 
-        # Always validate config.yml existence
         if not os.path.exists(config_path):
             self._exit_with_file_error('config.yml', config_path)
 
-        # Validate inventory file existence
+    def _validate_inventory_if_required(self):
+        """
+        Validate existence of inventory file, but only if config.yml
+        enables a service that depends on it (rabbitmq/galera).
+        """
+        if not self._inventory_required():
+            return
+
         inventory_found = False
 
         if self.inventory_path:
-            # Check only the provided inventory path
             if os.path.exists(self.inventory_path):
                 inventory_found = True
             else:
                 self._exit_with_file_error('inventory', self.inventory_path)
         else:
-            # Check both default inventory files
             for filename in ['inventory.ini', 'inventory']:
                 default_path = os.path.join(self.project_root, filename)
                 if os.path.exists(default_path):
@@ -190,7 +215,11 @@ class Config:
                     break
 
         if not inventory_found:
-            self._exit_with_file_error('inventory', 'inventory or inventory.ini in project root')
+            self._exit_with_file_error(
+                'inventory',
+                'inventory or inventory.ini in project root '
+                '(required because rabbitmq/galera is enabled in check_services)'
+            )
 
     def _load_yaml_config(self) -> DotDict:
         """
@@ -207,9 +236,15 @@ class Config:
         """
         Load node inventory from Ansible inventory file.
 
+        Returns an empty control list when inventory is not required
+        (no rabbitmq/galera in check_services) instead of failing.
+
         Returns:
             Dictionary mapping section names to lists of (display_name, connect_host) tuples
         """
+        if not self._inventory_required():
+            return {'control': []}
+
         if self.inventory_path:
             if os.path.exists(self.inventory_path):
                 return self._parse_inventory(self.inventory_path)
@@ -311,4 +346,3 @@ class Config:
             print("💡 Inventory file must be 'inventory' or 'inventory.ini'")
 
         sys.exit(1)
-
