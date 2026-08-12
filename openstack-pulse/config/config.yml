@@ -13,6 +13,7 @@ check_services:
   - neutron
   - keystone
   - adminui
+  - glance
 #  - rabbitmq
 #  - galera
 
