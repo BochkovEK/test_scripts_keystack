@@ -26,7 +26,7 @@ mariadb:
 
 adminui:
   protocol: "https"
-  port: 12999
+#  port: 12999
 #  cacert_path: "/path/to/ca-bundle.crt"
   timeout: 12
 
