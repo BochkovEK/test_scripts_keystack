@@ -19,6 +19,7 @@ from services.nova import NovaCheck
 from services.cinder import CinderCheck
 from services.keystone import KeystoneCheck
 from services.neutron import NeutronCheck
+from services.glance import GlanceCheck
 from services.rabbitmq import RabbitCheck
 from services.mariadb import MariaDBCheck
 from services.adminui import AdminUICheck
@@ -36,6 +37,7 @@ class Pulse:
         'cinder': {'type': ServiceType.OPENSTACK, 'class': CinderCheck},
         'keystone': {'type': ServiceType.OPENSTACK, 'class': KeystoneCheck},
         'neutron': {'type': ServiceType.OPENSTACK, 'class': NeutronCheck},
+        'glance': {'type': ServiceType.OPENSTACK, 'class': GlanceCheck},
         'rabbitmq': {'type': ServiceType.RABBITMQ, 'class': RabbitCheck},
         'galera': {'type': ServiceType.MARIADB, 'class': MariaDBCheck},
         'adminui': {'type': ServiceType.ADMINUI, 'class': AdminUICheck},
@@ -402,7 +404,8 @@ class Pulse:
 def get_launch_args():
     """Parse command line arguments"""
     parser = argparse.ArgumentParser(description='OpenStack Pulse Monitoring')
-    parser.add_argument('--inventory', '-i', help='Path to inventory file')
+    parser.add_argument('--inventory', '-i',
+                         help='Path to inventory file (required only if rabbitmq/galera enabled in check_services)')
     parser.add_argument('--config', '-c', help='Path to config.yml file')
     parser.add_argument('--output', '-o', help='Path to output file')
     parser.add_argument('--debug', '-d', action='store_true', help='Enable debug mode')
@@ -434,4 +437,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
