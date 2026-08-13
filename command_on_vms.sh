@@ -34,6 +34,7 @@ get_vms_list_script="get_vms_list.sh"
 [[ -z $SSH_BY_PASS ]] && SSH_BY_PASS="false"
 [[ -z $VMS ]] && VMS=""
 [[ -z $TS_SSH_TIMEOUT ]] && TS_SSH_TIMEOUT="$default_ssh_timeout"
+[[ -z $JUMP_HOST ]] && JUMP_HOST=""
 
 # Function to display help information
 show_help() {
@@ -47,6 +48,7 @@ show_help() {
       -u, -user <username>    SSH user (default: ubuntu)
       -c, -command <command>  Command to execute on VMs
       -k, -key <path>         SSH private key file path
+      -jh, -jump-host <host>  Jump host (bastion) IP or FQDN to hop through via SSH ProxyJump
       -ping                   Only perform ping check
       -p, -project <name>     OpenStack project name (default: admin)
       -dont_ask               Perform actions automatically without confirmation
@@ -67,6 +69,11 @@ show_help() {
 
       # Only ping check
       $0 -hv compute-01 -ping
+
+      # Run command through a jump host (bastion), since target network
+      # is not reachable directly from this machine
+      $0 -vms \"10.224.135.40\" -jh bastion.example.com -c 'uptime'
+      $0 -vms \"10.224.135.40\" -jh 10.10.0.5 -c 'uptime'
     "
 }
 
@@ -96,6 +103,11 @@ parse_arguments() {
             -k|-key)
                 KEY_PATH="$2"
                 echo "Using SSH key: $KEY_PATH"
+                shift 2
+                ;;
+            -jh|-jump-host)
+                JUMP_HOST="$2"
+                echo "Using jump host: $JUMP_HOST"
                 shift 2
                 ;;
             -ssh_by_pass)
@@ -206,8 +218,25 @@ get_vms_ips() {
 }
 
 # Function to check host connectivity
+# NOTE: if a jump host is set, ping is executed FROM the jump host,
+# since the target network may not be reachable directly from this machine.
 check_vm_connectivity() {
     local ip="$1"
+
+    if [ -n "$JUMP_HOST" ]; then
+        [ "$TS_DEBUG" = "true" ] && echo "ssh -o StrictHostKeyChecking=no -o ConnectTimeout=\"$TS_SSH_TIMEOUT\" $KEY_STRING \"$VM_USER@$JUMP_HOST\" \"ping -c 2 -W 1 $ip\""
+        if ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout="$TS_SSH_TIMEOUT" \
+            $KEY_STRING \
+            "$VM_USER@$JUMP_HOST" \
+            "ping -c 2 -W 1 $ip" &> /dev/null; then
+            echo -e "${green}Ping successful (via jump host $JUMP_HOST): $ip${normal}"
+            return 0
+        else
+            echo -e "${red}Ping failed (via jump host $JUMP_HOST): $ip${normal}"
+            return 1
+        fi
+    fi
 
     if ping -c 2 -W 1 "$ip" &> /dev/null; then
         echo -e "${green}Ping successful: $ip${normal}"
@@ -223,11 +252,15 @@ check_ssh_connectivity() {
     local ip="$1"
     local ssh_output
     local exit_code
+    local jump_opt=""
+
+    [ -n "$JUMP_HOST" ] && jump_opt="-J $VM_USER@$JUMP_HOST"
 
     [ "$TS_DEBUG" = "true" ] && {
     echo "ssh_output=\$(ssh -o StrictHostKeyChecking=no \
         -o ConnectTimeout=\"$TS_SSH_TIMEOUT\" \
         -o BatchMode=yes \
+        $jump_opt \
         -i \"$KEY_PATH\" \
         \"$VM_USER@$ip\" \
         \"echo \'SSH_OK\'\" 2>&1)";}
@@ -235,6 +268,7 @@ check_ssh_connectivity() {
     ssh_output=$(ssh -o StrictHostKeyChecking=no \
         -o ConnectTimeout="$TS_SSH_TIMEOUT" \
         -o BatchMode=yes \
+        $jump_opt \
         -i "$KEY_PATH" \
         "$VM_USER@$ip" \
         "echo 'SSH_OK'" 2>&1)
@@ -252,19 +286,24 @@ check_ssh_connectivity() {
 # Function to execute command on VM
 execute_on_vm() {
     local ip="$1"
+    local jump_opt=""
 
-    echo -e "${blue}Executing command on $ip...${normal}"
+    [ -n "$JUMP_HOST" ] && jump_opt="-J $VM_USER@$JUMP_HOST"
+
+    echo -e "${blue}Executing command on $ip$( [ -n "$JUMP_HOST" ] && echo " (via jump host $JUMP_HOST)" )...${normal}"
     echo -e "${yellow}Command: $COMMAND_STR${normal}"
 
     [ "$TS_DEBUG" = "true" ] && {
     echo "ssh -t -o StrictHostKeyChecking=no \
                -o ConnectTimeout=\"$TS_SSH_TIMEOUT\" \
+               $jump_opt \
                $KEY_STRING \
                \"$VM_USER@$ip\" \
                \"$COMMAND_STR\"";}
 
     ssh -t -o StrictHostKeyChecking=no \
     -o ConnectTimeout="$TS_SSH_TIMEOUT" \
+    $jump_opt \
     $KEY_STRING \
     "$VM_USER@$ip" \
     "$COMMAND_STR"
@@ -278,107 +317,6 @@ execute_on_vm() {
 
     return $exit_code
 }
-
-## Main function to run commands on VMs
-#batch_run_commands() {
-#    local at_least_one_failure=false
-#
-#    echo "batch_run_commands..."
-#    # Remove known_hosts to avoid conflicts
-#    [ -f "$HOME/.ssh/known_hosts" ] && rm -f "$HOME/.ssh/known_hosts"
-#
-#    # Ask for confirmation if not in auto mode
-#    if [ "$DONT_ASK" != "true" ]; then
-#        read -p "Press Enter to continue or Ctrl+C to cancel..."
-#    fi
-#
-#    # Get VMs IPs if not provided
-##    if [ -z "$VMS" ] && [ -n "$HYPERVISOR_NAME" ]; then
-#    get_vms_ips
-##    elif [ -z "$VMS" ]; then
-##        get_vms_ips
-##        echo -e "${red}No target specified. Use -hv or -ips option.${normal}"
-##        exit 1
-##    fi
-#
-#    local exit_code=$?
-#    [ "$TS_DEBUG" = "true" ] && echo -e "exit_code from get_vms_ips: $exit_code"
-#    if [ $exit_code -ne 0 ]; then
-#        echo -e "${yellow}Warning: Failed to get the list of IPs${normal}"
-#        return 1
-#    fi
-#
-#    [ "$TS_DEBUG" = "true" ] && echo -e "
-#    [DEBUG] Configuration:
-#      VMS: $VMS
-#      KEY_PATH: $KEY_PATH
-#      VM_USER: $VM_USER
-#      SSH_BY_PASS: $SSH_BY_PASS
-#      TS_SSH_TIMEOUT: $TS_SSH_TIMEOUT
-#    "
-#
-##    if [ "$TS_DEBUG" = "true" ]; then
-##        echo -e "${yellow}[Warning] Debug mode enabled - skipping command execution${normal}"
-##        return 0
-##    fi
-#
-#    # Process each VM
-#    for vm_tripl in $VMS; do
-#
-#        vm_name=$(echo "$vm_tripl" | awk -F':' '{print $1}')
-#        vm_status=$(echo "$vm_tripl" | awk -F':' '{print $2}')
-#        vm_ip=$(echo "$vm_tripl" | awk -F':' '{print $3}')
-#
-#        echo -e "${cyan}Processing VM: $vm_name VM status: $vm_status VM ip: $vm_ip${normal}"
-#
-#        [ "$TS_DEBUG" = "true" ] &&
-#        echo -e "
-#    [DEBUG] Configuration:
-#      VM_USER:     $VM_USER
-#      KEY_PATH:    $KEY_PATH
-#      SSH_BY_PASS: $SSH_BY_PASS
-#      KEY_STRING:  $KEY_STRING
-#      vm_name:     $vm_name
-#      vm_status:   $vm_status
-#      vm_ip:       $vm_ip
-#      "
-#
-#        # Check ping connectivity
-#        if ! check_vm_connectivity "$vm_ip"; then
-#            at_least_one_failure=true
-#            #continue
-#        fi
-#
-#        # Skip further checks if only ping is requested
-#        if [ "$ONLY_PING" = "true" ]; then
-#            continue
-#        fi
-#
-#        if [ "$SSH_BY_PASS" != "true" ]; then
-#          # Check SSH connectivity
-#          if ! check_ssh_connectivity "$vm_ip"; then
-#              at_least_one_failure=true
-#              continue
-#          fi
-#        fi
-#
-#        # Execute command if not only checking
-#        if [ "$ONLY_CHECK" = "false" ]; then
-#            if ! execute_on_vm "$vm_ip"; then
-#                at_least_one_failure=true
-#            fi
-#        fi
-#
-#        sleep 1
-#    done
-#
-#    # Set global variable for exit status
-#    if [ "$at_least_one_failure" = true ]; then
-#        return 1
-#    else
-#        return 0
-#    fi
-#}
 
 # Main function to run commands on VMs
 batch_run_commands() {
@@ -470,6 +408,7 @@ main() {
 
     echo "VM_USER: $VM_USER"
     echo "KEY_STRING: $KEY_STRING"
+    [ -n "$JUMP_HOST" ] && echo "JUMP_HOST: $JUMP_HOST"
 
     batch_run_commands
 
