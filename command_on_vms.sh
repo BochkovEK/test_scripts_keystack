@@ -4,6 +4,9 @@
 # Supports execution on all VMs of a hypervisor or specific VMs by IP/name
 # return string like vms_name:status:ip(pub_net)
 
+# Example manual command:
+# ssh -o ProxyCommand="ssh -i $STAND_DIR_ENV/id_rsa -W %h:%p ebochkov-installer-v2-lcm-01.vm.lab.itkey.com"     -i /root/test_scripts_keystack/key_test.pem     cirros@10.224.135.37
+
 # Color definitions
 green=$(tput setaf 2)
 red=$(tput setaf 1)
@@ -17,7 +20,7 @@ script_name=$(basename "$0")
 script_dir=$(dirname "$0")
 utils_dir="$script_dir/utils"
 openstack_utils="$utils_dir/openstack"
-default_ssh_timeout=5
+default_ssh_timeout=15
 get_vms_list_script="get_vms_list.sh"
 
 # Default values
@@ -63,7 +66,8 @@ show_help() {
       -vms                    Space-separated list of IP or name
       -v, -debug              Enable debug output
       -check                  Only check SSH access without executing commands
-      -t, -timeout <seconds>  SSH connection timeout (default: 5)
+      -t, -timeout <seconds>  SSH connection timeout (default: 15; consider raising further
+                              when using -jh, since the jump adds an extra connection hop)
       -ssh_by_pass            Enable ssh by password
       --help                  Show this help message
 
