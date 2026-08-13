@@ -4,7 +4,7 @@
 # Supports execution on all VMs of a hypervisor or specific VMs by IP/name
 # return string like vms_name:status:ip(pub_net)
 
-# Example manual commandd:
+# Example manual command:
 # ssh -o ProxyCommand="ssh -i $STAND_DIR_ENV/id_rsa -W %h:%p ebochkov-installer-v2-lcm-01.vm.lab.itkey.com"     -i /root/test_scripts_keystack/key_test.pem     cirros@10.224.135.37
 
 # Color definitions
