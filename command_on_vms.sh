@@ -424,8 +424,16 @@ batch_run_commands() {
             fi
         fi
 
-        # 2. Check SSH connectivity (if not bypassed) - runs regardless of ping result
-        if [ "$ONLY_PING" != "true" ] && [ "$SSH_BY_PASS" != "true" ] && [ "$current_vm_failed" = false ]; then
+        # 2. Check SSH connectivity - SKIPPED when -jh is set AND we're about to
+        #    execute a command anyway, since execute_on_vm (step 3) opens the exact
+        #    same double-hop connection through the jump host - a separate check
+        #    here would just duplicate that connection for no extra information.
+        #    Still runs when: no jump host is used (cheap direct check), or when
+        #    -check was explicitly requested (no step 3 to rely on instead).
+        local need_ssh_check=true
+        [ -n "$JUMP_HOST" ] && [ "$ONLY_CHECK" = "false" ] && need_ssh_check=false
+
+        if [ "$ONLY_PING" != "true" ] && [ "$SSH_BY_PASS" != "true" ] && [ "$current_vm_failed" = false ] && [ "$need_ssh_check" = "true" ]; then
             if ! check_ssh_connectivity "$vm_ip"; then
                 current_vm_failed=true
             fi
