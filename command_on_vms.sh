@@ -35,6 +35,7 @@ get_vms_list_script="get_vms_list.sh"
 [[ -z $VMS ]] && VMS=""
 [[ -z $TS_SSH_TIMEOUT ]] && TS_SSH_TIMEOUT="$default_ssh_timeout"
 [[ -z $JUMP_HOST ]] && JUMP_HOST=""
+[[ -z $PING_TIMEOUT ]] && PING_TIMEOUT="3"
 
 # Function to display help information
 show_help() {
@@ -49,6 +50,8 @@ show_help() {
       -c, -command <command>  Command to execute on VMs
       -k, -key <path>         SSH private key file path
       -jh, -jump-host <host>  Jump host (bastion) IP or FQDN to hop through via SSH ProxyJump
+      -pt, -ping-timeout <s>  Ping timeout in seconds (default: 3). Ping is advisory only:
+                              a failed ping never blocks the following SSH check/exec.
       -ping                   Only perform ping check
       -p, -project <name>     OpenStack project name (default: admin)
       -dont_ask               Perform actions automatically without confirmation
@@ -108,6 +111,11 @@ parse_arguments() {
             -jh|-jump-host)
                 JUMP_HOST="$2"
                 echo "Using jump host: $JUMP_HOST"
+                shift 2
+                ;;
+            -pt|-ping-timeout)
+                PING_TIMEOUT="$2"
+                echo "Ping timeout: $PING_TIMEOUT seconds"
                 shift 2
                 ;;
             -ssh_by_pass)
@@ -218,31 +226,35 @@ get_vms_ips() {
 }
 
 # Function to check host connectivity
-# NOTE: if a jump host is set, ping is executed FROM the jump host,
-# since the target network may not be reachable directly from this machine.
+# NOTE: this check is ADVISORY ONLY - it never blocks the following SSH
+# check/exec steps. A failed ping (e.g. due to missing raw-socket
+# permissions on the jump host, or a target that just drops ICMP) does
+# not necessarily mean the host is unreachable over SSH/TCP.
+# If a jump host is set, ping is executed FROM the jump host, since the
+# target network may not be reachable directly from this machine.
 check_vm_connectivity() {
     local ip="$1"
 
     if [ -n "$JUMP_HOST" ]; then
-        [ "$TS_DEBUG" = "true" ] && echo "ssh -o StrictHostKeyChecking=no -o ConnectTimeout=\"$TS_SSH_TIMEOUT\" $KEY_STRING \"$VM_USER@$JUMP_HOST\" \"ping -c 2 -W 1 $ip\""
+        [ "$TS_DEBUG" = "true" ] && echo "ssh -o StrictHostKeyChecking=no -o ConnectTimeout=\"$TS_SSH_TIMEOUT\" $KEY_STRING \"$VM_USER@$JUMP_HOST\" \"ping -c 2 -W $PING_TIMEOUT $ip\""
         if ssh -o StrictHostKeyChecking=no \
             -o ConnectTimeout="$TS_SSH_TIMEOUT" \
             $KEY_STRING \
             "$VM_USER@$JUMP_HOST" \
-            "ping -c 2 -W 1 $ip" &> /dev/null; then
+            "ping -c 2 -W $PING_TIMEOUT $ip" &> /dev/null; then
             echo -e "${green}Ping successful (via jump host $JUMP_HOST): $ip${normal}"
             return 0
         else
-            echo -e "${red}Ping failed (via jump host $JUMP_HOST): $ip${normal}"
+            echo -e "${yellow}Ping failed (via jump host $JUMP_HOST): $ip${normal}"
             return 1
         fi
     fi
 
-    if ping -c 2 -W 1 "$ip" &> /dev/null; then
+    if ping -c 2 -W "$PING_TIMEOUT" "$ip" &> /dev/null; then
         echo -e "${green}Ping successful: $ip${normal}"
         return 0
     else
-        echo -e "${red}Ping failed: $ip${normal}"
+        echo -e "${yellow}Ping failed: $ip${normal}"
         return 1
     fi
 }
@@ -323,6 +335,7 @@ batch_run_commands() {
     local at_least_one_failure=false
     local success_count=0
     local failure_count=0
+    local ping_failed_count=0
     local total_vms=0
 
     echo "batch_run_commands..."
@@ -354,12 +367,17 @@ batch_run_commands() {
 
         echo -e "${cyan}Processing VM: $vm_name | Status: $vm_status | IP: $vm_ip${normal}"
 
-        # 1. Check ping connectivity
+        # 1. Check ping connectivity (advisory only - does NOT block next steps,
+        #    it's just tracked/reported separately, e.g. useful when ping via
+        #    jump host is unreliable due to raw-socket permissions)
         if ! check_vm_connectivity "$vm_ip"; then
-            current_vm_failed=true
+            ((ping_failed_count++))
+            if [ "$ONLY_PING" = "true" ]; then
+                current_vm_failed=true
+            fi
         fi
 
-        # 2. Check SSH connectivity (if not bypassed and ping succeeded)
+        # 2. Check SSH connectivity (if not bypassed) - runs regardless of ping result
         if [ "$ONLY_PING" != "true" ] && [ "$SSH_BY_PASS" != "true" ] && [ "$current_vm_failed" = false ]; then
             if ! check_ssh_connectivity "$vm_ip"; then
                 current_vm_failed=true
@@ -390,6 +408,7 @@ batch_run_commands() {
     echo -e "  Total VMs processed: $total_vms"
     echo -e "  ${green}Successful:         $success_count${normal}"
     echo -e "  ${red}Failed:             $failure_count${normal}"
+    echo -e "  ${yellow}Ping failed (info): $ping_failed_count${normal}"
     echo -e "${cyan}=======================================${normal}\n"
 
     # Set return status
