@@ -6,9 +6,11 @@
 # openstack keypair create test-keypair --public-key ~/test_scripts_keystack/key_test.pub
 
 # Create flavor
-# openstack flavor create --ram 2048 --disk 20 --vcpus 2 --public 2c-2r
+# openstack flavor create --ram 2048 --vcpus 2 --public 2c-2r
 
-
+# Check hint
+# openstack compute service list --service nova-compute | grep ebochkov-installer-v2-comp-01
+# FR: | 91f26b48-4b68-490f-b493-f7514a65ca7f | nova-compute | ebochkov-installer-v2-comp-01 | [AZ]nova | enabled | up    | 2026-08-13T12:42:33.000000 |
 
 # Create test security group
 # openstack security group create test-security-group
@@ -156,7 +158,6 @@ Data Size      : ${DATA_SIZE}GB x $DATA_COUNT_PER_VM
 VM Count       : $VM_COUNT
 Sleep Interval : ${SLEEP_INTERVAL}s
 EOF
-echo "========================================"
 
 # --- Description of what the selected phase will do ---
 echo -e "\n========================================"
