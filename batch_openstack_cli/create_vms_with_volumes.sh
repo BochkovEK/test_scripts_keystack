@@ -5,6 +5,11 @@
 # Create key pair
 # openstack keypair create test-keypair --public-key ~/test_scripts_keystack/key_test.pub
 
+# Create flavor
+# openstack flavor create --ram 2048 --disk 20 --vcpus 2 --public 2c-2r
+
+
+
 # Create test security group
 # openstack security group create test-security-group
 # openstack security group rule create --egress --ethertype IPv4 --protocol tcp test-security-group
@@ -12,6 +17,8 @@
 # openstack security group rule create --egress --ethertype IPv4 --protocol udp test-security-group
 # openstack security group rule create --ingress --ethertype IPv4 --protocol udp test-security-group
 # openstack security group rule create --ingress --ethertype IPv4 --protocol icmp test-security-group
+
+# openstack security group list --project admin
 
 # Create env file (.env.create_vms_with_volumes) in script dir or source\define env var
 # Example env file .env.create_vms_with_volumes:
@@ -220,8 +227,7 @@ if [ "$PHASE" -eq 1 ]; then
         # Check readiness for pending VMs
         for p_vm in $PENDING_VMS; do
             PACK_STATUS=$(echo "$CURRENT_LIST" | grep "^${p_vm}-")
-            # All disks must be available/in-use
-            if [[ -n "$PACK_STATUS" ]] && ! echo "$PACK_STATUS" | grep -qvE "available|in-use"; then
+            if [[ -n "$PACK_STATUS" ]] && ! echo "$PACK_STATUS" | grep -qvE "available|in-use|error"; then
                 END_TS=$(date +%s)
                 START_TS=$(grep "^${p_vm};" "$(dirname "$0")/$VOL_METRICS" | cut -d ';' -f 2)
                 sed -i "s/^${p_vm};${START_TS};pending;0/${p_vm};${START_TS};${END_TS};$((END_TS - START_TS))/" "$(dirname "$0")/$VOL_METRICS"
@@ -231,6 +237,17 @@ if [ "$PHASE" -eq 1 ]; then
         grep -q ";pending;" "$(dirname "$0")/$VOL_METRICS" || break
         sleep 5
     done
+
+    echo -e "\n========================================"
+    echo "PHASE 1 COMPLETE: Volume status summary"
+    echo "========================================"
+    FINAL_LIST=$(openstack volume list --column Name --column Status -f value | grep "^${BASE_NAME}-" | sort)
+    echo "$FINAL_LIST"
+    echo "----------------------------------------"
+    ERROR_COUNT=$(echo "$FINAL_LIST" | grep -c " error$")
+    OK_COUNT=$(echo "$FINAL_LIST" | grep -cE " (available|in-use)$")
+    echo "OK: $OK_COUNT   ERROR: $ERROR_COUNT"
+    echo "========================================"
 fi
 
 # --- PHASE 2: VMs ---
