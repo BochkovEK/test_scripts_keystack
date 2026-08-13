@@ -35,6 +35,8 @@ get_vms_list_script="get_vms_list.sh"
 [[ -z $VMS ]] && VMS=""
 [[ -z $TS_SSH_TIMEOUT ]] && TS_SSH_TIMEOUT="$default_ssh_timeout"
 [[ -z $JUMP_HOST ]] && JUMP_HOST=""
+[[ -z $JUMP_HOST_USER ]] && JUMP_HOST_USER="$(whoami)"
+[[ -z $JUMP_HOST_KEY ]] && JUMP_HOST_KEY="${STAND_DIR_ENV:+$STAND_DIR_ENV/id_rsa}"
 [[ -z $PING_TIMEOUT ]] && PING_TIMEOUT="3"
 
 # Function to display help information
@@ -49,7 +51,10 @@ show_help() {
       -u, -user <username>    SSH user (default: ubuntu)
       -c, -command <command>  Command to execute on VMs
       -k, -key <path>         SSH private key file path
-      -jh, -jump-host <host>  Jump host (bastion) IP or FQDN to hop through via SSH ProxyJump
+      -jh, -jump-host <host>       Jump host (bastion) IP or FQDN to hop through via SSH ProxyCommand
+      -jhu, -jump-host-user <u>    User for the jump host login (default: current user, \$(whoami))
+      -jhk, -jump-host-key <path>  SSH private key for the jump host login
+                                   (default: \$STAND_DIR_ENV/id_rsa, if STAND_DIR_ENV is set)
       -pt, -ping-timeout <s>  Ping timeout in seconds (default: 3). Ping is advisory only:
                               a failed ping never blocks the following SSH check/exec.
       -ping                   Only perform ping check
@@ -74,9 +79,9 @@ show_help() {
       $0 -hv compute-01 -ping
 
       # Run command through a jump host (bastion), since target network
-      # is not reachable directly from this machine
-      $0 -vms \"10.224.135.40\" -jh bastion.example.com -c 'uptime'
-      $0 -vms \"10.224.135.40\" -jh 10.10.0.5 -c 'uptime'
+      # is not reachable directly from this machine.
+      # Jump host login (root@bastion, separate key) differs from target login (cirros@vm, target key)
+      $0 -vms \"10.224.135.37\" -jh bastion.example.com -jhu root -jhk /root/.ssh/id_rsa -u cirros -c 'uptime'
     "
 }
 
@@ -111,6 +116,16 @@ parse_arguments() {
             -jh|-jump-host)
                 JUMP_HOST="$2"
                 echo "Using jump host: $JUMP_HOST"
+                shift 2
+                ;;
+            -jhu|-jump-host-user)
+                JUMP_HOST_USER="$2"
+                echo "Jump host user: $JUMP_HOST_USER"
+                shift 2
+                ;;
+            -jhk|-jump-host-key)
+                JUMP_HOST_KEY="$2"
+                echo "Jump host key: $JUMP_HOST_KEY"
                 shift 2
                 ;;
             -pt|-ping-timeout)
@@ -187,6 +202,26 @@ validate_ssh_key() {
     chmod 600 "$KEY_PATH" 2>/dev/null || true
 }
 
+# Function to validate jump host SSH key (only relevant when -jh is used)
+validate_jump_host_key() {
+    if [ -z "$JUMP_HOST_KEY" ]; then
+        echo -e "${red}Jump host is set but no jump host key is configured (use -jhk or set STAND_DIR_ENV)${normal}"
+        exit 1
+    fi
+
+    if [ ! -f "$JUMP_HOST_KEY" ]; then
+        echo -e "${red}Jump host SSH key not found: $JUMP_HOST_KEY${normal}"
+        exit 1
+    fi
+
+    if [ ! -s "$JUMP_HOST_KEY" ]; then
+        echo -e "${red}Jump host SSH key is empty: $JUMP_HOST_KEY${normal}"
+        exit 1
+    fi
+
+    chmod 600 "$JUMP_HOST_KEY" 2>/dev/null || true
+}
+
 # Function to get VMs IPs from hypervisor
 get_vms_ips() {
     echo -e "${blue}Getting IPs of VMs: ${VMS:-all} from hypervisor: ${HYPERVISOR_NAME:-any} (project: $PROJECT)...${normal}"
@@ -236,16 +271,16 @@ check_vm_connectivity() {
     local ip="$1"
 
     if [ -n "$JUMP_HOST" ]; then
-        [ "$TS_DEBUG" = "true" ] && echo "ssh -o StrictHostKeyChecking=no -o ConnectTimeout=\"$TS_SSH_TIMEOUT\" $KEY_STRING \"$VM_USER@$JUMP_HOST\" \"ping -c 2 -W $PING_TIMEOUT $ip\""
+        [ "$TS_DEBUG" = "true" ] && echo "ssh -o StrictHostKeyChecking=no -o ConnectTimeout=\"$TS_SSH_TIMEOUT\" -i \"$JUMP_HOST_KEY\" \"$JUMP_HOST_USER@$JUMP_HOST\" \"ping -c 2 -W $PING_TIMEOUT $ip\""
         if ssh -o StrictHostKeyChecking=no \
             -o ConnectTimeout="$TS_SSH_TIMEOUT" \
-            $KEY_STRING \
-            "$VM_USER@$JUMP_HOST" \
+            -i "$JUMP_HOST_KEY" \
+            "$JUMP_HOST_USER@$JUMP_HOST" \
             "ping -c 2 -W $PING_TIMEOUT $ip" &> /dev/null; then
-            echo -e "${green}Ping successful (via jump host $JUMP_HOST): $ip${normal}"
+            echo -e "${green}Ping successful: $ip${normal}"
             return 0
         else
-            echo -e "${yellow}Ping failed (via jump host $JUMP_HOST): $ip${normal}"
+            echo -e "${yellow}Ping failed: $ip${normal}"
             return 1
         fi
     fi
@@ -264,15 +299,17 @@ check_ssh_connectivity() {
     local ip="$1"
     local ssh_output
     local exit_code
-    local jump_opt=""
+    local jump_opts=()
 
-    [ -n "$JUMP_HOST" ] && jump_opt="-J $VM_USER@$JUMP_HOST"
+    if [ -n "$JUMP_HOST" ]; then
+        jump_opts=(-o "ProxyCommand=ssh -i $JUMP_HOST_KEY -W %h:%p $JUMP_HOST_USER@$JUMP_HOST")
+    fi
 
     [ "$TS_DEBUG" = "true" ] && {
     echo "ssh_output=\$(ssh -o StrictHostKeyChecking=no \
         -o ConnectTimeout=\"$TS_SSH_TIMEOUT\" \
         -o BatchMode=yes \
-        $jump_opt \
+        ${jump_opts[*]} \
         -i \"$KEY_PATH\" \
         \"$VM_USER@$ip\" \
         \"echo \'SSH_OK\'\" 2>&1)";}
@@ -280,7 +317,7 @@ check_ssh_connectivity() {
     ssh_output=$(ssh -o StrictHostKeyChecking=no \
         -o ConnectTimeout="$TS_SSH_TIMEOUT" \
         -o BatchMode=yes \
-        $jump_opt \
+        "${jump_opts[@]}" \
         -i "$KEY_PATH" \
         "$VM_USER@$ip" \
         "echo 'SSH_OK'" 2>&1)
@@ -298,9 +335,11 @@ check_ssh_connectivity() {
 # Function to execute command on VM
 execute_on_vm() {
     local ip="$1"
-    local jump_opt=""
+    local jump_opts=()
 
-    [ -n "$JUMP_HOST" ] && jump_opt="-J $VM_USER@$JUMP_HOST"
+    if [ -n "$JUMP_HOST" ]; then
+        jump_opts=(-o "ProxyCommand=ssh -i $JUMP_HOST_KEY -W %h:%p $JUMP_HOST_USER@$JUMP_HOST")
+    fi
 
     echo -e "${blue}Executing command on $ip$( [ -n "$JUMP_HOST" ] && echo " (via jump host $JUMP_HOST)" )...${normal}"
     echo -e "${yellow}Command: $COMMAND_STR${normal}"
@@ -308,14 +347,14 @@ execute_on_vm() {
     [ "$TS_DEBUG" = "true" ] && {
     echo "ssh -t -o StrictHostKeyChecking=no \
                -o ConnectTimeout=\"$TS_SSH_TIMEOUT\" \
-               $jump_opt \
+               ${jump_opts[*]} \
                $KEY_STRING \
                \"$VM_USER@$ip\" \
                \"$COMMAND_STR\"";}
 
     ssh -t -o StrictHostKeyChecking=no \
     -o ConnectTimeout="$TS_SSH_TIMEOUT" \
-    $jump_opt \
+    "${jump_opts[@]}" \
     $KEY_STRING \
     "$VM_USER@$ip" \
     "$COMMAND_STR"
@@ -338,7 +377,11 @@ batch_run_commands() {
     local ping_failed_count=0
     local total_vms=0
 
-    echo "batch_run_commands..."
+    local mode_desc="command execution"
+    [ "$ONLY_PING" = "true" ] && mode_desc="ping check only"
+    [ "$ONLY_PING" != "true" ] && [ "$ONLY_CHECK" = "true" ] && mode_desc="SSH access check only"
+    echo -e "${blue}Mode: $mode_desc${normal}"
+    [ "$ONLY_PING" != "true" ] && [ "$ONLY_CHECK" = "false" ] && echo -e "${blue}Command to run on each VM: '$COMMAND_STR'${normal}"
     # Remove known_hosts to avoid conflicts
     [ -f "$HOME/.ssh/known_hosts" ] && rm -f "$HOME/.ssh/known_hosts"
 
@@ -425,9 +468,17 @@ main() {
         validate_ssh_key
     fi
 
+    if [ -n "$JUMP_HOST" ]; then
+        validate_jump_host_key
+    fi
+
     echo "VM_USER: $VM_USER"
     echo "KEY_STRING: $KEY_STRING"
-    [ -n "$JUMP_HOST" ] && echo "JUMP_HOST: $JUMP_HOST"
+    if [ -n "$JUMP_HOST" ]; then
+        echo "JUMP_HOST: $JUMP_HOST"
+        echo "JUMP_HOST_USER: $JUMP_HOST_USER"
+        echo "JUMP_HOST_KEY: $JUMP_HOST_KEY"
+    fi
 
     batch_run_commands
 
