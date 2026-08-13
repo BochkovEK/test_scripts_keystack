@@ -158,6 +158,34 @@ Sleep Interval : ${SLEEP_INTERVAL}s
 EOF
 echo "========================================"
 
+# --- Description of what the selected phase will do ---
+echo -e "\n========================================"
+echo "PHASE $PHASE ACTION:"
+echo "========================================"
+case "$PHASE" in
+    1)
+        echo "The following volumes (disks) will be created:"
+        echo "  - 1 boot volume (${BOOT_SIZE}GB) per VM"
+        echo "  - $DATA_COUNT_PER_VM data volume(s) (${DATA_SIZE}GB) per VM"
+        echo "  - Total VMs: $VM_COUNT, total volumes: $(( VM_COUNT * (1 + DATA_COUNT_PER_VM) ))"
+        echo "The script will wait until all volumes reach status available/in-use (or error)."
+        ;;
+    2)
+        echo "$VM_COUNT virtual machine(s) will be created, attaching"
+        echo "the boot and data volumes created earlier in phase 1."
+        echo "The script will wait until all VMs reach status ACTIVE (or ERROR)."
+        ;;
+    3)
+        echo "ALL VMs and volumes with prefix '${BASE_NAME}-' will be DELETED,"
+        echo "and the metrics files ($VOL_METRICS, $VM_METRICS) will be cleared."
+        echo "This is an IRREVERSIBLE operation."
+        ;;
+    *)
+        echo "Unknown phase: $PHASE"
+        ;;
+esac
+echo "========================================"
+
 read -p "Press [Enter] to save config ( $ENV_PATH ) and continue: "
 
 # Save Environment
