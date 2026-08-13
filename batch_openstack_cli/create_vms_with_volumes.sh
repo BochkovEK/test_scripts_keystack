@@ -314,6 +314,17 @@ if [ "$PHASE" -eq 2 ]; then
         if [ "$REM_VM" -eq 0 ]; then break; fi
         sleep "$INTERVAL"
     done
+
+    echo -e "\n========================================"
+    echo "PHASE 2 COMPLETE: VM status summary"
+    echo "========================================"
+    FINAL_VM_LIST=$(openstack server list --column Name --column Status -f value | grep "^${BASE_NAME}-" | sort)
+    echo "$FINAL_VM_LIST"
+    echo "----------------------------------------"
+    VM_ACTIVE_COUNT=$(echo "$FINAL_VM_LIST" | grep -c " ACTIVE$")
+    VM_ERROR_COUNT=$(echo "$FINAL_VM_LIST" | grep -c " ERROR$")
+    echo "ACTIVE: $VM_ACTIVE_COUNT   ERROR: $VM_ERROR_COUNT"
+    echo "========================================"
 fi
 
 # --- PHASE 3: CLEANUP (Teardown Infrastructure) ---
