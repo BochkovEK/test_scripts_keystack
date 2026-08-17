@@ -12,9 +12,15 @@
 
 ## Конфигурация
 
-Конфигурация OpenStack Pulse осуществлятся в три этапа:
-1. Подготовка переменных окружения:
+Конфигурация OpenStack Pulse осуществлятся в четыре этапа:
+1. Установка зависимостей:
+```bash
+    pip install -r ~/test_scripts_keystack/openstack-pulse/requirements.txt
+```
+2. Подготовка переменных окружения:
     - openrc - переменные авторизации в регионе
+        - export OS_AUTH_URL=https://<external_fqdn>:5000 # public endpoint
+        - export OS_CACERT="<path_to>/ca-bundle.crt"
     - Переменные авторизации в RabbitMQ API
         - RABBIT_USER - пользователь
         - RABBIT_PASS - пароль
