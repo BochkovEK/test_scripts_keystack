@@ -88,6 +88,7 @@ default_comp_required_container_list=(
 [[ -z $SSH_KEY_PATH ]] && SSH_KEY_PATH=""
 [[ -z $CONTAINER_ENGINE ]] && CONTAINER_ENGINE="$default_container_engine"
 [[ -z $KS_RELEASE ]] && KS_RELEASE=$default_ks_release
+[[ -z $UNHEALTHY_ONLY ]] && UNHEALTHY_ONLY="false"
 
 # Function to display help information
 show_help() {
@@ -99,6 +100,7 @@ show_help() {
       -nn, -node_name <names>       Space-separated node names
       -u, -user <username>          SSH username
       -ce, -container_engine <engine>  Container engine: docker or podman
+      -uh, -unhealthy               Show only containers in problem states (unhealthy/exited/restarting/etc), skip requirements check
       -debug                        Enable debug output
       --help                        Show this help message
     "
@@ -148,6 +150,11 @@ while [ -n "$1" ]; do
             SSH_KEY_PATH="$2"
             echo "Found -key_path with value: $SSH_KEY_PATH"
             shift
+            ;;
+
+        -uh|-unhealthy)
+            UNHEALTHY_ONLY="true"
+            echo "Found -unhealthy option (requirements check will be skipped)"
             ;;
 
         -debug)
@@ -386,24 +393,39 @@ check_container_status() {
         \"sudo $CONTAINER_ENGINE ps -a $format_option\"
     " >&2
 
-    # Now check containers since SSH is working
-    ssh -o StrictHostKeyChecking=no $key_string "$SSH_USER@$node_ip" \
-        "sudo $CONTAINER_ENGINE ps -a $format_option" | \
-        sed --unbuffered \
-          -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
-          -e 's/\(.*Exited.*\)/\o033[31m\1\o033[39m/' \
-          -e 's/\(.*Stopping.*\)/\o033[33m\1\o033[39m/' \
-          -e 's/\(.*restarting.*\)/\o033[33m\1\o033[39m/' \
-          -e 's/\(.*second.*\)/\o033[33m\1\o033[39m/' \
-          -e 's/\(.*a minute.*\)/\o033[33m\1\o033[39m/' \
-          -e 's/\(.*Less than.*\)/\o033[33m\1\o033[39m/' \
-          -e 's/\(.*(healthy).*\)/\o033[92m\1\o033[39m/' \
-          -e 's/\(.*days.*\)/\o033[92m\1\o033[39m/' \
-          -e 's/\(.*About an hour.*\)/\o033[92m\1\o033[39m/' \
-          -e 's/\(.*minutes.*\)/\o033[92m\1\o033[39m/' \
-          -e 's/\(.*weeks.*\)/\o033[92m\1\o033[39m/' \
-          -e 's/\(.*hours.*\)/\o033[92m\1\o033[39m/' \
-          -e 's/\(.*months.*\)/\o033[92m\1\o033[39m/'
+    if [ "$UNHEALTHY_ONLY" = "true" ]; then
+        # Only show containers in problem states (red/yellow), keep the header line, skip healthy/green ones
+        ssh -o StrictHostKeyChecking=no $key_string "$SSH_USER@$node_ip" \
+            "sudo $CONTAINER_ENGINE ps -a $format_option" | \
+            awk 'NR==1 || /\(unhealthy\)/ || /Exited/ || /Stopping/ || /restarting/ || /second/ || /a minute/ || /Less than/' | \
+            sed --unbuffered \
+              -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
+              -e 's/\(.*Exited.*\)/\o033[31m\1\o033[39m/' \
+              -e 's/\(.*Stopping.*\)/\o033[33m\1\o033[39m/' \
+              -e 's/\(.*restarting.*\)/\o033[33m\1\o033[39m/' \
+              -e 's/\(.*second.*\)/\o033[33m\1\o033[39m/' \
+              -e 's/\(.*a minute.*\)/\o033[33m\1\o033[39m/' \
+              -e 's/\(.*Less than.*\)/\o033[33m\1\o033[39m/'
+    else
+        # Now check containers since SSH is working
+        ssh -o StrictHostKeyChecking=no $key_string "$SSH_USER@$node_ip" \
+            "sudo $CONTAINER_ENGINE ps -a $format_option" | \
+            sed --unbuffered \
+              -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
+              -e 's/\(.*Exited.*\)/\o033[31m\1\o033[39m/' \
+              -e 's/\(.*Stopping.*\)/\o033[33m\1\o033[39m/' \
+              -e 's/\(.*restarting.*\)/\o033[33m\1\o033[39m/' \
+              -e 's/\(.*second.*\)/\o033[33m\1\o033[39m/' \
+              -e 's/\(.*a minute.*\)/\o033[33m\1\o033[39m/' \
+              -e 's/\(.*Less than.*\)/\o033[33m\1\o033[39m/' \
+              -e 's/\(.*(healthy).*\)/\o033[92m\1\o033[39m/' \
+              -e 's/\(.*days.*\)/\o033[92m\1\o033[39m/' \
+              -e 's/\(.*About an hour.*\)/\o033[92m\1\o033[39m/' \
+              -e 's/\(.*minutes.*\)/\o033[92m\1\o033[39m/' \
+              -e 's/\(.*weeks.*\)/\o033[92m\1\o033[39m/' \
+              -e 's/\(.*hours.*\)/\o033[92m\1\o033[39m/' \
+              -e 's/\(.*months.*\)/\o033[92m\1\o033[39m/'
+    fi
 }
 
 # Function to load external scripts
@@ -430,9 +452,11 @@ main() {
         exit 1
     fi
 
-    # Load container configuration
-    if ! load_container_config; then
-        echo -e "${yellow}Using default container lists${normal}"
+    # Load container configuration (not needed in unhealthy-only mode, requirements check is skipped)
+    if [ "$UNHEALTHY_ONLY" != "true" ]; then
+        if ! load_container_config; then
+            echo -e "${yellow}Using default container lists${normal}"
+        fi
     fi
 
     echo -e "
@@ -469,8 +493,8 @@ Using CE:         $CONTAINER_ENGINE
         # Check container status
         check_container_status "$node_name" "$node_ip"
 
-        # Determine node type and check required containers
-        if [ -z "$CONTAINER_NAME" ]; then
+        # Determine node type and check required containers (skipped in unhealthy-only mode)
+        if [ "$UNHEALTHY_ONLY" != "true" ] && [ -z "$CONTAINER_NAME" ]; then
             node_type=$(bash "$utils_dir/$get_nodes_list_script" -return_type "$node_name")
 
             [ "$TS_DEBUG" = true ] && echo -e "
