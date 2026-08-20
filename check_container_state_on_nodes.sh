@@ -397,7 +397,7 @@ check_container_status() {
         # Only show containers in problem states (red/yellow), keep the header line, skip healthy/green ones
         ssh -o StrictHostKeyChecking=no $key_string "$SSH_USER@$node_ip" \
             "sudo $CONTAINER_ENGINE ps -a $format_option" | \
-            awk 'NR==1 || /\(unhealthy\)/ || /Exited/ || /Stopping/ || /restarting/ || /second/ || /a minute/ || /Less than/' | \
+            awk 'NR==1{next} /\(unhealthy\)/ || /Exited/ || /Stopping/ || /restarting/ || /second/ || /a minute/ || /Less than/' | \
             sed --unbuffered \
               -e 's/\(.*(unhealthy).*\)/\o033[31m\1\o033[39m/' \
               -e 's/\(.*Exited.*\)/\o033[31m\1\o033[39m/' \
@@ -507,7 +507,7 @@ Using CE:         $CONTAINER_ENGINE
             esac
         fi
 
-        echo "----------------------------------------"
+#        echo "----------------------------------------"
     done
 }
 
