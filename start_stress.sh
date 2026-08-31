@@ -38,6 +38,9 @@ external_scripts=(
 [[ -z $VMS ]] && VMS=""
 [[ -z $MOUNT_TO_RAM ]] && MOUNT_TO_RAM="false"
 [[ -z $NETWORK_LOAD ]] && NETWORK_LOAD="on"  # on/off for network load
+[[ -z $JUMP_HOST ]] && JUMP_HOST=""
+[[ -z $JUMP_HOST_USER ]] && JUMP_HOST_USER="$(whoami)"
+[[ -z $JUMP_HOST_KEY ]] && JUMP_HOST_KEY="${STAND_DIR_ENV:+$STAND_DIR_ENV/id_rsa}"
 
 
 # Function: display_help
@@ -61,6 +64,12 @@ Options:
   -v, -debug              Enable debug output
   -vms <list>             Space-separated list of VM IPs
 
+  Jump Host Options:
+  -jh, -jump-host <host>       Jump host (bastion) IP or FQDN to hop through via SSH ProxyCommand
+  -jhu, -jump-host-user <u>    User for the jump host login (default: current user, \$(whoami))
+  -jhk, -jump-host-key <path>  SSH private key for the jump host login
+                               (default: \$STAND_DIR_ENV/id_rsa, if STAND_DIR_ENV is set)
+
   Network Load Options:
   -net, -network          Run network stress test
   -nload <on|off>         Network load action: on or off (default: on)
@@ -71,6 +80,10 @@ Examples:
   $0 -cpu 2 -hv compute-01 -p myproject -t 300
   $0 -net -hv compute-01 -nload on
   $0 -net -vms "192.168.1.100 192.168.1.101" -nload off
+
+  # Run through a jump host (bastion), since the target network
+  # is not reachable directly from this machine.
+  $0 -cpu 2 -vms "10.224.135.37" -jh bastion.example.com -jhu root -jhk /root/.ssh/id_rsa -u cirros
 
 EOF
 }
@@ -128,6 +141,33 @@ parse_arguments() {
                 fi
                 KEY_PATH="$2"
                 echo "Using SSH key: $KEY_PATH"
+                shift 2
+                ;;
+            -jh|-jump-host)
+                if [ -z "$2" ]; then
+                    echo -e "${red}Error: -jh requires a jump host${normal}"
+                    exit 1
+                fi
+                JUMP_HOST="$2"
+                echo "Using jump host: $JUMP_HOST"
+                shift 2
+                ;;
+            -jhu|-jump-host-user)
+                if [ -z "$2" ]; then
+                    echo -e "${red}Error: -jhu requires a username${normal}"
+                    exit 1
+                fi
+                JUMP_HOST_USER="$2"
+                echo "Jump host user: $JUMP_HOST_USER"
+                shift 2
+                ;;
+            -jhk|-jump-host-key)
+                if [ -z "$2" ]; then
+                    echo -e "${red}Error: -jhk requires a path to SSH key${normal}"
+                    exit 1
+                fi
+                JUMP_HOST_KEY="$2"
+                echo "Jump host key: $JUMP_HOST_KEY"
                 shift 2
                 ;;
             -p|-project)
@@ -201,6 +241,35 @@ parse_arguments() {
                 ;;
         esac
     done
+}
+
+# Function to validate jump host SSH key (only relevant when -jh is used)
+validate_jump_host_key() {
+    if [ -z "$JUMP_HOST_KEY" ]; then
+        echo -e "${red}Jump host is set but no jump host key is configured (use -jhk or set STAND_DIR_ENV)${normal}"
+        exit 1
+    fi
+
+    if [ ! -f "$JUMP_HOST_KEY" ]; then
+        echo -e "${red}Jump host SSH key not found: $JUMP_HOST_KEY${normal}"
+        exit 1
+    fi
+
+    if [ ! -s "$JUMP_HOST_KEY" ]; then
+        echo -e "${red}Jump host SSH key is empty: $JUMP_HOST_KEY${normal}"
+        exit 1
+    fi
+
+    chmod 600 "$JUMP_HOST_KEY" 2>/dev/null || true
+}
+
+# Function to build the ProxyCommand ssh option array when a jump host is set.
+# Echo'd into an array via `jump_opts=("${JUMP_OPTS[@]}")` at call sites.
+build_jump_opts() {
+    JUMP_OPTS=()
+    if [ -n "$JUMP_HOST" ]; then
+        JUMP_OPTS=(-o "ProxyCommand=ssh -i $JUMP_HOST_KEY -W %h:%p $JUMP_HOST_USER@$JUMP_HOST")
+    fi
 }
 
 # Function to get nodes list using external script
@@ -357,12 +426,15 @@ get_mode_strings() {
 # Function to execute network stress test
 network_stress() {
     local vm_pair="$1"
+    local jump_opts=()
+    build_jump_opts
+    jump_opts=("${JUMP_OPTS[@]}")
 
     # Extract data from name:status:ip pair
     local vm_name=$(echo "$vm_pair" | cut -d: -f1)
     local vm_ip=$(echo "$vm_pair" | cut -d: -f3)
 
-    echo "Processing VM: $vm_name ($vm_ip)"
+    echo "Processing VM: $vm_name ($vm_ip)$( [ -n "$JUMP_HOST" ] && echo " (via jump host $JUMP_HOST)" )"
 
     case $NETWORK_LOAD in
         on)
@@ -370,12 +442,12 @@ network_stress() {
             # ping --help
             # -s use <size> as number of data bytes to be sent
             # -f flood ping
-            ssh -t -o StrictHostKeyChecking=no -i "$KEY_PATH" "$VM_USER@$vm_ip" \
+            ssh -t -o StrictHostKeyChecking=no "${jump_opts[@]}" -i "$KEY_PATH" "$VM_USER@$vm_ip" \
                 "sudo sh -c 'echo \"@reboot root ping -f -s 1024 8.8.8.8\" >> /etc/crontab && reboot'"
             ;;
         off)
             echo "Stopping network load on $vm_name..."
-            ssh -t -o StrictHostKeyChecking=no -i "$KEY_PATH" "$VM_USER@$vm_ip" \
+            ssh -t -o StrictHostKeyChecking=no "${jump_opts[@]}" -i "$KEY_PATH" "$VM_USER@$vm_ip" \
                 "sudo sh -c 'sed -i '/ping/d' /etc/crontab && reboot'"
             ;;
         *)
@@ -396,6 +468,9 @@ network_stress() {
 # Function to copy and run stress tool
 copy_and_run_stress() {
     local vm_pair="$1"
+    local jump_opts=()
+    build_jump_opts
+    jump_opts=("${JUMP_OPTS[@]}")
 
     # For network test, use specialized function
     if [ "$TYPE_TEST" = "network" ]; then
@@ -407,7 +482,7 @@ copy_and_run_stress() {
     local vm_name=$(echo "$vm_pair" | cut -d: -f1)
     local vm_ip=$(echo "$vm_pair" | cut -d: -f3)
 
-    echo "Processing VM: $vm_name ($vm_ip)"
+    echo "Processing VM: $vm_name ($vm_ip)$( [ -n "$JUMP_HOST" ] && echo " (via jump host $JUMP_HOST)" )"
 
     if [ "$TYPE_TEST" = "ram" ] && [ "$MOUNT_TO_RAM" = "true" ]; then
         echo "Starting ${yellow}'Mount to RAM'${normal} type ram load on $vm_name using tmpfs..."
@@ -418,10 +493,10 @@ copy_and_run_stress() {
             RAM_SIZE=$RAM
         fi
 
-        ssh -o StrictHostKeyChecking=no -i "$KEY_PATH" "$VM_USER@$vm_ip" \
+        ssh -o StrictHostKeyChecking=no "${jump_opts[@]}" -i "$KEY_PATH" "$VM_USER@$vm_ip" \
             "sudo mkdir -p /mnt/ram && sudo mount -t tmpfs -o size=${RAM_SIZE}M tmpfs /mnt/ram"
 
-        ssh -o StrictHostKeyChecking=no -i "$KEY_PATH" "$VM_USER@$vm_ip" \
+        ssh -o StrictHostKeyChecking=no "${jump_opts[@]}" -i "$KEY_PATH" "$VM_USER@$vm_ip" \
             "sudo dd if=/dev/urandom of=/mnt/ram/bigfile bs=1M count=${RAM_SIZE} status=progress"
 
         echo -e "${green}\nRAM load started on $vm_name using tmpfs${normal}"
@@ -430,19 +505,19 @@ copy_and_run_stress() {
 
     echo "Copying stress tool to $vm_name..."
     [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG]
-    command: scp -o StrictHostKeyChecking=no -i \"$KEY_PATH\" \"$script_dir/stress\" \"$VM_USER@$vm_ip:~/\" >/dev/null 2>&1
+    command: scp -o StrictHostKeyChecking=no ${jump_opts[*]} -i \"$KEY_PATH\" \"$script_dir/stress\" \"$VM_USER@$vm_ip:~/\" >/dev/null 2>&1
     "
-    if ! scp -o StrictHostKeyChecking=no -i "$KEY_PATH" "$script_dir/stress" "$VM_USER@$vm_ip:~/" >/dev/null 2>&1; then
+    if ! scp -o StrictHostKeyChecking=no "${jump_opts[@]}" -i "$KEY_PATH" "$script_dir/stress" "$VM_USER@$vm_ip:~/" >/dev/null 2>&1; then
         echo -e "${red}Failed to copy stress tool to $vm_name${normal}"
         return 1
     fi
 
-    ssh -o StrictHostKeyChecking=no -i "$KEY_PATH" "$VM_USER@$vm_ip" "chmod +x ~/stress" >/dev/null 2>&1
+    ssh -o StrictHostKeyChecking=no "${jump_opts[@]}" -i "$KEY_PATH" "$VM_USER@$vm_ip" "chmod +x ~/stress" >/dev/null 2>&1
 
     echo "Starting $TYPE_TEST stress on $vm_name..."
     local ssh_command="nohup ./stress $stress_args > /dev/null 2>&1 &"
 
-    if ! ssh -o StrictHostKeyChecking=no -i "$KEY_PATH" "$VM_USER@$vm_ip" "$ssh_command"; then
+    if ! ssh -o StrictHostKeyChecking=no "${jump_opts[@]}" -i "$KEY_PATH" "$VM_USER@$vm_ip" "$ssh_command"; then
         echo -e "${red}Failed to start stress on $vm_name${normal}"
         return 1
     fi
@@ -452,6 +527,11 @@ copy_and_run_stress() {
 }
 
 # Function to check SSH connectivity to VMs
+# NOTE: this delegates to the external `test_ssh_connection` helper sourced
+# from check_ssh_connectivity.sh. That script's signature is NOT under our
+# control here - if it doesn't already accept jump-host args, it needs to be
+# updated separately (mirroring check_ssh_connectivity() in run_commands.sh)
+# for the jump host to actually be honored during this pre-flight check.
 check_vm_connectivity() {
     echo "Checking VM connectivity..."
 
@@ -461,9 +541,9 @@ check_vm_connectivity() {
         local vm_name=$(echo "$vm_pair" | cut -d: -f1)
         local vm_ip=$(echo "$vm_pair" | cut -d: -f3)
 
-        echo -e "${blue}Testing VM: $vm_name ($vm_ip)${normal}"
+        echo -e "${blue}Testing VM: $vm_name ($vm_ip)$( [ -n "$JUMP_HOST" ] && echo " (via jump host $JUMP_HOST)" )${normal}"
 
-        if test_ssh_connection "$vm_name" "$vm_ip" "10" "$VM_USER" "$KEY_PATH"; then
+        if test_ssh_connection "$vm_name" "$vm_ip" "10" "$VM_USER" "$KEY_PATH" "$JUMP_HOST" "$JUMP_HOST_USER" "$JUMP_HOST_KEY"; then
             echo -e "${green}✓ SSH access to $vm_name - OK${normal}"
         else
             echo -e "${red}✗ SSH access failed to $vm_name${normal}"
@@ -516,6 +596,10 @@ validate_environment() {
         exit 1
     fi
 
+    if [ -n "$JUMP_HOST" ]; then
+        validate_jump_host_key
+    fi
+
     if [ "$TYPE_TEST" = "cpu" ] && [ "$CPUS" -le 0 ]; then
         echo -e "${red}Invalid CPU count: $CPUS${normal}"
         exit 1
@@ -534,6 +618,12 @@ ${violet}Stress Test Configuration:${normal}
     SSH Key:              $KEY_PATH
     VM User:              $VM_USER
     Test Type:            $TYPE_TEST"
+
+    if [ -n "$JUMP_HOST" ]; then
+        echo "    Jump Host:            $JUMP_HOST"
+        echo "    Jump Host User:       $JUMP_HOST_USER"
+        echo "    Jump Host Key:        $JUMP_HOST_KEY"
+    fi
 
     if [ "$TYPE_TEST" = "network" ]; then
         echo "    Network Load:        $NETWORK_LOAD"
