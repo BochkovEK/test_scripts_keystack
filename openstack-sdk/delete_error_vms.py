@@ -238,6 +238,25 @@ def make_project_name_resolver(conn):
     return resolve
 
 
+def print_listing(conn, target_vms, project_name, header):
+    """Print the found VMs + their attached volumes (used for dry-run and info mode)"""
+    print(f"\n{header}")
+    for vm in target_vms:
+        proj = project_name(getattr(vm, 'project_id', None))
+        print(f"VM: {vm.id[:8]}... {vm.name or '<unnamed>':<30} | status={vm.status} | project={proj}")
+        vols = get_attached_volumes(conn, vm)
+        if vols:
+            print("  Volumes to reset to 'error' → delete:")
+            for v in vols:
+                try:
+                    vol = conn.block_storage.get_volume(v)
+                    print(f"    {v[:8]}... {vol.name or '<no name>':<30} | {vol.status}")
+                except:
+                    print(f"    {v[:8]}...")
+        else:
+            print("  No attached volumes")
+
+
 def main():
     args = parse_args()
     setup_logging(args.log_level)
@@ -253,20 +272,13 @@ def main():
         logging.error(f"Connection failed: {e}")
         sys.exit(1)
 
-    if not args.force_delete:
-        logging.info("No --force-delete flag provided → showing usage info only")
-        print("\nRun with --force-delete flag to perform cleanup\n")
-        return
-
-    if args.all_statuses and not args.yes:
-        if not confirm_all_statuses():
-            logging.info("Aborted by user.")
-            return
-
-    project_filter = resolve_project_filter(conn, args)  # None = no filtering (all projects/domains)
+    # Resolve --project/--domain filters (None = no filtering, i.e. all projects/domains)
+    project_filter = resolve_project_filter(conn, args)
     if project_filter is not None and not project_filter:
         return  # nothing matched --project/--domain
 
+    # Always search/collect matching VMs, regardless of --force-delete,
+    # so the user can see what would be affected.
     if target_status:
         logging.info(f"Searching for VMs in '{target_status}' status (all projects/domains unless filtered)...")
         target_vms = list(conn.compute.servers(status=target_status, all_projects=True))
@@ -287,23 +299,22 @@ def main():
 
     project_name = make_project_name_resolver(conn)
 
+    # --dry-run always just lists what would happen, whether or not --force-delete was given.
     if args.dry_run:
-        print("\nDRY RUN — no changes will be made")
-        for vm in target_vms:
-            proj = project_name(getattr(vm, 'project_id', None))
-            print(f"VM: {vm.id[:8]}... {vm.name or '<unnamed>':<30} | status={vm.status} | project={proj}")
-            vols = get_attached_volumes(conn, vm)
-            if vols:
-                print("  Volumes to reset to 'error' → delete:")
-                for v in vols:
-                    try:
-                        vol = conn.block_storage.get_volume(v)
-                        print(f"    {v[:8]}... {vol.name or '<no name>':<30} | {vol.status}")
-                    except:
-                        print(f"    {v[:8]}...")
-            else:
-                print("  No attached volumes")
+        print_listing(conn, target_vms, project_name, "DRY RUN — no changes will be made")
         return
+
+    # No --force-delete: informational listing only, no changes, no confirmation prompt.
+    if not args.force_delete:
+        print_listing(conn, target_vms, project_name, "INFO — the following VMs match your filters (no changes made)")
+        print("\nRun with --force-delete flag to perform cleanup\n")
+        return
+
+    # From here on we are about to make real changes.
+    if args.all_statuses and not args.yes:
+        if not confirm_all_statuses():
+            logging.info("Aborted by user.")
+            return
 
     print("\n" + "=" * 80)
     scope_desc = target_status if target_status else "ALL statuses"
