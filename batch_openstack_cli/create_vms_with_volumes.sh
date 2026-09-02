@@ -63,7 +63,7 @@
 
 # Remove VMs
 #openstack server delete $(openstack server list --project test_project -c ID -f value)
-#python ~/test_scripts_keystack/openstack-sdk/delete_error_vms.py --force-delete
+# !!! remove all VMs python ~/test_scripts_keystack/openstack-sdk/delete_error_vms.py --all-statuses
 # or
 #for v in test-vm-043 test-vm-044 test-vm-045; do openstack server delete "$v" > /dev/null; sleep 1; done
 
