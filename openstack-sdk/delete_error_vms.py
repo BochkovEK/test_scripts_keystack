@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Force delete ERROR VMs along with their attached volumes.
-For each ERROR VM:
+Force delete VMs (by default in ERROR status) along with their attached volumes.
+For each targeted VM:
   1. Collect attached volumes
   2. Reset all attached volumes to 'error' status
   3. Force delete all those volumes
@@ -22,12 +22,12 @@ from openstack import exceptions
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Force-delete ERROR VMs after resetting and deleting their attached volumes (no detach)"
+        description="Force-delete VMs after resetting and deleting their attached volumes (no detach)"
     )
     parser.add_argument(
         "--force-delete",
         action="store_true",
-        help="Reset attached volumes to 'error' → delete volumes → delete ERROR VMs"
+        help="Reset attached volumes to 'error' → delete volumes → delete targeted VMs"
     )
     parser.add_argument(
         "--dry-run",
@@ -46,6 +46,26 @@ def parse_args():
         default="INFO",
         help="Logging level"
     )
+
+    status_group = parser.add_mutually_exclusive_group()
+    status_group.add_argument(
+        "--status", "-s",
+        default="ERROR",
+        help="Only target VMs with this status (default: ERROR). Ignored if --all-statuses is set."
+    )
+    status_group.add_argument(
+        "--all-statuses", "-as",
+        action="store_true",
+        help="Target VMs regardless of status (DANGEROUS: includes ACTIVE, BUILD, etc). "
+             "Requires interactive confirmation unless --yes is also passed."
+    )
+
+    parser.add_argument(
+        "--yes", "-y",
+        action="store_true",
+        help="Skip the interactive confirmation prompt required by --all-statuses"
+    )
+
     return parser.parse_args()
 
 
@@ -125,9 +145,23 @@ def force_delete_server_with_dependencies(conn, server_id):
         return False
 
 
+def confirm_all_statuses():
+    """Interactive safety confirmation before touching VMs of any status"""
+    print("\n" + "!" * 80)
+    print("WARNING: --all-statuses selected.")
+    print("This will target VMs in ANY status, including ACTIVE, BUILD, SHUTOFF, etc.")
+    print("Attached volumes will be reset to 'error' and force-deleted, then the VM")
+    print("itself will be force-deleted. This is IRREVERSIBLE.")
+    print("!" * 80)
+    answer = input("\nType 'yes' to continue: ").strip().lower()
+    return answer == "yes"
+
+
 def main():
     args = parse_args()
     setup_logging(args.log_level)
+
+    target_status = None if args.all_statuses else args.status.upper()
 
     logging.info("Connecting to OpenStack...")
     try:
@@ -143,19 +177,31 @@ def main():
         print("\nRun with --force-delete flag to perform cleanup\n")
         return
 
-    logging.info("Searching for VMs in ERROR status...")
-    error_vms = list(conn.compute.servers(status="ERROR", all_projects=True))
+    if args.all_statuses and not args.yes:
+        if not confirm_all_statuses():
+            logging.info("Aborted by user.")
+            return
 
-    if not error_vms:
-        logging.info("No VMs found in ERROR status.")
+    if target_status:
+        logging.info(f"Searching for VMs in '{target_status}' status...")
+        target_vms = list(conn.compute.servers(status=target_status, all_projects=True))
+    else:
+        logging.info("Searching for VMs in ANY status...")
+        target_vms = list(conn.compute.servers(all_projects=True))
+
+    if not target_vms:
+        if target_status:
+            logging.info(f"No VMs found in '{target_status}' status.")
+        else:
+            logging.info("No VMs found.")
         return
 
-    logging.info(f"Found {len(error_vms)} VMs in ERROR status")
+    logging.info(f"Found {len(target_vms)} target VMs")
 
     if args.dry_run:
         print("\nDRY RUN — no changes will be made")
-        for vm in error_vms:
-            print(f"VM: {vm.id[:8]}... {vm.name or '<unnamed>':<30}")
+        for vm in target_vms:
+            print(f"VM: {vm.id[:8]}... {vm.name or '<unnamed>':<30} | status={vm.status}")
             vols = get_attached_volumes(conn, vm)
             if vols:
                 print("  Volumes to reset to 'error' → delete:")
@@ -170,15 +216,18 @@ def main():
         return
 
     print("\n" + "=" * 80)
-    print("CLEANUP: ERROR VMs → reset volumes to error → delete volumes → delete VMs")
+    if target_status:
+        print(f"CLEANUP: '{target_status}' VMs → reset volumes to error → delete volumes → delete VMs")
+    else:
+        print("CLEANUP: ALL VMs (any status) → reset volumes to error → delete volumes → delete VMs")
     print("=" * 80)
 
     deleted_vms = 0
     deleted_volumes = 0
     reset_volumes_count = 0
 
-    for vm in error_vms:
-        print(f"\nProcessing VM: {vm.id}  {vm.name or '<unnamed>'}")
+    for vm in target_vms:
+        print(f"\nProcessing VM: {vm.id}  {vm.name or '<unnamed>'}  (status={vm.status})")
 
         attached = get_attached_volumes(conn, vm)
 
@@ -203,10 +252,10 @@ def main():
     print("\n" + "=" * 80)
     print("SUMMARY")
     print("=" * 80)
-    print(f"  Processed ERROR VMs       : {len(error_vms)}")
-    print(f"  Volumes reset to 'error'  : {reset_volumes_count}")
-    print(f"  Volumes deleted           : {deleted_volumes}")
-    print(f"  VMs deleted               : {deleted_vms}")
+    print(f"  Processed VMs              : {len(target_vms)}")
+    print(f"  Volumes reset to 'error'   : {reset_volumes_count}")
+    print(f"  Volumes deleted            : {deleted_volumes}")
+    print(f"  VMs deleted                : {deleted_vms}")
     print("=" * 80)
 
 
