@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# get pools for pub_net
+# get pools for pub_net from cloud2 region
 # python3 ~/free_pools.py ebochkov-installer-v2-external
 
 # set for pub_net subnet:

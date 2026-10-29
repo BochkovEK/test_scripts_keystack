@@ -52,8 +52,7 @@ while [ -n "$1" ]; do
       Node IPs and names must be defined in hosts file (default: $default_hosts_path)
 
       Options:
-        -nt, -type_of_nodes <type>    Node type: 'lcm', 'ctrl', 'comp', 'net', 'strg', 'all', 'rmi'
-          NOTE: If you are using the node_type rmi, specify -suffix <suffix> (the default suffix is $default_rmi_suffix)
+        -nt, -type_of_nodes <type>    Short-name prefix before '-'; 'all' selects the predefined node types
         -suffix <suffix>              RMI suffix (example: -suffix rmi)
         -nn, -nodes_name <names>      Specific node names (space-separated)
         -h, -hosts_path <path>        Path to hosts file
@@ -154,10 +153,26 @@ parse_hosts() {
 
     # Populate NODES array from hosts file
     if [ ${#NODES[@]} -eq 0 ]; then
-        while read -r line; do
-            NODES+=("$line")
-#        done < <(grep -E "$nodes_to_find" "$TS_HOSTS_PATH" | awk '{print $2}')
-        done < <(grep -E "$nodes_to_find" "$TS_HOSTS_PATH" | grep -v '^#' | awk '{print $2}')
+        if [ "$NODES_TYPE" = "all" ]; then
+            while read -r line; do
+                NODES+=("$line")
+            done < <(
+                grep -E "$nodes_to_find" "$TS_HOSTS_PATH" |
+                    grep -v '^#' |
+                    awk '{print $2}'
+            )
+        else
+            # Find short name in the third field
+            while read -r line; do
+                NODES+=("$line")
+            done < <(
+                awk -v prefix="$NODES_TYPE-" '
+                    $1 !~ /^#/ && substr($3, 1, length(prefix)) == prefix {
+                        print $2
+                    }
+                ' "$TS_HOSTS_PATH"
+            )
+        fi
     fi
 
     [ "$TS_DEBUG" = true ] && printf "Found nodes: %s\n" "${NODES[*]}" >&2
@@ -177,51 +192,17 @@ nodes_list_by_type() {
     local node_type="$1"
 
     case "$node_type" in
-        lcm)
-            nodes_to_find="$lcm_pattern"
-            [ "$TS_DEBUG" = true ] && echo -e "Looking for lcm nodes" >&2
-            parse_hosts
-            ;;
-        ctrl)
-            nodes_to_find="$ctrl_pattern"
-            [ "$TS_DEBUG" = true ] && echo -e "Looking for controller nodes" >&2
-            parse_hosts
-            ;;
-
-        comp|cmpt)
-            nodes_to_find="$comp_pattern"
-            [ "$TS_DEBUG" = true ] && echo -e "Looking for compute nodes" >&2
-            parse_hosts
-            ;;
-
-        net)
-            nodes_to_find="$net_pattern"
-            [ "$TS_DEBUG" = true ] && echo -e "Looking for network nodes" >&2
-            parse_hosts
-            ;;
-        strg|storage)
-            nodes_to_find="$strg_pattern|$storage_pattern"
-            [ "$TS_DEBUG" = true ] && echo -e "Looking for storage nodes" >&2
-            parse_hosts
-            ;;
-
-        rmi)
-            nodes_to_find="$RMI_SUFFIX"
-            [ "$TS_DEBUG" = true ] && echo -e "Looking for ipmi nodes $nodes_to_find" >&2
-            parse_hosts
-            ;;
-
         all)
             nodes_to_find="$comp_pattern|$ctrl_pattern|$net_pattern|$lcm_pattern|$strg_pattern|$storage_pattern"
-            [ "$TS_DEBUG" = true ] && echo -e "Looking for all node types" >&2
-            parse_hosts
+            [ "$TS_DEBUG" = true ] && echo "Looking for all node types" >&2
             ;;
-
         *)
-            echo "${red}Unknown node type '$node_type'. Use: ctrl, comp, net, strg or all${normal}" >&2
-            exit 1
+            nodes_to_find="${node_type}-"
+            [ "$TS_DEBUG" = true ] && echo "Looking for short names starting with: $nodes_to_find" >&2
             ;;
     esac
+
+    parse_hosts
 }
 
 # Function to return type of specific node
