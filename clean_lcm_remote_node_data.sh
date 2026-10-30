@@ -9,7 +9,19 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+OPENSEARCH_ENV_FILE_NAME=".opensearch_env"
+
 OPENSEARCH_USER="admin"
+
+# Отыскиваем директорию, в которой лежит этот скрипт
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [ -f "$SCRIPT_DIR/$OPENSEARCH_ENV_FILE_NAME" ]; then
+    # Включаем автоматический экспорт всех загружаемых переменных
+    set -a
+    source "$SCRIPT_DIR/$OPENSEARCH_ENV_FILE_NAME"
+    set +a
+fi
 
 # Функция для вывода справки
 usage() {
