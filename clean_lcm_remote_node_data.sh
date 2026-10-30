@@ -13,7 +13,7 @@ OPENSEARCH_USER="admin"
 
 # Функция для вывода справки
 usage() {
-    echo -e "${YELLOW}Использование:${NC} $0 {sberlinux|ubuntu}"
+    echo -e "${YELLOW}Использование:${NC} $0 {sberlinux|ubuntu|x5}"
     echo "Пример: sudo $0 sberlinux"
     exit 1
 }
@@ -26,8 +26,8 @@ fi
 
 ENV_TYPE=$(echo "$1" | tr '[:upper:]' '[:lower:]')
 
-if [[ "$ENV_TYPE" != "sberlinux" && "$ENV_TYPE" != "ubuntu" ]]; then
-    echo -e "${RED}Ошибка: Неверный аргумент '$1'. Допустимы только 'sberlinux' или 'ubuntu'.${NC}"
+if [[ "$ENV_TYPE" != "sberlinux" && "$ENV_TYPE" != "ubuntu" && "$ENV_TYPE" != "x5" ]]; then
+    echo -e "${RED}Ошибка: Неверный аргумент '$1'. Допустимы только 'sberlinux' или 'ubuntu или x5'.${NC}"
     usage
 fi
 
