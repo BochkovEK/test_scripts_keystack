@@ -3,6 +3,17 @@
 # With no file, paste the lines and finish with Ctrl+D.
 # Required: VAULT_ADDR, VAULT_ROLE_ID, VAULT_SECRET_ID; curl and jq.
 # Optional: VAULT_CACERT, VAULT_SKIP_VERIFY=1, VAULT_KV_MOUNT (default secret_v2).
+# Exp:
+# bash ~/test_scripts_keystack/update_vault_secret_accounts.sh gitlab.ebochkov-installer-v2.vm.lab.itkey.
+# and past to console
+  #LCM Gitlab root password:       Zo1g5h558souTCgwN3WzwiOETYLp6yIdsoxh8UuQ3dpH0WzI5qXOaII3IyE27tE9
+  #LCM Gitlab ks-admin password:   5269ee208c7016f16c99f9796bfe79ed
+  #LCM Grafana admin password:     IqCAjf3FqI0v9tHRqsp8I74a15lBxfYY6Fa2YzXX
+  #LCM Nexus admin password:       IH+4OHyoSzs4MLG02vB23exP
+  #LCM Netbox admin password:      rl2E8JNVEy
+  #LCM Netbox ks-admin password:   TtXJ88ElqtuM50zc4+DQ7omhMPzspGCCSMC9VAQz6pg=
+# Press Ctrl+D
+
 set -Eeuo pipefail
 umask 077
 die() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
