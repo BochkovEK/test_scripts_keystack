@@ -50,11 +50,22 @@ for x in sorted(universe - used):
     if frags and frags[-1][1] == x - 1: frags[-1][1] = x
     else: frags.append([x, x])
 
+# print(f"# external CIDR {s['cidr']}, occupied {len(used & universe)} out of {len(universe)}")
+# print("allocation_pools = [")
+# for lo, hi in frags:
+#     print(f'  {{ start = "{ip.ip_address(lo)}", end = "{ip.ip_address(hi)}" }},')
+# print("]")
+# print(f"# free addresses: {sum(h - l + 1 for l, h in frags)}")
+
+subnet_ref = s.get("name") or s["id"]  # what to do `openstack subnet set`
+
 print(f"# external CIDR {s['cidr']}, occupied {len(used & universe)} out of {len(universe)}")
-print("allocation_pools = [")
-for lo, hi in frags:
-    print(f'  {{ start = "{ip.ip_address(lo)}", end = "{ip.ip_address(hi)}" }},')
-print("]")
+print(f"openstack subnet set {subnet_ref} --no-allocation-pool \\")
+lines = [
+    f"  --allocation-pool start={ip.ip_address(lo)},end={ip.ip_address(hi)}"
+    for lo, hi in frags
+]
+print(" \\\n".join(lines))
 print(f"# free addresses: {sum(h - l + 1 for l, h in frags)}")
 
 if a.inner:
