@@ -60,7 +60,7 @@ for x in sorted(universe - used):
 subnet_ref = s.get("name") or s["id"]  # what to do `openstack subnet set`
 
 print(f"# external CIDR {s['cidr']}, occupied {len(used & universe)} out of {len(universe)}")
-print(f"openstack subnet set {subnet_ref} --no-allocation-pool \\")
+print(f"openstack subnet set pub_net --no-allocation-pool \\")
 lines = [
     f"  --allocation-pool start={ip.ip_address(lo)},end={ip.ip_address(hi)}"
     for lo, hi in frags
