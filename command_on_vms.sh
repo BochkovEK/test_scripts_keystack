@@ -36,6 +36,7 @@ get_vms_list_script="get_vms_list.sh"
 [[ -z $TS_DEBUG ]] && TS_DEBUG="false"
 [[ -z $SSH_BY_PASS ]] && SSH_BY_PASS="false"
 [[ -z $VMS ]] && VMS=""
+[[ -z $IPS ]] && IPS=""
 [[ -z $TS_SSH_TIMEOUT ]] && TS_SSH_TIMEOUT="$default_ssh_timeout"
 [[ -z $JUMP_HOST ]] && JUMP_HOST=""
 [[ -z $JUMP_HOST_USER ]] && JUMP_HOST_USER="$(whoami)"
@@ -63,7 +64,8 @@ show_help() {
       -ping                   Only perform ping check
       -p, -project <name>     OpenStack project name (default: admin)
       -dont_ask               Perform actions automatically without confirmation
-      -vms                    Space-separated list of IP or name
+      -vms <names>            Space-separated list of VM names (resolved via OpenStack)
+      -ip  <ips>              Space-separated list of IPs (used directly, OpenStack is NOT queried)
       -v, -debug              Enable debug output
       -check                  Only check SSH access without executing commands
       -t, -timeout <seconds>  SSH connection timeout (default: 15; consider raising further
@@ -85,7 +87,10 @@ show_help() {
       # Run command through a jump host (bastion), since target network
       # is not reachable directly from this machine.
       # Jump host login (root@bastion, separate key) differs from target login (cirros@vm, target key)
-      $0 -vms \"10.224.135.37\" -jh bastion.example.com -jhu root -jhk /root/.ssh/id_rsa -u cirros -c 'uptime'
+      $0 -vms \"test_vm-01 test_vm-02\" -jh bastion.example.com -jhu root -jhk /root/.ssh/id_rsa -u cirros -c 'uptime'
+
+      # Direct IPs, without OpenStack lookup
+      $0 -ip \"192.168.1.10 192.168.1.11\" -check
     "
 }
 
@@ -177,6 +182,11 @@ parse_arguments() {
                 echo "Targeting specific VMS: $VMS"
                 shift 2
                 ;;
+            -ip)
+                IPS="$2"
+                echo "Targeting IPs directly: $IPS"
+                shift 2
+                ;;
             --)
                 shift
                 break
@@ -239,10 +249,9 @@ get_vms_ips() {
     [ -n "$PROJECT" ] && command_args+=(-p "$PROJECT")
 
     VMS=$(bash "$openstack_utils/$get_vms_list_script" "${command_args[@]}")
-
-    echo -e "VMS:
-    $VMS"
     local exit_code=$?
+
+    echo -e "VMS:\n$VMS"
     if [ $exit_code -ne 0 ]; then
         echo -e "${red}Failed to get VMs IPs (exit code: $exit_code)${normal}"
         echo -e "${red}Error output: $VMS${normal}"
@@ -373,6 +382,17 @@ execute_on_vm() {
     return $exit_code
 }
 
+# Build VMS list from raw IPs in the same name:status:ip format,
+# so the main loop works unchanged (OpenStack is not queried)
+build_vms_from_ips() {
+    local ip
+    VMS=""
+    for ip in $IPS; do
+        VMS+="${ip}:direct:${ip} "
+    done
+    echo -e "${blue}Using IPs directly (OpenStack lookup skipped): $IPS${normal}"
+}
+
 # Main function to run commands on VMs
 batch_run_commands() {
     local at_least_one_failure=false
@@ -395,8 +415,13 @@ batch_run_commands() {
     fi
 
     # Get VMs IPs
-    get_vms_ips
-    local exit_code=$?
+    local exit_code=0
+    if [ -n "$IPS" ]; then
+        build_vms_from_ips
+    else
+        get_vms_ips
+        exit_code=$?
+    fi
 
     if [ $exit_code -ne 0 ]; then
         echo -e "${yellow}Warning: Failed to get the list of IPs${normal}"
@@ -475,6 +500,13 @@ main() {
     echo "Starting $script_name script..."
 
     parse_arguments "$@"
+    if [ -n "$IPS" ] && [ -n "$VMS" ]; then
+        echo -e "${red}Use either -vms (names) or -ip, not both${normal}"
+        exit 1
+    fi
+    if [ -n "$IPS" ] && { [ -n "$HYPERVISOR_NAME" ] || [ -n "$PROJECT" ]; }; then
+        echo -e "${yellow}Warning: -hv/-p are ignored when -ip is used${normal}"
+    fi
     if [ "$SSH_BY_PASS" != "true" ]; then
         KEY_STRING="-i $KEY_PATH"
         validate_ssh_key
