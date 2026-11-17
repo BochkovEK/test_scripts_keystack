@@ -358,14 +358,14 @@ execute_on_vm() {
     echo -e "${yellow}Command: $COMMAND_STR${normal}"
 
     [ "$TS_DEBUG" = "true" ] && {
-    echo "ssh -o StrictHostKeyChecking=no \
+    echo "ssh -t -o StrictHostKeyChecking=no \
                -o ConnectTimeout=\"$TS_SSH_TIMEOUT\" \
                ${jump_opts[*]} \
                $KEY_STRING \
                \"$VM_USER@$ip\" \
                \"$COMMAND_STR\"";}
 
-    ssh -t -o StrictHostKeyChecking=no \
+    ssh -o StrictHostKeyChecking=no \
     -o ConnectTimeout="$TS_SSH_TIMEOUT" \
     "${jump_opts[@]}" \
     $KEY_STRING \
