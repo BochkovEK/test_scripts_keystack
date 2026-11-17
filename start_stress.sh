@@ -478,9 +478,6 @@ network_stress() {
 # Function to copy and run stress tool
 copy_and_run_stress() {
     local vm_pair="$1"
-    local jump_opts=()
-    build_jump_opts
-    jump_opts=("${JUMP_OPTS[@]}")
 
     # For network test, use specialized function
     if [ "$TYPE_TEST" = "network" ]; then
@@ -519,10 +516,7 @@ copy_and_run_stress() {
     fi
 
     echo "Copying stress tool to $vm_name..."
-
-    build_jump_opts
     if [ -n "$JUMP_HOST" ]; then
-        [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG] command: scp -o StrictHostKeyChecking=no -o \"ProxyCommand=ssh -i $JUMP_HOST_KEY -W %h:%p $JUMP_HOST_USER@$JUMP_HOST\" -i \"$KEY_PATH\" \"$script_dir/stress\" \"$VM_USER@$vm_ip:~/\""
         scp -o StrictHostKeyChecking=no \
             -o "ProxyCommand=ssh -i $JUMP_HOST_KEY -W %h:%p $JUMP_HOST_USER@$JUMP_HOST" \
             -i "$KEY_PATH" \
@@ -534,14 +528,6 @@ copy_and_run_stress() {
     fi
 
     if [ $? -ne 0 ]; then
-        echo -e "${red}Failed to copy stress tool to $vm_name${normal}"
-        return 1
-    fi
-
-    [ "$TS_DEBUG" = "true" ] && echo -e "[DEBUG]
-    command: scp -o StrictHostKeyChecking=no ${jump_opts[*]} -i \"$KEY_PATH\" \"$script_dir/stress\" \"$VM_USER@$vm_ip:~/\" >/dev/null 2>&1
-    "
-    if ! scp -o StrictHostKeyChecking=no "${jump_opts[@]}" -i "$KEY_PATH" "$script_dir/stress" "$VM_USER@$vm_ip:~/" >/dev/null 2>&1; then
         echo -e "${red}Failed to copy stress tool to $vm_name${normal}"
         return 1
     fi
