@@ -533,7 +533,7 @@ copy_and_run_stress() {
     fi
 
     echo "Starting $TYPE_TEST stress on $vm_name..."
-    local ssh_command="nohup ./stress $stress_args > /dev/null 2>&1 &"
+    local ssh_command="setsid nohup ./stress $stress_args > /dev/null 2>&1 &"
 
     if ! run_cmd_on_vm "$vm_ip" "$ssh_command"; then
         echo -e "${red}Failed to start stress on $vm_name${normal}"
