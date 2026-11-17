@@ -346,6 +346,7 @@ check_ssh_connectivity() {
 }
 
 # Function to execute command on VM
+# Function to execute command on VM
 execute_on_vm() {
     local ip="$1"
     local jump_opts=()
@@ -355,17 +356,25 @@ execute_on_vm() {
     fi
 
     echo -e "${blue}Executing command on $ip$( [ -n "$JUMP_HOST" ] && echo " (via jump host $JUMP_HOST)" )...${normal}"
-    echo -e "${yellow}Command: $COMMAND_STR${normal}"
+    echo -e "${yellow}Command: ${COMMAND_STR:-<Interactive Shell>}${normal}"
+
+    # Dynamically determine the presence of the -t flag:
+    # If COMMAND_STR is empty (-c ""), enable -t for interactive console.
+    # If COMMAND_STR is set, remove -t for clean execution of commands/background processes.
+    local ssh_t_flag=""
+    if [ -z "$COMMAND_STR" ]; then
+        ssh_t_flag="-t"
+    fi
 
     [ "$TS_DEBUG" = "true" ] && {
-    echo "ssh -t -o StrictHostKeyChecking=no \
+    echo "ssh $ssh_t_flag -o StrictHostKeyChecking=no \
                -o ConnectTimeout=\"$TS_SSH_TIMEOUT\" \
                ${jump_opts[*]} \
                $KEY_STRING \
                \"$VM_USER@$ip\" \
                \"$COMMAND_STR\"";}
 
-    ssh -o StrictHostKeyChecking=no \
+    ssh $ssh_t_flag -o StrictHostKeyChecking=no \
     -o ConnectTimeout="$TS_SSH_TIMEOUT" \
     "${jump_opts[@]}" \
     $KEY_STRING \
