@@ -16,6 +16,7 @@ get_active_vms_list_script="get_vms_list.sh"
 check_ssh_connectivity_script="check_ssh_connectivity.sh"
 yes_no_script="yes_no_answer.sh"
 network_load_script="network_load.sh"
+command_on_vms_script="command_on_vms.sh"
 default_key_name="key_test.pem"
 
 external_scripts=(
@@ -263,12 +264,28 @@ validate_jump_host_key() {
     chmod 600 "$JUMP_HOST_KEY" 2>/dev/null || true
 }
 
-# Function to build the ProxyCommand ssh option array when a jump host is set.
-# Echo'd into an array via `jump_opts=("${JUMP_OPTS[@]}")` at call sites.
+# Function to build the ProxyCommand ssh option array when a jump host is set (used for scp).
 build_jump_opts() {
     JUMP_OPTS=()
     if [ -n "$JUMP_HOST" ]; then
         JUMP_OPTS=(-o "ProxyCommand=ssh -i $JUMP_HOST_KEY -W %h:%p $JUMP_HOST_USER@$JUMP_HOST")
+    fi
+}
+
+# Helper function to execute commands on a VM via command_on_vms.sh
+run_cmd_on_vm() {
+    local vm_ip="$1"
+    local cmd="$2"
+    local quiet="${3:-false}"
+
+    local cmd_args=(-ip "$vm_ip" -u "$VM_USER" -k "$KEY_PATH" -c "$cmd" -dont_ask)
+    [ -n "$JUMP_HOST" ] && cmd_args+=(-jh "$JUMP_HOST" -jhu "$JUMP_HOST_USER" -jhk "$JUMP_HOST_KEY")
+    [ "$TS_DEBUG" = "true" ] && cmd_args+=(-debug)
+
+    if [ "$quiet" = "true" ]; then
+        bash "$script_dir/$command_on_vms_script" "${cmd_args[@]}" >/dev/null 2>&1
+    else
+        bash "$script_dir/$command_on_vms_script" "${cmd_args[@]}"
     fi
 }
 
@@ -426,9 +443,6 @@ get_mode_strings() {
 # Function to execute network stress test
 network_stress() {
     local vm_pair="$1"
-    local jump_opts=()
-    build_jump_opts
-    jump_opts=("${JUMP_OPTS[@]}")
 
     # Extract data from name:status:ip pair
     local vm_name=$(echo "$vm_pair" | cut -d: -f1)
@@ -436,19 +450,15 @@ network_stress() {
 
     echo "Processing VM: $vm_name ($vm_ip)$( [ -n "$JUMP_HOST" ] && echo " (via jump host $JUMP_HOST)" )"
 
+    local cmd=""
     case $NETWORK_LOAD in
         on)
             echo "Starting network load on $vm_name..."
-            # ping --help
-            # -s use <size> as number of data bytes to be sent
-            # -f flood ping
-            ssh -t -o StrictHostKeyChecking=no "${jump_opts[@]}" -i "$KEY_PATH" "$VM_USER@$vm_ip" \
-                "sudo sh -c 'echo \"@reboot root ping -f -s 1024 8.8.8.8\" >> /etc/crontab && reboot'"
+            cmd="sudo sh -c 'echo \"@reboot root ping -f -s 1024 8.8.8.8\" >> /etc/crontab && reboot'"
             ;;
         off)
             echo "Stopping network load on $vm_name..."
-            ssh -t -o StrictHostKeyChecking=no "${jump_opts[@]}" -i "$KEY_PATH" "$VM_USER@$vm_ip" \
-                "sudo sh -c 'sed -i '/ping/d' /etc/crontab && reboot'"
+            cmd="sudo sh -c 'sed -i '\''/ping/d'\'' /etc/crontab && reboot'"
             ;;
         *)
             echo -e "${red}Invalid network load value: $NETWORK_LOAD${normal}"
@@ -456,7 +466,7 @@ network_stress() {
             ;;
     esac
 
-    if [ $? -eq 0 ]; then
+    if run_cmd_on_vm "$vm_ip" "$cmd"; then
         echo -e "${green}Network load $NETWORK_LOAD completed on $vm_name${normal}"
         return 0
     else
@@ -486,18 +496,23 @@ copy_and_run_stress() {
 
     if [ "$TYPE_TEST" = "ram" ] && [ "$MOUNT_TO_RAM" = "true" ]; then
         echo "Starting ${yellow}'Mount to RAM'${normal} type ram load on $vm_name using tmpfs..."
-        # !!! Units only GB or MB
         if [ "$UNITS" = "G" ]; then
             RAM_SIZE=$(($RAM * 1024))
         else
             RAM_SIZE=$RAM
         fi
 
-        ssh -o StrictHostKeyChecking=no "${jump_opts[@]}" -i "$KEY_PATH" "$VM_USER@$vm_ip" \
-            "sudo mkdir -p /mnt/ram && sudo mount -t tmpfs -o size=${RAM_SIZE}M tmpfs /mnt/ram"
+        local cmd1="sudo mkdir -p /mnt/ram && sudo mount -t tmpfs -o size=${RAM_SIZE}M tmpfs /mnt/ram"
+        if ! run_cmd_on_vm "$vm_ip" "$cmd1"; then
+            echo -e "${red}Failed to create/mount RAM on $vm_name${normal}"
+            return 1
+        fi
 
-        ssh -o StrictHostKeyChecking=no "${jump_opts[@]}" -i "$KEY_PATH" "$VM_USER@$vm_ip" \
-            "sudo dd if=/dev/urandom of=/mnt/ram/bigfile bs=1M count=${RAM_SIZE} status=progress"
+        local cmd2="sudo dd if=/dev/urandom of=/mnt/ram/bigfile bs=1M count=${RAM_SIZE} status=progress"
+        if ! run_cmd_on_vm "$vm_ip" "$cmd2"; then
+            echo -e "${red}Failed to fill RAM file on $vm_name${normal}"
+            return 1
+        fi
 
         echo -e "${green}\nRAM load started on $vm_name using tmpfs${normal}"
         return 0
@@ -512,12 +527,15 @@ copy_and_run_stress() {
         return 1
     fi
 
-    ssh -o StrictHostKeyChecking=no "${jump_opts[@]}" -i "$KEY_PATH" "$VM_USER@$vm_ip" "chmod +x ~/stress" >/dev/null 2>&1
+    if ! run_cmd_on_vm "$vm_ip" "chmod +x ~/stress" "true"; then
+        echo -e "${red}Failed to make stress tool executable on $vm_name${normal}"
+        return 1
+    fi
 
     echo "Starting $TYPE_TEST stress on $vm_name..."
     local ssh_command="nohup ./stress $stress_args > /dev/null 2>&1 &"
 
-    if ! ssh -o StrictHostKeyChecking=no "${jump_opts[@]}" -i "$KEY_PATH" "$VM_USER@$vm_ip" "$ssh_command"; then
+    if ! run_cmd_on_vm "$vm_ip" "$ssh_command"; then
         echo -e "${red}Failed to start stress on $vm_name${normal}"
         return 1
     fi
@@ -527,11 +545,6 @@ copy_and_run_stress() {
 }
 
 # Function to check SSH connectivity to VMs
-# NOTE: this delegates to the external `test_ssh_connection` helper sourced
-# from check_ssh_connectivity.sh. That script's signature is NOT under our
-# control here - if it doesn't already accept jump-host args, it needs to be
-# updated separately (mirroring check_ssh_connectivity() in run_commands.sh)
-# for the jump host to actually be honored during this pre-flight check.
 check_vm_connectivity() {
     echo "Checking VM connectivity..."
 
@@ -588,6 +601,11 @@ batch_run_stress() {
 validate_environment() {
     if [ ! -f "$script_dir/stress" ]; then
         echo -e "${red}Stress binary not found: $script_dir/stress${normal}"
+        exit 1
+    fi
+
+    if [ ! -f "$script_dir/$command_on_vms_script" ]; then
+        echo -e "${red}command_on_vms.sh not found: $script_dir/$command_on_vms_script${normal}"
         exit 1
     fi
 
