@@ -169,12 +169,12 @@ while true; do
 
         if [ "$SERVICES_FAILED" = 0 ] &&
            [ "$REPO_HTTP" = "200" ] &&
-           if [ "$GITLAB_OK_STREAK" -eq "$SUCCESSFUL_CYCLES" ]; then
+           [ "$GITLAB_OK_STREAK" -eq "$SUCCESSFUL_CYCLES" ]; then
 
-            echo
-            echo "===== ALL SERVICES AVAILABLE ====="
-            echo "===== GITLAB FUNCTIONAL RECOVERY DETECTED ====="
-            echo "TIME: $(date -u)"
+           echo
+           echo "===== ALL SERVICES AVAILABLE ====="
+           echo "===== GITLAB FUNCTIONAL RECOVERY DETECTED ====="
+           echo "TIME: $(date -u)"
 
         fi
     fi
