@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  opensearch:
+    image: opensearchproject/opensearch:latest
+    container_name: opensearch-server
+    network_mode: host
+    environment:
+      - cluster.name=opensearch-cluster
+      - node.name=opensearch-node1
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_INITIAL_ADMIN_PASSWORD=MySecurePassword123!"
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+
+      - DISABLE_SECURITY_PLUGIN=false
+      - plugins.security.ssl.http.enabled=true
+      - plugins.security.ssl.http.pemcert_filepath=certs/opensearch.crt
+      - plugins.security.ssl.http.pemkey_filepath=certs/opensearch.key
+
+      - transport.ssl.enforce_hostname_verification=false
+      - plugins.security.ssl.transport.pemcert_filepath=certs/opensearch.crt
+      - plugins.security.ssl.transport.pemkey_filepath=certs/opensearch.key
+
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - ./opensearch_data:/usr/share/opensearch/data:z
+      - ./opensearch_certs:/usr/share/opensearch/config/certs:z
+    restart: always

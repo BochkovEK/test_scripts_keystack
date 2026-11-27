@@ -1,0 +1,56 @@
+services:
+  nexus3:
+    image: harbor.private.itkey.com/project_k/services/lcm/k0s/images/nexus3@sha256:d0627e14c37193f5fd866e84908eec6885941f99136d9d163d8e66bad95f899b
+    container_name: nexus3
+    restart: unless-stopped
+    volumes:
+      - /opt/services/nexus/data:/nexus-data:Z
+    networks:
+      - services-net
+
+  nginx:
+    image: harbor.private.itkey.com/project_k/services/lcm/k0s/images/nginx@sha256:e61037c3e4df7afcae5e0f3883bf027de23be19063a3856b26e1e9cc4ceed91e
+    container_name: nginx
+    restart: unless-stopped
+    cap_add:
+      - NET_BIND_SERVICE
+    ports:
+      - "443:443"
+    volumes:
+      - /opt/services/nginx/conf.d:/etc/nginx/conf.d:ro,Z
+      - /opt/services/nginx/certs:/etc/nginx/certs:ro,Z
+      - /opt/services/nginx/nginx.conf:/etc/nginx/nginx.conf:ro,Z
+      - /opt/services/nginx/stream-conf.d:/etc/nginx/stream-conf.d:ro,Z
+    networks:
+      - services-net
+  dnsmasq:
+    image: docker.io/strm/dnsmasq:latest
+    container_name: dnsmasq
+    restart: always
+    ports:
+      - "10.224.166.21:53:53/udp"
+      - "10.224.166.21:53:53/tcp"
+      - "127.0.0.1:53:53/udp"
+      - "127.0.0.1:53:53/tcp"
+    volumes:
+      - /opt/services/dnsmasq/dnsmasq.conf:/etc/dnsmasq.conf:ro,Z
+    command: ["--no-daemon", "--log-queries", "--log-dhcp"]
+    networks:
+      - services-net
+  minio:
+    image: public.ecr.aws/y9w4h2u9/minio:RELEASE.2025-09-07T16-13-09Z
+    container_name: minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: "${MINIO_ROOT_USER:?required}"
+      MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD:?required}"
+    volumes:
+      - /opt/services/minio/data:/data:Z
+      - /opt/services/minio/certs:/root/.minio/certs:ro,Z
+    networks:
+      - services-net
+
+networks:
+  services-net:
+    driver: bridge
